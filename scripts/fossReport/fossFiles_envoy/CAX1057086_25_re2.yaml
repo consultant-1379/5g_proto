@@ -1,0 +1,42 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2024-02-22T00:00:00Z
+FOSS:
+    # Available in Bazaar
+    FOSSName: re2
+    # Available in Bazaar
+    FOSSVersion: "2023-11"
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/google/re2/archive/2023-11-01.tar.gz
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 25/CAX1057086
+    # Not Available in Bazaar
+    Primary: N
+    # Available in Bazaar
+    STAKOCode: ESW2
+    # Available in Bazaar
+    STAKOReason: ()
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: "RE2 is a fast, safe, thread-friendly alternative to backtracking regular expression engines like those used in PCRE, Perl, and Python. It is a C++ library."
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: BSD 3-Clause (BSD-3-Clause)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: BSD 3-Clause (BSD-3-Clause)
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Statically
+    # Not Available in Bazaar
+    MavenDependency: NO
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    #Comments 
+    Comments: NA
+    ReportAuthor: ekhrart Artur Khromov

@@ -1,0 +1,22 @@
+{{- if eq (include "eric-bsf.tls" .) "true" }}
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+  name: {{ template "eric-bsf.name" . }}-manager-fhah-client-certificate
+  annotations:
+{{- include "eric-bsf.helm-annotations" . | indent 4 }}
+{{- include "eric-bsf.config-annotations" . | indent 4 }}
+  labels:
+{{- include "eric-bsf.labels" . | indent 4 }}
+spec:
+  kubernetes:
+    generatedSecretName: bsf-manager-fhah-client-if-certificate-secret
+  certificate:
+    subject:
+      cn: eric-bsf-manager
+    issuer:
+      reference: eric-fh-alarm-handler-fi-server-client-ca
+    extendedKeyUsage:
+      tlsClientAuth: true
+      tlsServerAuth: false
+{{- end }}

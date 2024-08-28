@@ -1,0 +1,582 @@
+[
+  {
+    "name": "ericsson-yang-extensions@2022-03-18.yang",
+    "module-name": "ericsson-yang-extensions",
+    "prefix": "yexte",
+    "revision": "2022-03-18",
+    "import": true
+  },
+  {
+    "name": "ericsson-alarm-pc-types@2018-11-21.yang",
+    "module-name": "ericsson-alarm-pc-types",
+    "prefix": "fmpce",
+    "revision": "2018-11-21",
+    "import": true
+  },
+  {
+    "name": "ietf-yang-types@2013-07-15.yang",
+    "module-name": "ietf-yang-types",
+    "prefix": "yang",
+    "revision": "2013-07-15",
+    "import": true
+  },
+  {
+    "name": "ietf-inet-types@2013-07-15.yang",
+    "module-name": "ietf-inet-types",
+    "prefix": "inet",
+    "revision": "2013-07-15",
+    "import": true
+  },
+  {
+    "name": "ericsson-yang-types@2022-03-18.yang",
+    "module-name": "ericsson-yang-types",
+    "prefix": "typese",
+    "revision": "2022-03-18",
+    "import": true
+  },
+  {
+    "name": "ietf-netconf-acm@2018-02-14.yang",
+    "module-name": "ietf-netconf-acm",
+    "prefix": "nacm",
+    "revision": "2018-02-14",
+    "deviations": [
+      "ericsson-netconf-acm-ext@2016-06-13.yang"
+    ],
+    "augmentations": [
+      "tailf-acm@2013-03-07.yang"
+    ],
+    "import": false
+  },
+  {
+    "name": "ietf-netconf@2011-06-01.yang",
+    "module-name": "ietf-netconf",
+    "prefix": "nc",
+    "revision": "2011-06-01",
+    "features": [
+      "ietf-netconf:candidate",
+      "ietf-netconf:confirmed-commit",
+      "ietf-netconf:rollback-on-error",
+      "ietf-netconf:startup",
+      "ietf-netconf:url",
+      "ietf-netconf:validate",
+      "ietf-netconf:writable-running",
+      "ietf-netconf:xpath"
+    ],
+    "augmentations": [
+      "ietf-netconf-with-defaults@2011-06-01.yang"
+    ],
+    "import": false
+  },
+  {
+    "name": "ietf-netconf-notifications@2012-02-06.yang",
+    "module-name": "ietf-netconf-notifications",
+    "prefix": "ncn",
+    "revision": "2012-02-06",
+    "import": false
+  },
+  {
+    "name": "ericsson-notifications@2022-11-30.yang",
+    "module-name": "ericsson-notifications",
+    "prefix": "notife",
+    "revision": "2022-11-30",
+    "features": [
+      "ericsson-notifications:netconf-state-change"
+    ],
+    "import": false
+  },
+  {
+    "name": "ietf-ssh-common@2019-11-20.yang",
+    "module-name": "ietf-ssh-common",
+    "prefix": "sshcmn",
+    "revision": "2019-11-20",
+    "features": [
+      "ietf-ssh-common:ssh-ctr",
+      "ietf-ssh-common:ssh-dh-group-exchange",
+      "ietf-ssh-common:ssh-ecc",
+      "ietf-ssh-common:ssh-sha2",
+      "ietf-ssh-common:ssh-x509-certs"
+    ],
+    "import": false
+  },
+  {
+    "name": "iana-symmetric-algs@2019-11-20.yang",
+    "module-name": "iana-symmetric-algs",
+    "prefix": "isa",
+    "revision": "2019-11-20",
+    "import": false
+  },
+  {
+    "name": "iana-asymmetric-algs@2019-11-20.yang",
+    "module-name": "iana-asymmetric-algs",
+    "prefix": "iasa",
+    "revision": "2019-11-20",
+    "import": false
+  },
+  {
+    "name": "ietf-crypto-types@2019-11-20.yang",
+    "module-name": "ietf-crypto-types",
+    "prefix": "ct",
+    "revision": "2019-11-20",
+    "import": true
+  },
+  {
+    "name": "ietf-truststore@2019-11-20.yang",
+    "module-name": "ietf-truststore",
+    "prefix": "ts",
+    "revision": "2019-11-20",
+    "features": [
+      "ietf-truststore:local-definitions-supported",
+      "ietf-truststore:raw-public-keys",
+      "ietf-truststore:ssh-host-keys",
+      "ietf-truststore:truststore-supported",
+      "ietf-truststore:x509-certificates"
+    ],
+    "deviations": [
+      "ericsson-truststore-ext@2023-05-11.yang"
+    ],
+    "augmentations": [
+      "ericsson-truststore-ext@2023-05-11.yang"
+    ],
+    "import": false
+  },
+  {
+    "name": "ietf-keystore@2019-11-20.yang",
+    "module-name": "ietf-keystore",
+    "prefix": "ks",
+    "revision": "2019-11-20",
+    "features": [
+      "ietf-keystore:key-generation",
+      "ietf-keystore:keystore-supported",
+      "ietf-keystore:local-definitions-supported"
+    ],
+    "deviations": [
+      "ericsson-keystore-ext@2023-06-20.yang"
+    ],
+    "augmentations": [
+      "ericsson-keystore-ext@2023-06-20.yang"
+    ],
+    "import": false
+  },
+  {
+    "name": "ietf-ssh-client@2019-11-20.yang",
+    "module-name": "ietf-ssh-client",
+    "prefix": "sshc",
+    "revision": "2019-11-20",
+    "import": true
+  },
+  {
+    "name": "ietf-tls-common@2019-11-20.yang",
+    "module-name": "ietf-tls-common",
+    "prefix": "tlscmn",
+    "revision": "2019-11-20",
+    "features": [
+      "ietf-tls-common:tls-1_0",
+      "ietf-tls-common:tls-1_1",
+      "ietf-tls-common:tls-1_2",
+      "ietf-tls-common:tls-1_3",
+      "ietf-tls-common:tls-3des",
+      "ietf-tls-common:tls-dhe",
+      "ietf-tls-common:tls-ecc",
+      "ietf-tls-common:tls-gcm",
+      "ietf-tls-common:tls-sha2"
+    ],
+    "import": false
+  },
+  {
+    "name": "ietf-tls-client@2019-11-20.yang",
+    "module-name": "ietf-tls-client",
+    "prefix": "tlsc",
+    "revision": "2019-11-20",
+    "import": true
+  },
+  {
+    "name": "ericsson-ftp-client@2020-03-23.yang",
+    "module-name": "ericsson-ftp-client",
+    "prefix": "ftpclie",
+    "revision": "2020-03-23",
+    "import": true
+  },
+  {
+    "name": "ericsson-brm@2022-09-02.yang",
+    "module-name": "ericsson-brm",
+    "prefix": "brme",
+    "revision": "2022-09-02",
+    "features": [
+      "ericsson-brm:failsafe-backups",
+      "ericsson-brm:housekeeping",
+      "ericsson-brm:label-store",
+      "ericsson-brm:rollback-at-restore",
+      "ericsson-brm:scheduler",
+      "ericsson-brm:sftp-client-authentication"
+    ],
+    "deviations": [
+      "ericsson-brm-ext-adp@2022-04-06.yang"
+    ],
+    "import": false
+  },
+  {
+    "name": "ericsson-brm-ext-adp@2022-04-06.yang",
+    "module-name": "ericsson-brm-ext-adp",
+    "prefix": "brmxe",
+    "revision": "2022-04-06",
+    "import": false
+  },
+  {
+    "name": "ericsson-sc-common-r16@2024-01-22.yang",
+    "module-name": "ericsson-sc-common-r16",
+    "prefix": "sccommonr16",
+    "revision": "2024-01-22",
+    "import": true
+  },
+  {
+    "name": "tailf-meta-extensions@2017-03-08.yang",
+    "module-name": "tailf-meta-extensions",
+    "prefix": "tailf",
+    "revision": "2017-03-08",
+    "import": true
+  },
+  {
+    "name": "tailf-cli-extensions@2021-12-17.yang",
+    "module-name": "tailf-cli-extensions",
+    "prefix": "tailf",
+    "revision": "2021-12-17",
+    "import": true
+  },
+  {
+    "name": "tailf-common@2023-02-21.yang",
+    "module-name": "tailf-common",
+    "prefix": "tailf",
+    "revision": "2023-02-21",
+    "import": false
+  },
+  {
+    "name": "ericsson-bsf@2024-01-30.yang",
+    "module-name": "ericsson-bsf",
+    "prefix": "scbsf",
+    "revision": "2024-01-30",
+    "import": false
+  },
+  {
+    "name": "ericsson-data-collector-adp@2023-03-22.yang",
+    "module-name": "ericsson-data-collector-adp",
+    "prefix": "dcadp",
+    "revision": "2023-03-22",
+    "deviations": [
+      "ericsson-data-collector-ext-adp@2023-03-22.yang"
+    ],
+    "import": false
+  },
+  {
+    "name": "ericsson-data-collector-ext-adp@2023-03-22.yang",
+    "module-name": "ericsson-data-collector-ext-adp",
+    "prefix": "dcxadp",
+    "revision": "2023-03-22",
+    "import": false
+  },
+  {
+    "name": "ericsson-sctp-adp@2023-01-23.yang",
+    "module-name": "ericsson-sctp-adp",
+    "prefix": "sctpadp",
+    "revision": "2023-01-23",
+    "import": false
+  },
+  {
+    "name": "ericsson-diameter-adp@2023-09-21.yang",
+    "module-name": "ericsson-diameter-adp",
+    "prefix": "diaadp",
+    "revision": "2023-09-21",
+    "features": [
+      "ietf-keystore:keystore-supported",
+      "ietf-truststore:truststore-supported"
+    ],
+    "import": false
+  },
+  {
+    "name": "ericsson-fm@2020-09-17.yang",
+    "module-name": "ericsson-fm",
+    "prefix": "fme",
+    "revision": "2020-09-17",
+    "features": [
+      "ericsson-fm:alert"
+    ],
+    "deviations": [
+      "ericsson-fm-ext-adp@2022-11-01.yang"
+    ],
+    "import": false
+  },
+  {
+    "name": "ericsson-fm-ext-adp@2022-11-01.yang",
+    "module-name": "ericsson-fm-ext-adp",
+    "prefix": "fmadpe",
+    "revision": "2022-11-01",
+    "import": false
+  },
+  {
+    "name": "ericsson-keystore-ext@2023-06-20.yang",
+    "module-name": "ericsson-keystore-ext",
+    "prefix": "ksxe",
+    "revision": "2023-06-20",
+    "features": [
+      "ericsson-keystore-ext:cmp",
+      "ericsson-keystore-ext:manual-renewal",
+      "ericsson-keystore-ext:pkcs10",
+      "ericsson-keystore-ext:pkcs12",
+      "ericsson-keystore-ext:pkcs8",
+      "ericsson-keystore-ext:scep"
+    ],
+    "import": false
+  },
+  {
+    "name": "ericsson-netconf-acm-ext@2016-06-13.yang",
+    "module-name": "ericsson-netconf-acm-ext",
+    "prefix": "nacmxe",
+    "revision": "2016-06-13",
+    "import": false
+  },
+  {
+    "name": "ericsson-pm@2022-03-31.yang",
+    "module-name": "ericsson-pm",
+    "prefix": "pme",
+    "revision": "2022-03-31",
+    "features": [
+      "ericsson-pm:measurement-jobs",
+      "ericsson-pm:realtime-jobs",
+      "ericsson-pm:threshold-jobs"
+    ],
+    "deviations": [
+      "ericsson-pm-dev-adp@2022-04-07.yang"
+    ],
+    "import": false
+  },
+  {
+    "name": "ericsson-pm-dev-adp@2022-04-07.yang",
+    "module-name": "ericsson-pm-dev-adp",
+    "prefix": "pmdevadp",
+    "revision": "2022-04-07",
+    "import": false
+  },
+  {
+    "name": "ericsson-scp@2024-02-06.yang",
+    "module-name": "ericsson-scp",
+    "prefix": "scscp",
+    "revision": "2024-02-06",
+    "import": false
+  },
+  {
+    "name": "ericsson-sepp@2024-02-09.yang",
+    "module-name": "ericsson-sepp",
+    "prefix": "scsepp",
+    "revision": "2024-02-09",
+    "import": false
+  },
+  {
+    "name": "ietf-tls-server@2019-11-20.yang",
+    "module-name": "ietf-tls-server",
+    "prefix": "tlss",
+    "revision": "2019-11-20",
+    "import": true
+  },
+  {
+    "name": "ericsson-snmp@2023-03-22.yang",
+    "module-name": "ericsson-snmp",
+    "prefix": "snmpee",
+    "revision": "2023-03-22",
+    "features": [
+      "ericsson-snmp:dtls",
+      "ericsson-snmp:network-prefix-validation",
+      "ericsson-snmp:no-auth-no-priv-feature"
+    ],
+    "import": false
+  },
+  {
+    "name": "ericsson-swim@2018-09-04.yang",
+    "module-name": "ericsson-swim",
+    "prefix": "swime",
+    "revision": "2018-09-04",
+    "import": false
+  },
+  {
+    "name": "iana-crypt-hash@2014-08-06.yang",
+    "module-name": "iana-crypt-hash",
+    "prefix": "ianach",
+    "revision": "2014-08-06",
+    "import": true
+  },
+  {
+    "name": "ietf-system@2014-08-06.yang",
+    "module-name": "ietf-system",
+    "prefix": "sys",
+    "revision": "2014-08-06",
+    "features": [
+      "ietf-system:authentication",
+      "ietf-system:dns-udp-tcp-port",
+      "ietf-system:local-users",
+      "ietf-system:ntp",
+      "ietf-system:ntp-udp-port",
+      "ietf-system:radius",
+      "ietf-system:radius-authentication",
+      "ietf-system:timezone-name"
+    ],
+    "deviations": [
+      "ericsson-system-ext-aum@2022-03-03.yang",
+      "ericsson-system-ext@2023-11-06.yang"
+    ],
+    "augmentations": [
+      "ericsson-system-ext@2023-11-06.yang"
+    ],
+    "import": false
+  },
+  {
+    "name": "ericsson-system-ext@2023-11-06.yang",
+    "module-name": "ericsson-system-ext",
+    "prefix": "sysxe",
+    "revision": "2023-11-06",
+    "features": [
+      "ericsson-system-ext:authentication-failure-alarm",
+      "ericsson-system-ext:ldap",
+      "ericsson-system-ext:ldap-authentication",
+      "ericsson-system-ext:ldap-clear",
+      "ericsson-system-ext:ldap-custom-filter",
+      "ericsson-system-ext:ldap-posix-filter",
+      "ericsson-system-ext:ldap-sasl-external",
+      "ericsson-system-ext:local-target-classes",
+      "ericsson-system-ext:ntp-security",
+      "ericsson-system-ext:oauth2-client-authentication",
+      "ietf-system:authentication",
+      "ietf-system:local-users",
+      "ietf-system:ntp"
+    ],
+    "deviations": [
+      "ericsson-system-ext-aum@2022-03-03.yang"
+    ],
+    "import": false
+  },
+  {
+    "name": "ericsson-system-ext-aum@2022-03-03.yang",
+    "module-name": "ericsson-system-ext-aum",
+    "prefix": "sysxeaum",
+    "revision": "2022-03-03",
+    "import": false
+  },
+  {
+    "name": "ericsson-truststore-ext@2023-05-11.yang",
+    "module-name": "ericsson-truststore-ext",
+    "prefix": "tsxe",
+    "revision": "2023-05-11",
+    "features": [
+      "ietf-truststore:ssh-host-keys",
+      "ietf-truststore:x509-certificates"
+    ],
+    "import": false
+  },
+  {
+    "name": "ericsson-vtap-pc5gc@2023-06-01.yang",
+    "module-name": "ericsson-vtap-pc5gc",
+    "prefix": "pbtc5gc",
+    "revision": "2023-06-01",
+    "import": false
+  },
+  {
+    "name": "ietf-datastores@2018-02-14.yang",
+    "module-name": "ietf-datastores",
+    "prefix": "ds",
+    "revision": "2018-02-14",
+    "import": false
+  },
+  {
+    "name": "ietf-yang-library@2019-01-04.yang",
+    "module-name": "ietf-yang-library",
+    "prefix": "yanglib",
+    "revision": "2019-01-04",
+    "augmentations": [
+      "ericsson-yang-library-ext@2017-11-07.yang"
+    ],
+    "import": false
+  },
+  {
+    "name": "ericsson-yang-library-ext@2017-11-07.yang",
+    "module-name": "ericsson-yang-library-ext",
+    "prefix": "yanglibxe",
+    "revision": "2017-11-07",
+    "import": false
+  },
+  {
+    "name": "ietf-interfaces@2018-02-20.yang",
+    "module-name": "ietf-interfaces",
+    "prefix": "if",
+    "revision": "2018-02-20",
+    "features": [
+      "ietf-interfaces:arbitrary-names",
+      "ietf-interfaces:if-mib",
+      "ietf-interfaces:pre-provisioning"
+    ],
+    "augmentations": [
+      "ietf-ip@2018-02-22.yang",
+      "ietf-network-instance@2019-01-21.yang"
+    ],
+    "import": false
+  },
+  {
+    "name": "ietf-ip@2018-02-22.yang",
+    "module-name": "ietf-ip",
+    "prefix": "ip",
+    "revision": "2018-02-22",
+    "features": [
+      "ietf-ip:ipv4-non-contiguous-netmasks",
+      "ietf-ip:ipv6-privacy-autoconf"
+    ],
+    "augmentations": [
+      "ietf-network-instance@2019-01-21.yang"
+    ],
+    "import": false
+  },
+  {
+    "name": "ietf-netconf-monitoring@2010-10-04.yang",
+    "module-name": "ietf-netconf-monitoring",
+    "prefix": "ncm",
+    "revision": "2010-10-04",
+    "import": false
+  },
+  {
+    "name": "ietf-netconf-with-defaults@2011-06-01.yang",
+    "module-name": "ietf-netconf-with-defaults",
+    "prefix": "ncwd",
+    "revision": "2011-06-01",
+    "import": false
+  },
+  {
+    "name": "ietf-yang-schema-mount@2019-01-14.yang",
+    "module-name": "ietf-yang-schema-mount",
+    "prefix": "yangmnt",
+    "revision": "2019-01-14",
+    "import": false
+  },
+  {
+    "name": "ietf-network-instance@2019-01-21.yang",
+    "module-name": "ietf-network-instance",
+    "prefix": "ni",
+    "revision": "2019-01-21",
+    "import": false
+  },
+  {
+    "name": "ietf-yang-metadata@2016-08-05.yang",
+    "module-name": "ietf-yang-metadata",
+    "prefix": "md",
+    "revision": "2016-08-05",
+    "import": true
+  },
+  {
+    "name": "ietf-origin@2018-02-14.yang",
+    "module-name": "ietf-origin",
+    "prefix": "or",
+    "revision": "2018-02-14",
+    "import": false
+  },
+  {
+    "name": "tailf-acm@2013-03-07.yang",
+    "module-name": "tailf-acm",
+    "prefix": "tacm",
+    "revision": "2013-03-07",
+    "import": false
+  }
+]

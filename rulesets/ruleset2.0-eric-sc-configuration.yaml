@@ -1,0 +1,731 @@
+modelVersion: 2.0
+
+description: "SC Configuration"
+
+import:
+  base: ruleset2.0-eric-base.yaml
+  bsf: ../eric-bsf/ruleset2.0.yaml
+  scp: ../eric-scp/ruleset2.0.yaml
+  sepp: ../eric-sepp/ruleset2.0.yaml
+  scbsf: ../eric-sc-bsf/ruleset2.0.yaml
+  scscp: ../eric-sc-scp/ruleset2.0.yaml
+  scsepp: ../eric-sc-sepp/ruleset2.0.yaml
+  scspider: ../eric-sc-spider/ruleset2.0.yaml
+
+properties:
+## Required folders
+  - CERTS_OUT_DIR: .certificates
+  - DEPLOY_PROFILES: deploy-profiles
+
+env:
+## Services
+  - BSF (default=false)
+  - SCP (default=false)
+  - SEPP (default=false)
+  - DIAMETER (default=false)
+## Deployment profiles - Configure in Makefile.user
+  - IP_VERSION_INT (default="DS")
+  - IP_VERSION_EXT (default="DS")
+  - PM_REMOTE_WRITE (default=false)
+  - METRICS (default=true)
+  - SYSLOG (default=false)
+  - LUMBERJACK (default=false)
+  - LOGGING (default=false)
+  - LOG_STREAMING (default="dual")
+  - TAPAGENT (default=false)
+  - TAPCOLLECTOR (default=false)
+  - LOADBALANCER_NODEPORTS (default=true)
+  - ROP_FILES_OPT2 (default=false)
+  - HIGH_AVAILABILITY (default=true)
+  - MULTIVPN (default=false)
+  - NETCONF_TLS (default=true)
+  - GEORED (default=false)
+  - VTAP (default=false)
+  - VTAP_LITE (default=false)
+  - VTAP_DTLS (default=false)
+  - RLF (default=false)
+  - NLF (default=false)
+  - SLF (default=false)
+  - BSF_DIAMETER (default=true)
+  - RESOURCES (default=full)
+  - SHARED_DBPG (default=false)
+  - DC1_NAMESPACE (default=false)
+  - DC2_NAMESPACE (default=false)
+## Additional parameters
+  - EXTERNAL_VALUES (default="csar/external/eric-sc-values.yaml")
+
+var:
+  - sc-bsf-chart
+  - sc-scp-chart
+  - sc-sepp-chart
+  - sc-cs-chart
+  - cncs-base-chart
+  - cncs-add-chart
+## The profiles' variables are created by scripts/helm_config_gen/config_gen_v2.py script
+  - eric-cloud-native-base-profiles
+  - eric-cloud-native-nf-additions-profiles
+  - eric-sc-cs-profiles
+  - eric-sc-bsf-profiles
+  - eric-sc-scp-profiles
+  - eric-sc-sepp-profiles
+  - eric-dsc-profiles
+
+rules:
+
+  certificates:
+    - task: rootca-create
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd:
+        - generate -d rootca -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: netconf-tls-create
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd:
+        - generate -d yang-provider -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+        - generate -d netconf-tls-client -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: geored-create
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd:
+        - generate -d cassandra-internode-external -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+        - generate -d cql-server-external -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+        - generate -d cql-client-external -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: transformer-create
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate -d transformer -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: rootca-install
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d rootca -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: bsf-worker-install
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d bsfwrk -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: bsf-manager-install
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d bsfmgr -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: scp-worker-install
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d scpwrk -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: scp-manager-install
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d scpmgr -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: sepp-manager-install
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d seppmgr -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: sepp-worker-install
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d seppwrk -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: nlf-install
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d nlf -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: slf-install
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d slf -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: nbi-install
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d nbi -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: influxdb-install
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d influxdb -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: telegraf-install
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d telegraf -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: pmrw-install
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d pmrw -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: ext-lumberjack-install
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d ext-lj -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: ext-lumberjack-x-install
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d ext-lj-x -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: yang-provider-install
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d yang-provider -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: transformer-install
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d transformer -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: syslog-install
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d syslog -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: internal-ldap-install
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d internal-ldap -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: referral-ldap-install
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d referral-ldap -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: diameter-install
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d diameter -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: pvtb-install
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d pvtb -p ${CERTS_OUT_DIR}/supreme.yaml
+
+  clean:
+    - task: all
+      cmd: ./scripts/force-clean.sh --cluster ${env.base.KUBE_HOST} --namespace ${var.base.namespace} --delete-namespace --debug
+    - task: roles
+      cmd: ./scripts/delete_roles.sh --namespace ${var.base.namespace}
+    - task: config-archives
+      cmd:
+        - rm -rf ${bsf.CHART_NAME}/charts/${bsf.CHART_NAME}/configarchives
+        - rm -rf ${scp.CHART_NAME}/charts/${scp.CHART_NAME}/configarchives
+        - rm -rf ${sepp.CHART_NAME}/charts/${sepp.CHART_NAME}/configarchives
+    - task: certm-config-secret
+      docker-image: base.helm-builder-py3
+      docker-envs:
+        - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+        - KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+      cmd: /bin/bash -c 'echo "Checking if CA secret contains data...";
+                         elapsed_time=0; delay=3; total_time=180;
+                         while true; do
+                             if [ "${env.BSF}" == "true" ]; then
+                                cas_data=$(kubectl --namespace ${var.base.namespace} get secrets eric-bsf-manager-nrf-ca-certificate -o jsonpath="{.data}");
+                             elif [ "${env.SCP}" == "true" ]; then
+                                cas_data=$(kubectl --namespace ${var.base.namespace} get secrets eric-scp-manager-nrf-ca-certificate -o jsonpath="{.data}");
+                             elif [ "${env.SEPP}" == "true" ]; then
+                                cas_data=$(kubectl --namespace ${var.base.namespace} get secrets eric-sepp-manager-nrf-ca-certificate -o jsonpath="{.data}");
+                             else
+                                echo "None of BSF, SCP, SEPP is enabled"
+                                break;
+                             fi;
+                             if [ $? -ne 0 ]; then
+                                echo "[ERROR] secret trusted-cas-secret read error";
+                                sleep $delay;
+                                elapsed_time=$((elapsed_time + delay));
+                                continue;
+                             fi;
+                             if ! [ -z "${cas_data}" ]; then
+                                 kubectl --namespace ${var.base.namespace} delete secret eric-sec-certm-deployment-configuration --ignore-not-found;
+                                 break;
+                             else
+                                 echo "[WARNING] CA secrets trusted-cas-secreteric-sc-trusted-ca are empty.";
+                             fi;
+                             sleep $delay;
+                             elapsed_time=$((elapsed_time + delay));
+                             if [ $elapsed_time -gt $total_time ]; then
+                                 echo "[WARNING] The CA secret has not been created or does not contain data";
+                                 break;
+                             fi;
+                             echo "elapsed_time=$elapsed_time, delay=$delay, total_time=$total_time";
+                         done'
+    - task: esc-parent
+      docker-image: base.java-maven-builder
+      cmd: mvn --no-transfer-progress -s ${var.base.build-proxy} -Duser.home=. clean
+    - task: envoy
+      cmd: rm -rf envoyproxy/envoywrk/envoy-static* ${base.OUTPUT_DIR}/envoy-static*
+    - task: directories
+      cmd: rm -rf ${base.OUTPUT_DIR}/ *.tgz .m2/repository/
+
+
+  secrets:
+    - task: default-secrets
+      docker-image: base.helm-builder-py3
+      docker-envs:
+        - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+        - KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+      cmd: scripts/secrets.sh create
+    - task: regcred-secret
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/.docker:/home/${env.base.USER}/.docker"
+      cmd: kubectl create secret docker-registry regcred
+            --kubeconfig ${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+            --namespace ${var.base.namespace}
+            --from-file=".dockerconfigjson=/home/${env.base.USER}/.docker/config.json"
+    - task: default-regcred-secret
+      docker-image: base.helm-builder-py3
+      docker-envs:
+        - KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+      cmd:
+        - /bin/bash -c 'kubectl get secret regcred --namespace=default -o yaml | sed "s/namespace:\ .*/namespace:\ ${var.base.namespace}/" | kubectl apply --namespace=${var.base.namespace} -f -'
+
+  configmaps:
+    - task: default-configmaps
+      docker-image: base.helm-builder-py3
+      docker-envs:
+        - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+        - KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+      cmd: scripts/configmaps.sh create
+
+  configuration:
+    - task: certm
+      docker-image: base.helm-builder-py3
+      docker-envs:
+        - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+        - KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+        - GEORED=${env.GEORED}
+        - NETCONF_TLS=${env.NETCONF_TLS}
+        - SYSLOG=${env.SYSLOG}
+      cmd: scripts/create_certm_json.sh
+    - task: users
+      cmd: /bin/bash -c 'cd scripts; ./adp_install_users.sh; cd ..'
+    - task: user-pwdReset # deprecated
+      cmd: /bin/bash -c 'cd scripts; ./um_pwd_reset_disable.sh; exit $? ; cd ..'
+    - task: bsf
+      cmd: /bin/bash -c "export KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf; export NAMESPACE=${var.base.namespace}; ./scripts/bash/loadBsfConfig"
+    - task: bsf-init
+      cmd: /bin/bash -c "export KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf; export NAMESPACE=${var.base.namespace}; ./scripts/bash/initBsfDb"
+    - task: scp
+      cmd: /bin/bash -c "export KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf; export NAMESPACE=${var.base.namespace}; ./scripts/bash/loadScpConfig"
+    - task: sepp
+      cmd: /bin/bash -c "export KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf; export NAMESPACE=${var.base.namespace}; ./scripts/bash/loadSeppConfig"
+    - task: sc
+      cmd: /bin/bash -c "export KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf; export NAMESPACE=${var.base.namespace}; ./scripts/bash/loadScConfig"
+    - task: tapagent
+      cmd:
+        - /bin/bash -c 'cd scripts; ./config_tapagent.sh sftp-secret; cd ..'
+        - /bin/bash -c 'cd scripts; ./config_tapagent.sh configmaps; cd ..'
+
+  prepare:
+    - task: sc-dsc-profile
+      cmd:
+        - rm -rf ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/eric-dsc/
+        - mkdir -p ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/eric-dsc/
+        - cp ${base.OUTPUT_DIR}/${scspider.CHART_DEPENDENCIES_FOLDER}/eric-dsc/profiles/* ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/eric-dsc/
+        - cp scripts/helm_config_gen/profiles/eric-dsc/* ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/eric-dsc/
+    - task: bsf-profile
+      cmd:
+        - rm -rf ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/${scbsf.CHART_NAME}/
+        - mkdir -p ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/${scbsf.CHART_NAME}/
+        - cp ${base.OUTPUT_DIR}/${scspider.CHART_DEPENDENCIES_FOLDER}/${scbsf.CHART_NAME}/profiles/* ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/${scbsf.CHART_NAME}/
+        - cp scripts/helm_config_gen/profiles/${scbsf.CHART_NAME}/* ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/${scbsf.CHART_NAME}/
+    - task: scp-profile
+      cmd:
+        - rm -rf ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/${scscp.CHART_NAME}/
+        - mkdir -p ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/${scscp.CHART_NAME}/
+        - cp ${base.OUTPUT_DIR}/${scspider.CHART_DEPENDENCIES_FOLDER}/${scscp.CHART_NAME}/profiles/* ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/${scscp.CHART_NAME}/
+        - cp scripts/helm_config_gen/profiles/${scscp.CHART_NAME}/* ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/${scscp.CHART_NAME}/
+    - task: sepp-profile
+      cmd:
+        - rm -rf ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/${scsepp.CHART_NAME}/
+        - mkdir -p ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/${scsepp.CHART_NAME}/
+        - cp ${base.OUTPUT_DIR}/${scspider.CHART_DEPENDENCIES_FOLDER}/${scsepp.CHART_NAME}/profiles/* ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/${scsepp.CHART_NAME}/
+        - cp scripts/helm_config_gen/profiles/${scsepp.CHART_NAME}/* ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/${scsepp.CHART_NAME}/
+    - task: sc-cs-profile
+      cmd:
+        - rm -rf ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/${scspider.SC_CS_NAME}/
+        - mkdir -p ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/${scspider.SC_CS_NAME}/
+        - cp ${base.OUTPUT_DIR}/${scspider.CHART_DEPENDENCIES_FOLDER}/${scspider.SC_CS_NAME}/profiles/* ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/${scspider.SC_CS_NAME}/
+        - cp scripts/helm_config_gen/profiles/${scspider.SC_CS_NAME}/* ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/${scspider.SC_CS_NAME}/
+    - task: cncs-a-profile
+      cmd:
+        - rm -rf ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/${scspider.CNCS_ADDITIONS_NAME}/
+        - mkdir -p ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/${scspider.CNCS_ADDITIONS_NAME}/
+        - cp ${base.OUTPUT_DIR}/${scspider.CHART_DEPENDENCIES_FOLDER}/${scspider.CNCS_ADDITIONS_NAME}/profiles/* ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/${scspider.CNCS_ADDITIONS_NAME}/
+        - cp scripts/helm_config_gen/profiles/${scspider.CNCS_ADDITIONS_NAME}/* ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/${scspider.CNCS_ADDITIONS_NAME}/
+    - task: cncs-b-profile
+      cmd:
+        - rm -rf ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/${scspider.CNCS_BASE_NAME}/
+        - mkdir -p ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/${scspider.CNCS_BASE_NAME}/
+        - cp ${base.OUTPUT_DIR}/${scspider.CHART_DEPENDENCIES_FOLDER}/${scspider.CNCS_BASE_NAME}/profiles/* ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/${scspider.CNCS_BASE_NAME}/
+        - cp scripts/helm_config_gen/profiles/${scspider.CNCS_BASE_NAME}/* ${base.OUTPUT_DIR}/${DEPLOY_PROFILES}/${scspider.CNCS_BASE_NAME}/
+    - task: sc-dsc-faultmappings
+      cmd: |
+        mkdir -p ${base.OUTPUT_DIR}/faultmappings;
+        faultmappings_dir=$(find ${base.OUTPUT_DIR}/${scspider.CHART_DEPENDENCIES_FOLDER}/eric-dsc -type d -name faultmappings);
+        for faultmapping_dir in $faultmappings_dir; do cp $faultmapping_dir/*dsc* ${base.OUTPUT_DIR}/faultmappings; done;
+    - task: bsf-faultmappings
+      cmd: |
+        mkdir -p ${base.OUTPUT_DIR}/faultmappings;
+        faultmappings_dir=$(find ${base.OUTPUT_DIR}/${scspider.CHART_DEPENDENCIES_FOLDER}/${scbsf.CHART_NAME} -type d -name faultmappings);
+        for faultmapping_dir in $faultmappings_dir; do cp $faultmapping_dir/* ${base.OUTPUT_DIR}/faultmappings; done;
+    - task: scp-faultmappings
+      cmd: |
+        mkdir -p ${base.OUTPUT_DIR}/faultmappings;
+        faultmappings_dir=$(find ${base.OUTPUT_DIR}/${scspider.CHART_DEPENDENCIES_FOLDER}/${scscp.CHART_NAME} -type d -name faultmappings);
+        for faultmapping_dir in $faultmappings_dir; do cp $faultmapping_dir/* ${base.OUTPUT_DIR}/faultmappings; done;
+    - task: sepp-faultmappings
+      cmd: |
+        mkdir -p ${base.OUTPUT_DIR}/faultmappings;
+        faultmappings_dir=$(find ${base.OUTPUT_DIR}/${scspider.CHART_DEPENDENCIES_FOLDER}/${scsepp.CHART_NAME} -type d -name faultmappings);
+        for faultmapping_dir in $faultmappings_dir; do cp $faultmapping_dir/* ${base.OUTPUT_DIR}/faultmappings; done;
+    - task: sc-cs-faultmappings
+      cmd: |
+        mkdir -p ${base.OUTPUT_DIR}/faultmappings;
+        faultmappings_dir=$(find ${base.OUTPUT_DIR}/${scspider.CHART_DEPENDENCIES_FOLDER}/${scspider.SC_CS_NAME} -type d -name faultmappings | grep -v hcagent);
+        for faultmapping_dir in $faultmappings_dir; do cp $faultmapping_dir/* ${base.OUTPUT_DIR}/faultmappings; done;
+    - task: cncs-a-faultmappings
+      cmd: |
+        mkdir -p ${base.OUTPUT_DIR}/faultmappings;
+        faultmappings_dir=$(find ${base.OUTPUT_DIR}/${scspider.CHART_DEPENDENCIES_FOLDER}/${scspider.CNCS_ADDITIONS_NAME} -type d -name faultmappings);
+        for faultmapping_dir in $faultmappings_dir; do cp $faultmapping_dir/* ${base.OUTPUT_DIR}/faultmappings; done;
+    - task: cncs-b-faultmappings
+      cmd: |
+        mkdir -p ${base.OUTPUT_DIR}/faultmappings;
+        faultmappings_dir=$(find ${base.OUTPUT_DIR}/${scspider.CHART_DEPENDENCIES_FOLDER}/${scspider.CNCS_BASE_NAME} -type d -name faultmappings);
+        for faultmapping_dir in $faultmappings_dir; do cp $faultmapping_dir/* ${base.OUTPUT_DIR}/faultmappings; done;
+    - task: sc-dsc-values
+      docker-image: base.helm-builder-py3
+      docker-envs:
+        - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+        - KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+      cmd: python3.10 scripts/helm_config_gen/config_gen_v2.py
+           -n ${var.base.namespace}
+           -i ${env.EXTERNAL_VALUES}
+           -o ${base.OUTPUT_DIR}
+           -e ${env.base.KUBE_HOST}
+           -n ${var.base.namespace}
+           -r ${env.RESOURCES}
+           --ihc ${scspider.SC_DSC_NAME}
+           --metrics ${env.METRICS}
+           --logging ${env.LOGGING}
+           --log-stream ${env.LOG_STREAMING}
+           --ha ${env.HIGH_AVAILABILITY}
+    - task: bsf-values
+      docker-image: base.helm-builder-py3
+      docker-envs:
+        - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+        - KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+      cmd: python3.10 scripts/helm_config_gen/config_gen_v2.py
+           -i ${env.EXTERNAL_VALUES}
+           -o ${base.OUTPUT_DIR}
+           -e ${env.base.KUBE_HOST}
+           -n ${var.base.namespace}
+           -r ${env.RESOURCES}
+           --ihc ${scbsf.CHART_NAME}
+           --ip-version-ext "${env.IP_VERSION_EXT}"
+           --ip-version-int "${env.IP_VERSION_INT}"
+           --metrics ${env.METRICS}
+           --lb-np ${env.LOADBALANCER_NODEPORTS}
+           --logging ${env.LOGGING}
+           --log-stream ${env.LOG_STREAMING}
+           --multi-vpn ${env.MULTIVPN}
+           --ha ${env.HIGH_AVAILABILITY}
+           --vtap ${env.VTAP}
+           --vtap-l ${env.VTAP_LITE}
+           --bsf-diameter ${env.BSF_DIAMETER}
+           -dc1 ${env.DC1_NAMESPACE}
+           -dc2 ${env.DC2_NAMESPACE}
+    - task: scp-values
+      docker-image: base.helm-builder-py3
+      docker-envs:
+        - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+        - KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+      cmd: python3.10 scripts/helm_config_gen/config_gen_v2.py
+           -n ${var.base.namespace}
+           -i ${env.EXTERNAL_VALUES}
+           -o ${base.OUTPUT_DIR}
+           -e ${env.base.KUBE_HOST}
+           -n ${var.base.namespace}
+           -r ${env.RESOURCES}
+           --ihc ${scscp.CHART_NAME}
+           --ip-version-ext "${env.IP_VERSION_EXT}"
+           --ip-version-int "${env.IP_VERSION_INT}"
+           --lb-np ${env.LOADBALANCER_NODEPORTS}
+           --logging ${env.LOGGING}
+           --log-stream ${env.LOG_STREAMING}
+           --multi-vpn ${env.MULTIVPN}
+           --ha ${env.HIGH_AVAILABILITY}
+           --vtap ${env.VTAP}
+           --vtap-l ${env.VTAP_LITE}
+           --rlf ${env.RLF}
+           --nlf ${env.NLF}
+           --slf ${env.SLF}
+    - task: sepp-values
+      docker-image: base.helm-builder-py3
+      docker-envs:
+        - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+        - KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+      cmd: python3.10 scripts/helm_config_gen/config_gen_v2.py
+           -n ${var.base.namespace}
+           -i ${env.EXTERNAL_VALUES}
+           -o ${base.OUTPUT_DIR}
+           -e ${env.base.KUBE_HOST}
+           -n ${var.base.namespace}
+           -r ${env.RESOURCES}
+           --ihc ${scsepp.CHART_NAME}
+           --ip-version-ext "${env.IP_VERSION_EXT}"
+           --ip-version-int "${env.IP_VERSION_INT}"
+           --lb-np ${env.LOADBALANCER_NODEPORTS}
+           --logging ${env.LOGGING}
+           --log-stream ${env.LOG_STREAMING}
+           --multi-vpn ${env.MULTIVPN}
+           --ha ${env.HIGH_AVAILABILITY}
+           --vtap ${env.VTAP}
+           --vtap-l ${env.VTAP_LITE}
+           --rlf ${env.RLF}
+    - task: sc-cs-values
+      docker-image: base.helm-builder-py3
+      docker-envs:
+        - BSF=${env.BSF}
+        - SEPP=${env.SEPP}
+        - SCP=${env.SCP}
+        - DIAMETER=${env.DIAMETER}
+        - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+        - KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+      cmd: python3.10 scripts/helm_config_gen/config_gen_v2.py
+           -n ${var.base.namespace}
+           -i ${env.EXTERNAL_VALUES}
+           -o ${base.OUTPUT_DIR}
+           -e ${env.base.KUBE_HOST}
+           -n ${var.base.namespace}
+           -r ${env.RESOURCES}
+           --ihc ${scspider.SC_CS_NAME}
+           --pm-rw ${env.PM_REMOTE_WRITE}
+           --metrics ${env.METRICS}
+           --logging ${env.LOGGING}
+           --log-stream ${env.LOG_STREAMING}
+           --ha ${env.HIGH_AVAILABILITY}
+           --vtap ${env.VTAP}
+           --vtap-l ${env.VTAP_LITE}
+           --vtap-dtls ${env.VTAP_DTLS}
+           --rlf ${env.RLF}
+           --nlf ${env.NLF}
+           --bsf-diameter ${env.BSF_DIAMETER}
+           --slf ${env.SLF}
+    - task: cncs-a-values
+      docker-image: base.helm-builder-py3
+      docker-envs:
+        - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+        - KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+      cmd: python3.10 scripts/helm_config_gen/config_gen_v2.py
+           -n ${var.base.namespace}
+           -i ${env.EXTERNAL_VALUES}
+           -o ${base.OUTPUT_DIR}
+           -e ${env.base.KUBE_HOST}
+           -n ${var.base.namespace}
+           -r ${env.RESOURCES}
+           --ihc ${scspider.CNCS_ADDITIONS_NAME}
+           --ip-version-ext "${env.IP_VERSION_EXT}"
+           --ip-version-int "${env.IP_VERSION_INT}"
+           --metrics ${env.METRICS}
+           --lb-np ${env.LOADBALANCER_NODEPORTS}
+           --rop2 ${env.ROP_FILES_OPT2}
+           --logging ${env.LOGGING}
+           --log-stream ${env.LOG_STREAMING}
+           --ha ${env.HIGH_AVAILABILITY}
+           --shared-dbpg ${env.SHARED_DBPG}
+    - task: cncs-b-values
+      docker-image: base.helm-builder-py3
+      docker-envs:
+        - BSF=${env.BSF}
+        - SEPP=${env.SEPP}
+        - SCP=${env.SCP}
+        - DIAMETER=${env.DIAMETER}
+        - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+        - KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+      cmd: python3.10 scripts/helm_config_gen/config_gen_v2.py
+           -n ${var.base.namespace}
+           -i ${env.EXTERNAL_VALUES}
+           -o ${base.OUTPUT_DIR}
+           -e ${env.base.KUBE_HOST}
+           -n ${var.base.namespace}
+           -r ${env.RESOURCES}
+           --ihc ${scspider.CNCS_BASE_NAME}
+           --ip-version-ext "${env.IP_VERSION_EXT}"
+           --ip-version-int "${env.IP_VERSION_INT}"
+           --pm-rw ${env.PM_REMOTE_WRITE}
+           --metrics ${env.METRICS}
+           --syslog ${env.SYSLOG}
+           --lj-m ${env.LUMBERJACK}
+           --lb-np ${env.LOADBALANCER_NODEPORTS}
+           --rop2 ${env.ROP_FILES_OPT2}
+           --logging ${env.LOGGING}
+           --log-stream ${env.LOG_STREAMING}
+           --ha ${env.HIGH_AVAILABILITY}
+           --bsf-diameter ${env.BSF_DIAMETER}
+           --rlf ${env.RLF}
+           --nlf ${env.NLF}
+           --vtap ${env.VTAP}
+           --slf ${env.SLF}
+           --shared-dbpg ${env.SHARED_DBPG}
+
+  ucc:
+    - task: cleanup
+      cmd:
+       - rm -rf ${base.OUTPUT_DIR}/${scspider.CHART_DEPENDENCIES_FOLDER}
+       - rm -rf ${base.OUTPUT_DIR}/ucc
+    - task: create-output-folder
+      cmd:
+       - mkdir -p ${base.OUTPUT_DIR}/ucc
+    - task: scspider.post-package:create-dependencies-folder
+    - task: scspider.post-package:fetch-dependencies
+    - task: scspider.post-package:unpack-cncs-b-chart
+    - task: scspider.post-package:unpack-cncs-a-chart
+    - task: scspider.post-package:unpack-sc-cs-chart
+    - task: scspider.post-package:unpack-sepp-chart
+    - task: merge
+      docker-image: base.helm-builder-py3
+      cmd:
+        - /bin/bash -c 'python3.10 scripts/helm_config_gen/merge_yaml.py
+                        ${base.OUTPUT_DIR}/ucc/eric-sc-ucc-values.yaml.tmp
+                        ${base.OUTPUT_DIR}/${scspider.CHART_DEPENDENCIES_FOLDER}/${scspider.CNCS_BASE_NAME}/profiles/noHA.yaml
+                        ${base.OUTPUT_DIR}/${scspider.CHART_DEPENDENCIES_FOLDER}/${scspider.CNCS_BASE_NAME}/profiles/small_footprint_resources.yaml
+                        scripts/helm_config_gen/profiles/${scspider.CNCS_BASE_NAME}/shared-dbpg.yaml
+                        scripts/helm_config_gen/profiles/${scspider.CNCS_BASE_NAME}/ucc_resources.yaml
+                        ${base.OUTPUT_DIR}/${scspider.CHART_DEPENDENCIES_FOLDER}/${scspider.CNCS_ADDITIONS_NAME}/profiles/noHA.yaml
+                        ${base.OUTPUT_DIR}/${scspider.CHART_DEPENDENCIES_FOLDER}/${scspider.CNCS_ADDITIONS_NAME}/profiles/small_footprint_resources.yaml
+                        scripts/helm_config_gen/profiles/${scspider.CNCS_ADDITIONS_NAME}/shared-dbpg.yaml
+                        scripts/helm_config_gen/profiles/${scspider.CNCS_ADDITIONS_NAME}/ucc_resources.yaml
+                        ${base.OUTPUT_DIR}/${scspider.CHART_DEPENDENCIES_FOLDER}/${scspider.SC_CS_NAME}/profiles/noHA.yaml
+                        ${base.OUTPUT_DIR}/${scspider.CHART_DEPENDENCIES_FOLDER}/${scspider.SC_CS_NAME}/profiles/small_footprint_resources.yaml
+                        scripts/helm_config_gen/profiles/${scspider.SC_CS_NAME}/ucc_resources.yaml
+                        ${base.OUTPUT_DIR}/${scspider.CHART_DEPENDENCIES_FOLDER}/${scsepp.CHART_NAME}/profiles/noHA.yaml
+                        scripts/helm_config_gen/profiles/${scsepp.CHART_NAME}/ucc_resources.yaml'
+    - task: remove-components
+      docker-image: base.helm-builder-py3
+      cmd:
+        - /bin/bash -c 'python3.10 scripts/helm_config_gen/remove_yaml.py
+                        ${base.OUTPUT_DIR}/ucc/eric-sc-ucc-values.yaml.tmp
+                        ${base.OUTPUT_DIR}/ucc/eric-sc-ucc-values.yaml
+                        eric-data-sftp-server
+                        eric-dst-collector
+                        eric-sc-nlf
+                        eric-sc-rlf'
+    - task: copy
+      cmd:
+        - cp ${base.OUTPUT_DIR}/ucc/eric-sc-ucc-values.yaml csar/external/

@@ -1,0 +1,189 @@
+modelVersion: 2.0
+
+description: "SC CRD creation/install/upgrade/delete"
+
+import:
+  base: ../rulesets/ruleset2.0-eric-base.yaml
+  sc: ../ruleset2.0-eric-sc.yaml
+
+var:
+  - eric-sec-sip-tls-crd-pkg
+  - eric-sec-certm-crd-pkg
+  - eric-tm-ingress-controller-cr-crd-pkg
+  - eric-data-wide-column-database-cd-crd-pkg
+  - eric-data-key-value-database-rd-crd-pkg
+  - eric-tm-senp-nvip-crd-pkg
+
+env:
+  - SEC_SIP_TLS_CRD_NAME (default=eric-sec-sip-tls)
+  - SEC_CERTM_CRD_NAME (default=eric-sec-certm)
+  - TM_INGRESS_CONTROLLER_CR_NAME (default=eric-tm-ingress-controller-cr)
+  - DATA_WIDE_COLUMN_DB_CD_NAME (default=eric-data-wide-column-database-cd)
+  - DATA_KEY_VALUE_DB_RD_NAME (default=eric-data-key-value-database-rd)
+  - TM_SENP_NVIP_NAME (default=eric-tm-senp-nvip)
+  - CRD_NAMESPACE (default=eric-crds)
+
+rules:
+  clean:
+    - task: sc.init:delete-output-dir
+
+  init:
+    - task: base.init:create-output-dir
+    - task: base.init:copy-helm-credentials
+    - task: base.init:set-kube-config
+    - task: base.init:api-tokens
+    - task: base.init:copy-helm-credentials
+
+  prepare:
+    - task: sc.scspider.post-package:create-dependencies-folder
+    - task: sc.scspider.post-package:fetch-dependencies
+    - task: sc.scspider.post-package:unpack-cncs-b-chart
+    - task: sc.scspider.post-package:unpack-cncs-a-chart
+    - task: sc.scspider.post-package:unpack-sc-cs-chart
+    - task: sc.scspider.post-package:unpack-bsf-chart
+    - task: sc.scspider.post-package:unpack-scp-chart
+    - task: sc.scspider.post-package:unpack-sepp-chart
+
+  fetch:
+    - task: sip-tls
+      description: Extract eric-sec-sip-tls crd tgz and store its name to .bob
+      docker-image: base.helm-builder-py3
+      cmd: /bin/bash -c "./scripts/crd_actions.sh -s ${env.SEC_SIP_TLS_CRD_NAME}"
+    - task: certm
+      description: Extract eric-sec-certm crd tgz and store its name to .bob
+      docker-image: base.helm-builder-py3
+      cmd: /bin/bash -c "./scripts/crd_actions.sh -s ${env.SEC_CERTM_CRD_NAME}"
+    - task: iccr
+      description: Extract eric-tm-ingress-controller-cr crd tgz and store its name to .bob
+      docker-image: base.helm-builder-py3
+      cmd: /bin/bash -c "./scripts/crd_actions.sh -s ${env.TM_INGRESS_CONTROLLER_CR_NAME}"
+    - task: wcdbcd
+      description: Extract eric-data-wide-column-database-cd crd tgz and store its name to .bob
+      docker-image: base.helm-builder-py3
+      cmd: /bin/bash -c "./scripts/crd_actions.sh -s ${env.DATA_WIDE_COLUMN_DB_CD_NAME}"
+    - task: redis
+      description: Extract eric-data-key-value-database-rd crd tgz and store its name to .bob
+      docker-image: base.helm-builder-py3
+      cmd: /bin/bash -c "./scripts/crd_actions.sh -s ${env.DATA_KEY_VALUE_DB_RD_NAME}"
+    - task: nvip
+      description: Extract eric-tm-senp-nvip crd tgz and store its name to .bob
+      docker-image: base.helm-builder-py3
+      cmd: /bin/bash -c "./scripts/crd_actions.sh -s ${env.TM_SENP_NVIP_NAME}"
+
+  deploy:
+    - task: sip-tls
+      description: Extract eric-sec-sip-tls crd tgz that was previously extracted with fetch rule
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: helm upgrade --install ${env.SEC_SIP_TLS_CRD_NAME}-crd ${base.OUTPUT_DIR}/${var.eric-sec-sip-tls-crd-pkg}
+                        --timeout 500s
+                        --namespace ${env.CRD_NAMESPACE}
+                        --atomic
+    - task: certm
+      description: Extract eric-sec-certm crd tgz that was previously extracted with fetch rule
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: helm upgrade --install ${env.SEC_CERTM_CRD_NAME}-crd ${base.OUTPUT_DIR}/${var.eric-sec-certm-crd-pkg}
+                        --timeout 500s
+                        --namespace ${env.CRD_NAMESPACE}
+                        --atomic
+    - task: iccr
+      description: Extract eric-tm-ingress-controller-cr crd tgz that was previously extracted with fetch rule
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: helm upgrade --install ${env.TM_INGRESS_CONTROLLER_CR_NAME}-crd ${base.OUTPUT_DIR}/${var.eric-tm-ingress-controller-cr-crd-pkg}
+                        --timeout 500s
+                        --namespace ${env.CRD_NAMESPACE}
+                        --atomic
+    - task: wcdbcd
+      description: Extract eric-data-wide-column-database-cd crd tgz that was previously extracted with fetch rule
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: helm upgrade --install ${env.DATA_WIDE_COLUMN_DB_CD_NAME}-crd ${base.OUTPUT_DIR}/${var.eric-data-wide-column-database-cd-crd-pkg}
+                        --timeout 500s
+                        --namespace ${env.CRD_NAMESPACE}
+                        --atomic
+    - task: redis
+      description: Extract eric-data-key-value-database-rd crd tgz that was previously extracted with fetch rule
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: helm upgrade --install ${env.DATA_KEY_VALUE_DB_RD_NAME}-crd ${base.OUTPUT_DIR}/${var.eric-data-key-value-database-rd-crd-pkg}
+                        --timeout 500s
+                        --namespace ${env.CRD_NAMESPACE}
+                        --atomic
+    - task: nvip
+      description: Extract eric-tm-senp-nvip crd tgz that was previously extracted with fetch rule
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: helm upgrade --install ${env.TM_SENP_NVIP_NAME}-crd ${base.OUTPUT_DIR}/${var.eric-tm-senp-nvip-crd-pkg}
+                        --timeout 500s
+                        --namespace ${env.CRD_NAMESPACE}
+                        --atomic
+
+  undeploy:
+    - task: sip-tls
+      description: undeploy eric-sec-sip-tls crd from cluster
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: helm uninstall ${env.SEC_SIP_TLS_CRD_NAME}-crd 
+                        --timeout 500s
+                        --namespace ${env.CRD_NAMESPACE}
+    - task: certm
+      description: undeploy eric-sec-certm crd from cluster
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: helm uninstall ${env.SEC_CERTM_CRD_NAME}-crd 
+                        --timeout 500s
+                        --namespace ${env.CRD_NAMESPACE}
+    - task: iccr
+      description: undeploy eric-tm-ingress-controller-cr crd from cluster
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: helm uninstall ${env.TM_INGRESS_CONTROLLER_CR_NAME}-crd 
+                        --timeout 500s
+                        --namespace ${env.CRD_NAMESPACE}
+    - task: wcdbcd
+      description: undeploy eric-data-wide-column-database-cd crd from cluster
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: helm uninstall ${env.DATA_WIDE_COLUMN_DB_CD_NAME}-crd 
+                        --timeout 500s
+                        --namespace ${env.CRD_NAMESPACE}
+    - task: redis
+      description: undeploy eric-data-key-value-database-rd crd from cluster
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: helm uninstall ${env.DATA_KEY_VALUE_DB_RD_NAME}-crd 
+                        --timeout 500s
+                        --namespace ${env.CRD_NAMESPACE}
+    - task: nvip
+      description: undeploy eric-tm-senp-nvip crd from cluster
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: helm uninstall ${env.TM_SENP_NVIP_NAME}-crd 
+                        --timeout 500s
+                        --namespace ${env.CRD_NAMESPACE}

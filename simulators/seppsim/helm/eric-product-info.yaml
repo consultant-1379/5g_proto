@@ -1,0 +1,11 @@
+productName: "SEPPSIM traffic simulator"
+productNumber: product_number
+productRevision: product_revision
+images:
+  seppsim:
+    productName: SEPPSIM traffic simulator"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf"
+    name: seppsim_image_name
+    tag: seppsim_image_tag

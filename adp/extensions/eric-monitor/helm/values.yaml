@@ -1,0 +1,20 @@
+# MONITOR
+
+service:
+  name: "eric-monitor"
+
+spec:
+  replicas: "0"
+  image: 
+  tag: 
+  port: "80"
+  tls: false
+
+vm:
+  hello-slogan: "This is a HELM packaged Kubernetes POD saying hello to the world!"
+
+certificates:      
+   secret: monitor-certificates
+   certificate: MONITOR.chain.crt   
+   key: MONITOR.key
+   ca: rootCA.crt

@@ -1,0 +1,10 @@
+labels: {
+  "eric-log-transformer-access": "true",
+}
+
+egress:
+  lumberjack:
+    enabled: true
+
+metrics:
+  enabled: false

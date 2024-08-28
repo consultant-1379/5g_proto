@@ -1,0 +1,25 @@
+#eric-cm-yang-provider:
+  externaldb:
+    host: eric-data-document-database-pg
+    dbname: sc_database
+    credentials:
+      kubernetesSecretName: eric-data-document-database-pg-sc
+      keyForUserId: custom-user
+      keyForUserPw: custom-pwd 
+  CMM:
+    host: eric-cm-mediator:5003
+#  userConfig:
+#    secretName: cm-yang-users
+#    secretKey: users.yaml
+  persistence:
+    accessMode: ReadWriteOnce
+  ldap:
+    enabled: true
+## imageCredentials:
+##   pullPolicy: IfNotPresent
+## service:
+##   annotations: {}
+## podAnnotations: {}
+  ingress:
+    enabled: false
+## resources: {}

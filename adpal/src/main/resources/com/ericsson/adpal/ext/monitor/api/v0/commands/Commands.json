@@ -1,0 +1,83 @@
+{
+    "$id": "file://schema/monitor_schema.json",
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Monitor Commands Request Schema",
+    "definitions": 
+    {
+        "Command": 
+        {
+            "$id": "#Command",
+            "type": "object",
+            "properties": 
+            {
+                "timeStamp": 
+                {
+                    "type": "integer"
+                },
+                "id": 
+                {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": true,
+            "required": 
+            [
+                "timeStamp",
+                "id"
+            ]
+        },
+        "Result": 
+        {
+            "$id": "#Result",
+            "type": "object",
+            "properties": 
+            {
+                "timeStamp": 
+                {
+                    "type": "integer"
+                },
+                "source": 
+                {
+                    "type": "string"
+                },
+                "statusCode": 
+                {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": true,
+            "required": 
+            [
+                "timeStamp",
+                "source",
+                "statusCode"
+            ]
+        },
+        "Results": 
+        {
+            "$id": "#Results",
+            "type": "array",
+            "items": 
+            {
+                "$ref": "#definitions/Result"
+            }
+        }
+    },
+    "type": "object",
+    "properties": 
+    {
+        "command": 
+        {
+            "$ref": "#definitions/Command"
+        },
+        "results": 
+        {
+            "$ref": "#definitions/Results"
+        }
+    },
+    "additionalProperties": false,
+    "required": 
+    [
+        "command"
+    ]
+}

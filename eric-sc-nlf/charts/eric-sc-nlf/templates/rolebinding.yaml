@@ -1,0 +1,21 @@
+{{- if .Values.rbac.createServiceAccount }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ template "eric-sc-nlf.name" . }}-{{ .Release.Namespace }}
+  labels:
+{{- include "eric-sc-nlf.labels" . | indent 4 }}
+    app: {{ template "eric-sc-nlf.name" . }}
+  annotations:
+{{- include "eric-sc-nlf.helm-annotations" . | indent 4 }}
+{{- include "eric-sc-nlf.config-annotations" . | indent 4 }}
+  namespace: {{ .Release.Namespace }}
+subjects:
+- kind: ServiceAccount
+  name: {{ template "eric-sc-nlf.name" . }}
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ template "eric-sc-nlf.name" . }}-{{ .Release.Namespace }}
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}

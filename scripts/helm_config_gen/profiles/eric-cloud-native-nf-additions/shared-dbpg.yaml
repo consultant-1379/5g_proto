@@ -1,0 +1,14 @@
+eric-cnom-server-db-pg:
+  enabled: false
+
+eric-cnom-server:
+  documentDatabasePg:
+    host: eric-data-document-database-pg
+    user: scusr
+    database: sc_database
+
+eric-cm-yang-provider:
+  externaldb:
+    host: eric-data-document-database-pg
+    dbuser: scusr
+    dbname: sc_database

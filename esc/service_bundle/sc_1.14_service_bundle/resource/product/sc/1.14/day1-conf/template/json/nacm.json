@@ -1,0 +1,146 @@
+{
+  "content": {
+    "section": [
+      {
+        "hello": {
+          "capabilities": {
+            "capability": [
+              "urn:ietf:params:netconf:base:1.0"
+            ]
+          }
+        }
+      },
+      {
+        "rpc": {
+          "edit-config": {
+            "target": {
+              "running": ""
+            },
+            "config": {
+              "nacm": {
+                "cmd-read-default": "deny",
+                "cmd-exec-default": "deny",
+                "groups": {
+                  "group": [
+                    {
+                      "name": "pc-probe-privacy-admin"
+                    }
+                  ]
+                },
+                "rule-list": [
+                  {
+                    "name": "ericsson-admin-user-management-5-system-privacy-operator",
+                    "group": [
+                      "system-privacy-operator"
+                    ],
+                    "rule": [
+                      {
+                        "name": "ietf-system-1-system-privacy-operator",
+                        "module-name": "ietf-system",
+                        "access-operations": "read",
+                        "action": "permit",
+                        "comment": "\"Rule updated by AUM\"",
+                        "path": "/system/authentication/user/name"
+                      },
+                      {
+                        "name": "ericsson-system-ext-2-system-privacy-operator",
+                        "module-name": "ericsson-system-ext",
+                        "access-operations": "read",
+                        "action": "permit",
+                        "comment": "\"Rule updated by AUM\"",
+                        "path": "/system/authentication/user/full-name"
+                      }
+                    ],
+                    "cmdrule": [
+                      {
+                        "name": "cli-metrics-query-cmd",
+                        "context": "cli",
+                        "command": "metrics-query",
+                        "access-operations": "*",
+                        "action": "permit"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "ericsson-bsf-manager-3-bsf-read-only",
+                    "group": [
+                      "bsf-read-only"
+                    ],
+                    "rule": [
+                      {
+                        "name": "ericsson-bsf-1-bsf-read-only",
+                        "module-name": "ericsson-bsf",
+                        "access-operations": "read",
+                        "action": "permit",
+                        "comment": "\"Rule updated by BSF-Manager\""
+                      },
+                      {
+                        "name": "ietf-keystore-1-bsf-read-only",
+                        "module-name": "ietf-keystore",
+                        "access-operations": "read",
+                        "action": "permit",
+                        "comment": "\"Rule updated by BSF-Manager\""
+                      },
+                      {
+                        "name": "ietf-truststore-1-bsf-read-only",
+                        "module-name": "ietf-truststore",
+                        "access-operations": "read",
+                        "action": "permit",
+                        "comment": "\"Rule updated by BSF-Manager\""
+                      },
+                      {
+                        "name": "ericsson-keystore-ext-1-bsf-read-only",
+                        "module-name": "ericsson-keystore-ext-1-bsf-read-only",
+                        "access-operations": "read",
+                        "action": "permit",
+                        "comment": "\"Rule updated by BSF-Manager\""
+                      },
+                      {
+                        "name": "ericsson-truststore-ext-1-bsf-read-only",
+                        "module-name": "ericsson-truststore-ext",
+                        "access-operations": "read",
+                        "action": "permit",
+                        "comment": "\"Rule updated by BSF-Manager\""
+                      },
+                      {
+                        "name": "ietf-netconf-monitoring-1-bsf-read-only",
+                        "module-name": "ietf-netconf-monitoring",
+                        "access-operations": "read",
+                        "action": "permit",
+                        "comment": "\"Rule updated by BSF-Manager\""
+                      },
+                      {
+                        "name": "ericsson-diameter-adp-1-bsf-read-only",
+                        "module-name": "ericsson-diameter-adp",
+                        "access-operations": "read",
+                        "action": "permit",
+                        "comment": "\"Rule updated by BSF-Manager\""
+                      }
+                    ],
+                    "cmdrule": [
+                      {
+                        "name": "cli-show-alarm-cmd",
+                        "context": "cli",
+                        "command": "\"show alarm\"",
+                        "access-operations": "*",
+                        "action": "permit"
+                      },
+                      {
+                        "name": "cli-show-alarm-history-cmd",
+                        "context": "cli",
+                        "command": "\"show alarm-history\"",
+                        "access-operations": "*",
+                        "action": "permit"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "@message-id": 0
+        }
+      }
+    ]
+  }
+}

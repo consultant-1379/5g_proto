@@ -1,0 +1,325 @@
+{
+  "content": {
+    "section": [
+      {
+        "hello": {
+          "capabilities": {
+            "capability": [
+              "urn:ietf:params:netconf:base:1.0"
+            ]
+          }
+        }
+      },
+      {
+        "rpc": {
+          "edit-config": {
+            "target": {
+              "running": ""
+            },
+            "config": {
+              "scp-function": {
+                "nf-instance": [
+                  {
+                    "name": "instance_1",
+                    "service-address": [
+                      {
+                        "name": "internalAddress",
+                        "port": 80,
+                        "fqdn": "scp.ericsson.se",
+                        "ipv4-address": "1.2.3.4"
+                      }
+                    ],
+                    "own-network": [
+                      {
+                        "name": "internalNetwork",
+                        "service-address-ref": "internalAddress",
+                        "routing-case-ref": "default_routing"
+                      }
+                    ],
+                    "vtap": {
+                      "enabled": false,
+                      "vtap-configuration": {
+                        "proxy": {
+                          "ingress": [
+                            {
+                              "name": "ownTap",
+                              "own-network-ref": [
+                                "internalNetwork"
+                              ],
+                              "enabled": true
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "ingress-connection-profile": [
+                      {
+                        "name": "default_profile"
+                      }
+                    ],
+                    "ingress-connection-profile-ref": "default_profile",
+                    "egress-connection-profile": [
+                      {
+                        "name": "default_profile"
+                      }
+                    ],
+                    "egress-connection-profile-ref": "default_profile",
+                    "message-data": [
+                      {
+                        "name": "apiRoot_data",
+                        "header": "3gpp-Sbi-target-apiRoot",
+                        "extractor-regex": "eric-chfsim-\\d+-mnc-(?P<mnc>\\d+)-mcc-(?P<mcc>\\d+)"
+                      },
+                      {
+                        "name": "chfsim_data",
+                        "header": "3gpp-Sbi-target-apiRoot",
+                        "extractor-regex": "eric-(?P<chfsim>chfsim-\\d+?)-.+"
+                      }
+                    ],
+                    "routing-case": [
+                      {
+                        "name": "default_routing",
+                        "message-data-ref": [
+                          "apiRoot_data",
+                          "chfsim_data"
+                        ],
+                        "routing-rule": [
+                          {
+                            "name": "csepp_to_rp_A",
+                            "condition": "var.mnc=='123' and var.mcc=='123'",
+                            "routing-action": [
+                              {
+                                "name": "csepp_to_rp_A_ra",
+                                "action-route-round-robin": {
+                                  "target-nf-pool": {
+                                    "nf-pool-ref": "sepp"
+                                  },
+                                  "failover-profile-ref": "fob1"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "name": "psepp_to_dfw",
+                            "condition": "var.mnc=='456' and var.mcc=='456' and (var.chfsim=='chfsim-6' or var.chfsim=='chfsim-7' or var.chfsim=='chfsim-8')",
+                            "routing-action": [
+                              {
+                                "name": "psepp_to_dfw_ra",
+                                "action-route-strict": {
+                                  "preserve-if-indirect-routing": "target-api-root-header",
+                                  "from-target-api-root-header": {},
+                                  "target-nf-pool": {
+                                    "nf-pool-ref": "universal_pool"
+                                  },
+                                  "failover-profile-ref": "fob1"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "name": "psepp_to_pref",
+                            "condition": "var.mnc=='456' and var.mcc=='456'",
+                            "routing-action": [
+                              {
+                                "name": "psepp_to_pref_ra",
+                                "action-route-preferred": {
+                                  "preserve-if-indirect-routing": "target-api-root-header",
+                                  "from-target-api-root-header": {},
+                                  "target-nf-pool": {
+                                    "nf-pool-ref": "occ"
+                                  },
+                                  "failover-profile-ref": "fob1"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ],
+                    "static-nf-instance-data": [
+                      {
+                        "name": "static_sepp",
+                        "static-nf-instance": [
+                          {
+                            "name": "seppA-chfsim1",
+                            "static-nf-service": [
+                              {
+                                "name": "nchf-convergedcharging",
+                                "address": {
+                                  "scheme": "http",
+                                  "fqdn": "eric-chfsim-1-mnc-123-mcc-123"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "name": "seppA-chfsim2",
+                            "static-nf-service": [
+                              {
+                                "name": "nchf-convergedcharging",
+                                "address": {
+                                  "scheme": "http",
+                                  "fqdn": "eric-chfsim-2-mnc-123-mcc-123"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "static_occ",
+                        "static-nf-instance": [
+                          {
+                            "name": "occ-chfsim3",
+                            "static-nf-service": [
+                              {
+                                "name": "nchf-convergedcharging",
+                                "address": {
+                                  "scheme": "http",
+                                  "fqdn": "eric-chfsim-3-mnc-456-mcc-456"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "name": "occ-chfsim4",
+                            "static-nf-service": [
+                              {
+                                "name": "nchf-convergedcharging",
+                                "address": {
+                                  "scheme": "http",
+                                  "fqdn": "eric-chfsim-4-mnc-456-mcc-456"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "name": "occ-chfsim5",
+                            "static-nf-service": [
+                              {
+                                "name": "nchf-convergedcharging",
+                                "address": {
+                                  "scheme": "http",
+                                  "fqdn": "eric-chfsim-5-mnc-456-mcc-456"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "static_universal",
+                        "static-nf-instance": [
+                          {
+                            "name": "occ-chfsim6",
+                            "static-nf-service": [
+                              {
+                                "name": "nchf-convergedcharging",
+                                "address": {
+                                  "scheme": "http",
+                                  "fqdn": "eric-chfsim-6-mnc-456-mcc-456"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "name": "occ-chfsim7",
+                            "static-nf-service": [
+                              {
+                                "name": "nchf-convergedcharging",
+                                "address": {
+                                  "scheme": "http",
+                                  "fqdn": "eric-chfsim-7-mnc-456-mcc-456"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "name": "occ-chfsim8",
+                            "static-nf-service": [
+                              {
+                                "name": "nchf-convergedcharging",
+                                "address": {
+                                  "scheme": "http",
+                                  "fqdn": "eric-chfsim-8-mnc-456-mcc-456"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ],
+                    "nf-pool": [
+                      {
+                        "name": "sepp",
+                        "nf-pool-discovery": [
+                          {
+                            "name": "sepp_pool",
+                            "static-nf-instance-data-ref": [
+                              "static_sepp"
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "occ",
+                        "nf-pool-discovery": [
+                          {
+                            "name": "occ_pool",
+                            "static-nf-instance-data-ref": [
+                              "static_occ"
+                            ]
+                          }
+                        ],
+                        "priority-group": [
+                          {
+                            "name": "occ_subpool",
+                            "priority": 1,
+                            "nf-match-condition": ""
+                          }
+                        ]
+                      },
+                      {
+                        "name": "universal_pool",
+                        "nf-pool-discovery": [
+                          {
+                            "name": "occ_pool",
+                            "static-nf-instance-data-ref": [
+                              "static_universal"
+                            ]
+                          }
+                        ]
+                      }
+                    ],
+                    "failover-profile": [
+                      {
+                        "name": "fob1",
+                        "request-time-budget": 3456,
+                        "retry-condition": {
+                          "http-status": [
+                            500,
+                            501,
+                            502,
+                            503,
+                            504
+                          ],
+                          "reset": false,
+                          "connect-failure": false,
+                          "refused-stream": false
+                        },
+                        "preferred-host-retries-max": 1,
+                        "target-nf-pool-reselects-max": 3,
+                        "target-timeout": 2345
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "@message-id": 0
+        }
+      }
+    ]
+  }
+}

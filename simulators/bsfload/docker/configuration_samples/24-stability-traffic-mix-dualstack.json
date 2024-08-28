@@ -1,0 +1,89 @@
+{
+  "duration": 86400,
+  "target-port": 80,
+  "metrics": {
+    "export-metrics": [
+      "PROMETHEUS"
+    ]
+  },
+  "setup-traffic-mix": [
+    {
+      "name": "setupRegister",
+      "order": 1,
+      "tps": 2000,
+      "target-host": "",
+      "type": "register",
+      "num-requests": 2000000,
+      "ip-range": {
+        "start-ip": "170.0.0.1",
+        "range": 2000000
+      }
+    }
+  ],
+  "traffic-mix": [
+    {
+      "name": "registerSetIpv4",
+      "order": 1,
+      "tps": 3000,
+      "target-host": "<IPV4_HOST>",
+      "type": "register",
+      "num-requests": 5000,
+      "ip-range": {
+        "start-ip": "10.0.0.1",
+        "range": 5000
+      }
+    },
+    {
+      "name": "registerSetIpv6",
+      "order": 2,
+      "tps": 3000,
+      "target-host": "<IPV6_HOST>",
+      "type": "register",
+      "num-requests": 5000,
+      "ip-range": {
+        "start-ip": "10.1.0.1",
+        "range": 5000
+      }
+    },
+    {
+      "name": "discoverySetIpv4",
+      "order": 3,
+      "tps": 3000,
+      "target-host": "<IPV4_HOST>",
+      "type": "discovery",
+      "num-requests": 5000,
+      "ip-range": {
+        "start-ip": "170.0.0.1",
+        "range": 5000
+      }
+    },
+    {
+      "name": "discoverySetIpv6",
+      "order": 4,
+      "tps": 3000,
+      "target-host": "<IPV6_HOST>",
+      "type": "discovery",
+      "num-requests": 5000,
+      "ip-range": {
+        "start-ip": "170.0.0.1",
+        "range": 5000
+      }
+    },
+    {
+      "name": "deregisterSetIpv4",
+      "order": 5,
+      "tps": 3000,
+      "target-host": "<IPV4_HOST>",
+      "type": "deregister",
+      "traffic-set-ref": "registerSetIpv4"
+    },
+    {
+      "name": "deregisterSetIpv6",
+      "order": 6,
+      "tps": 3000,
+      "target-host": "<IPV6_HOST>",
+      "type": "deregister",
+      "traffic-set-ref": "registerSetIpv6"
+    }
+  ]
+}

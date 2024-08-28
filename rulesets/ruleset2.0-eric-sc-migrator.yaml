@@ -1,0 +1,197 @@
+modelVersion: 2.0
+
+description: "Migrate SC"
+
+import:
+  base: ruleset2.0-eric-base.yaml
+  scbsf: ../eric-sc-bsf/ruleset2.0.yaml
+  scscp: ../eric-sc-scp/ruleset2.0.yaml
+  scsepp: ../eric-sc-sepp/ruleset2.0.yaml
+  scspider: ../eric-sc-spider/ruleset2.0.yaml
+
+docker-images:
+  - helm-migrator: armdocker.rnd.ericsson.se/proj-adp-cicd-drop/adp-helm-migrator:1.0.1
+
+
+properties:
+  - MIGRATOR_FOLDER_NAME: "migrator_files"
+  - TARGET_CHARTS_FOLDER: "${MIGRATOR_FOLDER_NAME}/target_charts"
+  - VALUES_FILES_FOLDER: "${MIGRATOR_FOLDER_NAME}/values_files"
+
+  - CNCS_BASE_CHART_FOLDER: "${TARGET_CHARTS_FOLDER}/${scspider.CNCS_BASE_NAME}"
+  - CNCS_ADDITIONS_CHART_FOLDER: "${TARGET_CHARTS_FOLDER}/${scspider.CNCS_ADDITIONS_NAME}"
+  - SC_CS_CHART_FOLDER: "${TARGET_CHARTS_FOLDER}/${scspider.SC_CS_NAME}"
+  - BSF_CHART_FOLDER: "${TARGET_CHARTS_FOLDER}/${scbsf.CHART_NAME}"
+  - SCP_CHART_FOLDER: "${TARGET_CHARTS_FOLDER}/${scscp.CHART_NAME}"
+  - SEPP_CHART_FOLDER: "${TARGET_CHARTS_FOLDER}/${scsepp.CHART_NAME}"
+  - ATMOZ_SFTP_CHART_FOLDER: "${TARGET_CHARTS_FOLDER}/eric-atmoz-sftp"
+  - VTAPRECORDER_CHART_FOLDER: "${TARGET_CHARTS_FOLDER}/eric-vtaprecorder"
+
+  - CNCS_BASE_VALUES_FOLDER: "${VALUES_FILES_FOLDER}/${scspider.CNCS_BASE_NAME}"
+  - CNCS_ADDITIONS_VALUES_FOLDER: "${VALUES_FILES_FOLDER}/${scspider.CNCS_ADDITIONS_NAME}"
+  - SC_CS_VALUES_FOLDER: "${VALUES_FILES_FOLDER}/${scspider.SC_CS_NAME}"
+  - BSF_VALUES_FOLDER: "${VALUES_FILES_FOLDER}/${scbsf.CHART_NAME}"
+  - SCP_VALUES_FOLDER: "${VALUES_FILES_FOLDER}/${scscp.CHART_NAME}"
+  - SEPP_VALUES_FOLDER: "${VALUES_FILES_FOLDER}/${scsepp.CHART_NAME}"
+
+env:
+  - PWD
+  - USER
+
+var:
+  - username
+
+rules:
+
+  migrate:
+    - task: dry-run
+      docker-image: helm-migrator
+      docker-envs:
+        - "NAMESPACE=${var.base.namespace}"
+        - "KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "HOME=$PWD"
+      docker-mounts:
+        - "/local/${env.USER}/kubectl/bin:/mnt/bin"
+      cmd: helm-migrator helmfile migrate -n ${var.base.namespace}
+            --kubeconfig ${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+            --helmfile-yaml-path ${base.OUTPUT_DIR}/${MIGRATOR_FOLDER_NAME}/helmfile.yaml
+            --verbosity 4 --dry-run
+    - task: helmfile
+      docker-image: helm-migrator
+      docker-envs:
+        - "NAMESPACE=${var.base.namespace}"
+        - "KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "HOME=$PWD"
+      docker-mounts:
+        - "/local/${env.USER}/kubectl/bin:/mnt/bin"
+      cmd: helm-migrator helmfile migrate -n ${var.base.namespace}
+            --kubeconfig ${env.PWD}/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+            --helmfile-yaml-path ${env.PWD}/${base.OUTPUT_DIR}/${MIGRATOR_FOLDER_NAME}/helmfile.yaml
+            --verbosity 4
+
+  upgrade:
+    - task: cncs-b
+      docker-image: base.helm-builder-py3
+      docker-envs:
+        - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+        - KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+        - XDG_DATA_HOME=home/helmuser/.helm
+      cmd: helm upgrade ${scspider.CNCS_BASE_NAME}-${var.username} ${base.OUTPUT_DIR}/${CNCS_BASE_CHART_FOLDER}
+                        --timeout 900s
+                        --namespace ${var.base.namespace}
+                        -f ${base.OUTPUT_DIR}/${CNCS_BASE_VALUES_FOLDER}/${scspider.CNCS_BASE_NAME}-values-final.yaml
+                        -f ${base.OUTPUT_DIR}/${CNCS_BASE_VALUES_FOLDER}/default.yaml
+                        -f ${base.OUTPUT_DIR}/${CNCS_BASE_VALUES_FOLDER}/allocate-loadbalancer-nodeports.yaml
+                        -f ${base.OUTPUT_DIR}/${CNCS_BASE_VALUES_FOLDER}/ipv4-internal.yaml
+                        -f ${base.OUTPUT_DIR}/${CNCS_BASE_VALUES_FOLDER}/dualstack-external.yaml
+                        -f ${base.OUTPUT_DIR}/${CNCS_BASE_VALUES_FOLDER}/rop-files-option2.yaml
+                        -f ${base.OUTPUT_DIR}/${CNCS_BASE_VALUES_FOLDER}/set-values.yaml
+                        --debug
+    - task: cncs-a
+      docker-image: base.helm-builder-py3
+      docker-envs:
+        - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+        - KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+        - XDG_DATA_HOME=home/helmuser/.helm
+      cmd: helm upgrade ${scspider.CNCS_ADDITIONS_NAME}-${var.username} ${base.OUTPUT_DIR}/${CNCS_ADDITIONS_CHART_FOLDER}
+                        --timeout 900s
+                        --namespace ${var.base.namespace}
+                        -f ${base.OUTPUT_DIR}/${CNCS_ADDITIONS_VALUES_FOLDER}/${scspider.CNCS_ADDITIONS_NAME}-values-final.yaml
+                        -f ${base.OUTPUT_DIR}/${CNCS_ADDITIONS_VALUES_FOLDER}/default.yaml
+                        -f ${base.OUTPUT_DIR}/${CNCS_ADDITIONS_VALUES_FOLDER}/allocate-loadbalancer-nodeports.yaml
+                        -f ${base.OUTPUT_DIR}/${CNCS_ADDITIONS_VALUES_FOLDER}/ipv4-internal.yaml
+                        -f ${base.OUTPUT_DIR}/${CNCS_ADDITIONS_VALUES_FOLDER}/dualstack-external.yaml
+                        -f ${base.OUTPUT_DIR}/${CNCS_ADDITIONS_VALUES_FOLDER}/rop-files-option2.yaml
+                        --debug
+    - task: sc-cs
+      docker-image: base.helm-builder-py3
+      docker-envs:
+        - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+        - KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+        - XDG_DATA_HOME=home/helmuser/.helm
+      cmd: helm upgrade ${scspider.SC_CS_NAME}-${var.username} ${base.OUTPUT_DIR}/${SC_CS_CHART_FOLDER}
+                        --timeout 900s
+                        --namespace ${var.base.namespace}
+                        -f ${base.OUTPUT_DIR}/${SC_CS_VALUES_FOLDER}/${scspider.SC_CS_NAME}-values-final.yaml
+                        -f ${base.OUTPUT_DIR}/${SC_CS_VALUES_FOLDER}/default.yaml
+                        -f ${base.OUTPUT_DIR}/${SC_CS_VALUES_FOLDER}/nlf.yaml
+                        -f ${base.OUTPUT_DIR}/${SC_CS_VALUES_FOLDER}/rlf.yaml
+                        -f ${base.OUTPUT_DIR}/${SC_CS_VALUES_FOLDER}/vtap.yaml
+                        -f ${base.OUTPUT_DIR}/${SC_CS_VALUES_FOLDER}/vtap-lite.yaml
+                        -f ${base.OUTPUT_DIR}/${SC_CS_VALUES_FOLDER}/vtap-dtls.yaml
+                        -f ${base.OUTPUT_DIR}/${SC_CS_VALUES_FOLDER}/set-values.yaml
+                        --debug
+    - task: bsf
+      docker-image: base.helm-builder-py3
+      docker-envs:
+        - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+        - KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+        - XDG_DATA_HOME=home/helmuser/.helm
+      cmd: helm upgrade ${scbsf.CHART_NAME}-${var.username} ${base.OUTPUT_DIR}/${BSF_CHART_FOLDER}
+                        --timeout 900s
+                        --namespace ${var.base.namespace}
+                        -f ${base.OUTPUT_DIR}/${BSF_VALUES_FOLDER}/${scbsf.CHART_NAME}-values-final.yaml
+                        -f ${base.OUTPUT_DIR}/${BSF_VALUES_FOLDER}/default.yaml
+                        -f ${base.OUTPUT_DIR}/${BSF_VALUES_FOLDER}/allocate-loadbalancer-nodeports.yaml
+                        -f ${base.OUTPUT_DIR}/${BSF_VALUES_FOLDER}/ipv4-internal.yaml
+                        -f ${base.OUTPUT_DIR}/${BSF_VALUES_FOLDER}/dualstack-external.yaml
+                        -f ${base.OUTPUT_DIR}/${BSF_VALUES_FOLDER}/vtap.yaml
+                        -f ${base.OUTPUT_DIR}/${BSF_VALUES_FOLDER}/vtap-lite.yaml
+                        -f ${base.OUTPUT_DIR}/${BSF_VALUES_FOLDER}/bsf-diameter.yaml
+                        --debug
+    - task: scp
+      docker-image: base.helm-builder-py3
+      docker-envs:
+        - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+        - KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+        - XDG_DATA_HOME=home/helmuser/.helm
+      cmd: helm upgrade ${scscp.CHART_NAME}-${var.username} ${base.OUTPUT_DIR}/${SCP_CHART_FOLDER}
+                        --timeout 900s
+                        --namespace ${var.base.namespace}
+                        -f ${base.OUTPUT_DIR}/${SCP_VALUES_FOLDER}/${scscp.CHART_NAME}-values-final.yaml
+                        -f ${base.OUTPUT_DIR}/${SCP_VALUES_FOLDER}/default.yaml
+                        -f ${base.OUTPUT_DIR}/${SCP_VALUES_FOLDER}/allocate-loadbalancer-nodeports.yaml
+                        -f ${base.OUTPUT_DIR}/${SCP_VALUES_FOLDER}/nlf.yaml
+                        -f ${base.OUTPUT_DIR}/${SCP_VALUES_FOLDER}/rlf.yaml
+                        -f ${base.OUTPUT_DIR}/${SCP_VALUES_FOLDER}/vtap.yaml
+                        -f ${base.OUTPUT_DIR}/${SCP_VALUES_FOLDER}/vtap-lite.yaml
+                        -f ${base.OUTPUT_DIR}/${SCP_VALUES_FOLDER}/dualstack-external.yaml
+                        -f ${base.OUTPUT_DIR}/${SCP_VALUES_FOLDER}/multi-vpn.yaml
+                        -f ${base.OUTPUT_DIR}/${SCP_VALUES_FOLDER}/set-values.yaml
+                        --debug
+    - task: sepp
+      docker-image: base.helm-builder-py3
+      docker-envs:
+        - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+        - KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+        - XDG_DATA_HOME=home/helmuser/.helm
+      cmd: helm upgrade ${scsepp.CHART_NAME}-${var.username} ${base.OUTPUT_DIR}/${SEPP_CHART_FOLDER}
+                        --timeout 900s
+                        --namespace ${var.base.namespace}
+                        -f ${base.OUTPUT_DIR}/${SEPP_VALUES_FOLDER}/${scsepp.CHART_NAME}-values-final.yaml
+                        -f ${base.OUTPUT_DIR}/${SEPP_VALUES_FOLDER}/default.yaml
+                        -f ${base.OUTPUT_DIR}/${SEPP_VALUES_FOLDER}/allocate-loadbalancer-nodeports.yaml
+                        -f ${base.OUTPUT_DIR}/${SEPP_VALUES_FOLDER}/rlf.yaml
+                        -f ${base.OUTPUT_DIR}/${SEPP_VALUES_FOLDER}/vtap.yaml
+                        -f ${base.OUTPUT_DIR}/${SEPP_VALUES_FOLDER}/vtap-lite.yaml
+                        -f ${base.OUTPUT_DIR}/${SEPP_VALUES_FOLDER}/dualstack-external.yaml
+                        -f ${base.OUTPUT_DIR}/${SEPP_VALUES_FOLDER}/multi-vpn.yaml
+                        --debug
+    # - task: atmoz-sftp
+    #   docker-image: base.helm-builder-py3
+    #   docker-envs:
+    #     - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+    #     - KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+    #     - XDG_DATA_HOME=home/helmuser/.helm
+    #   cmd: helm install eric-atmoz-sftp-${var.username} ${base.OUTPUT_DIR}/${ATMOZ_SFTP_CHART_FOLDER}
+    #                     --timeout 900s
+    #                     --namespace ${var.base.namespace}
+    # - task: vtaprecorder
+    #   docker-image: base.helm-builder-py3
+    #   docker-envs:
+    #     - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+    #     - KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+    #     - XDG_DATA_HOME=home/helmuser/.helm
+    #   cmd: helm install eric-vtaprecorder-${var.username} ${base.OUTPUT_DIR}/${VTAPRECORDER_CHART_FOLDER}
+    #                     --timeout 900s
+    #                     --namespace ${var.base.namespace}

@@ -1,0 +1,651 @@
+SCP DEMO - TALK SLOWLY
+======================
+
+
+Preparation:
+============
+export NAMESPACE="5g-bsf-$USER"
+#export GIT_PATH="/home/$USER/git/"
+export GIT_PATH="/local/git/"
+
+cd $GIT_PATH/5g_proto/
+
+Install needed tools:
+---------------------
+1. XLaunch for X-Display on Windows
+https://sourceforge.net/projects/vcxsrv/
+
+# 2. CentOS VM should be started in Bridged mode to be able to use a putty connection to it
+# Settings -> Network -> Adapter 1 -> Bridged Adapter, Name Intel(R) Dual Band Wireless-AC 8265
+# 
+# sudo dhclient
+
+3. VDI access (putty session e.g. to seroiuvd05256.sero.gic.ericsson.se)
+
+4. Ubuntu Linux Subsystem in Windows + ksniff
+https://wcdma-confluence.rnd.ki.sw.ericsson.se/display/DSCNode/Troubleshooting+SCP#TroubleshootingSCP-HowtogetWiresharkliveconnectedtoaPOD?
+
+check that Wireshark starts correctly:
+export DISPLAY=":0.0"
+wireshark
+
+
+5. FiveShell
+https://wcdma-confluence.rnd.ki.sw.ericsson.se/display/DSCNode/FiveShell
+
+
+6. Loadmeter
+https://wcdma-confluence.rnd.ki.sw.ericsson.se/display/DSCNode/How+to+use+the+loadviewer+for+fine-grain+CPU+measurements
+
+
+7. Netconf Browser
+https://wcdma-confluence.rnd.ki.sw.ericsson.se/display/DSCNode/Ericsson+Netconf+Browser+%28ENB%29+for+SC
+
+
+8. Tilix
+
+  Create file:
+  vi /etc/yum.repos.d/tilix.repo
+  
+  copy following into the file:
+  
+  [ivoarch-Tilix]
+  name=Copr repo for Tilix owned by ivoarch
+  baseurl=https://copr-be.cloud.fedoraproject.org/results/ivoarch/Tilix/epel-7-$basearch/
+  type=rpm-md
+  skip_if_unavailable=True
+  gpgcheck=1
+  gpgkey=https://copr-be.cloud.fedoraproject.org/results/ivoarch/Tilix/pubkey.gpg
+  repo_gpgcheck=0
+  enabled=1
+  enabled_metadata=1
+  
+  
+  on RHEL/CentOS 7:
+  yum update
+  yum install tilix
+
+10. Install STERN in ~/bin/
+
+11. Curl
+  module add curl/7.65.3
+
+
+Other preparations, to do for each demo:
+---------------------------------------
+
+1. Open Tools
+
+- Dashboard of cluster
+
+Hahn011:
+https://access-hahn011.rnd.gic.ericsson.se/login
+https://access-hahn011.rnd.gic.ericsson.se/k8s/clusters/c-cj54w/api/v1/namespaces/kube-system/services/https:kkubernetes-dashboard:443/proxy/#!/overview?namespace=default
+
+
+Todd044:
+https://access-todd044.rnd.gic.ericsson.se/login
+
+Rose003:
+https://access-rose003.rnd.gic.ericsson.se/login
+https://access-rose003.rnd.gic.ericsson.se/k8s/clusters/c-8zwzg/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:443/proxy/#!/overview?namespace=default
+
+
+
+3. CNOM
+https://wcdma-confluence.rnd.ki.sw.ericsson.se/display/DSCNode/CNOM+for+SC
+
+#You can access CNOM with the URL below (please replace with your Signum ID). 
+#http://5g-bsf-$USER.hahn011.rnd.gic.ericsson.se/em/login.html
+#http://5g-bsf-$USER.todd044.rnd.gic.ericsson.se/em/login.html
+#http://5g-bsf-$USER.rose003.rnd.gic.ericsson.se/em/login.html
+
+http://cnom.5g-bsf-eedcsi.hahn011.rnd.gic.ericsson.se.kaas:<port>/em
+http://cnom.5g-bsf-eedcsi.todd044.rnd.gic.ericsson.se.kaas:<port>/em
+http://cnom.5g-bsf-eedcsi.rose003.rnd.gic.ericsson.se.kaas:<port>/em
+
+<port> comes from: 
+k get svc | grep eric-tm-ingress-controller-cr
+Add FQDN mapping to C:\Windows\System32\drivers\etc\hosts
+10.120.9.132 cnom.5g-bsf-eedcsi.rose003.rnd.gic.ericsson.se.kaas
+10.210.156.10 cnom.5g-bsf-eedcsi.hahn011.rnd.gic.ericsson.se.kaas
+10.41.83.172 cnom.5g-bsf-eedcsi.hahn029.rnd.gic.ericsson.se.kaas
+
+http://cnom.5g-bsf-eedcsi.rose003.rnd.gic.ericsson.se.kaas:30685/em
+
+
+Password to be used: sec_admin/sec_admin -> change to Admin.123
+
+
+- ENB (use user 'expert') 
+
+- Loadmeter
+
+- Ubuntu on Windows
+  make sure that the right KAAS cluster is used under ~/.kube/config
+
+export NAMESPACE="5g-bsf-$USER"
+export CMM_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-cm-mediator)
+export NODE_IP=$(kubectl get nodes --namespace $NAMESPACE -o jsonpath="{.items[0].status.addresses[0].address}")
+export NRFSIM_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-nrfsim)
+export YP_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-cm-yang-provider)
+export MONITOR_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-monitor)
+export SCP_MANAGER_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-scp-manager" -o jsonpath="{.items[0].metadata.name}")
+
+
+(- Linux Hub (sero: https://ewp-sero.ra.ericsson.net/vpn/index.html) )
+
+- XLaunch
+
+- Shell to Centos via Putty and 
+  - Tilix
+  - Fiveshell
+   
+    source ~/fiveshell-venv/bin/activate
+    cd $GIT_PATH/5g_proto/devtools/5gshell/fiveshell
+     ./fiveshell.py&
+	 
+
+2. Install NRF SIM -> new, use fiveshell
+#cd scripts/
+#./create_certificates.sh nrfsim
+cd $GIT_PATH/5g_proto/esc
+make deploy-nrfsim
+
+3. Install 7 CHF SIM -> new, use fiveshell
+#cd scripts/
+#./create_certificates.sh chfsim
+cd $GIT_PATH/5g_proto/esc
+make deploy-chfsim-full
+
+4. Install K6 and scale out to 2 -> new, use fiveshell
+cd $GIT_PATH/5g_proto/devtools/k6
+make deploy-load
+
+k scale deployment eric-k6-deployment --replicas=2
+
+5. Prepare sc-sc-monitor
+k scale deploy eric-sc-monitor --replicas=1
+k patch svc eric-sc-monitor --type='json' -p '[{"op":"replace","path":"/spec/type","value":"NodePort"}]' 
+
+6. Install baseline + SCP + SPR
+cd $GIT_PATH/5g_proto/esc
+make undeploy-scp-only
+
+# 7. Build SCP helm deployment
+# cd $GIT_PATH/5g_proto/esc/
+# make build-scp-only
+
+8. Check the color codings in Wireshark
+take IP addresses for CHFsim from 
+k get svc  | grep chfsim
+
+
+9. log bash functions (or source $GIT_PATH/5g_proto/demo/.bash_functions):
+
+
+logNRF_1() {
+    k logs -f "$1" | grep -A 2  'RegisterNFInstance request' | sed 's/handleRegisterNfInstance      /\n/;T;D' | sed 's/|Received UpdateNFInstance request.//;T;D'| sed 's/c.e.utilities.common.Registry:87  |lambda$start$0                /\n/;T;D'| GREP_COLOR='1;34' grep --color=always -A 1 -E 'RegisterNFInstance|Updating'
+}
+
+logBSF() {
+    k logs -f eric-bsf-manager-0  | grep -A 1 'com.ericsson.esc.nrf.Nrf:247 |' | sed 's/|prepare                       /\n/;T;D' | sed 's/da$nfInstanceRegisterCreate$18/\n/;T;D' | sed 's/da$nfInstanceRegisterCreate$19/\n/;T;D' | GREP_COLOR='1;34' grep -A 1 -B 1 --color=always -E 'Registering'
+} 
+
+logSCP() {
+    k logs -f eric-scp-manager-0  | grep -A 1 'com.ericsson.esc.nrf.Nrf:247 |' | sed 's/|prepare                       /\n/;T;D' | sed 's/da$nfInstanceRegisterCreate$18/\n/;T;D' | sed 's/da$nfInstanceRegisterCreate$19/\n/;T;D' | GREP_COLOR='1;34' grep -A 1 -B 1 --color=always -E 'Registering'
+} 
+
+
+
+showRegisteredNFs() {
+    curl -X GET "http://$NODE_IP:$NRFSIM_PORT/nnrf-nfm/v1/nf-instances" | jq
+}
+
+showRegisteredNF() {
+    curl -X GET "http://$NODE_IP:$NRFSIM_PORT/nnrf-nfm/v1/nf-instances/"$1"" | jq | GREP_COLOR='1;34' grep --color=always -E 'nfInstanceId|nfType|nfStatus'
+}
+
+
+logNRF() {
+    export NRF_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-nrfsim" -o jsonpath="{.items[0].metadata.name}")
+    logNRF_1  $NRF_POD
+}
+
+
+UPDATE TIME
+sudo date -s "$(wget -qSO- --max-redirect=0 google.com 2>&1 | grep Date: | cut -d' ' -f5-8)Z"
+
+Export needed variables ** IN SPECIFIC TERMINAL
+
+export CMM_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-cm-mediator)
+export NODE_IP=$(kubectl get nodes --namespace $NAMESPACE -o jsonpath="{.items[0].status.addresses[0].address}")
+export NRFSIM_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-nrfsim)
+export YP_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-cm-yang-provider)
+export MONITOR_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-monitor)
+export SCP_MANAGER_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-scp-manager" -o jsonpath="{.items[0].metadata.name}")
+
+2. UC1: Deploy SCP Service ! DOESN'T WORK ANYMORE !
+==========================
+    0. Prepare:
+    cd $GIT_PATH/5g_proto/esc/
+    scpDeleteConfig
+    make undeploy-scp-only
+
+	1. Show Kubernetes Dashboard -> here are our deployed ADP generic services -> Value in its ease of use
+	2. Show terminal where we have our current pods running (first just ADP GS)
+	3. Deploy SCP -> Helm chart allows us to install with just one deployment package (show package)
+	
+	VISUALS:
+		Kubernetes Dashboard
+		Terminal 1:		watch "kubectl --namespace $NAMESPACE get pods | grep scp"
+		Terminal 2:		SCP: cd $GIT_PATH/5g_proto directory: 
+		
+        COMMAND:                helm install --namespace $NAMESPACE demo/eric-scp-0.0.1.tgz --name eric-scp-$USER -f demo/values-tls.yaml
+
+
+run commands to update worker variables!!!
+
+	export SCP_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-scp-worker)
+    export SCP_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-scp-worker)
+    echo $SCP_PORT
+	export SCP_MANAGER_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-scp-manager" -o jsonpath="{.items[0].metadata.name}")
+
+	
+
+
+3. UC2: Register to the NRF  ***CONFIGURATION VIA NETCONF***
+=============================================================
+        0. Preparation: 
+		
+		if not done:     scpDeleteConfig
+
+        export NRFSIM_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-nrfsim)
+        export SCP_MANAGER_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-scp-manager" -o jsonpath="{.items[0].metadata.name}")
+
+        cd ~/ksniff
+        export DISPLAY=":0.0"
+        
+        sudo ./kubectl-sniff -n 5g-bsf-$USER $SCP_MANAGER_POD
+        
+        remove automatic scaling:
+		k delete hpa eric-scp-worker
+
+        VISUAL:
+            Wireshark
+                Terminal 1:     watch "kubectl --namespace $NAMESPACE get pods | grep scp"
+                Terminal 2:     showRegisteredNFs ...
+                Terminal 3:     Configuration change
+				
+
+        1. Show example xml configuration -> sent via Netconf
+        2. Point out NRF Simulator running
+
+        showRegisteredNFs -> currently just NRF itself  (curl -X GET "http://$NODE_IP:$NRFSIM_PORT/nnrf-nfm/v1/nf-instances" | jq )
+
+        3. Configure -> Netconf
+        cat $GIT_PATH/5g_proto/esc/scp/sample_config_nrf.netconf | ssh -t -p $YP_PORT user1@$NODE_IP -s netconf
+
+        4. Show Wireshark SCP & NRF -> Config update & registration confirmation + PATCH for load level every 30 seconds including load info
+
+
+        showRegisteredNFs -> <newinstance>
+        showRegisteredNF <newinstance>
+
+    #showRegisteredNFs:
+        #curl -X GET "http://$NODE_IP:$NRFSIM_PORT/nnrf-nfm/v1/nf-instances" | jq
+        #showRegisteredNF INSTANCE_ID:
+        #curl -X GET "http://$NODE_IP:$NRFSIM_PORT/nnrf-nfm/v1/nf-instances/<newinstance> " | jq
+
+
+
+
+
+4. SCP traffic distribution
+===========================
+
+0. prepare
+
+a) ENB:
+   - remove OCC3 from ENB  (select OCC3, edit-> delete Parameter Group -> Push)
+
+b) From fiveshell:
+   Config+K8s   (reload configuration and K8s settings)
+   load test mode = ON
+   load statistic mode = ON
+   (TLS MUTUAL --- removed)
+   PortChange Netconf ONLY   (or PortChange Netconf Dyn)
+
+c) in VM:
+   check in shell that there are counters for CHFSIM1...: 
+   curl -s -X GET "http://$NODE_IP:$MONITOR_PORT/monitor/api/v0/commands?command=counter"  | jq
+   
+   pkill loadmeter
+
+   cd ~/bin/
+   ./loadmeter_get_chfsim_counters 3
+
+d) Start Loadmeter with 01_scp_chfsim_3.ini
+
+e) start k6 SLC traffic on one of the two k6 pods:
+
+   use fiveshell -> SLC S/M/U 3000/s (2. K6)
+
+
+  # echo $NODE_IP
+  # echo $SCP_PORT
+  # -> use this output in the k6 run commands below
+  # 
+  # kubectl -n $NAMESPACE get pods | grep eric-k6
+  # kubectl -n $NAMESPACE exec -ti <k6_pod_name> sh
+  # 
+  # 
+  # NOTE: adapt the SCP_PORT
+  # 
+  # Rose003:
+  # #pkill k6; k6 run -e CSA_HOST=csa.ericsson.se -e CSA_IP=10.120.9.132 -e SCP_PORT=31142 --max 10  --vus 10 --duration 10h cc_create_update_release_ci.js --no-usage-report --insecure-skip-tls-verify --rps 3000
+  # 
+  # pkill k6; k6 run -e CSA_HOST=csa.ericsson.se -e CSA_IP=10.120.9.132 -e SCP_PORT=31142 --max 10 --vus 10 --duration 10h slc_subscribe_modify_unsubscribe_ci.js --no-usage-report --insecure-skip-tls-verify --rps 3000
+  # 
+  # Todd044:
+  # #pkill k6; k6 run -e CSA_HOST=csa.ericsson.se -e CSA_IP=10.210.153.51 -e SCP_PORT=31142 --max 10  --vus 10 --duration 10h cc_create_update_release_ci.js --no-usage-report --insecure-skip-tls-verify --rps 3000
+  # 
+  # pkill k6; k6 run -e CSA_HOST=csa.ericsson.se -e CSA_IP=10.210.153.51 -e SCP_PORT=31142 --max 10 --vus 10 --duration 10h slc_subscribe_modify_unsubscribe_ci.js --no-usage-report --insecure-skip-tls-verify --rps 3000
+  # 
+  # Hahn011:
+  # #pkill k6; k6 run -e CSA_HOST=csa.ericsson.se -e CSA_IP=10.210.156.10 -e SCP_PORT=31040 --max 10  --vus 10 --duration 10h cc_create_update_release_ci.js --no-usage-report --insecure-skip-tls-verify --rps 3000
+  # 
+  # pkill k6; k6 run -e CSA_HOST=csa.ericsson.se -e CSA_IP=10.210.156.10 -e SCP_PORT=31040 --max 10 --vus 10 --duration 10h slc_subscribe_modify_unsubscribe_ci.js --no-usage-report --insecure-skip-tls-verify --rps 3000
+  # 
+
+1. show traffic beining distributes over 2 OCCs
+
+2a. add OCC3 via ENB template
+or
+#2b. add OCC3 fiveshell 
+
+
+NOTE: Adding an OCC4 does not work, statistics are screwed up
+
+
+
+
+Single traffic Converged Charging (CC) -- CC-Stickiness
+=======================================================
+
+0. prepare
+
+stop K6  via fiveshell  (ctrl-c)  
+
+#scale down to 1 envoy
+k scale deployment eric-scp-worker --replicas=1
+
+#in Ubunto for Windows
+cd ~/ksniff
+export DISPLAY=":0.0"
+
+export SCP_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-scp-worker" -o jsonpath="{.items[0].metadata.name}")
+	
+kubectl -n 5g-bsf-$USER get pods | grep worker
+sudo ./kubectl-sniff -n 5g-bsf-$USER $SCP_POD
+
+#CHFSim
+set load mode OFF
+#set TLS OFF         <--- needs to be changed, make use of TLS port
+
+Wireshark
+(json || (http2.header.name == ":status") ||  (http2.header.name == ":method") )&& !http && (frame.number > 0)
+
+
+in case Wireshark does not display all http2 messages
+  - check that port 80 is set for http2
+  - restart the chfsims (! the first message might be answered with 504 -> send 3 messages without customer)
+  k delete pods -l a=eric-chfsim
+  AND set loadmode off
+
+Blue:   CHFSIM-1
+Yellow: CHFSIM-2
+Green:  CHFSIM-3
+
+1. Single messages:
+
+1. create Session 1
+2. create Session 2
+
+3. update Session 2
+4. update Session 1
+
+5. release Session 1
+6. release Session 2
+
+
+Create:
+docker run --rm curlnew -v --resolve csa.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST -H "Content-Type: application/json" -d '{"notifyUri":"http://notifyURI.svc.cluster.local"}' http://csa.ericsson.se:$SCP_PORT/nchf-convergedcharging/v1/chargingdata
+#curl -v --resolve csa.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST -H "Content-Type: application/json" -d '{"notifyUri":"http://notifyURI.svc.cluster.local"}' http://csa.ericsson.se:$SCP_PORT/nchf-convergedcharging/v1/chargingdata
+
+Update:
+docker run --rm curlnew -v --resolve csa.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST http://csa.ericsson.se:$SCP_PORT/nchf-convergedcharging/v1/chargingdata/occ3-30000000/update
+#curl -v --resolve csa.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST http://csa.ericsson.se:$SCP_PORT/nchf-convergedcharging/v1/chargingdata/occ3-30000000/update
+
+
+docker run --rm curlnew -v --resolve csa.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST http://csa.ericsson.se:$SCP_PORT/nchf-convergedcharging/v1/chargingdata/occ2-10000001/update
+#curl -v --resolve csa.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST http://csa.ericsson.se:$SCP_PORT/nchf-convergedcharging/v1/chargingdata/occ2-20000000/update
+
+
+docker run --rm curlnew -v --resolve csa.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST http://csa.ericsson.se:$SCP_PORT/nchf-convergedcharging/v1/chargingdata/occ1-10012864
+/update
+#curl -v --resolve csa.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST http://csa.ericsson.se:$SCP_PORT/nchf-convergedcharging/v1/chargingdata/occ1-10012864
+/update
+
+Release:
+docker run --rm curlnew -v --resolve csa.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST http://csa.ericsson.se:$SCP_PORT/nchf-convergedcharging/v1/chargingdata/occ1-10000000/release
+
+#curl -v --resolve csa.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST http://csa.ericsson.se:$SCP_PORT/nchf-convergedcharging/v1/chargingdata/occ1-10000000/release
+
+
+
+#curl -v -X POST "http://$NODE_IP:$CHFSIM_PORT2/admin/v1/set_rej_percent/100"
+#curl -v -X POST "http://$NODE_IP:$CHFSIM_PORT/admin/v1/set_rej_answer/501"
+#curl -v -X POST "http://$NODE_IP:$CHFSIM_PORT/admin/v1/set_rej_message/update"
+#curl -v -X POST "http://$NODE_IP:$CHFSIM_PORT/admin/v1/set_drop_answer/true"
+#curl -v -X POST "http://$NODE_IP:$CHFSIM_PORT/admin/v1/set_drop_message/init"
+#curl -v -X POST "http://$NODE_IP:$CHFSIM_PORT/admin/v1/set_delay_answer/500"
+#curl -v -X POST "http://$NODE_IP:$CHFSIM_PORT/admin/v1/set_delay_message/update"
+
+
+
+CC 503 (single shot, Service Unavailable)
+==========================================
+
+curl -v -X POST "http://$NODE_IP:$CHFSIM_PORT1/admin/v1/add_disturbance/reject:503"
+#curl -v -X POST "http://$NODE_IP:$CHFSIM_PORT1/admin/v1/add_disturbance/reject:503,reject:503"
+
+(json || (http2.header.name == ":status") ||  (http2.header.name == ":method") ) && (frame.number > 9273)
+
+curl -v -X POST "http://$NODE_IP:$CHFSIM_PORT1/admin/v1/clear_disturbances
+
+
+1. create Session 1
+
+first message to OCC is rejected with 503
+2nd is ok
+
+docker run --rm curlnew -v --resolve csa.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST -H "Content-Type: application/json" -d '{"notifyUri":"http://notifyURI.svc.cluster.local"}' http://csa.ericsson.se:$SCP_PORT/nchf-convergedcharging/v1/chargingdata
+
+
+
+CC 400 (single shot, 404:Not Found)
+====================================
+
+curl -v -X POST "http://$NODE_IP:$CHFSIM_PORT1/admin/v1/add_disturbance/reject:404"
+curl -v -X POST "http://$NODE_IP:$CHFSIM_PORT1/admin/v1/add_disturbance/reject:404,reject:404"
+400:Bad Request
+404:Not Found
+
+1. create Session 1
+
+first message to OCC is rejected with 404
+2nd is ok
+
+1.
+docker run --rm curlnew -v --resolve csa.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST -H "Content-Type: application/json" -d '{"notifyUri":"http://notifyURI.svc.cluster.local"}' http://csa.ericsson.se:$SCP_PORT/nchf-convergedcharging/v1/chargingdata
+
+2.
+docker run --rm curlnew -v --resolve csa.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST -H "Content-Type: application/json" -d '{"notifyUri":"http://notifyURI.svc.cluster.local"}' http://csa.ericsson.se:$SCP_PORT/nchf-convergedcharging/v1/chargingdata
+
+
+
+CC 503 (load)
+================
+
+0. Prepare
+curl -v -X POST "http://$NODE_IP:$CHFSIM_PORT2/admin/v1/set_rej_answer/503"
+#curl -v -X POST "http://$NODE_IP:$CHFSIM_PORT2/admin/v1/set_rej_percent/100"
+
+a) in VM:
+   pkill loadmeter
+   cd ~/bin/
+   ./loadmeter_get_chfsim_counters 3
+
+b) Start Loadmeter with 01_scp_chfsim_3.ini
+   and set Max Value to 100
+
+c) load test mode = OFF
+   load statistic mode on
+   TLS MUTUAL
+
+
+e) start SLC k6 traffic on one of the two k6 pods:
+
+f) make sure CNOM is running
+
+   use fiveshell -> SLC S/M/U 3000/s (2. K6)
+
+   # Rose003:
+   # #pkill k6; k6 run -e CSA_HOST=csa.ericsson.se -e CSA_IP=10.120.9.132 -e SCP_PORT=31142 --max 10  --vus 1 --duration 10h cc_create_update_release_ci.js --no-usage-report --insecure-skip-tls-verify --rps 100
+   # 
+   # pkill k6; k6 run -e CSA_HOST=csa.ericsson.se -e CSA_IP=10.120.9.132 -e SCP_PORT=31142 --max 10 --vus 10 --duration 10h slc_subscribe_modify_unsubscribe_ci.js --no-usage-report --insecure-skip-tls-verify --rps 100
+   # 
+   # Todd044:
+   # #pkill k6; k6 run -e CSA_HOST=csa.ericsson.se -e CSA_IP=10.210.153.51 -e SCP_PORT=31142 --max 10  --vus 1 --duration 10h cc_create_update_release_ci.js --no-usage-report --insecure-skip-tls-verify --rps 100
+   # 
+   # pkill k6; k6 run -e CSA_HOST=csa.ericsson.se -e CSA_IP=10.210.153.51 -e SCP_PORT=31142 --max 10 --vus 10 --duration 10h slc_subscribe_modify_unsubscribe_ci.js --no-usage-report --insecure-skip-tls-verify --rps 100
+   # 
+   # Hahn011:
+   # #pkill k6; k6 run -e CSA_HOST=csa.ericsson.se -e CSA_IP=10.210.156.10 -e SCP_PORT=31040 --max 10  --vus 1 --duration 10h cc_create_update_release_ci.js --no-usage-report --insecure-skip-tls-verify --rps 100
+   # 
+   # pkill k6; k6 run -e CSA_HOST=csa.ericsson.se -e CSA_IP=10.210.156.10 -e SCP_PORT=31040 --max 10 --vus 10 --duration 10h slc_subscribe_modify_unsubscribe_ci.js --no-usage-report --insecure-skip-tls-verify --rps 100
+
+
+SHOW: set Blocking-time to 30 seconds in ENB for SLC
+
+
+Send 503 for 2 second -> block for 30 seconds (see ENB):
+curl -v -X POST "http://$NODE_IP:$CHFSIM_PORT2/admin/v1/set_rej_percent/100"; sleep 2; curl -v -X POST "http://$NODE_IP:$CHFSIM_PORT2/admin/v1/set_rej_percent/0"
+
+>>>> DOES NOT ALWAYS WORK if set to 1 second <<<<<<
+
+
+Show ALARM in CNOM:
+ScpProducerNotReachable   -> OCC2
+
+
+Restore:
+
+#curl -v -X POST "http://$NODE_IP:$CHFSIM_PORT2/admin/v1/set_rej_percent/0"
+#curl -v -X POST "http://$NODE_IP:$CHFSIM_PORT2/admin/v1/set_rej_percent/0"
+
+
+
+
+6. UC5: Scaling - Note: auto scaling is also working
+=======================================================
+
+        1. From Kubernetes dashboard, show the ease with which we can scale -> allows for super simple user experience
+        2. Point out the PODs coming up on the terminal
+        3. Start traffic
+        4. Scale to 4 worker PODs
+
+        VISUAL:
+                Kubernetes Dashboard -> Scale Worker Deployment
+                Terminal 1: watch kubectl --namespace $NAMESPACE get pods
+
+
+0. Prepare
+
+a) Stop Wireshark
+
+b) load test mode = ON
+   load statistic mode = ON
+   #TLS MUTUAL
+
+c) filter in CNOM on "worker"
+
+# d) set loadmeter to 1000 TPS -> use CNOM only
+
+e)
+kubectl -n $NAMESPACE delete hpa eric-scp-worker
+
+kubectl -n $NAMESPACE autoscale deployment eric-scp-worker --cpu-percent=50 --min=1 --max=4
+
+kubectl -n $NAMESPACE get hpa
+
+f)
+watch "kubectl -n $NAMESPACE get hpa"
+watch "kubectl -n $NAMESPACE get pods | grep worker"
+watch "kubectl -n $NAMESPACE top pods | grep worker"
+
+
+
+1. K6 POD for CC traffic
+
+   use fiveshell -> CC C/U/R 2000/s for Scaling(2. K6)
+
+    # Rose003
+    # pkill k6; k6 run -e CSA_HOST=csa.ericsson.se -e CSA_IP=10.120.9.132 -e SCP_PORT=31142 --max 10  --vus 1 --duration 3h cc_create_update_release_ci.js --no-usage-report --insecure-skip-tls-verify --no-connection-reuse --rps 2000
+    # 
+    # Todd044
+    # pkill k6; k6 run -e CSA_HOST=csa.ericsson.se -e CSA_IP=10.210.153.51 -e SCP_PORT=31142 --max 10  --vus 1 --duration 3h cc_create_update_release_ci.js --no-usage-report --insecure-skip-tls-verify --no-connection-reuse --rps 2000
+    # 
+    # Hahn011:
+    # pkill k6; k6 run -e CSA_HOST=csa.ericsson.se -e CSA_IP=10.210.156.10 -e SCP_PORT=31040 --max 10  --vus 1 --duration 3h cc_create_update_release_ci.js --no-usage-report --insecure-skip-tls-verify --no-connection-reuse --rps 2000
+
+   use fiveshell -> SLC S/M/U 2000/s for Scaling(2. K6)
+
+    # 2. K6 POD for SLC traffic (start in another K6 pod after some time) 
+    # 
+    # Rose003
+    # pkill k6; k6 run -e CSA_HOST=csa.ericsson.se -e CSA_IP=10.120.9.132 -e SCP_PORT=31142 --max 10 --vus 1 --duration 10h slc_subscribe_modify_unsubscribe_ci.js --no-usage-report --insecure-skip-tls-verify --no-connection-reuse --rps 2000
+    # 
+    # Todd044
+    # pkill k6; k6 run -e CSA_HOST=csa.ericsson.se -e CSA_IP=10.210.153.51 -e SCP_PORT=31142 --max 10 --vus 1 --duration 10h slc_subscribe_modify_unsubscribe_ci.js --no-usage-report --insecure-skip-tls-verify --no-connection-reuse --rps 2000
+    # 
+    # Hahn011:
+    # pkill k6; k6 run -e CSA_HOST=csa.ericsson.se -e CSA_IP=10.210.156.10 -e SCP_PORT=31040 --max 10 --vus 1 --duration 10h slc_subscribe_modify_unsubscribe_ci.js --no-usage-report --insecure-skip-tls-verify --no-connection-reuse --rps 2000
+
+
+
+In case of manual scale:
+k scale deployment eric-scp-worker --replicas=2
+
+restore
+k delete hpa eric-scp-worker
+
+
+
+
+7. UC6 (2 scp-worker, 1 restarts)
+============
+        1. Mention Kubernetes feature of resilience -> we have specified that we want to always have four worker
+                pods running -> when we kill one, another will be brought up somewhere else
+        2. We are now showing a manual kill of the POD, but the same principal applies if the POD were to terminate for any other reason
+        3. Show new POD up and running in seconds
+
+        VISUAL
+                Kubernetes Dashboard -> See pods
+                Terminal 1: Showing current pods
+                Terminal 2: kubectl --namespace $NAMESPACE delete pod eric-scp-worker-deployment-859c7fd79-29m95          <- Get id from the above printout
+
+k delete pod <scp-worker>   #  --grace-period=0 --force
+
+

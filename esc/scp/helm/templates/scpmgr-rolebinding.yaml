@@ -1,0 +1,21 @@
+{{- if .Values.rbac.createServiceAccount }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Values.service.manager.name }}-{{ .Release.Namespace }}
+  labels:
+{{- include "eric-scp.labels" . | indent 4 }}
+    app: {{ .Values.service.manager.name }}
+  annotations:
+{{- include "eric-scp.helm-annotations" . | indent 4 }}
+{{- include "eric-scp.config-annotations" . | indent 4 }}
+  namespace: {{ .Release.Namespace }}
+subjects:
+- kind: ServiceAccount
+  name: {{ .Values.service.manager.name }}
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ .Values.service.manager.name }}-{{ .Release.Namespace }}
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}

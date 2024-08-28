@@ -1,0 +1,36 @@
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ .Values.service.name }}
+spec:
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: {{ .Values.spec.port }}
+  selector:
+    app: {{ .Values.service.name }}
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.service.name }}-deployment
+  labels:
+    app: {{ .Values.service.name }}
+spec:
+  replicas: {{ .Values.spec.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.service.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.service.name }}
+    spec:
+      containers:
+      - name: {{ .Values.service.name }}
+        image: {{ .Values.spec.image }}:{{ .Values.spec.tag }}
+        imagePullPolicy: "Always"
+        ports:
+        - containerPort: 80

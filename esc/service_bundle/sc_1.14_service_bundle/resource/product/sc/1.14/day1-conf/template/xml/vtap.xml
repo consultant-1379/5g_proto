@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Notice that it is a configuration template in XML format
+  compliant with NF YANG model.  This XML template provides
+  a configuration skeleton that shall be modified before
+  loading into the yang service.  Some parts of the document
+  must be deleted or added depending on the network configuration
+  where the VNF will be deployed.
+-->
+<hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+	<capabilities>
+		<capability>
+            urn:ietf:params:netconf:base:1.0
+        </capability>
+	</capabilities>
+</hello>
+]]>]]>
+<?xml version="1.0" encoding="UTF-8"?>
+<rpc message-id="101"
+     xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+	<edit-config>
+		<target>
+			<running/>
+		</target>
+		<config>
+			<!--xmlns="urn:rdns:com:ericsson:oammodel:ericsson-vtap-pc5gc" PVTB configuration.-->
+			<vtap xmlns="urn:rdns:com:ericsson:oammodel:ericsson-vtap-pc5gc">				
+				<!-- Enable/Disable virtual tap. -->
+				<enabled>true</enabled>
+				<!-- Contains tapping profiles to be used by consumers. -->
+				<profiles>
+					<!-- Tapping profile, which specify domains. -->
+					<profile>
+						<!-- Name of the tapping profile. MANDATORY. -->
+						<name>profile1</name>
+						<!-- List of bussiness logic NF. MANDATORY. -->
+						<domain>
+							<!-- Name of the domain. MANDATORY. -->
+							<name>ccdm-udr-5G</name>
+							<!-- List of protocol streamed for this domain. -->
+							<protocol>native-http</protocol>
+						</domain>
+					</profile>
+				</profiles>
+				<!-- Contains consumers to receive vtap traces. -->
+				<stream-consumers>
+					<!-- Consumers to receive vtap traces. -->
+					<stream-consumer>
+						<!-- Name of the consumer. MANDATORY. -->
+						<name>consumer1</name>
+						<!-- Contains the IP address of the consumer. MANDATORY. -->
+						<address>10.5.5.65</address>
+						<!-- Specifies the tapping profile used by the consumer. MANDATORY. -->
+						<tapping-profile>profile1</tapping-profile>
+					</stream-consumer>
+				</stream-consumers>
+			</vtap>		
+		</config>
+	</edit-config>
+</rpc>

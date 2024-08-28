@@ -1,0 +1,79 @@
+# Copyright 2021 Ericsson GmbH
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ .Values.service.name }}
+spec:
+  {{ if eq (int (index .Values.configuration "ip-version")) 4}}
+  ipFamilies:
+  - IPv4
+  {{ else }}
+  ipFamilies:
+  - IPv6
+  {{ end }}
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: {{ .Values.spec.port }}
+  selector:
+    app: {{ .Values.service.name }}
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.service.name }}-deployment
+  labels:
+    app: {{ .Values.service.name }}
+    role: {{ .Values.service.name }}
+spec:
+  replicas: {{ .Values.spec.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.service.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.service.name }}
+    spec:
+      serviceAccountName: {{ include "eric-dsc-load.name" . }}-sa
+      imagePullSecrets:
+      - name: {{ template "eric-dscload.pullSecrets" . }}
+      containers:
+      - name: {{ .Values.service.name }}
+        image: {{ template "eric-dscload.registryUrl" . }}/{{ .Values.imageCredentials.repoPath }}/{{ .Values.spec.image }}:{{ .Values.spec.tag }}
+        imagePullPolicy: Always
+        readinessProbe:
+          exec:
+            command:
+            - cat
+            - /opt/dsc-load/load.cfg
+          initialDelaySeconds: 4
+          periodSeconds: 2
+        ports:
+        - containerPort: 80
+        {{- if .Values.spec.resources.requests.cpu }}
+        resources:
+          requests:
+            cpu: {{ .Values.spec.resources.requests.cpu | quote }}
+            memory: {{ .Values.spec.resources.requests.memory | quote }}
+          limits:
+            cpu: {{ .Values.spec.resources.limits.cpu | quote }}
+            memory: {{ .Values.spec.resources.limits.memory | quote }}
+        {{- end }}
+        env:
+        {{- include "eric-dsc-load.pod.envs" . | nindent 8 }}
+        {{- include "eric-dsc-load.configuration.envs" . | indent 8 }}
+        {{- include "eric-dsc-load.tls.envs" . | indent 8 }}
+        {{- include "eric-dsc-load.tls.volumeMounts" . | indent 8 }}
+      {{- include "eric-dsc-load.tls.volumes" . | indent 6 }}
+      {{ if .Values.usage }}
+      nodeSelector:
+        usage: {{ .Values.usage }}
+      tolerations:
+      - key: usage
+        operator: Equal
+        value: {{ .Values.usage }}
+        effect: "NoSchedule"
+      {{ end }}

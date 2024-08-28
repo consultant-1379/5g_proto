@@ -1,0 +1,413 @@
+// Run on SERO_GIC buildslaves,
+// decide which buildslave(s) to use
+def AGENT_LABEL = null
+node('DSC_BuildSlave_GIC_1||DSC_BuildSlave_GIC_2||DSC_BuildSlave_GIC_3||DSC_BuildSlave_GIC_4') {
+    stage('set agent'){
+        if (env.IP_VERSION == '6') {
+            // move to IPv6 buildslave(s)
+            AGENT_LABEL = '5G-SC-IPv6'
+        } else {
+            // move to IPv4 buildslave(s)
+            AGENT_LABEL = '5G-SC'
+        } //if
+    } //stage
+} //node
+
+// Clear troubleshooting failure reason to 
+def TROUBLESHOOTING_FAILURE_REASON=""
+
+// Set email body
+def email_color=""
+def email_text1="Hi team,<br><br>ADP CI/CD Test results for ADP Service: ${CHART_NAME} ${CHART_VERSION} "
+def email_jcatlogs=""
+def email_verdict=""
+def email_buildUrl="Jcat logs:<br>${env.BUILD_URL}"
+def email_text2="Thank you for pushing.<br><br>BR,<br>SC-Staging"
+
+// Deployment is ready and test can be run on it
+def ENV_READY = false
+
+// look for suite name in latestjcatlogs_$nr/dt.xml
+String retrieveSuite(String nr) {
+    env.someVar=nr
+    echo "looking for suite name in latestjcatlogs_${env.someVar}/dt.xml"
+    suite= sh (returnStdout: true,
+        script:"awk -F '\"' '/suite name/ {print \$2}' latestjcatlogs_${env.someVar}/dt.xml")
+    echo "Found suite: $suite"
+    return (suite)
+}
+
+// look for suite info in latestjcatlogs_$nr/dt.xml
+String retrieveInfo(String nr) {
+    env.someVar2=nr
+    echo "looking for suite info in latestjcatlogs_${env.someVar2}/dt.xml"
+    info= sh (returnStdout: true,
+        //script:"cat latestjcatlogs_${env.someVar2}/dt.xml | grep -o -P \"suite name.*ExecutionFinished\"")
+        script:"awk '/suite name/ {res=\$0; count=0} /Skip/ {count=count+1} END {print res\" Skipped=\"count}' latestjcatlogs_${env.someVar2}/dt.xml | sed -E \"s/(<|ExecutionFinished.*>)//g\"")
+    echo "Found info: $info"
+    return (info)
+}
+
+// set the displayed build name to BUILD_NUMBER | COMMIT
+currentBuild.displayName = "#${BUILD_NUMBER} - ${env.COMMIT}"
+
+pipeline {
+    agent { label "${AGENT_LABEL}" }
+    options {
+        timeout(time: 90, unit: 'MINUTES')
+        timestamps()
+    }
+    environment {
+        // Pipe Variables Used in Jenkins
+        VERSION = ''
+        PRODUCT = ''
+        KUBE_HOST = "${env.KUBE_HOST}"
+        NAMESPACE = "${env.NAMESPACE}"
+        ARM_ARTIFACTORY_TOKEN = "${ARM_ARTIFACTORY_TOKEN}"
+        TROUBLESHOOTING = "${env.TROUBLESHOOTING}"
+        BRANCH = "${env.BRANCH}"
+        TEST_BRANCH = "${env.TEST_BRANCH}"
+        REDIS_CONTAINER = "eric-chfsim-redis"
+        COMMIT = "${COMMIT}"
+    }
+    stages {
+        stage('Print env vars') {
+            steps {
+                sh 'printenv | sort'
+                script {
+                    // set displayed build name
+                    currentBuild.displayName = "#${BUILD_NUMBER}>${env.CHART_NAME}:${env.CHART_VERSION}"
+                    // set displayed description
+                    currentBuild.description = "${env.NODE_NAME}, ${env.KUBE_HOST}<br>${env.CHART_REPO},  ${env.CHART_NAME}, ${env.CHART_VERSION}<br>${env.COMMIT}";
+                    if ( fileExists("/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh") ) {
+                        // Log current job 
+                        sh "/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh -start"
+                    } // if
+                } //script
+            } //steps
+        } //stage
+        stage('Cleaning WS on Buildslaves') {
+            // only if no other instance of the same job is running in parallel
+            // if another instance is running this procedure would delete its WS and make it failing
+            when {
+                expression { currentBuild.getPreviousBuildInProgress() == null }
+            }
+            steps {
+                // remove all (!) content (including the git repo)
+                sh '''#!/bin/bash -x
+                    IP_ADDRESS_TMP=`hostname -i`;
+                    BUILD_PATH_TMP=`pwd`;
+                    for ip in 10.210.174.60 10.210.174.61 10.210.155.84 10.210.155.137 10.210.174.209; do
+                        if [ "${IP_ADDRESS_TMP}" != "${ip}" ]; then
+                            ssh eiffelesc@${ip} "if [ -d ${BUILD_PATH_TMP} ]; then rm -rf ${BUILD_PATH_TMP}/; else echo \"Nothing to clean\"; fi;"
+                        fi;
+                    done;'''
+            } //steps
+        } //stage
+        stage('Clone test repository') {
+            steps {
+                echo 'Checking user'
+                sh 'whoami'
+                echo 'check path'
+                echo pwd()
+                sh 'git submodule update --init --recursive'
+                sh './bob/bob init:set-build-proxy'
+                sh './bob/bob init:set-kube-config'
+                sh './bob/bob build-libs-ci'
+                echo 'Creating test repo directory'
+                dir('5g_test_ci'){
+                    deleteDir()
+                }
+                echo pwd()
+                echo 'Trying to clone the 5G prototype test repository'
+                checkout scmGit(
+                    branches: [[name: '*/${TEST_BRANCH}']],
+                    userRemoteConfigs: [[credentialsId: 'eiffelesc-user-password', name: 'origin', url: 'https://eiffelesc@gerritmirror-direct.sero.gic.ericsson.se/a/MC_5G/5g_test_ci']],
+                    extensions: [submodule(parentCredentials: true, recursiveSubmodules: true, reference: '', shallow: false), [$class: 'RelativeTargetDirectory', relativeTargetDir: '5g_test_ci']])
+                echo 'check content'
+                dir('5g_test_ci') {
+                    echo pwd()
+                    sh 'git log -n 10'
+                    sh 'ls -ltrh'
+                    sh 'git submodule update --init --recursive'
+                    sh 'echo "TEST_BRANCH=${TEST_BRANCH}" > ../concl.properties'
+                    sh 'echo "TEST_COMMIT=$(git log -n1 --abbrev-commit --format="%h")" >> ../concl.properties'
+                    sh 'echo "CHART_NAME=${CHART_NAME}" >> ../concl.properties'
+                    sh 'echo "CHART_REPO=${CHART_REPO}" >> ../concl.properties'
+                    sh 'echo "CHART_VERSION=${CHART_VERSION}" >> ../concl.properties'
+                } // dir
+            } // steps
+        } // stage
+        stage('Test Statistics check') {
+            steps {
+                script{
+                    env.LOGDB = "true"
+                    echo "Set Test Statistics setting, LOGDB= ${env.LOGDB}"
+                    echo "TEST_TYPE: ${env.TEST_TYPE}"
+                } // script
+            } //steps
+        } // stage
+        stage('Test Preparation') {
+            steps {
+                dir('5g_test_ci') {
+                    sh "./bob/bob init"
+                    script {
+                        sh "./bob/bob adptest:ft-set-ports"
+                        if (env.IP_VERSION == '6') {
+                            sh "./bob/bob adptest:prepareft6"
+                        } else {
+                            sh "./bob/bob adptest:prepareft"
+                        } // if
+                    } //script
+                    
+                    // update the file /etc/hosts:
+                    sh "./bob/bob adptest:update-hostfile"
+
+                    sh "./bob/bob adptest:ft-set-redis-name"
+                    sh "./bob/bob adptest:ft-start-redis"
+                } // dir
+            } // steps
+        } // stage
+        stage('Trigger function test suites') {
+            steps {
+                script {
+                    dir('5g_test_ci') {
+                        sh "export TS_LOG_URL=${env.BUILD_URL}; ./bob/bob adptest:jenkinsft"
+                    } // dir
+                } // script
+            } // steps
+        } // stage
+        stage('Checking test results') {
+            steps{
+                dir('5g_test_ci') {
+                    script {
+                        statusCode = sh returnStatus: true, script: '''
+                            FAILED=0;
+                            SKIPPED=0;
+                            RESULTS=0;
+                            for i in ./jcat-esc/common-testcases/target ./jcat-esc/proxy-testcases/target-scp ./jcat-esc/proxy-testcases/target-sepp ./jcat-esc/bsf-testcases/target; do
+                                if [ "$FAILED" -eq 0 ] && [ "$SKIPPED" -eq 0 ]; then
+                                    if [ -f $i/failsafe-reports/testng-results.xml ]; then
+                                        FAILED=$(grep -oE "failed=\\"[0-9]{1,}\\"" $i/failsafe-reports/testng-results.xml | cut -d\'=\' -f2 | sed "s/\\"//g");
+                                        SKIPPED=$(grep -oE "skipped=\\"[0-9]{1,}\\"" $i/failsafe-reports/testng-results.xml | cut -d\'=\' -f2 | sed "s/\\"//g");
+                                        RESULTS=1;
+                                    fi
+                                fi
+                            done;
+                            if [ "$FAILED" -eq 0 ] && [ "$SKIPPED" -eq 0 ] && [ "$RESULTS" -eq 1 ]; then
+                                echo "All TCs were successful";
+                                echo "TROUBLESHOOTING=FALSE" >> ../concl.properties;
+                            else
+                                echo "Some TCs failed!!";
+                                echo "TROUBLESHOOTING=TRUE" >> ../concl.properties;
+                            fi;
+                            if [ "$RESULTS" -eq 0 ]; then
+                                echo "Test suite and TCs failed!!";
+                                exit 1;
+                            fi;'''
+                        // avoid termination of verification pipeline
+                        // if (statusCode != 0) { currentBuild.result = 'UNSTABLE' }
+                    } // script
+                } // dir
+                archiveArtifacts allowEmptyArchive: true, artifacts: 'concl.properties', onlyIfSuccessful: false
+                archiveArtifacts allowEmptyArchive: true, artifacts: '5g_test_ci/logs_${NAMESPACE}_*.tgz', onlyIfSuccessful: false
+            } // steps
+        } //stage
+        stage('Set verdict') {
+            steps {
+                script {
+                    def exists = fileExists 'concl.properties'
+                    catchError(buildResult: 'SUCCESS', message: 'TROUBLESHOOTING = TRUE', stageResult: 'UNSTABLE') {
+                        if (exists) {
+                            def data = readFile(file: 'concl.properties')
+                            if (data.contains("TROUBLESHOOTING=FALSE")) {
+                                email_color = "<body style=\"background-color: LightGreen;\">"; // body in LightGreen
+                                email_verdict = "Verdict: <b><font color=\"#228B22\"> Success </font></b>" // in green
+                            } else {
+                                email_color = "<body style=\"background-color: Salmon;\">"; // body in Salmon
+                                email_verdict = "Verdict: <b><font color=\"#FF0000\"> Failed </font></b>" // in red
+                                error "Verdict: Failed";
+                            } // if
+                        } else {
+                            email_verdict = "Verdict: <b>undefined</b>"
+                            error "Verdict: Undefined";
+                        } // if
+                    } // catcherror
+                    // update concl.properties
+                    readContent = readFile 'concl.properties'
+                    writeFile file: 'concl.properties', text: readContent +"\rVERDICT=$email_verdict"
+                } // script
+            } // steps
+        } // stage
+        stage('Archiving JCAT logs') {
+            environment {
+                DIRS=0
+            }
+            steps {
+                dir('5g_test_ci') {
+                    script {
+                        // copy jcat reports and count them
+                        // To prevent the day 01 of the month issue, the current day is printed and checked.
+                        // To simplify the date arithmetic, the current day is counted in seconds since 1/1/1970.
+                        // Substracting 86400s (24h/1day) allows to return the date of the previous day.
+                        // The rest is directory listing, creation and copy operations.
+                        DIRS = sh (
+                            script: ''' #!/bin/bash -xe
+                                export DOM=`date +%d`;
+                                export LOG_DIRS="";
+                                if [ "$DOM" == "01" ]; then
+                                    export DOM_SEC=`date +%s`;
+                                    YESTERDAY_SEC=$(( ${DOM_SEC} - 86400));
+                                    export LAST_MONTH=`date --date="@${YESTERDAY_SEC}" +%Y%m`;
+                                    for DIR in `ls ./jcat-esc/jcatlogs/${LAST_MONTH}`; do
+                                        LOG_DIRS="$LOG_DIRS ./jcat-esc/jcatlogs/${LAST_MONTH}/$DIR";
+                                    done;
+                                fi;
+                                CUR_MONTH=`date +%Y%m`;
+                                for DIR in `ls ./jcat-esc/jcatlogs/${CUR_MONTH}`; do
+                                    LOG_DIRS="$LOG_DIRS ./jcat-esc/jcatlogs/${CUR_MONTH}/$DIR";
+                                done
+                                j=1;
+                                for i in ${LOG_DIRS}; do
+                                    mkdir ./latestjcatlogs_$j;
+                                    cp -R ./$i/. ./latestjcatlogs_$j/.;
+                                    j=$((j+1));
+                                done;
+                                echo $j;''' ,
+                            returnStdout: true).trim()
+                        last1 = "${DIRS}"
+                        echo "$last1"
+                        // define the lists
+                        def SUITES=[]
+                        def INFO=[]
+                        // retrieve information from the dt.xml files from the latestjcatlog_$x dirs
+                        for (def x=1;x<"$last1".toInteger();x++) {
+                            SUITES.add(retrieveSuite("$x"))
+                            //INFO.add(retrieveInfo("$x").replace("ExecutionFinished",""))
+                            INFO.add(retrieveInfo("$x"))
+                        }
+                        // set the base data for the html report
+                        def baseReportDir="latestjcatlogs_"
+                        def reportdir=""
+                        def baseReportName="jcatReport_"
+                        def reportName=""
+                        // for each run
+                        for (def x=1;x<"$last1".toInteger();x++) {
+                            // set info for the run into the email
+                            script{
+                                email_jcatlogs = email_jcatlogs + INFO.get(x-1) + "<br>"
+                            } //script
+                            reportDir="$baseReportDir"+"$x" // add suite nr to basedir
+                            echo "$reportDir"
+                            reportName=SUITES.get(x-1) // reportname is suite name
+                            echo "$reportName"
+                            indexName="index.html" // index name
+                            echo "$indexName"
+                            publishHTML([allowMissing: false,
+                                alwaysLinkToLastBuild: false,
+                                keepAll: true,
+                                reportDir: "$reportDir",
+                                reportFiles: "$indexName",
+                                reportName: "$reportName",
+                                reportTitles: "$reportName",
+                                escapeUnderscores: false])
+                        } // for
+                        // update concl.properties
+                        email_jcatlog_props = email_jcatlogs.replaceAll("\n","") // remove the \n
+                        readContent = readFile '../concl.properties'
+                        writeFile file: '../concl.properties', text: readContent +"\rJCAT_LOGS=$email_jcatlog_props"+"\rBUILD_URL=$email_buildUrl"
+                        // delete jcatlogs_x after publishing (clean-up of workspace)
+                        sh 'rm -rf latestjcatlogs_*'
+                    } // script
+                } // dir
+                archiveArtifacts allowEmptyArchive: true, artifacts: 'concl.properties', onlyIfSuccessful: false
+            } // steps
+        } // stage
+    } // stages
+    post {
+        always {
+            script {
+                // Log current job
+                if ( fileExists("/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh") ) {
+                    sh "/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh -stop"
+                } // if
+            } // script
+            // releasing ports applies to all test-types
+            dir('5g_test_ci') {
+                echo("Releasing ports ...")
+                sh "./bob/bob adptest:ft-release-ports"
+            } //dir
+            echo "TEST_TYPE is $TEST_TYPE"
+            dir('5g_test_ci') {
+                echo("Removing redis ...")
+                sh "./bob/bob adptest:ft-remove-redis"
+            } //dir
+        } // always
+        // cleanup of ports needed in case job was aborted
+        // needed in order to avoid filling up of file ports_used_CI
+        aborted {
+            script {
+                dir('5g_proto') {
+                    try {
+                        timeout(time: 20, unit: 'MINUTES') {
+                            // clean cluster due to failure in pipeline
+                            sh "./bob/bob clean-resources:delete-namespace"
+                            sh "./bob/bob clean-resources:create-namespace"
+                            sh "./bob/bob clean-resources:remove-cluster-resources"
+                        } // timeout
+                    } catch (exc) {
+                        TROUBLESHOOTING_FAILURE_REASON += ("Failed to clean cluster forcefully after verification abort")
+                        sh "kubectl delete ns ${env.NAMESPACE} --namespace ${env.NAMESPACE} --kubeconfig ~/.kube/${KUBE_HOST}.config"
+                        sh "kubectl create ns ${env.NAMESPACE} --namespace ${env.NAMESPACE} --kubeconfig ~/.kube/${KUBE_HOST}.config"
+                    } // catch
+                } //dir
+            } //script
+        } // aborted
+        failure {
+            script {
+                sh "./bob/bob init:set-namespace" // needs to be checked if needed
+                try {
+                    sh "./scripts/collect_ADP_logs.sh -c ~/.kube/${env.KUBE_HOST}.config -n `cat .bob/var.namespace`"
+                    archiveArtifacts allowEmptyArchive: true, artifacts: 'logs_*.tgz', onlyIfSuccessful: false
+                } catch(exc) {
+                    TROUBLESHOOTING_FAILURE_REASON += ("Exception caught while collecting logs")
+                } // try
+                echo "$TEST_TYPE"
+                // clean cluster due to failure in pipeline
+                if (env.CLEAN_CLUSTER != 'FALSE') {
+                    try {
+                        timeout(time: 8, unit: 'MINUTES') {
+                            sh "./bob/bob clean-resources:delete-namespace"
+                            sh "./bob/bob clean-resources:create-namespace"
+                            sh "./bob/bob clean-resources:remove-namespace-resources"
+                            sh "./bob/bob clean-resources:remove-cluster-resources"
+                        } // timeout
+                    } catch (exc) {
+                        TROUBLESHOOTING_FAILURE_REASON += ("Failed to clean cluster forcefully after verification failure")
+                    } // try
+                    if ("$TEST_TYPE".contains("AdpStaging")) {
+                        if (env.UPGRADE_CRDS == 'true') { 
+                            try {
+                                timeout(time: 600000, unit: 'MILLISECONDS') {
+                                    // Delete crds
+                                    sh "./bob/bob undeploy-crds"
+                                } // timeout
+                            } catch (exc) {
+                                TROUBLESHOOTING_FAILURE_REASON += ("Failed to clean CRDS after verification failure")
+                            } // try
+                        } //if
+                    } //if
+                } //if
+                // send mail to test team in case of job failure
+                if ("$TEST_TYPE".contains("AdpStaging")) {
+                    def COLOR="<body style=\"background-color: Salmon;\">"
+                    echo "Sending email to Team Challengers due to pipeline failure"
+                    emailext body: "Hello ADP CICD owners,<br><br> SC application deployment failed while testing ${CHART_NAME} ${CHART_REPO} ${CHART_VERSION}.<br>Please take appropriate actions!<br><br> .Folowing are the possible Troubleshooting reasons: ${TROUBLESHOOTING_FAILURE_REASON} <br><br>.Please check:<br>"+"${email_text2}",
+                    mimeType: 'text/html',
+                    subject: "SC ADP CICD Staging test failed for ${CHART_NAME} ${CHART_REPO} ${CHART_VERSION}",
+                    to: "IXG-ChallengersTeam@ericsson.onmicrosoft.com"
+                } // if
+            } // script
+        } // failure
+    } // post
+} // pipeline

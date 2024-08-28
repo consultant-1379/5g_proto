@@ -1,0 +1,24 @@
+# Copyright 2019 Ericsson GmbH
+{{- if and (eq (include "eric-scp.tls" .) "true") (eq (include "eric-scp.dcedsc.tls" .) "true") }}
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+  name: eric-scp-dced-client-cert
+  labels:
+{{- include "eric-scp.labels" . | indent 4 }}
+    app: {{ .Values.service.manager.name | quote }}
+  annotations:
+{{- include "eric-scp.helm-annotations" . | indent 4 }}
+{{- include "eric-scp.config-annotations" . | indent 4 }}
+spec:
+  kubernetes:
+    generatedSecretName: eric-scp-dced-client-cert
+  certificate:
+    subject:
+      cn: root
+    issuer:
+      reference: eric-data-distributed-coordinator-ed-sc-ca
+    extendedKeyUsage:
+      tlsClientAuth: true
+      tlsServerAuth: false
+{{- end }}

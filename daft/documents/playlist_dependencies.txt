@@ -1,0 +1,461 @@
+The existing DAFT playlists:
+----------------------------
+000_Playlist_001-099_For_Customer_Use.txt
+001_Deploy_SC.pm
+002_Upgrade_SC.pm
+003_Undeploy_SC.pm
+004_Config_Management.pm
+005_User_Management.pm
+006_SC_Healthcheck.pm
+007_Certificate_Management.pm
+008_Rollback_SC.pm
+009_Deploy_cnDSC.pm
+100_Playlist_101-799_For_Ericsson_Internal_Use.txt
+101_Send_Command_Files.pm
+102_Supreme_Certificate_Management.pm
+103_Tools_Management.pm
+200_Playlist_200-299_For_EVNFM_Use.txt
+201_EVNFM_Deploy_SC.pm
+202_EVNFM_List_Packages.pm
+203_EVNFM_List_Instances.pm
+204_EVNFM_Upgrade_SC.pm
+205_EVNFM_Scaling_SC.pm
+300_Playlist_301-399_For_Robustness_Test_Cases.txt
+301_Robustness_Test_Timezone_Change.pm
+302_Robustness_Test_K8s_Master_Restart.pm
+303_Robustness_Test_K8s_Worker_Restart.pm
+304_Robustness_Test_K8s_Worker_Drain.pm
+305_Robustness_Test_Moderate_Network_Impairment.pm
+306_Robustness_Test_Scaling.pm
+800_Playlist_801-899_Potentialy_Dangerous.txt
+801_Time_Shift_Test.pm
+802_ECCD_Installation.pm
+803_Create_Timeshift_Package.pm
+804_Timeshift_Traffic_Setup.pm
+900_Playlist_901-999_Not_To_Be_Called_Directly.txt
+901_Initialize_Job_Environment.pm
+902_Cleanup_Job_Environment.pm
+903_Global_Preprocess.pm
+904_Global_Postprocess.pm
+905_Deploy_Preprocess.pm
+906_Deploy_Postprocess.pm
+907_Upgrade_Preprocess.pm
+908_Upgrade_Postprocess.pm
+909_Execute_Playlist_Extensions.pm
+910_Deploy.pm
+911_Undeploy.pm
+912_Upgrade.pm
+913_Add_Configuration.pm
+914_Collect_Logs.pm
+915_Add_Users.pm
+916_Compare_CRD.pm
+917_Pre_Healthcheck.pm
+918_Post_Healthcheck.pm
+919_Check_Registry_Information.pm
+920_Check_Network_Config_Information.pm
+921_Install_Certificates.pm
+922_Handle_Software_Directory_Files.pm
+923_Rollback.pm
+924_Prepare_Deploy_Upgrade.pm
+925_Handle_Tools_Package.pm
+926_Handle_Docker_Images.pm
+927_Deploy_Upgrade_CRDS.pm
+928_Verify_Deployment.pm
+929_Handle_Secrets.pm
+930_Prepare_Secret_Files.pm
+931_Check_Resource_Usage.pm
+932_Test_Case_Common_Logic.pm
+933_Handle_KPI_Statistics.pm
+934_Prepare_Value_Files.pm
+
+Dependencies:
+-------------
+001_Deploy_SC.pm:
+    Playlist::901_Initialize_Job_Environment::main
+    Playlist::902_Cleanup_Job_Environment::main
+    Playlist::903_Global_Preprocess::main
+        Playlist::909_Execute_Playlist_Extensions::main
+        Playlist::917_Pre_Healthcheck::main
+    Playlist::904_Global_Postprocess::main
+        Playlist::909_Execute_Playlist_Extensions::main
+        Playlist::918_Post_Healthcheck::main
+    Playlist::905_Deploy_Preprocess::main
+        Playlist::909_Execute_Playlist_Extensions::main
+    Playlist::906_Deploy_Postprocess::main
+        Playlist::909_Execute_Playlist_Extensions::main
+    Playlist::910_Deploy::main
+        Playlist::924_Prepare_Deploy_Upgrade::main
+            Playlist::919_Check_Registry_Information::main
+        Playlist::925_Handle_Tools_Package::main
+        Playlist::926_Handle_Docker_Images::main
+        Playlist::927_Deploy_Upgrade_CRDS::main
+            Playlist::916_Compare_CRD::main
+        Playlist::928_Verify_Deployment::main
+        Playlist::929_Handle_Secrets::main
+    Playlist::914_Collect_Logs::main
+    Playlist::920_Check_Network_Config_Information::main
+    Playlist::922_Handle_Software_Directory_Files::main
+    Playlist::930_Prepare_Secret_Files::main
+    Playlist::931_Check_Resource_Usage::main
+    Playlist::934_Prepare_Value_Files::main
+
+002_Upgrade_SC.pm:
+    Playlist::901_Initialize_Job_Environment::main
+    Playlist::902_Cleanup_Job_Environment::main
+    Playlist::903_Global_Preprocess::main
+        Playlist::909_Execute_Playlist_Extensions::main
+        Playlist::917_Pre_Healthcheck::main
+    Playlist::904_Global_Postprocess::main
+        Playlist::909_Execute_Playlist_Extensions::main
+        Playlist::918_Post_Healthcheck::main
+    Playlist::907_Upgrade_Preprocess::main
+        Playlist::909_Execute_Playlist_Extensions::main
+    Playlist::908_Upgrade_Postprocess::main
+        Playlist::909_Execute_Playlist_Extensions::main
+    Playlist::912_Upgrade::main
+        Playlist::924_Prepare_Deploy_Upgrade::main
+            Playlist::919_Check_Registry_Information::main
+        Playlist::925_Handle_Tools_Package::main
+        Playlist::926_Handle_Docker_Images::main
+        Playlist::927_Deploy_Upgrade_CRDS::main
+            Playlist::916_Compare_CRD::main
+        Playlist::928_Verify_Deployment::main
+    Playlist::914_Collect_Logs::main
+    Playlist::919_Check_Registry_Information::main
+    Playlist::920_Check_Network_Config_Information::main
+    Playlist::922_Handle_Software_Directory_Files::main
+    Playlist::933_Handle_KPI_Statistics::main
+    Playlist::934_Prepare_Value_Files::main
+
+003_Undeploy_SC.pm:
+    Playlist::901_Initialize_Job_Environment::main
+    Playlist::902_Cleanup_Job_Environment::main
+    Playlist::911_Undeploy::main
+    Playlist::914_Collect_Logs::main
+    Playlist::920_Check_Network_Config_Information::main
+
+004_Config_Management.pm:
+    Playlist::901_Initialize_Job_Environment::main
+    Playlist::902_Cleanup_Job_Environment::main
+    Playlist::913_Add_Configuration::main
+        Playlist::917_Pre_Healthcheck::main
+        Playlist::918_Post_Healthcheck::main
+    Playlist::914_Collect_Logs::main
+    Playlist::920_Check_Network_Config_Information::main
+
+005_User_Management.pm:
+    Playlist::901_Initialize_Job_Environment::main
+    Playlist::902_Cleanup_Job_Environment::main
+    Playlist::914_Collect_Logs::main
+    Playlist::915_Add_Users::main
+    Playlist::920_Check_Network_Config_Information::main
+
+006_SC_Healthcheck.pm:
+    Playlist::901_Initialize_Job_Environment::main
+    Playlist::902_Cleanup_Job_Environment::main
+    Playlist::917_Pre_Healthcheck::main
+    Playlist::918_Post_Healthcheck::main
+    Playlist::919_Check_Registry_Information::main
+    Playlist::920_Check_Network_Config_Information::main
+
+007_Certificate_Management.pm:
+    Playlist::901_Initialize_Job_Environment::main
+    Playlist::902_Cleanup_Job_Environment::main
+    Playlist::914_Collect_Logs::main
+    Playlist::920_Check_Network_Config_Information::main
+    Playlist::921_Install_Certificates::main
+
+008_Rollback_SC.pm:
+    Playlist::901_Initialize_Job_Environment::main
+    Playlist::902_Cleanup_Job_Environment::main
+    Playlist::914_Collect_Logs::main
+    Playlist::923_Rollback::main
+        Playlist::918_Post_Healthcheck::main
+        Playlist::919_Check_Registry_Information::main
+    return Playlist::920_Check_Network_Config_Information::validate_network_config_parameter($hash_ref);
+
+009_Deploy_cnDSC.pm:
+    Playlist::901_Initialize_Job_Environment::main
+    Playlist::902_Cleanup_Job_Environment::main
+    Playlist::903_Global_Preprocess::main
+        Playlist::909_Execute_Playlist_Extensions::main
+        Playlist::917_Pre_Healthcheck::main
+    Playlist::904_Global_Postprocess::main
+        Playlist::909_Execute_Playlist_Extensions::main
+        Playlist::918_Post_Healthcheck::main
+    Playlist::905_Deploy_Preprocess::main
+        Playlist::909_Execute_Playlist_Extensions::main
+    Playlist::906_Deploy_Postprocess::main
+        Playlist::909_Execute_Playlist_Extensions::main
+    Playlist::910_Deploy::main
+        Playlist::924_Prepare_Deploy_Upgrade::main
+            Playlist::919_Check_Registry_Information::main
+        Playlist::925_Handle_Tools_Package::main
+        Playlist::926_Handle_Docker_Images::main
+        Playlist::927_Deploy_Upgrade_CRDS::main
+            Playlist::916_Compare_CRD::main
+        Playlist::928_Verify_Deployment::main
+        Playlist::929_Handle_Secrets::main
+    Playlist::914_Collect_Logs::main
+    Playlist::920_Check_Network_Config_Information::main
+    Playlist::922_Handle_Software_Directory_Files::main
+    Playlist::930_Prepare_Secret_Files::main
+    Playlist::931_Check_Resource_Usage::main
+    Playlist::934_Prepare_Value_Files::main
+
+101_Send_Command_Files.pm:
+    Playlist::901_Initialize_Job_Environment::main
+    Playlist::902_Cleanup_Job_Environment::main
+
+102_Supreme_Certificate_Management.pm:
+    Playlist::901_Initialize_Job_Environment::main
+    Playlist::902_Cleanup_Job_Environment::main
+    Playlist::914_Collect_Logs::main
+    return Playlist::920_Check_Network_Config_Information::validate_network_config_parameter($hash_ref);
+
+103_Tools_Management.pm:
+    Playlist::901_Initialize_Job_Environment::main
+    Playlist::902_Cleanup_Job_Environment::main
+    Playlist::914_Collect_Logs::main
+    return Playlist::920_Check_Network_Config_Information::validate_network_config_parameter($hash_ref);
+
+201_EVNFM_Deploy_SC.pm:
+    Playlist::901_Initialize_Job_Environment::main
+    Playlist::902_Cleanup_Job_Environment::main
+    Playlist::903_Global_Preprocess::main
+        Playlist::909_Execute_Playlist_Extensions::main
+        Playlist::917_Pre_Healthcheck::main
+    Playlist::904_Global_Postprocess::main
+        Playlist::909_Execute_Playlist_Extensions::main
+        Playlist::918_Post_Healthcheck::main
+    Playlist::905_Deploy_Preprocess::main
+        Playlist::909_Execute_Playlist_Extensions::main
+    Playlist::906_Deploy_Postprocess::main
+        Playlist::909_Execute_Playlist_Extensions::main
+    Playlist::914_Collect_Logs::main
+    Playlist::920_Check_Network_Config_Information::main
+    Playlist::922_Handle_Software_Directory_Files::main
+    Playlist::924_Prepare_Deploy_Upgrade::main
+        Playlist::919_Check_Registry_Information::main
+    Playlist::929_Handle_Secrets::main
+    Playlist::930_Prepare_Secret_Files::main
+    Playlist::931_Check_Resource_Usage::main
+    Playlist::934_Prepare_Value_Files::main
+
+202_EVNFM_List_Packages.pm:
+    Playlist::901_Initialize_Job_Environment::main
+    Playlist::902_Cleanup_Job_Environment::main
+
+203_EVNFM_List_Instances.pm:
+    Playlist::901_Initialize_Job_Environment::main
+    Playlist::902_Cleanup_Job_Environment::main
+
+204_EVNFM_Upgrade_SC.pm:
+    Playlist::901_Initialize_Job_Environment::main
+    Playlist::902_Cleanup_Job_Environment::main
+    Playlist::903_Global_Preprocess::main
+        Playlist::909_Execute_Playlist_Extensions::main
+        Playlist::917_Pre_Healthcheck::main
+    Playlist::904_Global_Postprocess::main
+        Playlist::909_Execute_Playlist_Extensions::main
+        Playlist::918_Post_Healthcheck::main
+    Playlist::905_Upgrade_Preprocess::main
+        Playlist::909_Execute_Playlist_Extensions::main
+    Playlist::906_Upgrade_Postprocess::main
+        Playlist::909_Execute_Playlist_Extensions::main
+    Playlist::914_Collect_Logs::main
+    Playlist::920_Check_Network_Config_Information::main
+    Playlist::922_Handle_Software_Directory_Files::main
+    Playlist::924_Prepare_Deploy_Upgrade::main
+        Playlist::919_Check_Registry_Information::main
+    Playlist::929_Handle_Secrets::main
+    Playlist::930_Prepare_Secret_Files::main
+    Playlist::931_Check_Resource_Usage::main
+    Playlist::934_Prepare_Value_Files::main
+
+205_EVNFM_Scaling_SC.pm:
+    Playlist::901_Initialize_Job_Environment::main
+    Playlist::902_Cleanup_Job_Environment::main
+    Playlist::903_Global_Preprocess::main
+        Playlist::909_Execute_Playlist_Extensions::main
+        Playlist::917_Pre_Healthcheck::main
+    Playlist::904_Global_Postprocess::main
+        Playlist::909_Execute_Playlist_Extensions::main
+        Playlist::918_Post_Healthcheck::main
+    Playlist::914_Collect_Logs::main
+    Playlist::920_Check_Network_Config_Information::main
+    Playlist::922_Handle_Software_Directory_Files::main
+    Playlist::930_Prepare_Secret_Files::main
+    Playlist::931_Check_Resource_Usage::main
+    Playlist::934_Prepare_Value_Files::main
+
+301_Robustness_Test_Timezone_Change.pm:
+    Playlist::902_Cleanup_Job_Environment::main
+    Playlist::914_Collect_Logs::main
+    return Playlist::920_Check_Network_Config_Information::validate_network_config_parameter($hash_ref);
+    Playlist::932_Test_Case_Common_Logic::main
+        Playlist::901_Initialize_Job_Environment::main
+        Playlist::902_Cleanup_Job_Environment::main
+        Playlist::914_Collect_Logs::main
+        Playlist::917_Pre_Healthcheck::main
+        Playlist::918_Post_Healthcheck::main
+        Playlist::920_Check_Network_Config_Information::main
+        Playlist::922_Handle_Software_Directory_Files::main
+        Playlist::933_Handle_KPI_Statistics::main
+
+302_Robustness_Test_K8s_Master_Restart.pm:
+    Playlist::902_Cleanup_Job_Environment::main
+    Playlist::914_Collect_Logs::main
+    return Playlist::920_Check_Network_Config_Information::validate_network_config_parameter($hash_ref);
+    Playlist::932_Test_Case_Common_Logic::main
+        Playlist::901_Initialize_Job_Environment::main
+        Playlist::902_Cleanup_Job_Environment::main
+        Playlist::914_Collect_Logs::main
+        Playlist::917_Pre_Healthcheck::main
+        Playlist::918_Post_Healthcheck::main
+        Playlist::920_Check_Network_Config_Information::main
+        Playlist::922_Handle_Software_Directory_Files::main
+        Playlist::933_Handle_KPI_Statistics::main
+
+303_Robustness_Test_K8s_Worker_Restart.pm:
+    Playlist::902_Cleanup_Job_Environment::main
+    Playlist::914_Collect_Logs::main
+    return Playlist::920_Check_Network_Config_Information::validate_network_config_parameter($hash_ref);
+    Playlist::932_Test_Case_Common_Logic::main
+        Playlist::901_Initialize_Job_Environment::main
+        Playlist::902_Cleanup_Job_Environment::main
+        Playlist::914_Collect_Logs::main
+        Playlist::917_Pre_Healthcheck::main
+        Playlist::918_Post_Healthcheck::main
+        Playlist::920_Check_Network_Config_Information::main
+        Playlist::922_Handle_Software_Directory_Files::main
+        Playlist::933_Handle_KPI_Statistics::main
+
+304_Robustness_Test_K8s_Worker_Drain.pm:
+    Playlist::902_Cleanup_Job_Environment::main
+    Playlist::914_Collect_Logs::main
+    return Playlist::920_Check_Network_Config_Information::validate_network_config_parameter($hash_ref);
+    Playlist::932_Test_Case_Common_Logic::main
+        Playlist::901_Initialize_Job_Environment::main
+        Playlist::902_Cleanup_Job_Environment::main
+        Playlist::914_Collect_Logs::main
+        Playlist::917_Pre_Healthcheck::main
+        Playlist::918_Post_Healthcheck::main
+        Playlist::920_Check_Network_Config_Information::main
+        Playlist::922_Handle_Software_Directory_Files::main
+        Playlist::933_Handle_KPI_Statistics::main
+
+305_Robustness_Test_Moderate_Network_Impairment.pm:
+    Playlist::902_Cleanup_Job_Environment::main
+    Playlist::914_Collect_Logs::main
+    return Playlist::920_Check_Network_Config_Information::validate_network_config_parameter($hash_ref);
+    Playlist::932_Test_Case_Common_Logic::main
+        Playlist::901_Initialize_Job_Environment::main
+        Playlist::902_Cleanup_Job_Environment::main
+        Playlist::914_Collect_Logs::main
+        Playlist::917_Pre_Healthcheck::main
+        Playlist::918_Post_Healthcheck::main
+        Playlist::920_Check_Network_Config_Information::main
+        Playlist::922_Handle_Software_Directory_Files::main
+        Playlist::933_Handle_KPI_Statistics::main
+
+306_Robustness_Test_Scaling.pm:
+    Playlist::902_Cleanup_Job_Environment::main
+    Playlist::914_Collect_Logs::main
+    return Playlist::920_Check_Network_Config_Information::validate_network_config_parameter($hash_ref);
+    Playlist::932_Test_Case_Common_Logic::main
+        Playlist::901_Initialize_Job_Environment::main
+        Playlist::902_Cleanup_Job_Environment::main
+        Playlist::914_Collect_Logs::main
+        Playlist::917_Pre_Healthcheck::main
+        Playlist::918_Post_Healthcheck::main
+        Playlist::920_Check_Network_Config_Information::main
+        Playlist::922_Handle_Software_Directory_Files::main
+        Playlist::933_Handle_KPI_Statistics::main
+
+801_Time_Shift_Test.pm:
+    Playlist::901_Initialize_Job_Environment::main
+    Playlist::902_Cleanup_Job_Environment::main
+    Playlist::914_Collect_Logs::main
+    Playlist::917_Pre_Healthcheck::main
+    Playlist::918_Post_Healthcheck::main
+    Playlist::920_Check_Network_Config_Information::main
+    Playlist::933_Handle_KPI_Statistics::main
+
+802_ECCD_Installation.pm:
+    Playlist::901_Initialize_Job_Environment::main
+    Playlist::902_Cleanup_Job_Environment::main
+    Playlist::904_Global_Postprocess::main
+        Playlist::909_Execute_Playlist_Extensions::main
+        Playlist::918_Post_Healthcheck::main
+
+803_Create_Timeshift_Package.pm:
+    Playlist::901_Initialize_Job_Environment::main
+    Playlist::902_Cleanup_Job_Environment::main
+
+804_Timeshift_Traffic_Setup.pm:
+    Playlist::901_Initialize_Job_Environment::main
+    Playlist::902_Cleanup_Job_Environment::main
+
+903_Global_Preprocess.pm:
+    Playlist::909_Execute_Playlist_Extensions::main
+    Playlist::917_Pre_Healthcheck::main
+
+904_Global_Postprocess.pm:
+    Playlist::909_Execute_Playlist_Extensions::main
+    Playlist::918_Post_Healthcheck::main
+
+905_Deploy_Preprocess.pm:
+    Playlist::909_Execute_Playlist_Extensions::main
+
+906_Deploy_Postprocess.pm:
+    Playlist::909_Execute_Playlist_Extensions::main
+
+907_Upgrade_Preprocess.pm:
+    Playlist::909_Execute_Playlist_Extensions::main
+
+908_Upgrade_Postprocess.pm:
+    Playlist::909_Execute_Playlist_Extensions::main
+
+910_Deploy.pm:
+    Playlist::924_Prepare_Deploy_Upgrade::main
+        Playlist::919_Check_Registry_Information::main
+    Playlist::925_Handle_Tools_Package::main
+    Playlist::926_Handle_Docker_Images::main
+    Playlist::927_Deploy_Upgrade_CRDS::main
+        Playlist::916_Compare_CRD::main
+    Playlist::928_Verify_Deployment::main
+    Playlist::929_Handle_Secrets::main
+
+912_Upgrade.pm:
+    Playlist::924_Prepare_Deploy_Upgrade::main
+        Playlist::919_Check_Registry_Information::main
+    Playlist::925_Handle_Tools_Package::main
+    Playlist::926_Handle_Docker_Images::main
+    Playlist::927_Deploy_Upgrade_CRDS::main
+        Playlist::916_Compare_CRD::main
+    Playlist::928_Verify_Deployment::main
+
+913_Add_Configuration.pm:
+    Playlist::917_Pre_Healthcheck::main
+    Playlist::918_Post_Healthcheck::main
+
+923_Rollback.pm:
+    Playlist::918_Post_Healthcheck::main
+    Playlist::919_Check_Registry_Information::main
+
+924_Prepare_Deploy_Upgrade.pm:
+    Playlist::919_Check_Registry_Information::main
+
+927_Deploy_Upgrade_CRDS.pm:
+    Playlist::916_Compare_CRD::main
+
+932_Test_Case_Common_Logic.pm:
+    Playlist::901_Initialize_Job_Environment::main
+    Playlist::902_Cleanup_Job_Environment::main
+    Playlist::914_Collect_Logs::main
+    Playlist::917_Pre_Healthcheck::main
+    Playlist::918_Post_Healthcheck::main
+    Playlist::920_Check_Network_Config_Information::main
+    Playlist::922_Handle_Software_Directory_Files::main
+    Playlist::933_Handle_KPI_Statistics::main

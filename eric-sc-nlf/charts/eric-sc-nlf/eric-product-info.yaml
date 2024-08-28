@@ -1,0 +1,24 @@
+productName: "NF Lookup Function (eric-sc-nlf)"
+productNumber: "CXC 174 4712"
+images:
+  nlf:
+    productName: "NLF"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: nlf_repo_path
+    name: nlf_image_name
+    tag: nlf_image_tag
+  tapagent:
+    productName: "NLF TAP agent"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: tapagent_repo_path
+    name: tapagent_image_name
+    tag: tapagent_image_tag
+  tlskeylogagent:
+    productName: "SCPNLFTLS Keylog Agent"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: tlskeylogagent_repo_path
+    name: tlskeylogagent_image_name
+    tag: tlskeylogagent_image_tag

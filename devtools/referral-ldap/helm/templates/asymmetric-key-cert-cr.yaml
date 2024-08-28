@@ -1,0 +1,14 @@
+{{- if eq (include "eric-referral-ldap.cr" .) "true" -}}
+{{- if eq (include "eric-referral-ldap.tls" .) "true" -}}
+apiVersion: certm.sec.ericsson.com/v1
+kind: ExternalCertificate
+metadata:
+  name: {{ template "eric-referral-ldap.name" . }}-asymmetric-key-cert
+  labels:
+    app: {{ template "eric-referral-ldap.name" . }}
+spec:
+  generated-secret-name: {{ template "eric-referral-ldap.name" . }}-asymmetric-key-cert-secret
+  generated-secret-type: tls
+  asymmetric-key-certificate-name: {{ .Values.tls.useCr.clientKey }}/{{ .Values.tls.useCr.clientCert }}
+{{- end -}}
+{{- end -}}

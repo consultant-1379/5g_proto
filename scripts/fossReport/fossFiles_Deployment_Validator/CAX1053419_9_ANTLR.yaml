@@ -1,0 +1,38 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2019-07-03 16:00
+FOSS:
+    # Available in Bazaar
+    FOSSName: ANTLR
+    # Available in Bazaar
+    FOSSVersion: 2.7.7
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: http://www.antlr2.org/
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 9/CAX1053419
+    # Not Available in Bazaar
+    PRIMNumber(CTC): CTC 101 5207
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: ANTLR, ANother Tool for Language Recognition, is a language tool that provides a framework for constructing recognizers, interpreters, compilers, and translators from grammatical descriptions containing actions in a variety of target languages. ANTLR provides excellent support for tree construction, tree walking, translation, error recovery, and error reporting.
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: The BSD 3-Clause License NEW
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: The BSD 3-Clause License NEW
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'antlr:antlr:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ENTNGRG Georgios Antoniou

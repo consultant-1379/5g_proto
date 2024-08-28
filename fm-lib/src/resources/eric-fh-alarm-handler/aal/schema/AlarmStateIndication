@@ -1,0 +1,98 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "id": "file://schema/AlarmStateIndication#",
+  "title": "Alarm state indication",
+  "description": "Definition of an alarm state indication",
+  "type": "object",
+  "properties": {
+    "version": {
+      "description": "The semantic version of this schema. It should be <major version>.<minor version>. A change in minor version only is backward compatible.",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$"
+    },
+    "alarmName": {
+      "description": "The name of the alarm.",
+      "type": "string"
+    },
+    "faultyResource": {
+      "description": "The faulty resource which is the cause of this alarm. Identifies a particular instance or resource of the fault.",
+      "type": "string"
+    },
+    "serviceName": {
+      "description": "A string identifying the service.",
+      "type": "string"
+    },
+    "severity": {
+      "description": "The current severity of the alarm. The severity level is proportional to the urgency of the required action.",
+      "type": "string",
+      "enum": [
+        "Clear",
+        "Warning",
+        "Minor",
+        "Major",
+        "Critical"
+      ]
+    },
+    "description": {
+      "description": "Extra information providing further insight about the alarm.",
+      "type": "string"
+    },
+    "eventTime": {
+      "description": "The timestamp of when the alarm was last updated, as microseconds elapsed since 1 Jan 1970 not including leap seconds in UTC.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "additionalInformation": {
+      "description": "Additional alarm information",
+      "type": "object"
+    },
+    "alarmUpdate": {
+      "description": "Alarm update number. Starts with 0 for the alarm raise and is incremented for each alarm update and clear.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "vendor": {
+      "description": "The vendor specifies a private enterprise number maintained by IANA (Internet Assigned Numbers Authority) as listed by the URL http://www.iana.org/assignments/enterprise-numbers/enterprise-numbers. In combination with the code, this provides a unique identification of the alarm type. Value 193 is the Ericsson vendor.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "code": {
+      "description": "The code is an unsigned integer. The combination of this number with the vendor number is unique per alarm type.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "category": {
+      "description": "The event type as defined in X.733/X.736.",
+      "type": "string",
+      "enum": ["Other",
+        "CommunicationsAlarm",
+        "QualityOfServiceAlarm",
+        "ProcessingErrorAlarm",
+        "EquipmentAlarm",
+        "EnvironmentalAlarm",
+        "IntegrityViolation",
+        "OperationalViolation",
+        "PhysicalViolation",
+        "SecurityServiceOrMechanismViolation",
+        "TimeDomainViolation"]
+    },
+    "probableCause": {
+      "description": "Probable cause based on ITU recommendations M.3100, X.733 and X.736, and in ETSI recommendation GSM 12.11. Values are specified in the ERICSSON-ALARM-PC-MIB module (12/155 19-CAA 901 2587/2 Uen A)",
+      "type": "integer",
+      "minimum": 0
+    },
+    "specificProblem": {
+      "description": "The specific problem for the alarm.",
+      "type": "string",
+      "maxLength": 64
+    }
+  },
+  "required": [
+    "version",
+    "alarmName",
+    "serviceName",
+    "severity",
+    "eventTime",
+    "alarmUpdate"
+  ]
+}

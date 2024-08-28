@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "eric-sc-slf.name" . }}-rr
+  labels:
+{{- include "eric-sc-slf.labels" . | indent 4 }}
+    app: {{ template "eric-sc-slf.name" . }}
+  annotations:
+{{- include "eric-sc-slf.helm-annotations" . | indent 4 }}
+{{- include "eric-sc-slf.config-annotations" . | indent 4 }}
+data:
+  {{ template "eric-sc-slf.name" . }}-rr.yml: |
+{{- include "eric-sc-slf.recording-rules" . | indent 4 }}

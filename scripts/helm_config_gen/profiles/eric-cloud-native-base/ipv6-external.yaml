@@ -1,0 +1,14 @@
+global:
+  externalIPv4:
+    enabled: false
+  externalIPv6:
+    enabled: true
+
+eric-fh-snmp-alarm-provider:
+  service:
+    externalIPv6:
+      enabled: false
+
+eric-tm-ingress-controller-cr:
+    externalIPv6:
+      enabled: false

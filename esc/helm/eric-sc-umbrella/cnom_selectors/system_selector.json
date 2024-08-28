@@ -1,0 +1,108 @@
+{
+  "id": "system_selector_config",
+  "sourceType": "prometheus",
+  "generalSelectors": [
+    {
+      "selectorId": "groupSelector",
+      "type": "local",
+      "label": "System group",
+      "placeholder": "Select a system metrics group",
+      "useForLineChartTitle": true,
+      "values": [
+        {
+          "name": "CPU usage in percent",
+          "value": "cpu_usage_percent"
+        },
+        {
+          "name": "CPU usage in cores",
+          "value": "cpu_usage_in_cores"
+        },
+        {
+          "name": "Memory usage in percent",
+          "value": "mem_usage_percent"
+        },
+        {
+          "name": "Memory usage in Mbytes",
+          "value": "mem_usage_mi"
+        }
+      ]
+    },
+    {
+      "selectorId": "podSelector",
+      "type": "remote",
+      "label": "Pod",
+      "placeholder": "Select a pod",
+      "multi": true,
+      "selectAllItem": false,
+      "value": "pod"
+    },
+    {
+      "selectorId": "containerSelector",
+      "type": "remote",
+      "label": "Container",
+      "placeholder": "Select a container",
+      "map": {"groupSelector": "mem_usage_mi"},
+      "multi": true,
+      "value": "container"
+    },
+    {
+      "selectorId": "containerSelector2",
+      "type": "remote",
+      "label": "Container",
+      "placeholder": "Select a container",
+      "map": {"groupSelector": "cpu_usage_in_cores"},
+      "multi": true,
+      "value": "container"
+    },
+    {
+      "selectorId": "containerSelector3",
+      "type": "remote",
+      "label": "Container",
+      "placeholder": "Select a container",
+      "map": {"groupSelector": "mem_usage_percent"},
+      "multi": true,
+      "value": "container"
+    }
+  ],
+  "metricSelector": {
+    "label": "KPI",
+    "placeholder": "Select the metrics",
+    "multi": true,
+    "metrics": [
+      {
+        "map": { "groupSelector": "cpu_usage_percent" },
+        "values": [{"name": "job:pod_cpu_usage_100"}]
+      },
+      {
+        "map": { "groupSelector": "cpu_usage_in_cores" },
+        "values": [
+          {"name": "instance_job:container_cpu_requests_total"},
+          {"name": "instance_job:container_cpu_limits_total"},
+          {"name": "instance_job:container_cpu_usage_total"}
+        ]
+      },
+      {
+        "map": { "groupSelector": "mem_usage_percent" },
+        "values": [
+          {"name": "job:container_memory_usage_100"}
+        ]
+      },
+      {
+        "map": { "groupSelector": "mem_usage_mi" },
+        "values": [
+          {"name": "instance_job:container_memory_limits"},
+          {"name": "instance_job:container_memory_usage"}
+        ]
+      }
+    ]
+  },
+  "unit": {
+    "targetSelector": "groupSelector",
+    "map": {
+      "cpu_usage_percent": " %",
+      "cpu_usage_in_cores": "cores",
+      "mem_usage_percent": " %",
+      "mem_usage_mi": "Mi"
+    }
+  }
+}

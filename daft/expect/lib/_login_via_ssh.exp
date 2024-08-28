@@ -1,0 +1,391 @@
+################################################################################
+#
+#  Author   : eustone, everhel
+#
+#  Revision : 1.13
+#  Date     : 2023-03-02 18:25:48
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2017, 2020, 2022, 2023
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+source [file join [file dirname [info script]] ../lib/_debug_message.exp]
+
+# -----------------------------------------------------------------------------
+# Connect using a normal ssh connection to the node.
+#
+# Input:
+#  - IP-address of the node
+#  - username
+#  - password
+#  - port number, OPTIONAL
+#
+# Output:
+#  - 0: Success
+#    1: Timeout or failure to connect
+#
+proc login_via_ssh {ip user password {port  ""} {new_password ""}} {
+    global spawn_id
+    global timeout
+
+    # Fetch any previously detected prompt and update the local prompt variable
+    global detected_prompt
+    global detected_prompt_raw
+    if {$detected_prompt == ""} {
+        set default_prompt "aPromptThatShouldNeverBeMatched1234567890"
+        set prompt $default_prompt
+    } else {
+        set default_prompt $detected_prompt
+        set prompt $default_prompt
+    }
+
+    set use_special_key 0
+    set possible_signaling_controller_CMYP_prompt 0
+
+    # Login to the node
+    if {$port == ""} {
+        set command "spawn -noecho ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o loglevel=ERROR $user@$ip"
+    } else {
+        set command "spawn -noecho ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o loglevel=ERROR $user@$ip -p $port"
+    }
+
+    debug_message "login_via_ssh: $command"
+    if [catch "$command" reason] {
+        puts "\nSpawn of 'ssh' failed with reason: $reason\n"
+        debug_message "    Spawn of 'ssh' failed with reason: $reason"
+        exit 1
+    }
+    debug_message "    Prompt before login: $prompt"
+
+    set password_cnt 0
+    set new_password_cnt 0
+
+    # Save currently set timeout value
+    set default_timeout $timeout
+
+    set potential_prompt 0
+
+    # Wait for password request from node
+    expect {
+        "ew Password:" {
+            incr new_password_cnt
+            if {$new_password_cnt > 2} {
+                puts "\nAttempted to send the password 2 times without success\n"
+                set timeout $default_timeout
+                return 1
+            }
+            send "$new_password\r"
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt $default_prompt
+
+            exp_continue
+        }
+        "assword:" {
+            incr password_cnt
+            if {$password_cnt > 2} {
+                puts "\nAttempted to send the password 2 times without success\n"
+                set timeout $default_timeout
+                return 1
+            }
+            send "$password\r"
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt $default_prompt
+
+            exp_continue
+        }
+        -re "^Are you sure you want to continue connecting (yes/no(/\[fingerprint\])?)\?" {
+            # OpenSSH 8.0 added the option to use a fingerprint as authentication
+            send "yes\r"
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt $default_prompt
+
+            exp_continue
+        }
+        -re "^Unable to negotiate with .+ no matching key exchange method found. Their offer: diffie-hellman-group1-sha1" {
+            # Unable to login to DMX because of weak algorithm from newer Linux version.
+            # Try specifically with the weak key
+            set use_special_key 1
+
+            exp_continue
+        }
+        "Connection refused" {
+            # We are probably trying to connect to the wrong IP
+            set timeout $default_timeout
+            return 1
+        }
+        -re "^ERICSSON SIGNALING CONTROLLER\r\n" {
+            # Possible CMYP prompt from the signaling controller coming
+            set possible_signaling_controller_CMYP_prompt 1
+
+            # Line received, wait for more
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set prompt $default_prompt
+            set potential_prompt 0
+
+            exp_continue
+        }
+        -re "^SIGNALING CONTROLLER\r\n" {
+            # Possible CMYP prompt from the signaling controller coming
+            set possible_signaling_controller_CMYP_prompt 1
+
+            # Line received, wait for more
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set prompt $default_prompt
+            set potential_prompt 0
+
+            exp_continue
+        }
+        "\n" {
+            # Line received, wait for more
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set prompt $default_prompt
+            set potential_prompt 0
+
+            exp_continue
+        }
+        -re "$prompt$" {
+            if { $prompt == "" } {
+                # Continue looking for prompt
+                exp_continue
+            } else {
+                # Restore timeout value
+                set timeout $default_timeout
+                debug_message "    Prompt detected: $prompt"
+                # Ready for next command
+            }
+        }
+        -re  "(\u005D\u005D\u003E\u005D\u005D\u003E)$" {
+            # NETCONF prompt "]]>]]>"
+            set timeout $default_timeout
+            set prompt $expect_out(1,string)
+            debug_message "    NETCONF Prompt detected: $prompt"
+            # Ready for next command
+        }
+        -re "(\[^\r\n\]+\[$#><\] )$" {
+            # We have received something that looks like a normal Unix prompt
+            set prompt $expect_out(1,string)
+            debug_message "    UNIX Prompt detected: $prompt"
+        }
+        -re "(\[^\r\n\]+\[#\])$" {
+            # We have received something that looks like a CMYP prompt, check one more thing
+            if { $possible_signaling_controller_CMYP_prompt == 1 } {
+                set prompt $expect_out(1,string)
+                debug_message "    SC CMYP Prompt detected: $prompt"
+            } else {
+                # We have received a potential prompt, wait max 1 second for something more to come
+                set timeout 1
+                set potential_prompt 1
+                set prompt $expect_out(1,string)
+                debug_message "    Potential Prompt detected: $prompt"
+
+                exp_continue
+            }
+        }
+        -re "(\[^\r\n\]+)$" {
+            # We have received a potential prompt, wait max 1 second for something more to come
+            set timeout 1
+            set potential_prompt 1
+            set prompt $expect_out(1,string)
+            debug_message "    Potential Prompt detected: $prompt"
+
+            exp_continue
+        }
+        eof {
+            debug_message "    eof detected, use_special_key=$use_special_key"
+            if { $use_special_key == 1 } {
+                # Try a new connection
+                puts "\nFailed to login using default key exchange, trying the weaker 'diffie-hellman-group1-sha1' key\n"
+                set timeout $default_timeout
+            } else {
+                puts "\nWe were unable to login to the node due to lost connection\n"
+                set timeout $default_timeout
+                return 1
+            }
+        }
+        timeout {
+            debug_message "    timeout detected, potential_prompt=$potential_prompt"
+            if { $potential_prompt == 1 } {
+                # Treat this as a success but first restore timeout value
+                set timeout $default_timeout
+            } else {
+                puts "\nWe were unable to login to the node due to a timeout\n"
+                set timeout $default_timeout
+                return 1
+            }
+        }
+    }
+
+    # Restore default timeout value
+    set timeout $default_timeout
+
+    # Update the detected prompt , if needed
+    if {$prompt != $detected_prompt} {
+        # Save the raw prompt before we convert the non-ASCII characters to \uXXXX values
+        set detected_prompt_raw $prompt
+
+        # Convert all non-ASCII and Tcl-significant characters into \u escape sequences by using regsub and subst in combination
+        # Code copied from example on web page: https://www.tcl.tk/man/tcl8.4/TclCmd/regsub.htm
+        set RE {[][{}\$\s\u0100-\uffff]}
+        set substitution {[format \\\\u%04x [scan "\\&" %c]]}
+        debug_message "    Prompt changed from: $default_prompt"
+        set prompt [subst [regsub -all $RE $prompt $substitution]]
+        debug_message "    Prompt changed to:   $prompt"
+
+        set default_prompt $prompt
+        set detected_prompt $prompt
+    }
+
+    if { $use_special_key == 1 } {
+        # Login to the node
+        if {$port == ""} {
+            set command "spawn -noecho ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o loglevel=ERROR -oKexAlgorithms=diffie-hellman-group1-sha1 $user@$ip"
+        } else {
+            set command "spawn -noecho ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o loglevel=ERROR -oKexAlgorithms=diffie-hellman-group1-sha1 $user@$ip -p $port"
+        }
+
+        debug_message "login_via_ssh using special key: $command"
+        if [catch "$command" reason] {
+            puts "\nSpawn of 'ssh' failed with reason: $reason\n"
+            debug_message "    Spawn of 'ssh' failed with reason: $reason"
+            exit 1
+        }
+        debug_message "    Prompt before login: $prompt"
+
+        set password_cnt 0
+
+        set potential_prompt 0
+
+        # Wait for password request from node
+        expect {
+            "assword:" {
+                incr password_cnt
+                if {$password_cnt > 2} {
+                    puts "\nAttempted to send the password 2 times without success\n"
+                    set timeout $default_timeout
+                    return 1
+                }
+                send "$password\r"
+
+                # Restore default timeout value since we have not received the prompt
+                set timeout $default_timeout
+                set potential_prompt 0
+                set prompt $default_prompt
+
+                exp_continue
+            }
+            -re "^Are you sure you want to continue connecting (yes/no(/\[fingerprint\])?)\?" {
+                # OpenSSH 8.0 added the option to use a fingerprint as authentication
+                send "yes\r"
+
+                # Restore default timeout value since we have not received the prompt
+                set timeout $default_timeout
+                set potential_prompt 0
+                set prompt $default_prompt
+
+                exp_continue
+            }
+            "Connection refused" {
+                # We are probably trying to connect to the wrong IP
+                set timeout $default_timeout
+                return 1
+            }
+            "\n" {
+                # Line received, wait for more
+
+                # Restore default timeout value since we have not received the prompt
+                set timeout $default_timeout
+                set potential_prompt 0
+                set prompt $default_prompt
+
+                exp_continue
+            }
+           -re  "$prompt$" {
+                # Restore timeout valye
+                set timeout $default_timeout
+                if { $prompt == "" } {
+                    # Continue looking for prompt
+                    exp_continue
+                } else {
+                    # Ready for next command
+                    debug_message "    Prompt detected: $prompt"
+                }
+            }
+           -re  "(\u005D\u005D\u003E\u005D\u005D\u003E)$" {
+                # NETCONF prompt "]]>]]>"
+                set timeout $default_timeout
+                set prompt $expect_out(1,string)
+                debug_message "    NETCONF Prompt detected: $prompt"
+                # Ready for next command
+            }
+            -re "(\[^\r\n\]+)$" {
+                # We have received a potential prompt, wait max 1 second for something more to come
+                set timeout 1
+                set potential_prompt 1
+                set prompt $expect_out(1,string)
+                debug_message "    Potential Prompt detected: $prompt"
+
+                exp_continue
+            }
+            eof {
+                puts "\nWe were unable to login to the node due to lost connection\n"
+                set timeout $default_timeout
+                debug_message "    eof detected"
+                return 1
+            }
+            timeout {
+                debug_message "    timeout detected, potential_prompt=$potential_prompt"
+                if { $potential_prompt == 1 } {
+                    # Treat this as a success but first restore timeout value
+                    set timeout $default_timeout
+                } else {
+                    puts "\nWe were unable to login to the node due to a timeout\n"
+                    set timeout $default_timeout
+                    return 1
+                }
+            }
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    # Update the detected prompt , if needed
+    if {$prompt != $detected_prompt} {
+        set detected_prompt_raw $prompt
+        # Convert all non-ASCII and Tcl-significant characters into \u escape sequences by using regsub and subst in combination
+        # Code copied from example on web page: https://www.tcl.tk/man/tcl8.4/TclCmd/regsub.htm
+        set RE {[][{}\$\s\u0100-\uffff]}
+        set substitution {[format \\\\u%04x [scan "\\&" %c]]}
+        debug_message "    Prompt changed from: $default_prompt"
+        set prompt [subst [regsub -all $RE $prompt $substitution]]
+        debug_message "    Prompt changed to:   $prompt"
+
+        set detected_prompt $prompt
+    }
+
+    return 0
+}

@@ -1,0 +1,50 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2023-12-20 12:24
+FOSS:
+    # Available in Bazaar
+    FOSSName: gRPC-Java
+    # Available in Bazaar
+    FOSSVersion: V1.60.0
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/grpc/grpc-java/archive/v1.60.0.zip
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 66/CTX1020513
+    # Not Available in Bazaar
+    Primary: Y
+    # Available in Bazaar
+    STAKOCode: Restricted use
+    # Available in Bazaar
+    STAKOReason: Newer version exists
+    # Not Available in Bazaar
+    FunctionalityUsedInTheEricssonProduct: 'The Java gRPC implementation. HTTP/2 based RPC '
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: Apache License 2.0
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency:
+    - 'io.grpc:grpc-api:jar:1.60.0'
+    - 'io.grpc:grpc-context:jar:1.60.0'
+    - 'io.grpc:grpc-core:jar:1.60.0'
+    - 'io.grpc:grpc-grpclb:jar:1.60.0'
+    - 'io.grpc:grpc-netty:jar:1.60.0'
+    - 'io.grpc:grpc-protobuf:jar:1.60.0'
+    - 'io.grpc:grpc-protobuf-lite:jar:1.60.0'
+    - 'io.grpc:grpc-stub:jar:1.60.0'
+    - 'io.grpc:grpc-inprocess:jar:1.60.0'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: XEIRPAP Eirini Papastefanaki

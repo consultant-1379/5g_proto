@@ -1,0 +1,2 @@
+#!/bin/sh
+java -jar /usr/local/swagger-3.3.0/swagger-codegen-cli.jar $*

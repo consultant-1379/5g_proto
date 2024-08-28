@@ -1,0 +1,44 @@
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.1
+#  Date     : 2023-11-22 18:41:59
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2023
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+################################################################################
+# This file is used by the daft_sequencer.pl script and it contains commands to
+# be executed one-after-another.
+#
+# The file will case the execution to sleep for a specified amount of time.
+#
+# NOTE:
+# This should be executed on the node.
+################################################################################
+
+# Environment variables
+# ---------------------
+ENVIRONMENT_VARIABLE: DAFT_SLEEP_PARAMETERS="minutes=30 message='Waiting between executing commands'"
+
+# Script variables
+# ----------------
+# Always stop on error when executing these commands
+SCRIPT_VARIABLE: stop-on-error=yes
+
+# Execute commands
+# ----------------
+
+# Sleep a specified amount of time
+IF_NOT_ENVIRONMENT_VAR DAFT_SLEEP_PARAMETERS="(hours|minutes|seconds)=0" SLEEP_WITH_PROGRESS: $DAFT_SLEEP_PARAMETERS

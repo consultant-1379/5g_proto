@@ -1,0 +1,373 @@
+#!/usr/bin/expect
+
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.2
+#  Date     : 2024-01-16 17:32:37
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2022, 2024
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# ------------------------------- Procedures ----------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+
+# -----------------------------------------------------------------------------
+# Show syntax and help information.
+# Input:
+#  -
+#
+# Output:
+#  -
+#
+proc show_syntax {} {
+    global argv0
+
+    #              1         2         3         4         5         6         7         8
+    #     12345678901234567890123456789012345678901234567890123456789012345678901234567890
+    puts "This script connects to the CMYP IP address via CLI and imports a backup of the"
+    puts "configuration data from an external SFTP server."
+    puts ""
+    puts ""
+    puts "syntax:"
+    puts "======="
+    puts ""
+    puts "  $argv0 <mandatory> <optional>"
+    puts ""
+    puts "<mandatory> is:"
+    puts "  --ip=<IP address to the node via SSH>"
+    puts "  --password=<password for login>"
+    puts "  --sftp-password=<password to sftp server>"
+    puts "  --sftp-url=<url to sftp server file>"
+    puts "  --user=<username for login>"
+    puts ""
+    puts "<optional> is one or more of the following:"
+    puts "  --debug"
+    puts "  --help"
+    puts "  --port=<port number>"
+    puts "  --timeout=<seconds>"
+    puts ""
+    puts "Where:"
+    puts ""
+    puts "  --debug"
+    puts "    Shows extra debug messages."
+    puts ""
+    puts "  --help"
+    puts "    Shows this help information."
+    puts ""
+    puts "  --ip=<IP address to the node via SSH>"
+    puts "    Set the IP-address to use for connecting to the node, the connection is"
+    puts "    done using the SSH protocol."
+    puts ""
+    puts "  --password=<password for login>"
+    puts "    Set the user password to use for connecting to the node, the connection is"
+    puts "    done using the SSH protocol."
+    puts ""
+    puts "  --port=<port number>"
+    puts "    Set the port number to use for connecting to the node."
+    puts "    If not specified then the default value used would be '22'."
+    puts ""
+    puts "  --sftp-password=<password to sftp server>"
+    puts "    Set the password to use for login to the SFTP server as given by --sftp-url path."
+    puts ""
+    puts "  --sftp-url=<url to sftp server>"
+    puts "    Set the URL to import the backup from. It should include user name and the whole"
+    puts "    URL path to reach the SFTP server file to import."
+    puts "    Example: --sftp-url user@some-sftp-server.com:22/path/on/server/filename.tar.gz"
+    puts ""
+    puts "  --timeout=<seconds>"
+    puts "    Set the timeout value to use when sending a command to the node before a"
+    puts "    printout is returned back by the node."
+    puts "    If nothing is returned back from the node within this time frame or"
+    puts "    if the node prompt is not returned back after the last printout then it"
+    puts "    is considered as a failure."
+    puts "    For long executing commands that takes longer than the default (1200) seconds"
+    puts "    to produce any printouts, set this parameter to a higher value."
+    puts "    Default is '1200' seconds if not specified."
+    puts ""
+    puts "  --user=<username for login>"
+    puts "    Set the user name to use for connecting to the node, the connection is"
+    puts "    done using the SSH protocol."
+    puts ""
+    puts ""
+    puts "Examples:"
+    puts "========="
+    puts ""
+    puts "Example 1:"
+    puts "Export a backup using a specific name."
+    puts ""
+    puts "  $argv0 --user=expert --ip=10.221.168.105 --user=expert --password=rootroot --sftp-password=admin --sftp-url=admin@10.10.10.49:30623/data/backups/DEFAULT/backup1-2022-11-23T14:34:01.525148Z.tar.gz"
+    puts ""
+    puts ""
+    puts "The script returns:"
+    puts "==================="
+    puts ""
+    puts " 0: Successful termination"
+    puts " 1: Unsuccessful termination"
+    puts " 2: Unsuccessful login"
+    puts ""
+}
+
+source [file join [file dirname [info script]] ../lib/_error_message.exp]
+source [file join [file dirname [info script]] ../lib/_exit_all.exp]
+source [file join [file dirname [info script]] ../lib/_exit_with_error_message.exp]
+source [file join [file dirname [info script]] ../lib/_get_shell_type.exp]
+source [file join [file dirname [info script]] ../lib/_login_via_ssh.exp]
+
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# ----------------------------- Main code loop --------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+
+# increased the default timeout to 1200 in order to let the long-running MAPIWF extension execute
+# Set timeout value in seconds to use for waiting for the expected string
+set timeout 1200
+
+# Initialize the global error counter
+set errorcnt 0
+
+# Initialize debug_list for the scripts that need it
+set debug_list {}
+
+set backup_name ""
+set current_time [clock seconds]
+set debug_messages 0
+set detected_prompt ""
+set error_line ""
+set ignore_errors 0
+set ip ""
+set shell ""
+set param ""
+set password ""
+set port ""
+set sftp_password ""
+set sftp_url ""
+set user ""
+
+# Parse all command line parameters
+foreach cmd_arg $argv {
+    append all_args $cmd_arg " "
+
+    # --help
+    if {[regexp "^(\-\-help)$" $cmd_arg junk param] == 1} {
+        show_syntax
+        exit 1
+
+    # --debug
+    } elseif {[regexp "^(\-\-debug)$" $cmd_arg junk param] == 1} {
+        set debug_messages 1
+
+    # --ip=
+    } elseif {[regexp "^(\-\-ip)=(.+)" $cmd_arg junk param value] == 1} {
+        set ip $value
+
+    # --password=
+    } elseif {[regexp "^(\-\-password)=(.+)" $cmd_arg junk param value] == 1} {
+        set password $value
+
+    # --port=
+    } elseif {[regexp "^(\-\-port)=(.+)" $cmd_arg junk param value] == 1} {
+        set port $value
+
+    # --sftp-password=
+    } elseif {[regexp "^(\-\-sftp-password)=(.+)" $cmd_arg junk param value] == 1} {
+        set sftp_password $value
+
+    # --sftp-url=
+    } elseif {[regexp "^(\-\-sftp-url)=(.+)" $cmd_arg junk param value] == 1} {
+        set sftp_url $value
+
+    # --timeout=
+    } elseif {[regexp "^(\-\-timeout)=(.+)" $cmd_arg junk param value] == 1} {
+        set timeout $value
+
+    # --user=
+    } elseif {[regexp "^(\-\-user)=(.+)" $cmd_arg junk param value] == 1} {
+        set user $value
+
+    } else {
+        exit_with_error_message 1 "Unknown parameter \"$cmd_arg\" detected, use parameter --help to see syntax"
+    }
+}
+
+# Check consistency of the parameters
+if {$ip != ""} {
+    if {$user == ""} {
+        exit_with_error_message 1 "Missing parameter --user="
+    }
+    if {$password == ""} {
+        exit_with_error_message 1 "Missing parameter --password="
+    }
+} else {
+    exit_with_error_message 1 "Missing parameter --ip="
+}
+
+# Check if sftp-password is specified.
+if {$sftp_password == ""} {
+    exit_with_error_message 1 "Missing parameter --sftp-password="
+}
+
+# Check if sftp-url is specified.
+if {$sftp_url == ""} {
+    exit_with_error_message 1 "Missing parameter --sftp-url="
+}
+
+# Workaround for problem which happens when this script is run as part of the
+# DAFT server playlist which runs the script using a terminal type "dumb" which
+# causes the CLISS to not show any prompt which causes all sent commands to
+# time out.
+# The workaround is to trick the terminal to use a terminal type of "xterm" which
+# at least seems to return back a proper CLISS prompt.
+set env(TERM) "xterm"
+
+# Connect to the node
+if {[login_via_ssh $ip $user $password $port] > 0} {
+    # Some error have occurred
+    if { $port != "" } {
+        exit_with_error_message 2 "Unable to login to node via SSH at IP address $ip and port $port"
+    } else {
+        exit_with_error_message 2 "Unable to login to node via SSH at IP address $ip"
+    }
+}
+
+# Determine what kind of shell we have connected to
+set shell_type [get_shell_type]
+
+if {$shell_type != "CMYP-CLI"} {
+    # CLISS
+    # CMXB-LINUX
+    # CYGWIN
+    # DIRECTOR-LINUX
+    # DMX
+    # GEP-LINUX
+    # GEP-SIGNMCLI
+    # ISS
+    # LINUX
+    # NETCONF
+    # SCXB-LINUX-BSP
+    # SCXB-LINUX-DMX
+    # UNKNOWN
+    exit_all
+    exit_with_error_message 1 "Unable to determine the shell type or not supported shell type ($shell_type)"
+}
+
+# Show previous stored backups
+send -- "show brm backup-manager DEFAULT backup | nomore\r"
+expect -re "$detected_prompt$"
+
+# Start backup
+set progress_number ""
+send -- "brm backup-manager DEFAULT import-backup uri sftp://$sftp_url password $sftp_password\r"
+expect {
+    -re "return-value (\[0-9\]+)\r*\n" {
+        set progress_number $expect_out(1,string)
+        exp_continue
+    }
+    -re "$detected_prompt$"
+}
+
+if {$progress_number == ""} {
+    exit_all
+    exit_with_error_message 1 "Backup import failed or did not start"
+}
+
+# Check progress of backup export, wait a max of 5 minutes
+# This is an example of what we are waiting for:
+#show brm backup-manager DEFAULT progress-report 41811
+#progress-report 41811
+# action-name                EXPORT
+#  additional-info            [ "Exported Backup: myBackup-2021-05-05T09:37:31.401196Z.tar.gz" ]
+#  progress-percentage        100
+#  result                     success
+#  state                      finished
+#  time-action-started        2021-05-06T15:38:43.409+00:00
+#  time-action-completed      2021-05-06T15:38:44.661+00:00
+#  time-of-last-status-update 2021-05-06T15:38:44.661+00:00
+#expert@5gc-sc-testnode#
+
+set counter 0
+set result ""
+set state ""
+while { $counter < 60 } {
+    sleep 5
+    incr counter
+
+    send -- "show brm backup-manager DEFAULT progress-report $progress_number | nomore\r"
+
+    expect {
+        -re "^\[ \]+result\[ \]+(\[^\r\n\]+)\r*\n" {
+            set result $expect_out(1,string)
+            exp_continue
+        }
+        -re "^\[ \]+state\[ \]+(\[^\r\n\]+)\r*\n" {
+            set state $expect_out(1,string)
+            exp_continue
+        }
+        -re "\n" {
+            # A new line that did not match any lines above
+            exp_continue
+        }
+        -re "$detected_prompt$"
+    }
+
+    # puts "\n-------- DBG ----------------------------------\nresult=$result\nresult_info=$result_info\nstate=$state\n-----------------------------------------------\n"
+
+    if {$state == "finished"} {
+        # The backup export has finished
+        break
+    }
+}
+
+if {$result == "success"} {
+    # The export was successful
+    puts "\n********************************\n* Backup import was successful *\n********************************\n"
+
+    # Show previous stored backups
+    send -- "show brm backup-manager DEFAULT backup | nomore\r"
+    expect -re "$detected_prompt$"
+} else {
+    exit_all
+    exit_with_error_message 1 "Backup import failed and did not return back 'state success' within 5 minutes"
+}
+
+# Time to exit out of the node, send exit or end until the connection is dropped
+exit_all
+
+# Check for any errors
+if {$errorcnt > 0} {
+    exit_with_error_message 1 "Error Counter = $errorcnt"
+} else {
+    puts ""
+    if { $debug_messages == 1 } {
+        if { [info exists debug_list] } {
+            if { [llength $debug_list] > 0 } {
+                puts "\nThe information printed below can be used as trouble shooting help to find out why the script failed but is probably only useful for the developers of the script.\nThe following events has been seen:"
+                puts "-----------------------------------------------------"
+                foreach line $debug_list {
+                    puts "$line"
+                }
+                puts "-----------------------------------------------------"
+                puts ""
+            }
+        }
+    }
+    exit 0
+}

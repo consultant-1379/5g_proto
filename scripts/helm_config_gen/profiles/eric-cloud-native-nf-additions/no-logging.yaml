@@ -1,0 +1,29 @@
+## Feature Description:
+## 1) All container logs are sent to stdout
+## 2) CNOM log viewer is disabled
+
+## Note:
+## 1) This profile is used only for resource reduction in local deployments
+## 2) The direct, indirect and dual log streaming profiles are used in production
+
+global:
+  log:
+    streamingMethod: "indirect"
+  logShipper:
+    deployment:
+      type: ""
+
+eric-cnom-server:
+  searchEngine:
+    tls:
+      enabled: false
+  features:
+    logViewer: false
+
+eric-cm-yang-provider:
+  cliExtensionCmds:
+    showAlarmsHistory:
+      enabled: false
+
+eric-cloud-native-nf-additions-log-shipper:
+  enabled: false

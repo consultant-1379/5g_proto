@@ -1,0 +1,38 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2019-07-02 12:24
+FOSS:
+    # Available in Bazaar
+    FOSSName: jackson-databind
+    # Available in Bazaar
+    FOSSVersion: 2.9.6
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/FasterXML/jackson-databind/archive/jackson-databind-{{FOSSVersion}}.zip
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 58/CAX1056155
+    # Not Available in Bazaar
+    PRIMNumber(CTC): CTC 101 5280
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: This project contains the general-purpose data-binding functionality and tree-model for Jackson Data Processor. It builds on core streaming parser/generator package, and uses Jackson Annotations for configuration.
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: Apache License 2.0
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'com.fasterxml.jackson.core:jackson-databind:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ENTNGRG Georgios Antoniou

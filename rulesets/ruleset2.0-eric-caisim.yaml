@@ -1,0 +1,95 @@
+modelVersion: 2.0
+
+import:
+  base: ruleset2.0-eric-base.yaml
+
+description: "cai sumulator tool for asih testing"
+
+properties:
+  - CAI_NAME: eric-caisim
+  - EXPORT_DIR: ${base.OUTPUT_DIR}/export-cai
+  
+env:
+ - BOB_FORCE_IMAGE_PULL (default=false)
+ - RELEASE (default=false)
+
+var:
+ - cai-version
+
+rules:
+  init:
+    - task: base.init:create-output-dir
+    - task: base.init:set-namespace
+    - task: base.init:set-kube-config
+    - task: base.init:api-tokens
+    - task: cai-version
+      docker-image: base.adp-release-auto
+      cmd: generate-version --is-release ${env.RELEASE} --output cai-version
+
+  image:
+    - task: build-cai
+      cmd: docker build ./simulators/caisim/
+           --file simulators/caisim/Dockerfile
+           --build-arg CBOS_REPO=${base.CBOS_REPO}
+           --build-arg DOCKER_BASE_IMG=${base.CBOS_ZYPPER_IMG}
+           --tag ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${CAI_NAME}:${var.cai-version}
+           
+  lint:
+    - task: helm-cai
+      docker-image: base.helm-builder
+      cmd: helm simulators/caisim/helm
+
+  package:
+    - task: helm-chart-cai
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "mkdir -p ${base.OUTPUT_DIR}/${CAI_NAME}; cp -r simulators/caisim/helm/* ${base.OUTPUT_DIR}/${CAI_NAME};
+           update_values.rb ${base.OUTPUT_DIR}/${CAI_NAME}/values.yaml
+           imageCredentials:registry:url=${base.DOCKER_REGISTRY_URL} imageCredentials:repoPath=${base.DOCKER_REPO_PATH}/${env.base.USER}
+           images:simulator:name=${CAI_NAME} images:simulator:tag=${var.cai-version} > ${base.OUTPUT_DIR}/${CAI_NAME}/values.tmp.yaml;
+           mv ${base.OUTPUT_DIR}/${CAI_NAME}/values.tmp.yaml ${base.OUTPUT_DIR}/${CAI_NAME}/values.yaml;
+           helm package --version ${var.cai-version} --app-version ${var.cai-version} ${base.OUTPUT_DIR}/${CAI_NAME}/ -d ${base.OUTPUT_DIR}/";
+
+  push:
+    - task: docker-image-cai
+      cmd: docker push ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${CAI_NAME}:${var.cai-version}
+    - task: helm-chart-cai
+      cmd: "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\" --upload-file ${base.OUTPUT_DIR}/${CAI_NAME}-${var.cai-version}.tgz \"${base.HELM_CHART_REPO}/${CAI_NAME}-${var.cai-version}.tgz\""
+
+  deploy:
+    - task: deploy-cai
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"        
+      cmd: /bin/bash -c 'helm install ${CAI_NAME}-${env.base.USER} --namespace ${var.base.namespace} ${base.OUTPUT_DIR}/${CAI_NAME}-${var.cai-version}.tgz'
+
+  undeploy:
+    - task: undeploy-cai
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm" 
+      cmd: helm uninstall ${CAI_NAME}-${env.base.USER} --namespace ${var.base.namespace} 
+      
+  export:
+    - task: clean:export
+    - task: folders
+      cmd: /bin/bash -c "mkdir -p ${EXPORT_DIR}; mkdir -p ${EXPORT_DIR}/helm; mkdir -p ${EXPORT_DIR}/docker";      
+    - task: helm
+      cmd: /bin/bash -c 'cp ${base.OUTPUT_DIR}/${CAI_NAME}-${var.cai-version}.tgz ${EXPORT_DIR}/helm';
+    - task: image
+      cmd: /bin/bash -c 'docker save ${base.DOCKER_REGISTRY_URL}/${base.DOCKER_REPO_PATH}/${env.base.USER}/${CAI_NAME}:${var.cai-version} > ${EXPORT_DIR}/docker/${CAI_NAME}-${var.cai-version}.tar';
+
+  clean:
+    - task: export
+      cmd: rm -rf ${EXPORT_DIR}
+    - task: helm
+      cmd:
+        - rm -f ${base.OUTPUT_DIR}/${CAI_NAME}-*.tgz
+        - rm -rf ${base.OUTPUT_DIR}/${CAI_NAME}
+    - task: templates-cai
+      cmd: rm -rf ${base.OUTPUT_DIR}/${CAI_NAME}/templates/*.yaml
+    - task: version
+      cmd: rm -f ${base.OUTPUT_DIR}/var.cai-version

@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "eric-sepp.name" . }}-manager-loglevel
+  labels:
+{{- include "eric-sepp.labels" . | indent 4 }}
+    app: {{ template "eric-sepp.name" . }}-manager
+  annotations:
+{{- include "eric-sepp.helm-annotations" . | indent 4 }}
+{{- include "eric-sepp.config-annotations" . | indent 4 }}
+data:
+  logcontrol.json: |-
+    [
+        {
+          "container": "eric-sepp-manager",
+          "severity": {{ .Values.log.manager.level | quote }}
+        },
+        {
+          "container": "license-consumer",
+          "severity": {{ .Values.log.licenseConsumer.level | quote }}
+        }{{- if eq (include "eric-sepp.tapagent.manager.enabled" .) "true" }},
+        {
+          "container": "tlskeylogagent",
+          "severity": {{ .Values.log.tlskeylogagent.level | quote }}
+        }{{- end }}
+    ]

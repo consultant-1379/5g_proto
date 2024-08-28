@@ -1,0 +1,10 @@
+
+Installation of "{{ .Chart.Name }}" is complete and the deployment is named "{{ .Release.Name }}" in the namespace "{{ .Release.Namespace }}".
+
+To delete EJBCA deployment:
+
+    helm delete --purge {{ .Release.Name }}
+
+The User Interface can be accessed via the URL: {{ .Values.ingress.host }}
+
+It may take a few minutes before the page is available

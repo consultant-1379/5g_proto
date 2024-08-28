@@ -1,0 +1,285 @@
+#!/bin/bash -e
+echo "--"
+echo $1
+echo "--"
+
+if ( ! $1 );
+then
+   echo "SCP != true, SCP is not deployed: no need to load SCP config"
+   exit  0;
+fi;
+
+
+export SUFFIXES="0 -external -ipv4 -ipv6";
+echo $SUFFIXES;
+
+##################
+# Extract CMM_IP #
+##################
+export SVC_BASE_NAME="eric-cm-yang-provider";
+
+for SUFFIX in $SUFFIXES;
+do
+    export VSUF=$(echo $SUFFIX | tr 'a-z,-' 'A-Z,_' );
+    export SVC_NAME="${SVC_BASE_NAME}${SUFFIX}";
+    export SVC_AVAIL=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE}`;
+
+    if [ "${SVC_AVAIL}" != "" ];
+    then
+        ################################
+        # Determining the Service Type #
+        ################################
+
+        export SVC_TYPE=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o 'jsonpath={.spec.type}'`;
+
+        if [ "${SVC_TYPE}" == "LoadBalancer" ];
+        then
+
+            export CMM_IP$VSUF=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o jsonpath='{.status.loadBalancer.ingress[*].ip}'`;
+            export CMM_PORT$VSUF=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"netconf\")].port}"`;
+
+            if [ "${CMM_IP}$VSUF" == "" ];
+            then
+                echo "LoadBalancer seems to be in state <Pending> due to port conflicts on 80 or 443. Falling back to combination of <NodeIP>:<NodePort>.";
+                export CMM_IP$VSUF=`kubectl get nodes --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -l '!node-roleEscTestPropertiesrnetes.io/master' -o jsonpath='{.items[0].status.addresses[?(@.type == "InternalIP" )].address}'`;
+                export CMM_PORT$VSUF=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"netconf\")].nodePort}"`;
+            fi;
+
+        elif [ "${SVC_TYPE}" == "NodePort" ];
+        then
+
+            export CMM_IP$VSUF=`kubectl get nodes --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -l '!node-roleEscTestPropertiesrnetes.io/master' -o jsonpath='{.items[0].status.addresses[?(@.type == "InternalIP" )].address}'`;
+            export CMM_PORT$VSUF=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"netconf\")].nodePort}"`;
+
+        else
+
+                echo "Error: The service seems not to be accessible from outside the cluster."; exit 1;
+        fi;
+    fi;
+
+done;
+
+#####################
+# Extract SCP Ports #
+#####################
+export SVC_BASE_NAME="eric-scp-worker";
+
+for SUFFIX in $SUFFIXES;
+do
+    if [ "$SUFFIX" == "0" ];
+    then
+        export SUFFIX="";
+    fi;
+
+    export VSUF=$(echo $SUFFIX | tr 'a-z,-' 'A-Z,_' );
+    export SVC_NAME="${SVC_BASE_NAME}${SUFFIX}";
+    export SVC_AVAIL=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE}`;
+
+    if [ "${SVC_AVAIL}" != "" ];
+    then
+        ################################
+        # Determining the Service Type #
+        ################################
+
+        export SVC_TYPE=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o 'jsonpath={.spec.type}'`;
+
+        if [ "${SVC_TYPE}" == "LoadBalancer" ];
+        then
+
+            export SCP_IP$VSUF=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o jsonpath='{.status.loadBalancer.ingress[*].ip}'`;
+            export SCP_WRKR_PORT$VSUF=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"unencrypted-port\")].port}"`;
+            export SCP_WRKR_TLS_PORT$VSUF=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"encrypted-port\")].port}"`;
+
+            if [ "${CSA_IP}$VSUF" == "" ];
+            then
+                echo "LoadBalancer seems to be in state <Pending> due to port conflicts on 80 or 443. Falling back to combination of <NodeIP>:<NodePort>.";
+                export SCP_IP$VSUF=`kubectl get nodes --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -l '!node-roleEscTestPropertiesrnetes.io/master' -o jsonpath='{.items[0].status.addresses[?(@.type == "InternalIP" )].address}'`;
+                export SCP_WRKR_PORT$VSUF=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"unencrypted-port\")].nodePort}"`;
+                export SCP_WRKR_TLS_PORT$VSUF=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"encrypted-port\")].nodePort}"`;
+            fi;
+
+        elif [ "${SVC_TYPE}" == "NodePort" ];
+        then
+
+            export SCP_IP$VSUF=`kubectl get nodes --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -l '!node-roleEscTestPropertiesrnetes.io/master' -o jsonpath='{.items[0].status.addresses[?(@.type == "InternalIP" )].address}'`;
+            export SCP_WRKR_PORT$VSUF=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"unencrypted-port\")].nodePort}"`;
+            export SCP_WRKR_TLS_PORT$VSUF=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"encrypted-port\")].nodePort}"`;
+
+        else
+
+                echo "Error: The service seems not to be accessible from outside the cluster."; exit 1;
+        fi;
+    fi;
+
+done;
+
+if [ "$IP_VERSION" == "6" ];
+then
+    export DEFAULTCONFIG="./Jenkins/PipeConfig/sample_config_scp.netconf";
+    export CMM_IP="${CMM_IP_IPV6}";
+    export CMM_PORT="${CMM_PORT_IPV6}";
+    export SCP_WRKR_IP="${SCP_WRKR_IP_IPV6}";
+    export SCP_WRKR_PORT="${SCP_WRKR_PORT_IPV6}";
+    export SCP_WRKR_TLS_PORT="${SCP_WRKR_TLS_PORT_IPV6}";
+else
+    export DEFAULTCONFIG="./Jenkins/PipeConfig/sample_config_scp.netconf"
+    if [ ! -z ${CMM_IP_IPV4} ] && [ ! -z ${SCP_WRKR_PORT_IPV4} ];
+    then
+            export CMM_IP="${CMM_IP_IPV4}";
+            export CMM_PORT="${CMM_PORT_IPV4}";
+            export SCP_WRKR_IP="${SCP_WRKR_IP_IPV4}";
+            export SCP_WRKR_PORT="${SCP_WRKR_PORT_IPV4}";
+            export SCP_WRKR_TLS_PORT="${SCP_WRKR_TLS_PORT_IPV4}";
+    else
+
+            export CMM_IP="${CMM_IP_EXTERNAL}";
+            export CMM_PORT="${CMM_PORT_EXTERNAL}";
+            export SCP_WRKR_IP="${SCP_WRKR_IP}";
+            export SCP_WRKR_PORT="${SCP_WRKR_PORT}";
+            export SCP_WRKR_TLS_PORT="${SCP_WRKR_TLS_PORT}";
+    fi;
+fi;
+
+echo http://$CMM_IP:$CMM_PORT
+echo SCP:$SCP_WRKR_IP:$SCP_WRKR_PORT
+
+sleep 3
+#################
+# Load Config ###
+#################
+
+pwd
+sed "s/<SCP_WRKR_IP>/$SCP_WRKR_IP/g" ./Jenkins/PipeConfig/sample_config_scp.netconf > tempConfig.netconf
+sed -i "s/<SCP_WRKR_PORT>/$SCP_WRKR_PORT/g" tempConfig.netconf
+
+/usr/bin/expect <( cat << EOS
+
+exp_internal 0
+set timeout 120
+
+spawn ssh -t -p $CMM_PORT scp-admin@$CMM_IP -s netconf
+
+expect {
+        "continue connecting (yes/no" {
+        send "yes\r"
+        expect "*Password: "
+        send "scpscp\r" }
+
+        "*Password: " {
+        send "scpscp\r" }
+        }
+
+sleep 10
+
+expect "]]>]]>"
+
+send [ exec cat ./Jenkins/PipeConfig/hello.netconf ]
+
+set foundOk "false"
+set wait_time 2
+set timeout 20
+
+send_user "This is the value of foundOK: \$foundOk ##### Zing ####"
+
+while { [string compare \$foundOk "false"] == 0 } {
+
+	send_user " Now in the while loop ###### Zong ####### "
+        send_user "The value of foundOk is: \$foundOk"
+
+	send [ exec cat tempConfig.netconf ]
+        sleep 8
+	expect {
+                 "<ok/></rpc-reply>]]>]]>" {
+			set foundOk "true" }
+
+                 "</rpc-error></rpc-reply>]]>]]>" {
+                        puts "Received an error while loading the configuration. Exiting" }
+               }
+
+        send_user " The waiting time is: \$wait_time "
+
+        sleep \$wait_time
+        set wait_time "[expr 2 * \$wait_time]"
+
+        if { \$wait_time > 128 } {
+           send_user " Waiting Time exceed 4 min. The deploy will be aborted. Please check the ADP logs. "
+           send [ exec cat ./Jenkins/PipeConfig/close.netconf ]
+	   expect "]]>]]>"
+           exit 1
+        }
+}
+
+send [ exec cat ./Jenkins/PipeConfig/close.netconf ]
+expect "]]>]]>"
+
+EOS
+)
+
+rm -rf tempConfig.netconf
+
+sleep 9
+##################
+# Check Config ###i
+##################
+#cat ./Jenkins/PipeConfig/hello.netconf > tempConfig.netconf
+cat ./Jenkins/PipeConfig/getConfScp.netconf >> tempConfig.netconf
+
+/usr/bin/expect <( cat << EOS
+exp_internal 0
+set timeout 120
+
+spawn ssh -t -p $CMM_PORT scp-admin@$CMM_IP -s netconf
+
+expect {
+        "continue connecting (yes/no" {
+        send "yes\r"
+        expect "*Password: "
+        send "scpscp\r" }
+
+        "*Password: " {
+        send "scpscp\r" }
+        }
+
+sleep 10
+
+expect "]]>]]>"
+
+send [ exec cat ./Jenkins/PipeConfig/hello.netconf ]
+
+set foundOk "false"
+set wait_time 2
+set timeout 20
+
+while { [string compare \$foundOk "false"] == 0 } {
+
+	send [ exec cat tempConfig.netconf ]
+        sleep 8
+	expect {
+		"</scp-function></data></rpc-reply>]]>]]>" {
+				set foundOk "true"
+			}
+		"<data></data></rpc-reply>]]>]]>" {
+				puts "No config found. Aborting."
+			}
+	       }
+
+	sleep \$wait_time
+	set wait_time "[expr 2 * \$wait_time]"
+
+
+        if { \$wait_time > 128 } {
+           send_user "Waiting Time exceed 4 min. The deploy will be aborted. Please check the ADP logs."
+           send [ exec cat ./Jenkins/PipeConfig/close.netconf ]
+           expect "]]>]]>"
+           exit 1
+        }
+
+}
+
+send [ exec cat ./Jenkins/PipeConfig/close.netconf ]
+expect "]]>]]>"
+
+EOS
+)
+
+rm -rf tempConfig.netconf

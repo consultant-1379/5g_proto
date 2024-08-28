@@ -1,0 +1,163 @@
+<?xml version="1.0"?>
+<hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <capabilities>
+    <capability>urn:ietf:params:netconf:base:1.0</capability>
+  </capabilities>
+</hello>
+]]>]]>
+<rpc message-id="1" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+<edit-config>
+    <target>
+        <running/>
+    </target>
+    <config xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+        <system xmlns="urn:ietf:params:xml:ns:yang:ietf-system">
+            <authentication>
+               <user>
+                   <name>user1</name>
+                   <password>rootroot</password>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">scp-admin</groups>
+               </user>
+               <user>
+                   <name>user2</name>
+                   <password>rootroot</password>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">bsf-admin</groups>
+               </user>
+               <user>
+                   <name>user3</name>
+                   <password>rootroot</password>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">sepp-admin</groups>
+               </user>
+               <user>
+                   <name>user4</name>
+                   <password>rootroot</password>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">csa-admin</groups>
+               </user>               
+               <user>
+                   <name>user-diam</name>
+                   <password>rootroot</password>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">bsf-admin</groups>
+               </user>
+               <user>
+                   <name>expert</name>
+                   <password>rootroot</password>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">system-admin</groups>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">system-security-admin</groups>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">scp-admin</groups>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">bsf-admin</groups>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">sepp-admin</groups>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">csa-admin</groups>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">pc-probe-privacy-admin</groups>
+               </user>
+               <user>
+                   <name>sys-admin</name>
+                   <password>syssys</password>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">system-admin</groups>
+               </user>
+               <user>
+                   <name>sec-admin</name>
+                   <password>secsec</password>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">system-security-admin</groups>
+               </user>
+               <user>
+                   <name>sys-read</name>
+                   <password>readread</password>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">system-read-only</groups>
+               </user>
+               <user>
+                   <name>scp-read</name>
+                   <password>readread</password>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">scp-read-only</groups>
+               </user>
+               <user>
+                   <name>scp-sec-admin</name>
+                   <password>scpsec</password>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">scp-security-admin</groups>
+               </user>
+               <user>
+                   <name>scp-admin</name>
+                   <password>scpscp</password>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">scp-admin</groups>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">pc-probe-privacy-admin</groups>
+               </user>
+               <user>
+                   <name>bsf-read</name>
+                   <password>readread</password>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">bsf-read-only</groups>
+               </user>
+               <user>
+                   <name>bsf-sec-admin</name>
+                   <password>bsfsec</password>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">bsf-security-admin</groups>
+               </user>
+               <user>
+                   <name>bsf-admin</name>
+                   <password>bsfbsf</password>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">bsf-admin</groups>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">pc-probe-privacy-admin</groups>
+               </user>
+               <user>
+                   <name>sepp-read</name>
+                   <password>readread</password>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">sepp-read-only</groups>
+               </user>
+               <user>
+                   <name>sepp-sec-admin</name>
+                   <password>seppsec</password>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">sepp-security-admin</groups>
+               </user>
+               <user>
+                   <name>sepp-admin</name>
+                   <password>seppsepp</password>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">sepp-admin</groups>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">pc-probe-privacy-admin</groups>
+               </user>
+               <user>
+                   <name>csa-read</name>
+                   <password>readread</password>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">csa-read-only</groups>
+               </user>
+               <user>
+                   <name>csa-sec-admin</name>
+                   <password>csasec</password>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">csa-security-admin</groups>
+               </user>
+               <user>
+                   <name>csa-admin</name>
+                   <password>csacsa</password>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">csa-admin</groups>
+               </user>
+               <user>
+                   <name>sc-oam-admin</name>
+                   <password>oamoam</password>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">sc-admin</groups>
+               </user>
+               <user>
+                   <name>sc-oam-sec-admin</name>
+                   <password>oamsec</password>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">sc-security-admin</groups>
+               </user>
+               <user>
+                   <name>sc-oam-read-only</name>
+                   <password>oamread</password>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">sc-read-only</groups>
+               </user>
+               <user>
+                   <name>oam-internal</name>
+                   <password>oaminternal</password>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">scp-admin</groups>
+               </user>
+               <user>
+                   <name>sc-admin</name>
+                   <password>scsc</password>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">csa-admin</groups>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">scp-admin</groups>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">sepp-admin</groups>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">bsf-admin</groups>
+                   <groups xmlns="urn:rdns:com:ericsson:oammodel:ericsson-system-ext">pc-probe-privacy-admin</groups>
+               </user>
+            </authentication>
+        </system>
+    </config>
+</edit-config>
+</rpc>

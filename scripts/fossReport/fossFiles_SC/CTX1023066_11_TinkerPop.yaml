@@ -1,0 +1,45 @@
+Version: v1
+Decription: FOSS list
+LastUpdate: 2023-12-20 16:25
+FOSS:
+    # Available in Bazaar
+    FOSSName: tinkerpop
+    # Available in Bazaar
+    FOSSVersion: 3.7.1
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/apache/tinkerpop/archive/refs/tags/{{FOSSVersion}}.tar.gz 
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 11/CTX1023066
+    # Not Available in Bazaar
+    Primary: Y
+    # Available in Bazaar
+    STAKOCode: General Use
+    # Available in Bazaar
+    STAKOReason: ()
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: Apache TinkerPop™ provides graph computing capabilities for both graph databases (OLTP) and graph analytic systems (OLAP).
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: Apache License 2.0
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'org.apache.tinkerpop:gremlin-core:jar:{{FOSSVersion}}'
+    - 'org.apache.tinkerpop:gremlin-language:jar:{{FOSSVersion}}'
+    - 'org.apache.tinkerpop:gremlin-shaded:jar:{{FOSSVersion}}'
+    - 'org.apache.tinkerpop:tinkergraph-gremlin:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: XEIRPAP Eirini Papastefanaki

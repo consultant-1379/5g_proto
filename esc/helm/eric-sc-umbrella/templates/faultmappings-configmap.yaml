@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eric-fh-alarm-handler-faultmappings
+  labels:
+{{- include "eric-sc.de-facto-labels" . | indent 4 }}
+  annotations:
+{{- include "eric-sc.product-annotations" . | indent 4 }}
+data:
+{{ (.Files.Glob "faultmappings/*").AsConfig | indent 2 }}

@@ -1,0 +1,114 @@
+modelVersion: 2.0
+
+import:
+  base: ruleset2.0-eric-base.yaml
+
+description: "Influxdb chart taken from influxdata"
+
+properties:
+  - INFLUXDB_REPO_URL: https://helm.influxdata.com/
+  - INFLUXDB_REPO_NAME: influxdata
+  - INFLUXDB_DIR: devtools/influxdb2
+  - INFLUXDB_CHART_NAME: influxdb2
+  - INFLUXDB_CHART_VERSION: 2.0.12
+  
+  - EXPORT_DIR: ${base.OUTPUT_DIR}/export-influxdb
+  - INFLUXDB_SERVICE_NAME: eric-${INFLUXDB_CHART_NAME}
+
+env:
+  - RELEASE (default=false)
+  - USER (default=anonymous)
+       
+var:
+  - build-proxy
+  - inflxudb2-chart-version
+  - namespace
+
+rules:
+  download:
+    - task: move-old-influxdb-folder
+      cmd: /bin/bash -c "if [[ -d ${INFLUXDB_DIR}/helm ]];
+                         then
+                            mkdir -p ${INFLUXDB_DIR}/helm_old;
+                            cp -Rp ${INFLUXDB_DIR}/helm/. ${INFLUXDB_DIR}/helm_old;
+                         fi;"
+    - task: create-influxdb-folder
+      cmd: /bin/bash -c "if [[ ! -d ${INFLUXDB_DIR}/helm ]];
+                         then
+                            mkdir -p ${INFLUXDB_DIR}/helm;
+                         fi;"
+    - task: repo-add
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: /bin/bash -c "helm repo add ${INFLUXDB_REPO_NAME} ${INFLUXDB_REPO_URL};
+                         helm pull ${INFLUXDB_REPO_NAME}/${INFLUXDB_CHART_NAME} --version ${INFLUXDB_CHART_VERSION} --destination ${INFLUXDB_DIR}"
+    - task: extract-chart
+      cmd: "tar zxvf ${INFLUXDB_DIR}/${INFLUXDB_CHART_NAME}-${INFLUXDB_CHART_VERSION}.tgz --directory ${INFLUXDB_DIR}/helm --strip-components=1"
+    - task: remove-tgz
+      cmd: /bin/bash -c "rm -fr ${INFLUXDB_DIR}/*.tgz"
+    - task: check-downloaded-version
+      cmd: "if [[ -d ${INFLUXDB_DIR}/helm_old ]]; then
+               diff -qr ${INFLUXDB_DIR}/helm/ ${INFLUXDB_DIR}/helm_old/;
+               if [ $? -eq 0 ]; then
+                  echo 'No changes identified';
+                  rm -fr ${INFLUXDB_DIR}/helm_old;
+               else
+                  echo 'Changes identified in the new influxdb chart, please check changes';
+                  exit 1;
+               fi;
+            fi;"
+  
+  init:
+    - task: create-output-dir
+      cmd: /bin/bash -c "if [[ ! -d ${base.OUTPUT_DIR} ]];
+                         then
+                            mkdir -p ${base.OUTPUT_DIR};
+                         fi;"
+    - task: set-namespace
+      cmd: /bin/bash -c "./scripts/bash/setNamespace -u ${env.base.USER} -n ${env.base.NAMESPACE} -h ${env.base.KUBE_HOST}"
+    - task: influxdb-chart-version
+      cmd: /bin/bash -c "echo ${INFLUXDB_CHART_VERSION} > ${base.OUTPUT_DIR}/var.influxdb-chart-version"
+    - task: set-kube-config
+      cmd: /bin/bash -c "cp -r /home/${env.base.USER}/.kube/${env.base.KUBE_HOST}.config ${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf;"
+
+  package:
+    - task: copy-values
+      cmd: /bin/bash -c "cp ${INFLUXDB_DIR}/mods/values.yaml ${base.OUTPUT_DIR}/influxdb-values.yaml"
+    - task: influxdb-chart
+      docker-image: base.adp-release-auto
+      cmd: /bin/bash -c "helm-package --folder ${INFLUXDB_DIR}/helm
+                                      --output ${base.OUTPUT_DIR}
+                                      --version ${INFLUXDB_CHART_VERSION}"
+     
+  deploy:
+    - task: influxdb
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env HELM_USER=${env.USER}"
+      cmd: sh -c 'helm install eric-${INFLUXDB_CHART_NAME}-${env.USER} ${base.OUTPUT_DIR}/${INFLUXDB_CHART_NAME}-${INFLUXDB_CHART_VERSION}.tgz
+                               -f ${base.OUTPUT_DIR}/influxdb-values.yaml
+                               -n ${var.namespace}'
+
+  undeploy:
+    - task: influxdb
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env HELM_USER=${env.USER}"
+      cmd: sh -c 'helm uninstall eric-${INFLUXDB_CHART_NAME}-${env.USER} -n ${var.namespace}' 
+    - task: remove-all-resources
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: kubectl api-resources --verbs=list -o name | xargs -n 1 --verbose kubectl delete --ignore-not-found -l app.kubernetes.io/instance=eric-${INFLUXDB_CHART_NAME}-${env.USER}
+
+  clean:
+    - task: generated-files
+      cmd: /bin/bash -c "rm -rf ${base.OUTPUT_DIR}/*influxdb*;
+                         rm -rf ${base.OUTPUT_DIR}/*tmp*"
+
+

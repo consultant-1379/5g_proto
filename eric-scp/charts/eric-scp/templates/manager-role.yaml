@@ -1,0 +1,24 @@
+{{- if .Values.rbac.createServiceAccount }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ template "eric-scp.name" . }}-manager
+  labels:
+{{- include "eric-scp.labels" . | indent 4 }}
+    app: {{ template "eric-scp.name" . }}-manager
+  annotations:
+{{- include "eric-scp.helm-annotations" . | indent 4 }}
+{{- include "eric-scp.config-annotations" . | indent 4 }}
+  namespace: {{ .Release.Namespace }}
+rules:
+  - apiGroups:
+    - ""
+    resources:
+    - services
+    - endpoints
+    - pods
+    verbs:
+    - get
+    - list
+    - patch
+{{- end }}

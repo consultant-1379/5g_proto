@@ -1,0 +1,127 @@
+modelVersion: 2.0
+
+import:
+  base: ruleset2.0-eric-base.yaml
+
+description: "nghttp2 tool for HTTP2 client/server/proxy and h2load benchmarkign tool"
+
+properties:
+  - NGHTTP2_NAME: eric-nghttp2
+  
+  - ARM_DOCKER_REGISTRY: ${base.ARM_DOCKER_REGISTRY}
+
+  - DOCKER_REGISTRY_URL: ${base.DOCKER_REGISTRY_URL}
+  - DOCKER_REPO_PATH: ${base.DOCKER_REPO_PATH}      
+    
+  - HELM_CHART_REPO: ${base.HELM_CHART_REPO}
+  - HELM_VERSION_HELMBUILDERPY3: ${base.HELM_VERSION_HELMBUILDERPY3}
+  - IMAGE_TAG: 0.0.1-0
+
+  - JENKINS_URL: ${base.JENKINS_URL}
+
+  - OUTPUT_DIR: .bob
+  - EXPORT_DIR: ${OUTPUT_DIR}/export-nghttp2
+  - NAMESPACE: $NAMESPACE
+  
+env:
+ - USER (default=anonymous)
+ - HOSTNAME (default=nohost)
+ - RELEASE (default=false)
+ - KUBE_HOST
+ - ARTIFACTORY_TOKEN
+
+var:
+ - namespace
+ - build-proxy
+ - nghttp2-version
+
+rules:
+  init:
+    - task: set-build-proxy
+      cmd: /bin/bash -c "if [[ ${env.HOSTNAME} =~ seroi ]];
+                        then
+                          echo 'gic_proxy_settings.xml' > ${OUTPUT_DIR}/var.build-proxy;
+                        else
+                          echo 'settings.xml' > ${OUTPUT_DIR}/var.build-proxy;
+                        fi"
+    - task: nghttp2-version
+      docker-image: base.adp-release-auto
+      cmd: generate-version --is-release ${env.RELEASE} --output nghttp2-version
+    - task: set-kube-config
+      cmd: /bin/bash -c "cp /home/${env.USER}/.kube/${env.KUBE_HOST}.config ${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf;"
+    - task: set-namespace
+      cmd: /bin/bash -c "if [[ \"${env.USER}\" != \"eiffelesc\" ]];
+                         then
+                            echo '5g-bsf-'${env.USER} > ${OUTPUT_DIR}/var.namespace;
+                            echo ${env.USER} > ${OUTPUT_DIR}/var.username;
+                         else
+                            ./scripts/bash/allocateDynNamespace ${NAMESPACE} ${env.KUBE_HOST};
+                         fi;"
+                         
+  # Build a docker image pointing to internal repository
+  image:
+    - task: build-nghttp2
+      cmd: docker build ./devtools/nghttp2/
+           --file devtools/nghttp2/Dockerfile
+           --tag ${ARM_DOCKER_REGISTRY}/${env.USER}/${NGHTTP2_NAME}:${var.nghttp2-version}
+           
+  lint:
+    - task: helm-nghttp2
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${HELM_VERSION_HELMBUILDERPY3}"
+      cmd: helm lint devtools/nghttp2/helm
+
+  package:
+    - task: helm-chart-nghttp2
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "mkdir -p ${OUTPUT_DIR}/${NGHTTP2_NAME}; cp -r devtools/nghttp2/helm/* ${OUTPUT_DIR}/${NGHTTP2_NAME};
+           update_values.rb ${OUTPUT_DIR}/${NGHTTP2_NAME}/values.yaml
+           image:registry:url=${DOCKER_REGISTRY_URL} image:repoPath=${DOCKER_REPO_PATH}/${env.USER}
+           spec:image=${NGHTTP2_NAME} spec:tag=${var.nghttp2-version} > ${OUTPUT_DIR}/${NGHTTP2_NAME}/values.tmp.yaml;
+           mv ${OUTPUT_DIR}/${NGHTTP2_NAME}/values.tmp.yaml ${OUTPUT_DIR}/${NGHTTP2_NAME}/values.yaml;
+           helm package --version ${var.nghttp2-version} --app-version ${var.nghttp2-version} ${OUTPUT_DIR}/${NGHTTP2_NAME}/ -d ${OUTPUT_DIR}/";
+
+  push:
+    - task: docker-image-nghttp2
+      cmd: docker push ${ARM_DOCKER_REGISTRY}/${env.USER}/${NGHTTP2_NAME}:${var.nghttp2-version}
+    - task: helm-chart-nghttp2
+      cmd: curl -f -k -H "X-JFrog-Art-Api:${env.ARTIFACTORY_TOKEN}" --upload-file ${OUTPUT_DIR}/${NGHTTP2_NAME}-${var.nghttp2-version}.tgz "${HELM_CHART_REPO}/${NGHTTP2_NAME}-${var.nghttp2-version}.tgz"
+
+  deploy:
+    - task: deploy-nghttp2
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: /bin/bash -c 'helm install --namespace ${var.namespace} ${NGHTTP2_NAME}-${env.USER} ${OUTPUT_DIR}/${NGHTTP2_NAME}-${var.nghttp2-version}.tgz'
+
+  undeploy:
+    - task: undeploy-nghttp2
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: helm uninstall --namespace ${var.namespace} ${NGHTTP2_NAME}-${env.USER}
+
+  export:
+    - task: clean
+      cmd: /bin/bash -c "rm -rf ${EXPORT_DIR}";
+    - task: folders
+      cmd: /bin/bash -c "mkdir -p ${EXPORT_DIR}; mkdir -p ${EXPORT_DIR}/helm; mkdir -p ${EXPORT_DIR}/docker";      
+    - task: helm
+      cmd: /bin/bash -c 'cp ${OUTPUT_DIR}/${NGHTTP2_NAME}-${var.nghttp2-version}.tgz ${EXPORT_DIR}/helm';
+    - task: image
+      cmd: /bin/bash -c 'docker save ${DOCKER_REGISTRY_URL}/${DOCKER_REPO_PATH}/${env.USER}/${NGHTTP2_NAME}:${var.nghttp2-version} > ${EXPORT_DIR}/docker/${NGHTTP2_NAME}-${var.nghttp2-version}.tar';
+
+  clean:
+    - task: directories
+      cmd: /bin/bash -c "rm -rf ${OUTPUT_DIR}/ *.tgz";
+    - task: export
+      cmd: /bin/bash -c "rm -rf ${EXPORT_DIR}";
+    - task: templates-nghttp2
+      cmd: /bin/bash -c "rm -rf ${OUTPUT_DIR}/$(NGHTTP2_NAME)/templates/*.yaml";
+
+

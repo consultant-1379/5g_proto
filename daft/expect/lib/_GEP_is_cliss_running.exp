@@ -1,0 +1,102 @@
+################################################################################
+# $Revision: 1.4 $                                                             #
+#   $Author: EUSTONE $                                                         #
+#     $Date: 2015/01/16 15:36:56 $                                             #
+################################################################################
+#                                                                              #
+# (C) COPYRIGHT ERICSSON GMBH 2014                                             #
+#                                                                              #
+# The copyright to the computer program(s) herein is the property of           #
+# Ericsson GmbH, Germany.                                                      #
+#                                                                              #
+# The program(s) may be used and/or copied only with the written permission    #
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in   #
+# the agreement/contract under which the program(s) have been supplied.        #
+#                                                                              #
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Find out if CLISS is running on the specified node.
+#
+# This subroutine expects that it is already connected to the GEP Linux prompt.
+#
+# Input:
+#  - Hostname
+#  - root password
+#
+# Output:
+#  -  0: Success, CLISS running on given node
+#     1: Failure, CLISS is not running on given node
+#    -1: Timeout
+#
+proc GEP_is_cliss_running {hostname root_psw} {
+    global spawn_id
+
+    set errorcnt 0
+    set found 0
+
+    if { $hostname == "localhost" } {
+        # Check if listen port 830 is active on current node
+        send -- "netstat -lnt | grep -w 830\r"
+
+        expect {
+            -re ":830 " {
+                # Yes, the CLISS seems to be running here
+                set found 1
+                exp_continue
+            }
+            -re "SC-\[12\]\[^\n\]*$" {
+                # Promt received
+            }
+            -re "PL-\[0-9\]+\[^\n\]*$" {
+                # Promt received
+            }
+            timeout {
+                return -1
+            }
+        }
+    } else {
+        # Execute the command on the given hostname
+        send -- "ssh $hostname netstat -lnt | grep -w 830\r"
+
+        expect {
+            -re ":830 " {
+                # Yes, the CLISS seems to be running here
+                set found 1
+                exp_continue
+            }
+            "Connection closed by foreign host" {
+                # Login failed for some reason
+                return 1
+            }
+            "assword:" {
+                send "$root_psw\r"
+                exp_continue
+            }
+            "(yes/no)?" {
+                send "yes\r"
+                exp_continue
+            }
+            -re "SC-\[12\]\[^\n\]*$" {
+                # Promt received
+            }
+            -re "PL-\[0-9\]+\[^\n\]*$" {
+                # Promt received
+            }
+            timeout {
+                return -1
+            }
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    if { $found == 0 } {
+        # Not running here
+        return 1
+    } else {
+        # Running here
+        return 0
+    }
+}

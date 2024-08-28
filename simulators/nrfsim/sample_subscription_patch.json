@@ -1,0 +1,3 @@
+[
+  { "op": "replace", "path": "/validityTime", "value": "2021-01-28T15:30:00.123Z" }
+]

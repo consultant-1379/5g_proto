@@ -1,0 +1,215 @@
+{
+  "content": {
+    "section": [
+      {
+        "hello": {
+          "capabilities": {
+            "capability": [
+              "urn:ietf:params:netconf:base:1.0"
+            ]
+          }
+        }
+      },
+      {
+        "rpc": {
+          "edit-config": {
+            "target": {
+              "running": ""
+            },
+            "config": {
+              "bsf-function": {
+                "nf-instance": [
+                  {
+                    "name": "bsf1",
+                    "service-address": [
+                      {
+                        "name": "west1SA",
+                        "fqdn": "bsf.ericsson.se",
+                        "port": 0
+                      }
+                    ],
+                    "nf-profile": [
+                      {
+                        "name": "bsf_profile1",
+                        "service-address-ref": "west1SA",
+                        "nf-type": "bsf",
+                        "bsf-info": {
+                          "dnn": [
+                            "dnn1",
+                            "dnn2",
+                            "dnn3"
+                          ],
+                          "ip-domain": [
+                            "ip-domain1",
+                            "ip-domain2"
+                          ],
+                          "ipv4-addr-range": [
+                            {
+                              "ipv4-addr-start": "1.2.3.4",
+                              "ipv4-addr-end": "1.2.3.5"
+                            },
+                            {
+                              "ipv4-addr-start": "1.2.3.6",
+                              "ipv4-addr-end": "1.2.3.7"
+                            }
+                          ],
+                          "ipv6-prefix-range": [
+                            {
+                              "ipv6-prefix-start": "2001:1234:5678:1234::/64",
+                              "ipv6-prefix-end": "2001:1234:5678:1235::/64"
+                            },
+                            {
+                              "ipv6-prefix-start": "2001:1234:5678:1236::/64",
+                              "ipv6-prefix-end": "2001:1234:5678:1237::/64"
+                            }
+                          ]
+                        },
+                        "nf-service": [
+                          {
+                            "service-instance-id": "service-id-about-bsf",
+                            "service-name": "nbsf-management",
+                            "scheme": "http",
+                            "allowed-plmn": [
+                              {
+                                "mcc": "262",
+                                "mnc": "200"
+                              }
+                            ],
+                            "api-prefix": "bsf-",
+                            "service-priority": 1,
+                            "service-address-ref": [
+                              "west1SA"
+                            ]
+                          }
+                        ]
+                      }
+                    ],
+                    "nrf-group": [
+                      {
+                        "name": "nrf_registration",
+                        "nf-profile-ref": "bsf_profile1",
+                        "nrf": [
+                          {
+                            "name": "nrf_west1",
+                            "fqdn": "eric-nrfsim",
+                            "scheme": "http",
+                            "ip-endpoint": [
+                              {
+                                "name": "nrf_west1_ep",
+                                "ipv4-address": "100.100.100.100",
+                                "port": 80
+                              }
+                            ],
+                            "priority": 1,
+                            "nf-profile-ref": "bsf_profile1"
+                          }
+                        ]
+                      }
+                    ],
+                    "nrf-service": {
+                      "nf-management": {
+                        "nrf-group-ref": [
+                          "nrf_registration"
+                        ]
+                      }
+                    },
+                    "bsf-service": [
+                      {
+                        "name": "serviceName1",
+                        "diameter-routing": {}
+                      }
+                    ]
+                  }
+                ]
+              },
+              "diameter": {
+                "service": [
+                  {
+                    "id": "SC.bsf",
+                    "request-send-max-retry": 0,
+                    "local-endpoint-reference": [
+                      {
+                        "id": "MyTransportEndpointServer",
+                        "enabled": true,
+                        "rank": 1,
+                        "local-endpoint": "MyTransportEndpointServer"
+                      }
+                    ]
+                  }
+                ],
+                "peer-table": {
+                  "dynamic-peer-acceptor": [
+                    {
+                      "id": "MyDynamicPeerAcceptor",
+                      "restrict-connections": true,
+                      "enabled": true
+                    }
+                  ]
+                },
+                "transport": {
+                  "node": [
+                    {
+                      "id": "machine.source.client.realm.com",
+                      "origin-realm": "source.client.realm.com",
+                      "origin-host": "machine.source.client.realm.com",
+                      "product-name": "CDIATA",
+                      "vendor-id": 193,
+                      "firmware-revision": 1
+                    }
+                  ],
+                  "host-address-resolver": [
+                    {
+                      "id": "address",
+                      "linux-env-var": "POD_IP"
+                    }
+                  ],
+                  "local-endpoint": [
+                    {
+                      "id": "MyTransportEndpointServer",
+                      "enabled": true,
+                      "dscp": 59,
+                      "watchdog-timer": 30000,
+                      "reconnect-timer": 10000,
+                      "node": "machine.source.client.realm.com",
+                      "terminate-connection-from-accepted-peers": [
+                        "MyDynamicPeerAcceptor"
+                      ],
+                      "transport-tcp": {
+                        "port": 3868,
+                        "rank": 1,
+                        "no-delay": true
+                      }
+                    }
+                  ]
+                },
+                "routing-table": [
+                  {
+                    "id": "MyRoutingTable",
+                    "service": [
+                      "SC.bsf"
+                    ],
+                    "routing-entry": [
+                      {
+                        "id": 200,
+                        "enabled": true,
+                        "expression": "msg.ingress",
+                        "action": "route-to-service service=\"SC.bsf\" local-action=\"PROXY\""
+                      },
+                      {
+                        "id": 300,
+                        "enabled": true,
+                        "expression": "msg.egress",
+                        "action": "forward-message"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "@message-id": 0
+        }
+      }
+    ]
+  }
+}

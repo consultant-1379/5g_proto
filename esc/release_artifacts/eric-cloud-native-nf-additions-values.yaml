@@ -1,0 +1,799 @@
+definitions:
+  ## VIP_OAM: the virtual IP address for OAM traffic
+  VIP_OAM: &VIP_OAM ""
+  ## storage class for all OAM state
+  oam_storage_class: &oam_storage_class "network-block"
+  ## shared VIP label for OAM
+  shared_vip_oam_label: &shared_vip_oam_label "shared-vip-oam"
+
+global:
+  timezone: UTC
+  # nodeSelector: {}
+  pullSecret: ""
+  registry:
+    url: "armdocker.rnd.ericsson.se"
+  externalIPv4:
+     enabled: false    ## empty, true or false
+  externalIPv6:
+     enabled: false    ## empty, true or false
+  ipFamilyPolicy: SingleStack  ## SingleStack or PreferDualStack or RequireDualStack
+  # annotations: {}
+  # labels: {}
+  networkPolicy:
+    enabled: true
+  log:
+    outputs: ["stdout", "k8sLevel"] # supports stream, applicationLevel or stdout (or <old> k8sLevel)
+    streamingMethod: "indirect" # supports direct, indirect or dual
+  logShipper:
+    deployment:
+      type: "" # supports sidecar or empty
+  security:
+    tls:
+      enabled: true
+
+## Admin User Management
+eric-sec-admin-user-management:
+  enabled: true
+  egress:
+   iamAuthenticationLdapClient:
+    certificates:
+      asymmetricKeyCertificateName: "sc-ldap-default-cert"
+      trustedCertificateListName: "sc-trusted-default-cas"
+  notices:
+    legal: "IF YOU ARE NOT AN AUTHORIZED USER, PLEASE EXIT IMMEDIATELY"
+    privacy: "This system processes sensitive personal data. The misuse of such data may\ngenerate considerable harm to the data subjects. Be reminded of the\nconfidentiality obligations you have when accessing this kind of data and\nthe disciplinary consequences of improper handling.\nVersion: 1.0, Last Updated: May 21, 2019"
+    postLogin: "SIGNALING CONTROLLER"
+  # resources:
+    # aum:
+      # requests:
+        # memory: "256Mi"
+        # cpu: "250m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "512Mi"
+        # cpu: "500m"
+        # ephemeral-storage:
+  # probes:
+    # aum:
+      # livenessProbe:
+        # periodSeconds: 5
+        # timeoutSeconds: 2
+        # failureThreshold: 3
+      # readinessProbe:
+        # periodSeconds: 5
+        # timeoutSeconds: 2
+        # successThreshold: 1
+        # failureThreshold: 3
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # timeoutSeconds: 2
+        # failureThreshold: 180
+  # nodeSelector:
+    # aum: {}
+    # hooklauncher: {}
+  # tolerations:
+    # aum:
+    # - key: node.kubernetes.io/not-ready
+      # operator: Exists
+      # effect: NoExecute
+      # tolerationSeconds: 0
+    # - key: node.kubernetes.io/unreachable
+      # operator: Exists
+      # effect: NoExecute
+      # tolerationSeconds: 0
+    # hooklauncher: []
+  # labels: {}
+  # annotations: {}
+
+## LDAP Server
+eric-sec-ldap-server:
+  enabled: true
+  replicaCount: 2
+  ldap:
+    aum:
+      enabled: true
+  brAgent:
+    enabled: true
+    brLabelValue: "eric-sec-ldap-server"
+    backupTypeList:
+      - "DEFAULT"
+  persistentVolumeClaim:
+    storageClassName: *oam_storage_class
+    # size: 8Gi
+  # affinity:
+    # podAntiAffinity: "soft"
+  # nodeSelector:
+    # ldap: {}
+    # ldapProxy: {}
+  # tolerations:
+    # ldap: []
+    # ldapproxy:
+    # - key: node.kubernetes.io/not-ready
+      # operator: Exists
+      # effect: NoExecute
+      # tolerationSeconds: 0
+    # - key: node.kubernetes.io/unreachable
+      # operator: Exists
+      # effect: NoExecute
+      # tolerationSeconds: 0
+    # preupgrade: []
+  # podDisruptionBudget:
+    # minAvailable: "50%"
+  # resources:
+    # preupgrade:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "500Mi"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "1Gi"
+    # ldap:
+      # requests:
+        # memory: "512Mi"
+        # cpu: "300m"
+        # ephemeral-storage: "1Gi"
+      # limits:
+        # memory: "2036Mi"
+        # cpu: "1000m"
+        # ephemeral-storage: "2Gi"
+    # ldapagent:
+      # requests:
+        # memory: "512Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "512Mi"
+      # limits:
+        # memory: "1024Mi"
+        # cpu: "300m"
+        # ephemeral-storage: "1Gi"
+    # ldapproxy:
+      # requests:
+        # memory: "512Mi"
+        # cpu: "500m"
+        # ephemeral-storage: "512Mi"
+      # limits:
+        # memory: "2036Mi"
+        # cpu: "1000m"
+        # ephemeral-storage: "1Gi"
+    # ldapinit:
+      # requests:
+        # memory: "512Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "1Gi"
+      # limits:
+        # memory: "2036Mi"
+        # cpu: "500m"
+        # ephemeral-storage: "2Gi"
+    # metricsExporter:
+      # requests:
+        # memory: "96Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "196Mi"
+      # limits:
+        # memory: "128Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "256Mi"
+  # probes:
+    # ldap:
+      # livenessProbe:
+        # initialDelaySeconds: 10
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        # failureThreshold: 10
+      # readinessProbe:
+        # initialDelaySeconds: 10
+        # periodSeconds: 10
+        # timeoutSeconds: 70
+        # failureThreshold: 10
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        # failureThreshold: 25
+    # ldapmetrics:
+      # livenessProbe:
+        # initialDelaySeconds: 15
+        # periodSeconds: 15
+        # timeoutSeconds: 15
+        # failureThreshold: 3
+    # ldapproxy:
+      # livenessProbe:
+        # initialDelaySeconds: 10
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        # failureThreshold: 5
+      # readinessProbe:
+        # initialDelaySeconds: 10
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        # failureThreshold: 3
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        # failureThreshold: 25
+    # ldapagent:
+      # livenessProbe:
+        # initialDelaySeconds: 20
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        # failureThreshold: 10
+      # readinessProbe:
+        # initialDelaySeconds: 20
+        # periodSeconds: 3
+        # timeoutSeconds: 15
+        # failureThreshold: 1
+  # annotations: {}
+  # labels: {}
+
+## Configuration Management Yang Provider
+eric-cm-yang-provider:
+  enabled: true
+  externaldb:
+    dbname: sc_database
+    dbuser: scusr ## modify only if ugrading from release less than SC1.4.x
+    host: eric-data-document-database-pg
+  nbiNotifications:
+    notifyInternalChanges: false
+  certManagement:
+    sshKeys:
+      enabled: false
+  sshHostKeys:
+    name: cm-cliNetconf-ssh-server
+  cliExtensionCmds:
+    showAlarms:
+      enabled: true
+    showAlarmsHistory:
+      enabled: true
+  pmMetrics:
+    enableQueryMetricsCommands: true
+  # resources:
+    # initContainer:
+      # limits:
+        # cpu: 500m
+        # memory: 250Mi
+        # ephemeral-storage:
+      # requests:
+        # cpu: 50m
+        # memory: 50Mi
+        # ephemeral-storage:
+    # yangEngine:
+      # limits:
+        # cpu: 4000m
+        # memory: 2Gi
+        # ephemeral-storage:
+      # requests:
+        # cpu: 250m
+        # memory: 500Mi
+        # ephemeral-storage:
+    # yangDbAdapter:
+      # limits:
+        # cpu: 2000m
+        # memory: 250Mi
+        # ephemeral-storage:
+      # requests:
+        # cpu: 100m
+        # memory: 100Mi
+        # ephemeral-storage:
+    # sshd:
+      # limits:
+        # cpu: 1000m
+        # memory: 1200Mi
+        # ephemeral-storage: 500Mi
+      # requests:
+        # cpu: 50m
+        # memory: 50Mi
+        # ephemeral-storage:
+    # schemaSynchronizer:
+      # limits:
+        # cpu: 4000m
+        # memory: 2Gi
+        # ephemeral-storage:
+      # requests:
+        # cpu: 100m
+        # memory: 50Mi
+        # ephemeral-storage:
+    # externalNotifSender:
+      # limits:
+        # cpu: 1000m
+        # memory: 250Mi
+        # ephemeral-storage:
+      # requests:
+        # cpu: 50m
+        # memory: 50Mi
+        # ephemeral-storage:
+    # yangLibExt:
+      # limits:
+        # cpu: 1000m
+        # memory: 250Mi
+        # ephemeral-storage:
+      # requests:
+        # cpu: 50m
+        # memory: 50Mi
+        # ephemeral-storage:
+    # notificationController:
+      # limits:
+        # cpu: 1000m
+        # memory: 250Mi
+        # ephemeral-storage:
+      # requests:
+        # cpu: 50m
+        # memory: 50Mi
+        # ephemeral-storage:
+    # pmMetrics:
+      # limits:
+        # cpu: 1000m
+        # memory: 250Mi
+        # ephemeral-storage:
+      # requests:
+        # cpu: 50m
+        # memory: 50Mi
+        # ephemeral-storage:
+    # cliExtensionCmds:
+      # limits:
+        # cpu: 500m
+        # memory: 128Mi
+        # ephemeral-storage:
+      # requests:
+        # cpu: 50m
+        # memory: 50Mi
+        # ephemeral-storage:
+  # probes:
+    # yangEngine:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # timeoutSeconds: 15
+      # startupProbe:
+        # initialDelaySeconds: 10
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        # failureThreshold: 30
+    # externalNotifSender:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+      # startupProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 10
+        # failureThreshold: 30
+    # yangLibExt:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+      # startupProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        # failureThreshold: 30
+    # yangDbAdapter:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+      # startupProbe:
+        # initialDelaySeconds: 10
+        # periodSeconds: 10
+        # failureThreshold: 30
+    # schemaSynchronizer:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 60
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 2
+        # failureThreshold: 3
+      # startupProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 10
+        # failureThreshold: 30
+    # sshd:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+      # startupProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 10
+        # failureThreshold: 30
+    # pmMetrics:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+      # startupProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 10
+        # failureThreshold: 30
+    # cliExtensionCmds:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+      # startupProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 10
+        # failureThreshold: 30
+    # notificationController:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 2
+        # failureThreshold: 3
+      # startupProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 10
+        # failureThreshold: 30
+  service:
+    # cmNbiPorts:
+      # dscp: 0
+    annotations:
+      # cloudProviderLB:
+      sharedVIPLabel: *shared_vip_oam_label
+      # addressPoolName: ""
+    loadBalancerIP: *VIP_OAM
+    # externalIPv4:
+      # enabled: false
+      # loadBalancerIP:
+      # annotations:
+        # sharedVIPLabel: *shared_vip_oam_label
+        # addressPoolName: ""
+    # externalIPv6:
+      # enabled: false
+      # loadBalancerIP:
+      # annotations:
+        # sharedVIPLabel: *shared_vip_oam_label
+        # addressPoolName: ""
+    certificates:
+      asymmetricKeyCertificateName: "netconf-default-key-cert"
+      trustedCertificateListName: "sc-trusted-default-cas"
+  externalTls:
+    netconf:
+      enabled: true
+  # ldap:
+    # ipv6Enabled: false
+  # nodeSelector: {}
+  # tolerations:
+    # eric-cm-yang-provider:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 30
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+  # podDisruptionBudget:
+    # minAvailable: 0
+  # affinity:
+    # podAntiAffinity: "soft"
+  # annotations: {}
+  # labels: {}
+
+## CNOM Server
+eric-cnom-server:
+  enabled: true
+  features:
+    serviceCommunicationProxy: false
+    logViews: true
+    metricViewer: false
+    bro: false
+  documentDatabasePg:
+    enabled: true
+    host: eric-data-document-database-pg
+  documentDatabase:
+    enabled: false
+  cmYangProvider:
+    enabled: true
+    host: eric-cm-yang-provider-external
+  serviceCommunicationProxy:
+    configMap: eric-scp-manager-scp-schema-configmap
+    secret: eric-sc-oam-user-secret
+    secretUsernameKey: username
+    secretPasswordKey: password
+  appConfig:
+    configMaps: [eric-sc-cs-cnom-app-config]
+  metrics:
+    #hierarchy:
+      #configMap: "eric-cnom-metrics-hierarchy"
+    selectorConfig:
+      configMap: "eric-sc-cs-cnom-metrics-selector-config"
+  server:
+    basePath: "/em"
+    behindProxy: true
+  service:
+    endpoints:
+      api:
+        tls:
+          ca:
+            - name: eric-tm-ingress-controller-cr-client-ca
+              bundle: ca.pem
+  authentication:
+    local:
+      enabled: false
+    ldap:
+      enabled: true
+      roleMapping:
+        - internalRole: SECURITY_ADMIN
+          externalRoles: ["sc-security-admin", "*:sc-security-admin"]
+        - internalRole: ADMINISTRATOR
+          externalRoles: ["sc-admin", "*:sc-admin"]
+        - internalRole: OPERATOR
+          externalRoles: ["sc-read-only", "*:sc-read-only"]
+  resources:
+    server:
+      requests:
+        # memory: 400Mi
+        cpu: 500m
+      # limits:
+        # memory: 400Mi
+        # cpu: 500m
+  # probes:
+    # server:
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 1
+        # failureThreshold: 180
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 5
+        # failureThreshold: 10
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 1
+        # successThreshold: 1
+        # failureThreshold: 3
+  # podPriority:
+    # server:
+      # priorityClassName: ""
+  # nodeSelector:
+    # server: {}
+  # tolerations:
+    # server: []
+  # topologySpreadConstraints:
+    # server: []
+  # annotations: {}
+  # labels: {}
+
+## PM Bulk Reporter
+eric-pm-bulk-reporter:
+  enabled: true
+  objectStorage: ## ROP File Storage Backend
+    enabled: false
+    secretName: "eric-data-object-storage-mn-secret"
+  thresholdReporter:
+    enabled: true
+    restAPI: true
+  security:
+    keyManagement:
+      enabled: true
+    certificateManagement:
+      enabled: false
+  sshHostKeys:
+    name: pm-rop-sftp-server
+  applicationId:
+    enabled: true
+  networkPolicy:
+    enabled: true
+  # resources:
+    # initcontainer:
+      # requests:
+        # cpu: 50m
+        # memory: 50Mi
+        # ephemeral-storage:
+      # limits:
+        # cpu: '1'
+        # memory: 200Mi
+        # ephemeral-storage:
+    # bulkreporter:
+      # requests:
+        # cpu: 100m
+        # memory: 50Mi
+        # ephemeral-storage:
+      # limits:
+        # cpu: '1'
+        # memory: 200Mi
+        # ephemeral-storage:
+    # alarmreporter:
+      # requests:
+        # cpu: 100m
+        # memory: 50Mi
+        # ephemeral-storage:
+      # limits:
+        # cpu: '1'
+        # memory: 200Mi
+        # ephemeral-storage:
+    # pmsftp:
+      # requests:
+        # cpu: 50m
+        # memory: 50Mi
+        # ephemeral-storage:
+      # limits:
+        # cpu: '1'
+        # memory: 200Mi
+        # ephemeral-storage:
+  # probes:
+    # bulkreporter:
+      # livenessProbe:
+        # initialDelaySeconds: 15
+        # periodSeconds: 15
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 15
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 3
+    # alarmreporter:
+      # livenessProbe:
+        # initialDelaySeconds: 15
+        # periodSeconds: 15
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 15
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 3
+    # pmsftp:
+      # livenessProbe:
+        # initialDelaySeconds: 15
+        # periodSeconds: 20
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 15
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 3
+  persistentVolumeClaim:
+    storageClassName: *oam_storage_class
+    enabled: true
+    size: 10Gi
+  service:
+    # externalIPv4:
+      # enabled: false
+      # externalTrafficPolicy: Cluster
+      # loadBalancerIP:
+      # annotations:
+        # cloudProviderLB: {}
+        # sharedVIPLabel: *shared_vip_oam_label
+        # addressPoolName: ""
+    # externalIPv6:
+      # enabled: false
+      # externalTrafficPolicy: Cluster
+      # loadBalancerIP:
+      # annotations:
+        # cloudProviderLB: {}
+        # sharedVIPLabel: *shared_vip_oam_label
+        # addressPoolName: ""
+    annotations:
+      # cloudProviderLB: {}
+      sharedVIPLabel: *shared_vip_oam_label
+      # addressPoolName: ""
+    loadBalancerIP: *VIP_OAM
+  userConfig:
+    ldap:
+      rolesConfig:
+        readOnlyGroup: "system-read-only,scp-read-only,bsf-read-only,sepp-read-only"
+        readWriteGroup: "system-admin,scp-admin,bsf-admin,sepp-admin"
+      # useIPv6DNSFirst: false
+  env:
+    # iscompressed: false
+    nodeType: "Signaling_Controller"
+    # maxNoOfPmFiles: 1000
+  # nodeSelector:
+    # eric-pm-bulk-reporter: {}
+    # hooklauncher: {}
+  # tolerations:
+    # eric-pm-bulk-reporter:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+  # podDisruptionBudget:
+    # minAvailable: 0
+  # annotations: {}
+  # labels: {}
+
+## SFTP Server
+eric-data-sftp-server:
+  enabled: false
+  service:
+    # sshHostkeys:
+      # name: eric-data-sftp-server-ssh-server-key
+    annotations:
+      sharedVIPLabel: *shared_vip_oam_label
+      # addressPoolName: ""
+      # cloudProviderLB: {}
+    loadBalancerIP: *VIP_OAM
+    # port: 9023
+  certmHostKey:
+    enabled: false
+  objectStorage:
+    accessSecretName: "eric-data-object-storage-mn-secret"
+  configuration:
+    bucket_policy: "scp-admin eric-pmbr-rop-file-store rw:bsf-admin eric-pmbr-rop-file-store rw:sepp-admin eric-pmbr-rop-file-store rw:scp-read-only eric-pmbr-rop-file-store r:bsf-read-only eric-pmbr-rop-file-store r:sepp-read-only eric-pmbr-rop-file-store r"
+    object_policy: ""
+    default_bucket_policy: "system-admin * rw:system-read-only * r:system-security-admin * rw"
+  privacy_notice_file: "This system processes sensitive personal data. The misuse of such data may\ngenerate considerable harm to the data subjects. Be reminded of the\nconfidentiality obligations you have when accessing this kind of data and\nthe disciplinary consequences of improper handling.\nVersion: 1.0, Last Updated: May 21, 2019"
+  # replicaCount: 1
+  # resources:
+    # sftpServer:
+      # requests:
+        # memory: 256Mi
+        # cpu: 50m
+      # limits:
+        # memory: 1024Mi
+        # cpu: 500m
+  # probes:
+    # sftpServer:
+      # livenessProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 5
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 15
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 3
+  # podDisruptionBudget:
+    # minAvailable: 0
+  # labels: {}
+  # annotations: {}
+  # nodeSelector: {}
+  # tolerations: []
+  # certmHostKey:
+    # enabled: false
+  # userManagement:
+    # ldap:
+      # lookupFamilyOrder: ipv4_first ## <empty>/ipv4_first/ipv6_first/ipv4_only/ipv6_only
+
+## Document Database PG
+eric-data-document-database-pg:
+  enabled: false
+
+eric-lcm-smart-helm-hooks:
+  enabled: false
+
+eric-cloud-native-nf-additions-log-shipper:
+  enabled: false

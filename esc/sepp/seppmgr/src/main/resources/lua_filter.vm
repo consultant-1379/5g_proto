@@ -1,0 +1,267 @@
+## NOTE: The Velocity templates seem to remove the newline-character at the end
+##       of comment lines. It wouldn't matter in HTML (which is what Velocity
+##       templates are probably made for), but here it does.
+##       That's why comments are always on their own line, never at the end of a line.
+
+function envoy_on_request(request_handle)
+  request_handle:logInfo("Request")
+  
+  ## Mark the request that it has already gone through LUA. This helps in 
+  ## the Envoy routing-rules to differentiate the initial pass (before LUA-
+  ## processing) from the second pass (after LUA):
+  request_handle:headers():replace("x-lua", "///")
+  
+  ## Perl-compatible regex library (I don't manage to load it to  "local rex",
+  ## however this might be ok since the LUA documentation states:
+  ## "The other main job of require is to avoid loading the same file twice.
+  ##  For that purpose, it keeps a table with the names of all loaded files.
+  ##  If a required file is already in the table, require simply returns."
+  ## https://www.lua.org/pil/8.1.html
+  rex = require("rex_pcre")
+
+  -- Variables expected to be there for the predicate-expressions:
+  local req = {}
+  req.path = request_handle:headers():get(":path")
+  req.method = request_handle:headers():get(":method")
+  add_headers_to_req_variable(request_handle, req)
+
+  -- Read start-Routing-Case metadata:
+  local md = request_handle:metadata()
+  local rc = md:get("rc")
+  if rc
+  then
+    -- call function for this routing case via table lookup.
+    -- The Manager created one LUA function per RC and LUA put the function in a table
+    -- with the key = RC-name and value = function. This function knows which routing data
+    -- to extract. Then the routing case logic is executed. If the routing case goes
+    -- to another routing case, this should happen via tail recursion 
+    -- http://lua-users.org/wiki/ProperTailRecursion
+    -- At the end, the name of the cluster is returned.
+    request_handle:logInfo("Metadata rc: " .. rc)
+    local routing_cluster = _G["rc_" .. rc](request_handle, req) 
+    
+    -- Return cluster for routing:
+    if (routing_cluster)
+    then
+      request_handle:logInfo("Routing to cluster " .. routing_cluster)
+      request_handle:headers():replace("$egressConst.HEADER_CLUSTER", routing_cluster)
+    else
+      request_handle:logErr("ERROR: Routing case ended without returning a cluster")
+      request_handle:headers():replace("$egressConst.HEADER_CLUSTER", "unknown")
+    end
+  else
+    request_handle:logWarn("No routing case (rc) metadata found")
+  end
+end
+
+-- ===== BEGIN CONFIGURATION-DEPENDENT PART ================================
+  -- ------------- ROUTING DATA FUNCTIONS --------------------------
+#foreach($rd in $seppcfg.getMessageData())
+  -- Routing data $rd.getName()
+  function rd_${rd.getName()}(request_handle, var)
+    request_handle:logInfo("Enter rd_$rd.getName()")
+## If we ever implement more sources or more destinations, then better synthesize the
+##  helper function names here instead of a bigger if/else cascade
+#if($rd.getHeader())  ## read from header
+  #if($rd.getExtractorRegex())
+    routing_data_from_header_with_extractor_regex(request_handle, "$rd.getHeader()", "$routingctx.getNormalizedExtractorRegexp($rd.getExtractorRegex())", var)
+  #else  ## store in variable
+    routing_data_from_header_to_variable(request_handle, "$rd.getHeader()", "$rd.getVariableName()", var)
+  #end
+#else ## read from path
+  #if($rd.getExtractorRegex()) 
+    routing_data_from_path_with_extractor_regex(request_handle, "$routingctx.getNormalizedExtractorRegexp($rd.getExtractorRegex())", var)
+  #else ## store in variable
+    routing_data_from_path_to_variable(request_handle, "$rd.getVariableName()", var)
+  #end
+#end
+  end
+#end
+
+  -- ------------- ROUTING CASE FUNCTIONS --------------------------
+## Macro to make a quoted, comma-separated list of strings from a Java List of Strings.
+## Has to be in one line to avoid spaces or newlines in the generated LUA code.
+#macro(quoteList $list)
+#foreach($rdr in $list)"$rdr"#if($foreach.hasNext),#end#end
+#end
+#foreach($rc in $seppcfg.getRoutingCase())
+  -- Routing case $rc.getName()
+  function rc_${rc.getName()}(request_handle, req)
+    request_handle:logInfo("Enter rc_$rc.getName()")
+    -- Read Routing-Data
+    local rd_list = {#quoteList($rc.getMessageDataRef())}  -- routing-data is known from netconf
+    local var = {}  -- routing-data variables stored in "var"
+
+    for index, rd_name in pairs(rd_list) do
+      request_handle:logInfo("Metadata rd " .. index .. ": " .. rd_name)
+      -- Call the function to read the routing data from the MO "rd_name" 
+      -- and store it in var.
+      _G["rd_" .. rd_name](request_handle, var)
+    end
+    
+    -- Debugging: print variables
+    request_handle:logInfo("Variables: var.:\n" .. tformat(var, 4))
+    request_handle:logInfo("Variables: req.:\n" .. tformat(req, 4))
+
+    -- Routing Rules ------------------------------------
+    -- Evaluate predicate expressions based on rd
+  #foreach($rr in $rc.getRoutingRule())
+    #if (! $foreach.first)    elseif #else    if#end ($rr.getPredicateExpression()) -- Rule: $rr.getName()
+    then
+      #if($egress.getPoolName($rc.getName(), $rr.getName()) == $egress.getErrorUnknownPool())
+      return nil  -- pool not found -- should not happen
+      #else
+      apply_target_api_processing_${egress.getTargetApiProcessing($rc.getName(), $rr.getName())}(request_handle)
+      return "$egress.getPoolName($rc.getName(), $rr.getName())";
+      #end
+  #end
+     end
+     -- Fall-through: no cluster found
+     return nil
+  end
+#end
+-- ===== END CONFIGURATION-DEPENDENT PART ================================
+
+
+-- -------------- HELPER FUNCTIONS ------------------------------
+-- Apply target-api-header processing
+## Routing to dyn-fwd-proxy: Replace authority header and remove targetApiRoot header
+function apply_target_api_processing_auth(request_handle)
+  request_handle:logInfo("apply_target_api_processing_auth()")
+  local dest_host = request_handle:headers():get("$egressConst.HEADER_TARGET_API_ROOT")
+  if (dest_host)
+  then
+    ## dest_host may contain the protocol remove it, otherwise the forwarding will fail
+    dest_host = dest_host:gsub("^(http(s?)://)", "")  
+    request_handle:logInfo("Header $egressConst.HEADER_TARGET_API_ROOT found")
+    request_handle:headers():replace("$egressConst.HEADER_HOST", dest_host)
+    request_handle:headers():replace(":authority", dest_host)
+    request_handle:headers():remove("$egressConst.HEADER_TARGET_API_ROOT")
+  else
+    request_handle:logInfo("Header $egressConst.HEADER_TARGET_API_ROOT NOT FOUND")
+  end
+end
+
+## Routing to preferred cluster: Set metadata for subset-cluster and remove targetApiRoot header
+function apply_target_api_processing_header(request_handle)
+  request_handle:logInfo("apply_target_api_processing_header()")
+  local si = request_handle:streamInfo()
+  local dest_host = request_handle:headers():get("$egressConst.HEADER_TARGET_API_ROOT")
+  if (dest_host)
+  then
+    dest_host = get_host_from_url(dest_host)
+    request_handle:logInfo("Header $egressConst.HEADER_TARGET_API_ROOT found. Using dest_host=" .. dest_host)
+    request_handle:headers():replace("$egressConst.HEADER_HOST", dest_host)
+    request_handle:headers():remove("$egressConst.HEADER_TARGET_API_ROOT")
+    si:dynamicMetadata():set("envoy.lb", "$egressConst.METADATA_HOST", dest_host)
+  else
+    request_handle:logInfo("Header $egressConst.HEADER_TARGET_API_ROOT NOT FOUND")
+  end
+end
+
+## Get Host part from URL
+function get_host_from_url(host)
+  local dest_host = host
+  ## dest_host may contain the protocol and/or port -> remove it, otherwise the subset-cluster-match fails
+  dest_host = dest_host:gsub("^(http(s?)://)", "")
+  dest_host = dest_host:gsub(":%d+$", "")
+  return dest_host
+end
+
+## Routing to round-robin cluster: No header/metadata modifications
+function apply_target_api_processing_none(request_handle)
+  request_handle:logInfo("apply_target_api_processing_none()")
+end
+
+-- Copy all headers into the req.header variable to make them available for predicate-expressions
+function add_headers_to_req_variable(request_handle, req)
+  req.header = {}
+  for header_name, header_value in pairs(request_handle:headers()) do
+    if (string.byte(header_name) ~= 58)  -- skip pseudo-headers that start with ':'
+    then
+      req.header[header_name] = header_value
+    end
+  end
+end
+
+-- Read routing-data from a header with an extractor-regex and store in var.*:
+function routing_data_from_header_with_extractor_regex(request_handle, header_name, pattern, var)
+  if (header_name)
+  then
+    local header = request_handle:headers():get(header_name)
+    routing_data_extractor_regex(header, pattern, var)
+  end
+end
+
+-- Read routing-data from the path with an extractor-regex and store in var.*:
+function routing_data_from_path_with_extractor_regex(request_handle, pattern, var)
+  routing_data_from_header_with_extractor_regex(request_handle, ':path', pattern, var)
+end
+
+-- Read routing-data from a header and copy into a variable in var.var_name:
+function routing_data_from_header_to_variable(request_handle, header_name, var_name, var)
+  if (header_name)
+  then
+    local header = request_handle:headers():get(header_name)
+    var[var_name] = header
+  end
+end
+
+-- Read routing-data from the path and copy into a variable in var.var_name:
+function routing_data_from_path_to_variable(request_handle, var_name, var)
+  routing_data_from_header_to_variable(request_handle, ':path', var_name, var)
+end
+
+-- Use a regex with named captures to extract from the source
+-- and store into variables "var" that can be used in predicate-expressions.
+-- NOTE: Each \ in the pattern must be doubled in a LUA string to escape it!!
+function routing_data_extractor_regex(source, pattern, var)
+  if (source and pattern and var)
+  then
+    local regex = rex.new(pattern)
+    local start_pos, end_pos, captures = regex:exec(source)
+    -- If the regex matched, then add the named captures to routing data (var)
+    merge_table(captures, var)
+  end
+end
+
+-- Return contents of `tbl`, formatted with indentation.
+-- `indent` sets the initial level of indentation.
+-- adapted from https://gist.github.com/ripter/4270799
+function tformat (tbl, indent)
+  return tformat_acc(tbl, indent, "")
+end
+function tformat_acc (tbl, indent, acc)
+  if not indent then indent = 0 end
+  for k, v in pairs(tbl) do
+    formatting = string.rep("  ", indent) .. k .. ": "
+    if type(v) == "table" then
+      acc = acc .. formatting .. "\n"
+      return tformat_acc(v, indent+1, acc)
+    elseif type(v) == 'boolean' then
+      acc = acc .. formatting .. tostring(v) .. "\n"
+    else
+      acc = acc .. formatting .. v .. "\n"
+    end
+  end
+  return acc
+end
+
+-- Merge the first table into the second table. The destination table is changed
+-- in place.
+-- Only if:
+--  - none of the tables is nil
+--  - the key in source starts with a letter (A-Z, a-z)
+function merge_table(source, dest)
+  if (source and dest)
+  then
+    for k, v in pairs(source)
+    do
+      local first_char = string.byte(k)
+      if ((first_char >= 65 and first_char <= 90) or (first_char >= 97 and first_char <= 122))
+      then
+        dest[k] = v
+      end
+    end
+  end
+end

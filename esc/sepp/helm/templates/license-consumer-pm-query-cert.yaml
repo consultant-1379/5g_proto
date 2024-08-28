@@ -1,0 +1,3 @@
+{{- if eq (include "eric-sepp.license-consumer.enabled" . ) "true" }}
+  {{- include "eric-sc-license-consumer.pm-cert" . }}
+{{- end }}

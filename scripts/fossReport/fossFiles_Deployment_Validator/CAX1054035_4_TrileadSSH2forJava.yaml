@@ -1,0 +1,38 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2019-09-30 16:00
+FOSS:
+    # Available in Bazaar
+    FOSSName: Trilead SSH2 for Java
+    # Available in Bazaar
+    FOSSVersion: BUILD-217-JENKINS-16
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/jenkinsci/trilead-ssh2/archive/trilead-ssh2-{{FOSSVersion}}.zip
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 4/CAX1054035
+    # Not Available in Bazaar
+    PRIMNumber(CTC): CTC1016586
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: Patched trilead-ssh2 used in Jenkins
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: (The BSD 3-Clause License NEW, MIT License)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: MIT License
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: (HMAC-SHA1(512), HMAC-MD5(512), HMAC, AES(256), Blowfish(448), DES(56), 3DES(168), RSA)       
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: The actual used Cryptographic Algorithm is negotiated during hand-shake at connection setup
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: (SSH)
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: SSH is used for Netconf connections within the SC Deployment Validator
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'org.jenkins-ci:trilead-ssh2:jar:{{FOSSVersion}}-elis1'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ENTNGRG Georgios Antoniou

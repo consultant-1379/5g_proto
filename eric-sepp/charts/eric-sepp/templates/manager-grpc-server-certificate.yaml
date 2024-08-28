@@ -1,0 +1,26 @@
+{{- if eq (include "eric-sepp.tls" .) "true" }}
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+  name: {{ template "eric-sepp.name" . }}-manager-grpc-server-certificate
+  labels:
+{{- include "eric-sepp.labels" . | indent 4 }}
+    app: {{ template "eric-sepp.name" . }}-manager
+  annotations:
+{{- include "eric-sepp.helm-annotations" . | indent 4 }}
+{{- include "eric-sepp.config-annotations" . | indent 4 }}
+spec:
+  kubernetes:
+    generatedSecretName: {{ template "eric-sepp.name" . }}-manager-grpc-server-certificate
+    certificateName: tls.crt
+    privateKeyName: tls.key
+  certificate:
+    subject:
+      cn: {{ template "eric-sepp.name" . }}-manager-grpc
+    subjectAlternativeName:
+      dns:
+        - certified-scrape-target
+    extendedKeyUsage:
+      tlsClientAuth: false
+      tlsServerAuth: true
+{{- end }}

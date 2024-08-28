@@ -1,0 +1,68 @@
+[
+  {
+    "faultName": "PodFailure",
+    "vendor": 193,
+    "code": 10027009,
+    "defaultSeverity": "Major",
+    "defaultDescription": "Pod failure was detected in SC deployment",
+    "category": "Other",
+    "specificProblem": "SC, Pod Failure"
+  },
+  {
+    "faultName": "PvtbDifferenceReceivedSentSuccessesPacketsRatio",
+    "createAlarm" : true,
+    "vendor": 193,
+    "code": 10027011,
+    "defaultExpiration" : 0,
+    "defaultSeverity": "Major",
+    "defaultDescription": "PVTB difference between successful sent and received packets ratio",
+    "probableCause": 207,
+    "category": "Other",
+    "specificProblem": "SC,PVTB deviation between successful sent/received packets ratio"
+  },
+  {
+    "faultName": "TapcollectorOutTapFramesDroppedRatio",
+    "createAlarm" : true,
+    "vendor": 193,
+    "code": 10027012,
+    "defaultExpiration" : 0,
+    "defaultSeverity": "Major",
+    "defaultDescription": "TapCollector out tap frames dropped ratio",
+    "probableCause": 207,
+    "category": "Other",
+    "specificProblem": "SC,Tapcollector out tap frames dropped ratio"
+  },
+  {
+    "faultName": "ScRlfHighLoad",
+    "createAlarm": true,
+    "vendor": 193,
+    "code": 10027013,
+    "defaultExpiration" : 0,
+    "defaultSeverity": "Major",
+    "defaultDescription": "RLF load has passed a defined threshold",
+    "probableCause": 207,
+    "category": "Other",
+    "specificProblem": "SC, RLF High Load"
+  },
+  {
+    "faultName": "ScNlfHighLoad",
+    "createAlarm": true,
+    "vendor": 193,
+    "code": 10027014,
+    "defaultExpiration" : 0,
+    "defaultSeverity": "Major",
+    "defaultDescription": "NLF load has passed a defined threshold",
+    "probableCause": 207,
+    "category": "Other",
+    "specificProblem": "SC, NLF High Load"
+  },
+  {
+    "faultName": "ScNlfNrfGroupUnavailable",
+    "vendor": 193,
+    "code": 10027015,
+    "defaultSeverity": "Major",
+    "defaultDescription": "The NRF-group is unavailable",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SC, NLF NRF Group Unavailable"
+  }
+]

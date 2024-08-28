@@ -1,0 +1,1324 @@
+{
+    "namespace": "sc",
+    "dashboards": [
+        {
+            "_id": "bsf_overview",
+            "title": "BSF Overview",
+            "order": 1,
+            "apps": [
+                "statusOverview"
+            ],
+            "dashboardTreeView": { "tree": [["BSF"]] },
+            "tiles": [
+                {
+                    "xSize": 2,
+                    "ySize": 2,
+                    "widget": "bsf_kpi_tps"
+                },
+                {
+                    "xSize": 6,
+                    "ySize": 2,
+                    "widget": "bsf_tps_timeline"
+                },
+                {
+                    "xSize": 2,
+                    "ySize": 2,
+                    "widget": "builtin:alarm_summary_bar_chart"
+                },
+                {
+                    "xSize": 2,
+                    "ySize": 2,
+                    "widget": "bsf_kpi_success"
+                },
+                {
+                    "xSize": 6,
+                    "ySize": 2,
+                    "widget": "bsf_success_timeline"
+                },
+                {
+                    "xSize": 2,
+                    "ySize": 2,
+                    "widget": "bsf_load"
+                },
+                {
+                    "xSize": 2,
+                    "ySize": 2,
+                    "widget": "bsf_kpi_mps"
+                },
+                {
+                    "xSize": 8,
+                    "ySize": 2,
+                    "widget": "bsf_mps_timeline"
+                },
+                {
+                    "xSize": 10,
+                    "ySize": 2,
+                    "widget": "sc:pod_table"
+                }
+            ]
+        },
+        {
+            "_id": "bsf_system",
+            "title": "BSF System View",
+            "order": 2,
+            "apps": [
+                "statusOverview"
+            ],
+            "dashboardTreeView": { "tree": [["BSF"]] },
+            "tiles": [
+                {
+                    "xSize": 2,
+                    "ySize": 4,
+                    "widget": "bsf_system_kpi"
+                },
+                {
+                    "xSize": 8,
+                    "ySize": 2,
+                    "widget": "bsf_load_percentage"
+                },
+                {
+                    "xSize": 8,
+                    "ySize": 2,
+                    "widget": "bsf_cpu"
+                },
+                {
+                    "xSize": 2,
+                    "ySize": 2,
+                    "widget": "builtin:alarm_summary_bar_chart"
+                },
+                {
+                    "xSize": 8,
+                    "ySize": 2,
+                    "widget": "bsf_memory"
+                },
+                {
+                    "xSize": 10,
+                    "ySize": 2,
+                    "widget": "sc:pod_table"
+                }
+            ]
+        },
+        {
+            "_id": "bsf_database_overview",
+            "title": "BSF Database Overview",
+            "order": 3,
+            "apps": [
+                "statusOverview"
+            ],
+            "dashboardTreeView": { "tree": [["BSF"]] },
+            "tiles": [
+                {
+                    "xSize": 2,
+                    "ySize": 4,
+                    "widget": "db_kpis"
+                },
+                {
+                    "xSize": 4,
+                    "ySize": 2,
+                    "widget": "unsuccessful_binding_database_operations"
+                },
+                {
+                    "xSize": 4,
+                    "ySize": 2,
+                    "widget": "database_storage_utilization"
+                },
+                {
+                    "xSize": 4,
+                    "ySize": 2,
+                    "widget": "timeout_errors"
+                },
+                {
+                    "xSize": 4,
+                    "ySize": 2,
+                    "widget": "throttling_errors"
+                }
+            ]
+        },
+        {
+            "_id": "bsf_database_details",
+            "title": "BSF Database Details View",
+            "order": 4,
+            "apps": [
+                "statusOverview"
+            ],
+            "dashboardTreeView": { "tree": [["BSF"]] },
+            "tiles": [
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "binding_database_request_timeouts"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "binding_database_request_throttling"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "cql_requests_rate"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "cql_requests_mean_latency_per_instance"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "pool_open_connections"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "database_error_rate"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "pool_in_flight"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "file_system_storage"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "throttling_delay_mean_latency"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "throttling_queue_max"
+                }
+            ]
+        },
+        {
+            "_id": "bsf_binding_cleanup_statistics",
+            "title": "BSF Binding Cleanup View",
+            "order": 5,
+            "apps": [
+                "statusOverview"
+            ],
+            "dashboardTreeView": { "tree": [["BSF"]] },
+            "tiles": [
+                {
+                    "xSize": 2,
+                    "ySize": 8,
+                    "widget": "binding_cleanup_kpis"
+                },
+                {
+                    "xSize": 4,
+                    "ySize": 2,
+                    "widget": "stale_bindings_deletion_rate_resolve_upon_lookup_multiple_bindings"
+                },
+                {
+                    "xSize": 4,
+                    "ySize": 2,
+                    "widget": "stale_bindings_deletion_rate_resolve_upon_lookup_recovery_time"
+                },
+                {
+                    "xSize": 4,
+                    "ySize": 2,
+                    "widget": "bindings_scanned_rate"
+                },
+                {
+                    "xSize": 4,
+                    "ySize": 2,
+                    "widget": "stale_bindings_detected_rate_binding_database_scan"
+                },
+                {
+                    "xSize": 4,
+                    "ySize": 2,
+                    "widget": "stale_bindings_deletion_rate_binding_database_scan"
+                },
+                {
+                    "xSize": 4,
+                    "ySize": 2,
+                    "widget": "bindings_scanned_current"
+                },
+                {
+                    "xSize": 4,
+                    "ySize": 2,
+                    "widget": "bindings_stale_and_deleted_current"
+                },
+                {
+                    "xSize": 4,
+                    "ySize": 2,
+                    "widget": "binding_database_scan_duration"
+                }
+            ]
+        }
+    ],
+    "widgets": [
+        {
+            "_id": "bsf_kpi_tps",
+            "widgetType": "kpi",
+            "title": "TPS",
+            "sources": [
+                {
+                    "source": "bsf_http_tps"
+                },
+                {
+                    "source": "Diameter_TransTerm_Ordered"
+                }
+            ]
+        },
+        {
+            "_id": "bsf_kpi_mps",
+            "widgetType": "kpi",
+            "title": "MPS",
+            "sources": [
+                {
+                    "source": "bsf_licensed_traffic"
+                }
+            ]
+        },
+        {
+            "_id": "bsf_kpi_success",
+            "widgetType": "kpi",
+            "title": "Success Rate",
+            "sources": [
+                {
+                    "source": "bsf_http_success"
+                },
+                {
+                    "source": "Diameter_Transaction_SuccessRate"
+                }
+            ]
+        },
+        {
+            "_id": "bsf_tps_timeline",
+            "widgetType": "timeline",
+            "title": "TPS",
+            "sources": [
+                {
+                    "source": "bsf_http_tps"
+                },
+                {
+                    "source": "Diameter_TransTerm_Ordered"
+                }
+            ]
+        },
+        {
+            "_id": "bsf_mps_timeline",
+            "widgetType": "timeline",
+            "title": "MPS",
+            "sources": [
+                {
+                    "source": "bsf_licensed_traffic"
+                }
+            ]
+        },
+        {
+            "_id": "bsf_success_timeline",
+            "widgetType": "timeline",
+            "title": "Ratio",
+            "sources": [
+                {
+                    "source": "bsf_http_success"
+                },
+                {
+                    "source": "Diameter_Transaction_SuccessRate"
+                }
+            ]
+        },
+        {
+            "_id": "bsf_system_kpi",
+            "widgetType": "kpi",
+            "title": "SYSTEM KPIs",
+            "sources": [
+                {
+                    "source": "bsf_manager_memory"
+                },
+                {
+                    "source": "bsf_worker_memory"
+                },
+                {
+                    "source": "bsf_diameter_memory"
+                },
+                {
+                    "source": "stm_diameter_memory"
+                },
+                {
+                    "source": "bsf_dsl_memory"
+                },
+                {
+                    "source": "bsf_diameter_grpc_memory"
+                },
+                {
+                    "source": "wcdb_memory"
+                },
+                {
+                    "source": "bsf_load"
+                },
+                {
+                    "source": "bsf_worker_load"
+                },
+                {
+                    "source": "bsf_cassandra_load"
+                },
+                {
+                    "source": "bsf_dsl_load"
+                },
+                {
+                    "source": "bsf_fe_diameter_load"
+                },
+                {
+                    "source": "bsf_diameter_load"
+                },
+                {
+                    "source": "bsf_proxy_grpc_diameter_load"
+                }
+            ]
+        },
+        {
+            "_id": "bsf_cpu",
+            "widgetType": "timeline",
+            "title": "CPU Usage in CPU millicores",
+            "sources": [
+                {
+                    "source": "bsf_manager_cpu"
+                },
+                {
+                    "source": "bsf_worker_cpu"
+                },
+                {
+                    "source": "bsf_diameter_cpu"
+                },
+                {
+                    "source": "stm_diameter_cpu"
+                },
+                {
+                    "source": "bsf_dsl_cpu"
+                },
+                {
+                    "source": "bsf_diameter_grpc_cpu"
+                },
+                {
+                    "source": "wcdb_cpu"
+                }
+            ]
+        },
+        {
+            "_id": "bsf_load",
+            "widgetType": "timeline",
+            "title": "BSF Load in %",
+            "sources": [
+                {
+                    "source": "bsf_load"
+                }
+            ]
+        },
+        {
+            "_id": "bsf_load_percentage",
+            "widgetType": "timeline",
+            "title": "BSF Load in %",
+            "sources": [
+                {
+                    "source": "bsf_load"
+                },
+                {
+                    "source": "bsf_worker_load"
+                },
+                {
+                    "source": "bsf_cassandra_load"
+                },
+                {
+                    "source": "bsf_dsl_load"
+                },
+                {
+                    "source": "bsf_fe_diameter_load"
+                },
+                {
+                    "source": "bsf_diameter_load"
+                },
+                {
+                    "source": "bsf_proxy_grpc_diameter_load"
+                }
+            ]
+        },
+        {
+            "_id": "bsf_memory",
+            "widgetType": "timeline",
+            "title": "Memory Usage in MByte [MB] per Container",
+            "sources": [
+                {
+                    "source": "bsf_manager_memory"
+                },
+                {
+                    "source": "bsf_worker_memory"
+                },
+                {
+                    "source": "bsf_diameter_memory"
+                },
+                {
+                    "source": "stm_diameter_memory"
+                },
+                {
+                    "source": "bsf_dsl_memory"
+                },
+                {
+                    "source": "bsf_diameter_grpc_memory"
+                },
+                {
+                    "source": "wcdb_memory"
+                }
+            ]
+        },
+        {
+            "_id": "cql_requests_rate",
+            "widgetType": "timeline",
+            "title": "CQL requests rate in requests/sec",
+            "sources": [
+                {
+                    "source": "bsf_worker_cql_rate"
+                },
+                {
+                    "source": "bsf_diameter_cql_rate"
+                }
+            ]
+        },
+        {
+            "_id": "database_error_rate",
+            "widgetType": "timeline",
+            "title": "Binding database error rate in errors/sec",
+            "sources": [
+                {
+                    "source": "connection_init_errors_bsf_worker"
+                },
+                {
+                    "source": "connection_init_errors_bsf_diameter"
+                },
+                {
+                    "source": "connection_auth_errors_bsf_worker"
+                },
+                {
+                    "source": "connection_auth_errors_bsf_diameter"
+                },
+                {
+                    "source": "read_timeout_errors_bsf_worker"
+                },
+                {
+                    "source": "read_timeout_errors_bsf_diameter"
+                },
+                {
+                    "source": "write_timeout_errors_bsf_worker"
+                },
+                {
+                    "source": "write_timeout_errors_bsf_diameter"
+                },
+                {
+                    "source": "requests_aborted_bsf_worker"
+                },
+                {
+                    "source": "requests_aborted_diameter"
+                },
+                {
+                    "source": "requests_unavailable_bsf_worker"
+                },
+                {
+                    "source": "requests_unavailable_diameter"
+                },
+                {
+                    "source": "requests_unsent_bsf_worker"
+                },
+                {
+                    "source": "requests_unsent_diameter"
+                },
+                {
+                    "source": "requests_other_error_bsf_worker"
+                },
+                {
+                    "source": "requests_other_error_diameter"
+                }
+            ]
+        },
+        {
+            "_id": "cql_requests_mean_latency_per_instance",
+            "widgetType": "timeline",
+            "title": "CQL requests mean latency per instance in milliseconds",
+            "sources": [
+                {
+                    "source": "bsf_worker_mean_latency_per_instance"
+                },
+                {
+                    "source": "bsf_diameter_mean_latency_per_instance"
+                }
+            ]
+        },
+        {
+            "_id": "binding_database_request_timeouts",
+            "widgetType": "timeline",
+            "title": "Binding database request timeouts",
+            "sources": [
+                {
+                    "source": "bsf_worker_request_timeouts_per_instance"
+                },
+                {
+                    "source": "bsf_diameter_request_timeouts_per_instance"
+                }
+            ]
+        },
+        {
+            "_id": "binding_database_request_throttling",
+            "widgetType": "timeline",
+            "title": "Binding database request throttling",
+            "sources": [
+                {
+                    "source": "bsf_worker_request_throttling_per_instance"
+                },
+                {
+                    "source": "bsf_diameter_request_throttling_per_instance"
+                }
+            ]
+        },
+        {
+            "_id": "throttling_delay_mean_latency",
+            "widgetType": "timeline",
+            "title": "Throttling delay mean latency in milliseconds",
+            "sources": [
+                {
+                    "source": "throttling_delay_mean_latency_bsf_worker"
+                },
+                {
+                    "source": "throttling_delay_mean_latency_diameter"
+                }
+            ]
+        },
+        {
+            "_id": "throttling_errors",
+            "widgetType": "timeline",
+            "title": "Total throttling error rate in errors/sec",
+            "sources": [
+                {
+                    "source": "throttling_errors_bsf_worker"
+                },
+                {
+                    "source": "throttling_errors_diameter"
+                }
+            ]
+        },
+        {
+            "_id": "timeout_errors",
+            "widgetType": "timeline",
+            "title": "Total timeout error rate in errors/sec",
+            "sources": [
+                {
+                    "source": "timeout_errors_bsf_worker"
+                },
+                {
+                    "source": "timeout_errors_diameter"
+                }
+            ]
+        },
+        {
+            "_id": "throttling_queue_max",
+            "widgetType": "timeline",
+            "title": "Throttling queue size",
+            "sources": [
+                {
+                    "source": "throttling_queue_max_bsf_worker"
+                },
+                {
+                    "source": "throttling_queue_max_diameter"
+                }
+            ]
+        },
+        {
+            "_id": "pool_in_flight",
+            "widgetType": "timeline",
+            "title": "In flight requests",
+            "sources": [
+                {
+                    "source": "pool_in_flight_bsf_worker"
+                },
+                {
+                    "source": "pool_in_flight_diameter"
+                }
+            ]
+        },
+        {
+            "_id": "pool_open_connections",
+            "widgetType": "timeline",
+            "title": "Open connections to binding database",
+            "sources": [
+                {
+                    "source": "pool_open_connections_bsf_worker"
+                },
+                {
+                    "source": "pool_open_connections_diameter"
+                }
+            ]
+        },
+        {
+            "_id": "file_system_storage",
+            "widgetType": "timeline",
+            "title": "File system storage usage in bytes",
+            "sources": [
+                {
+                    "source": "file_system_storage_usage"
+                }
+            ]
+        },
+        {
+            "_id": "database_storage_utilization",
+            "widgetType": "timeline",
+            "title": "Binding database storage utilization",
+            "sources": [
+                {
+                    "source": "database_storage_utilization"
+                }
+            ]
+        },
+        {
+            "_id": "unsuccessful_binding_database_operations",
+            "widgetType": "timeline",
+            "title": "Unsuccessful binding database operations",
+            "sources": [
+                {
+                    "source": "unsuccessful_binding_database_operations_total"
+                }
+            ]
+        },
+        {
+            "_id": "db_kpis",
+            "widgetType": "kpi",
+            "title": "Database KPIs",
+            "sources": [
+                {
+                    "source": "unsuccessful_binding_database_operations_total"
+                },
+                {
+                    "source": "database_storage_utilization"
+                }
+            ]
+        },
+        {
+            "_id": "binding_cleanup_kpis",
+            "widgetType": "kpi",
+            "title": "Cleanup KPIs",
+            "sources": [
+                {
+                    "source": "bindings_scanned_current"
+                },
+                {
+                    "source": "bindings_stale_current"
+                },
+                {
+                    "source": "bindings_stale_deleted_current"
+                },
+                {
+                    "source": "binding_scans_started_last_two_days"
+                },
+                {
+                    "source": "binding_scans_failed_last_two_days"
+                },
+                {
+                    "source": "binding_scans_completed_last_two_days"
+                }
+            ]
+        },
+        {
+            "_id": "stale_bindings_deletion_rate_resolve_upon_lookup_multiple_bindings",
+            "widgetType": "timeline",
+            "title": "Total multiple bindings deleted due to resolution upon lookup in bindings/sec",
+            "sources": [
+                {
+                    "source": "stale_bindings_deletion_rate_resolve_upon_lookup_multiple_bindings"
+                }
+            ]
+        },
+        {
+            "_id": "stale_bindings_deletion_rate_resolve_upon_lookup_recovery_time",
+            "widgetType": "timeline",
+            "title": "Total stale bindings due to pcf recovery time deleted from resolution upon lookup in bindings/sec",
+            "sources": [
+                {
+                    "source": "stale_bindings_deletion_rate_resolve_upon_lookup_recovery_time"
+                }
+            ]
+        },
+        {
+            "_id": "stale_bindings_detected_rate_binding_database_scan",
+            "widgetType": "timeline",
+            "title": "Total stale bindings detected from binding database scan in bindings/sec",
+            "sources": [
+                {
+                    "source": "stale_bindings_detected_rate_binding_database_scan"
+                }
+            ]
+        },
+        {
+            "_id": "stale_bindings_deletion_rate_binding_database_scan",
+            "widgetType": "timeline",
+            "title": "Total stale bindings deleted due to binding database scan in bindings/sec",
+            "sources": [
+                {
+                    "source": "stale_bindings_deletion_rate_binding_database_scan"
+                }
+            ]
+        },
+        {
+            "_id": "bindings_scanned_rate",
+            "widgetType": "timeline",
+            "title": "Total bindings scanned in bindings/sec",
+            "sources": [
+                {
+                    "source": "bindings_scanned_rate"
+                }
+            ]
+        },
+        {
+            "_id": "bindings_scanned_current",
+            "widgetType": "timeline",
+            "title": "Current scanned bindings",
+            "sources": [
+                {
+                    "source": "bindings_scanned_current"
+                }
+            ]
+        },
+        {
+            "_id": "bindings_stale_and_deleted_current",
+            "widgetType": "timeline",
+            "title": "Current stale bindings",
+            "sources": [
+                {
+                    "source": "bindings_stale_current"
+                },
+        {
+                    "source": "bindings_stale_deleted_current"
+                }
+            ]
+        },
+        {
+            "_id": "binding_database_scan_duration",
+            "widgetType": "timeline",
+            "title": "Binding database scan duration in seconds",
+            "sources": [
+                {
+                    "source": "binding_database_scan_duration"
+                }
+            ]
+        }
+    ],
+    "sources": [
+        {
+            "_id": "bsf_http_tps",
+            "sourceType": "prometheus",
+            "query": "job:bsf_http_tps",
+            "label": "BSF HTTP [TPS]"
+        },
+        {
+            "_id": "bsf_http_success",
+            "sourceType": "prometheus",
+            "query": "job:bsf_http_success_rate_cnom",
+            "label": "BSF HTTP Success Rate [%]"
+        },
+        {
+            "_id": "bsf_manager_cpu",
+            "sourceType": "prometheus",
+            "query": "job:bsf_manager_avg_cpu_load_millicores",
+            "label": "BSF Manager Load [CPU millicores]"
+        },
+        {
+            "_id": "bsf_worker_cpu",
+            "sourceType": "prometheus",
+            "query": "job:bsf_worker_avg_cpu_load_millicores",
+            "label": "BSF Worker Load (Average) [CPU millicores]"
+        },
+        {
+            "_id": "bsf_diameter_cpu",
+            "sourceType": "prometheus",
+            "query": "job:bsf_diameter_avg_cpu_load_millicores",
+            "label": "BSF Diameter Load (Average) [CPU millicores]"
+        },
+        {
+            "_id": "stm_diameter_cpu",
+            "sourceType": "prometheus",
+            "query": "job:stm_diameter_avg_cpu_load_millicores",
+            "label": "BSF Diameter FE Load (Average) [CPU millicores]"
+        },
+        {
+            "_id": "bsf_dsl_cpu",
+            "sourceType": "prometheus",
+            "query": "job:bsf_dsl_avg_cpu_load_millicores",
+            "label": "BSF DSL Load (Average) [CPU millicores]"
+        },
+        {
+            "_id": "bsf_diameter_grpc_cpu",
+            "sourceType": "prometheus",
+            "query": "job:bsf_diameter_grpc_avg_cpu_load_millicores",
+            "label": "BSF Diameter Proxy gRPC Load (Average) [CPU millicores]"
+        },
+        {
+            "_id": "wcdb_cpu",
+            "sourceType": "prometheus",
+            "query": "job:wcdb_avg_cpu_load_millicores",
+            "label": "BSF Wide Column Database Load (Average) [CPU millicores]"
+        },
+        {
+            "_id": "bsf_manager_memory",
+            "sourceType": "prometheus",
+            "query": "job:bsf_manager_avg_memory_mb",
+            "label": "BSF Manager Memory [MB]"
+        },
+        {
+            "_id": "bsf_worker_memory",
+            "sourceType": "prometheus",
+            "query": "job:bsf_worker_avg_memory_mb",
+            "label": "BSF Worker Memory (Average) [MB]"
+        },
+        {
+            "_id": "bsf_diameter_memory",
+            "sourceType": "prometheus",
+            "query": "job:bsf_diameter_avg_memory_mb",
+            "label": "BSF Diameter Memory (Average) [MB]"
+        },
+        {
+            "_id": "stm_diameter_memory",
+            "sourceType": "prometheus",
+            "query": "job:stm_diameter_avg_memory_mb",
+            "label": "BSF Diameter FE Memory (Average) [MB]"
+        },
+        {
+            "_id": "bsf_dsl_memory",
+            "sourceType": "prometheus",
+            "query": "job:bsf_dsl_avg_memory_mb",
+            "label": "BSF DSL Memory (Average) [MB]"
+        },
+        {
+            "_id": "bsf_diameter_grpc_memory",
+            "sourceType": "prometheus",
+            "query": "job:bsf_diameter_grpc_avg_memory_mb",
+            "label": "BSF Diameter Proxy gRPC Memory (Average) [MB]"
+        },
+        {
+            "_id": "wcdb_memory",
+            "sourceType": "prometheus",
+            "query": "job:wcdb_avg_memory_mb",
+            "label": "BSF Wide Column Database Memory (Average) [MB]"
+        },
+        {
+            "_id": "bsf_load",
+            "sourceType": "prometheus",
+            "query": "job:avg_bsf_load_percentage",
+            "label": "BSF Load [%]"
+        },
+        {
+            "_id": "bsf_worker_load",
+            "sourceType": "prometheus",
+            "query": "job:avg_bsf_worker_load_percentage",
+            "label": "BSF Worker Load [%]"
+        },
+        {
+            "_id": "bsf_cassandra_load",
+            "sourceType": "prometheus",
+            "query": "job:avg_bsf_cassandra_load_percentage",
+            "label": "BSF Wide Column Database Load [%]"
+        },
+        {
+            "_id": "bsf_dsl_load",
+            "sourceType": "prometheus",
+            "query": "job:avg_bsf_dsl_load_percentage",
+            "label": "BSF DSL Load [%]"
+        },
+        {
+            "_id": "bsf_fe_diameter_load",
+            "sourceType": "prometheus",
+            "query": "job:avg_bsf_fe_diameter_load_percentage",
+            "label": "BSF FE Diameter Load [%]"
+        },
+        {
+            "_id": "bsf_diameter_load",
+            "sourceType": "prometheus",
+            "query": "job:avg_bsf_diameter_load_percentage",
+            "label": "BSF Diameter Load [%]"
+        },
+        {
+            "_id": "bsf_proxy_grpc_diameter_load",
+            "sourceType": "prometheus",
+            "query": "job:avg_bsf_diameter_grpc_load_percentage",
+            "label": "BSF Proxy gRPC Diameter Load [%]"
+        },
+        {
+            "_id": "Diameter_TransTerm_Ordered",
+            "sourceType": "prometheus",
+            "query": "job:bsf_diameter_tps",
+            "label": "BSF Diameter [TPS]"
+        },
+        {
+            "_id": "Diameter_Transaction_SuccessRate",
+            "sourceType": "prometheus",
+            "query": "job:bsf_diameter_success_rate_cnom",
+            "label": "BSF Diameter Transactions Success Rate [%]"
+        },
+        {
+            "_id": "bsf_worker_cql_rate",
+            "sourceType": "prometheus",
+            "query": "job:bsf_worker_cql_rate",
+            "label": "BSF Worker - ",
+            "splitByLabelName": "instance",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "bsf_diameter_cql_rate",
+            "sourceType": "prometheus",
+            "query": "job:bsf_diameter_cql_rate",
+            "label": "Diameter - ",
+            "splitByLabelName": "instance",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "bsf_worker_mean_latency_per_instance",
+            "sourceType": "prometheus",
+            "query": "job:bsf_worker_mean_latency_per_instance",
+            "label": "BSF Worker - ",
+            "splitByLabelName": "instance",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "bsf_diameter_mean_latency_per_instance",
+            "sourceType": "prometheus",
+            "query": "job:bsf_diameter_mean_latency_per_instance",
+            "label": "Diameter - ",
+            "splitByLabelName": "instance",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "bsf_worker_request_timeouts_per_instance",
+            "sourceType": "prometheus",
+            "query": "job:bsf_worker_total_request_timeouts_per_instance",
+            "label": "BSF Worker - ",
+            "splitByLabelName": "instance",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "bsf_diameter_request_timeouts_per_instance",
+            "sourceType": "prometheus",
+            "query": "job:bsf_diameter_total_request_timeouts_per_instance",
+            "label": "Diameter - ",
+            "splitByLabelName": "instance",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "bsf_worker_request_throttling_per_instance",
+            "sourceType": "prometheus",
+            "query": "job:bsf_worker_total_request_throttling_per_instance",
+            "label": "BSF Worker - ",
+            "splitByLabelName": "instance",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "bsf_diameter_request_throttling_per_instance",
+            "sourceType": "prometheus",
+            "query": "job:bsf_diameter_total_request_throttling_per_instance",
+            "label": "Diameter - ",
+            "splitByLabelName": "instance",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "connection_init_errors_bsf_worker",
+            "sourceType": "prometheus",
+            "query": "job:bsf_worker_connection_init_errors",
+            "label": "Connection init, BSF Worker"
+        },
+        {
+            "_id": "connection_init_errors_bsf_diameter",
+            "sourceType": "prometheus",
+            "query": "job:bsf_diameter_connection_init_errors",
+            "label": "Connection init, Diameter"
+        },
+        {
+            "_id": "connection_auth_errors_bsf_worker",
+            "sourceType": "prometheus",
+            "query": "job:bsf_worker_connection_auth_errors",
+            "label": "Connection auth, BSF Worker"
+        },
+        {
+            "_id": "connection_auth_errors_bsf_diameter",
+            "sourceType": "prometheus",
+            "query": "job:bsf_diameter_connection_auth_errors",
+            "label": "Connection auth, Diameter"
+        },
+        {
+            "_id": "read_timeout_errors_bsf_worker",
+            "sourceType": "prometheus",
+            "query": "job:bsf_worker_read_timeout_errors",
+            "label": "Request read timeout, BSF Worker"
+        },
+        {
+            "_id": "read_timeout_errors_bsf_diameter",
+            "sourceType": "prometheus",
+            "query": "job:bsf_diameter_read_timeout_errors",
+            "label": "Request read timeout, Diameter"
+        },
+        {
+            "_id": "write_timeout_errors_bsf_worker",
+            "sourceType": "prometheus",
+            "query": "job:bsf_worker_write_timeout_errors",
+            "label": "Request write timeout, BSF Worker"
+        },
+        {
+            "_id": "write_timeout_errors_bsf_diameter",
+            "sourceType": "prometheus",
+            "query": "job:bsf_diameter_write_timeout_errors",
+            "label": "Request write timeout, Diameter"
+        },
+        {
+            "_id": "requests_aborted_bsf_worker",
+            "sourceType": "prometheus",
+            "query": "job:bsf_worker_requests_aborted",
+            "label": "Request aborted, BSF Worker - "
+        },
+        {
+            "_id": "requests_aborted_diameter",
+            "sourceType": "prometheus",
+            "query": "job:bsf_diameter_requests_aborted",
+            "label": "Request aborted, Diameter"
+        },
+        {
+            "_id": "requests_unavailable_bsf_worker",
+            "sourceType": "prometheus",
+            "query": "job:bsf_worker_requests_unavailable",
+            "label": "Request unavailable, BSF Workers"
+        },
+        {
+            "_id": "requests_unavailable_diameter",
+            "sourceType": "prometheus",
+            "query": "job:bsf_diameter_requests_unavailable",
+            "label": "Request unavailable, Diameter"
+        },
+        {
+            "_id": "requests_unsent_bsf_worker",
+            "sourceType": "prometheus",
+            "query": "job:bsf_worker_requests_unsent",
+            "label": "Request unsent, BSF Workers"
+        },
+        {
+            "_id": "requests_unsent_diameter",
+            "sourceType": "prometheus",
+            "query": "job:bsf_diameter_requests_unsent",
+            "label": "Request unsent, Diameter"
+        },
+        {
+            "_id": "requests_other_error_bsf_worker",
+            "sourceType": "prometheus",
+            "query": "job:bsf_worker_requests_other_error",
+            "label": "Request other error, BSF Workers"
+        },
+        {
+            "_id": "requests_other_error_diameter",
+            "sourceType": "prometheus",
+            "query": "job:bsf_diameter_requests_other_error",
+            "label": "Request other error, Diameter"
+        },
+        {
+            "_id": "throttling_delay_mean_latency_bsf_worker",
+            "sourceType": "prometheus",
+            "query": "job:bsf_worker_throttling_delay_mean_latency",
+            "label": "BSF Worker - ",
+            "splitByLabelName": "instance",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "throttling_delay_mean_latency_diameter",
+            "sourceType": "prometheus",
+            "query": "job:bsf_diameter_throttling_delay_mean_latency",
+            "label": "Diameter - ",
+            "splitByLabelName": "instance",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "throttling_errors_bsf_worker",
+            "sourceType": "prometheus",
+            "query": "job:bsf_worker_throttling_errors",
+            "label": "BSF Worker"
+        },
+        {
+            "_id": "throttling_errors_diameter",
+            "sourceType": "prometheus",
+            "query": "job:bsf_diameter_throttling_errors",
+            "label": "Diameter"
+        },
+        {
+            "_id": "timeout_errors_bsf_worker",
+            "sourceType": "prometheus",
+            "query": "job:bsf_worker_timeout_errors",
+            "label": "BSF Worker"
+        },
+        {
+            "_id": "timeout_errors_diameter",
+            "sourceType": "prometheus",
+            "query": "job:bsf_diameter_timeout_errors",
+            "label": "Diameter"
+        },
+        {
+            "_id": "throttling_queue_max",
+            "sourceType": "prometheus",
+            "query": "job:throttling_queue_max",
+            "label": "",
+            "splitByLabelName": "instance",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "throttling_queue_max_bsf_worker",
+            "sourceType": "prometheus",
+            "query": "job:bsf_worker_throttling_queue_max",
+            "label": "BSF Worker - ",
+            "splitByLabelName": "instance",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "throttling_queue_max_diameter",
+            "sourceType": "prometheus",
+            "query": "job:bsf_diameter_throttling_queue_max",
+            "label": "Diameter - ",
+            "splitByLabelName": "instance",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "pool_in_flight_bsf_worker",
+            "sourceType": "prometheus",
+            "query": "job:bsf_worker_pool_in_flight",
+            "label": "BSF Worker - ",
+            "splitByLabelName": "instance",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "pool_in_flight_diameter",
+            "sourceType": "prometheus",
+            "query": "job:bsf_diameter_pool_in_flight",
+            "label": "Diameter - ",
+            "splitByLabelName": "instance",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "pool_open_connections_bsf_worker",
+            "sourceType": "prometheus",
+            "query": "job:bsf_worker_pool_open_connections",
+            "label": "BSF Worker - ",
+            "splitByLabelName": "instance",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "pool_open_connections_diameter",
+            "sourceType": "prometheus",
+            "query": "job:bsf_diameter_pool_open_connections",
+            "label": "Diameter - ",
+            "splitByLabelName": "instance",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "file_system_storage_usage",
+            "sourceType": "prometheus",
+            "query": "job:file_system_storage_usage",
+            "label": "File system storage usage - ",
+            "splitByLabelName": "instance",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "database_storage_utilization",
+            "sourceType": "prometheus",
+            "query": "job:max_database_storage_utilization",
+            "label": "Max binding database storage utilization [%]"
+        },
+        {
+            "_id": "unsuccessful_binding_database_operations_total",
+            "sourceType": "prometheus",
+            "query": "job:cassandra_unsuccessful_transactions_per_cassandra_total_messages:ratio_rate45s_100",
+            "label": "Unsuccessful binding database operations [%]"
+        },
+        {
+            "_id": "bsf_licensed_traffic",
+            "sourceType": "prometheus",
+            "query": "job:bsf_licensed_traffic",
+            "label": "Licensed Traffic [MPS]"
+        },
+    {
+            "_id": "stale_bindings_deletion_rate_resolve_upon_lookup_multiple_bindings",
+            "sourceType": "prometheus",
+            "query": "bsf_bindings_stale_deleted_total_lookup_multiple_bindings",
+            "label": "PCF - ",
+            "splitByLabelName": "pcf_id",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "stale_bindings_deletion_rate_resolve_upon_lookup_recovery_time",
+            "sourceType": "prometheus",
+            "query": "bsf_bindings_stale_deleted_total_lookup_recovery_time",
+            "label": "PCF - ",
+            "splitByLabelName": "pcf_id",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "stale_bindings_deletion_rate_binding_database_scan",
+            "sourceType": "prometheus",
+            "query": "bsf_bindings_stale_deleted_total_scan_rate45s",
+            "label": "PCF - ",
+            "splitByLabelName": "pcf_id",
+            "labelOrder": "prometheusLabelLast"
+        },
+    {
+            "_id": "stale_bindings_detected_rate_binding_database_scan",
+            "sourceType": "prometheus",
+            "query": "bsf_bindings_stale_total_scan_rate45s",
+            "label": "PCF - ",
+            "splitByLabelName": "pcf_id",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "bindings_scanned_rate",
+            "sourceType": "prometheus",
+            "query": "bsf_bindings_scanned_total_rate45s",
+            "label": "PCF - ",
+            "splitByLabelName": "pcf_id",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "binding_scans_started_last_two_days",
+            "sourceType": "prometheus",
+            "query": "bsf_binding_database_scans_started_last_two_days",
+            "label": "Binding database scans started last two days"
+        },
+        {
+            "_id": "binding_scans_failed_last_two_days",
+            "sourceType": "prometheus",
+            "query": "bsf_binding_database_scans_failed_last_two_days_sum_by_reason",
+            "label": "Binding database scans failed last two days"
+        },
+        {
+            "_id": "binding_scans_completed_last_two_days",
+            "sourceType": "prometheus",
+            "query": "bsf_binding_database_scans_completed_last_two_days",
+            "label": "Binding database scans completed last two days"
+        },
+        {
+            "_id": "bindings_scanned_current",
+            "sourceType": "prometheus",
+            "query": "bsf_bindings_scanned_current",
+            "label": "Current scanned bindings"
+        },
+        {
+            "_id": "bindings_stale_current",
+            "sourceType": "prometheus",
+            "query": "bsf_bindings_stale_current",
+        "label": "Current stale bindings detected"
+        },
+        {
+            "_id": "bindings_stale_deleted_current",
+            "sourceType": "prometheus",
+            "query": "bsf_bindings_stale_deleted_current",
+            "label": "Current stale bindings deleted"
+        },
+        {
+            "_id": "binding_database_scan_duration",
+            "sourceType": "prometheus",
+            "query": "bsf_binding_database_scan_duration_seconds",
+            "label": "Binding database scan duration"
+        }
+    ]
+}

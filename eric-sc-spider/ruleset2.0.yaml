@@ -1,0 +1,398 @@
+modelVersion: 2.0
+
+description: "SC Spider Integration Helm Chart"
+
+import:
+  base: ../rulesets/ruleset2.0-eric-base.yaml
+  scbsf: ../eric-sc-bsf/ruleset2.0.yaml
+  scscp: ../eric-sc-scp/ruleset2.0.yaml
+  scsepp: ../eric-sc-sepp/ruleset2.0.yaml
+
+properties:
+  - CHART_NAME: "eric-sc-spider"
+  - CHART_PATH: ${CHART_NAME}/charts/${CHART_NAME}
+  - CHART_DEPENDENCIES_FOLDER: ${CHART_NAME}-dependencies
+  - CHART_DEPENDENCIES_FILE: "dependencies-list.json"
+  - DEPENDENCIES_FOLDER: ${CHART_NAME}_tmp/${CHART_NAME}/charts
+  - CHART_UPDATED_DEPENDENCIES: ${CHART_NAME}-updated-dependencies
+  - SC_CS_NAME: "eric-sc-cs"
+  - CNCS_BASE_NAME: "eric-cloud-native-base"
+  - CNCS_ADDITIONS_NAME: "eric-cloud-native-nf-additions"
+  - SC_DSC_NAME: "eric-dsc"
+  - HELM_REPO_INTERNAL: "proj-sc-all-internal-helm"
+  - HELM_REPO_DROP: "proj-sc-all-drop-helm"
+  - HELM_REPO_RELEASED: "proj-sc-all-released-helm"
+  - HELM_REPO_URL_INTERNAL: "${base.ARMSERO_ARTIFACTORY_URL}/${HELM_REPO_INTERNAL}"
+  - HELM_REPO_URL_DROP: "${base.ARMSERO_ARTIFACTORY_URL}/${HELM_REPO_DROP}"
+  - HELM_REPO_URL_RELEASED: "${base.ARMSERO_ARTIFACTORY_URL}/${HELM_REPO_RELEASED}"
+
+env:
+## Services
+  - BSF (default=false)
+  - SCP (default=false)
+  - SEPP (default=false)
+
+## Git related parameters
+  - GERRIT_USERNAME
+  - GERRIT_PASSWORD
+  - GERRIT_REFSPEC
+  - GIT_REPO_URL (default="https://gerrit.ericsson.se/a/MC_5G/5g_proto")
+  # overrides GIT_REPO_URL, set in Jenkins pipeline configuration parameters
+  - VCS_REPO_URL
+  - GIT_BRANCH (default="master")
+  # override GIT_BRANCH, set in Jenkins pipeline configuration parameters
+  - VCS_BRANCH
+  # inca skips git commit in "ihc-auto prepare" command
+  - INCA_SKIP_GIT_COMMIT (default=true)
+
+## Versioning related parameters
+  # Version strategy possible values: DYNAMIC, MAJOR, MINOR, PATCH, EP (explanation in https://gerrit.ericsson.se/plugins/gitiles/adp-cicd/adp-int-helm-chart-auto/+/HEAD/README.md#How-to-use-ihc_auto-script)
+  - VERSION_STRATEGY (default="DYNAMIC")
+  # Check sub-chart dependency version: In case that major/minor versions stepped but previous version is not released, the creation of integration chart will fail
+  - VERSION_CHECK (default=true)
+  # Allow downgrade of sub-chart dependencies
+  - ALLOW_DOWNGRADE (default=false)
+
+## Helm related parameters
+  - CHART_NAME
+  - CHART_REPO
+  - CHART_VERSION
+  # User signum
+  - HELM_USER (default="${env.base.USER}")
+  # The user's identity token in ARM SERO (Not the API key)
+  - ARM_API_TOKEN
+
+## Jenkins related parameters
+  - JENKINS_URL
+  - JOB_NAME
+  - BUILD_NUMBER
+
+## Cihelm timers
+  - CIHELM_RETRY_TIMEOUT (default = 600)
+  - CIHELM_RETRY_SLEEP (default = 30)
+  - CIHELM_HTTP_RETRY (default = 10)
+
+var:
+  - sc-dsc-version
+  - sc-bsf-version
+  - sc-scp-version
+  - sc-sepp-version
+  - sc-cs-version
+  - cncs-base-version
+  - cncs-add-version
+  - sc-dsc-chart-tgz
+  - sc-bsf-chart-tgz
+  - sc-scp-chart-tgz
+  - sc-sepp-chart-tgz
+  - sc-cs-chart-tgz
+  - cncs-base-chart-tgz
+  - cncs-add-chart-tgz
+  - dependency-chart-tgz
+  - new-dependency-name
+  - new-dependency-repo
+  - new-dependency-version
+
+rules:
+
+  clean:
+    - task: inca-tmp-folder
+      cmd: rm -rf ${base.OUTPUT_DIR}/${CHART_NAME}_tmp
+
+  init-internal-local:
+    - rule: scscp.all-internal-local
+    - rule: scbsf.all-internal-local
+    - rule: scsepp.all-internal-local
+
+  init-drop-local:
+    - rule: scscp.all-drop-local
+    - rule: scbsf.all-drop-local
+    - rule: scsepp.all-drop-local
+
+  init-internal-ci:
+    - rule: scscp.all-internal-ci
+    - rule: scbsf.all-internal-ci
+    - rule: scsepp.all-internal-ci
+
+  init-ci:
+    - rule: scscp.all-ci
+    - rule: scbsf.all-ci
+    - rule: scsepp.all-ci
+
+  pre-package:
+    - task: prepare-dependency
+      description: Prepare the comma-separated values of CHART_NAME, CHART_REPO, CHART_VERSION required for inca packaging (e.g., name="eric-sc-bsf,eric-sc-scp")
+      cmd: |
+        name=""; repo=""; version="";
+        if [ \"${env.BSF}\" == \"true\" ];
+        then
+          name+="${scbsf.CHART_NAME},";
+          repo+="${scbsf.HELM_REPO_URL_INTERNAL},";
+          version+="${var.scbsf.sc-bsf-version},";
+        fi;
+        if [ \"${env.SCP}\" == \"true\" ];
+        then
+          name+="${scscp.CHART_NAME},";
+          repo+="${scscp.HELM_REPO_URL_INTERNAL},";
+          version+="${var.scscp.sc-scp-version},";
+        fi;
+        if [ \"${env.SEPP}\" == \"true\" ];
+        then
+          name+="${scsepp.CHART_NAME},";
+          repo+="${scsepp.HELM_REPO_URL_INTERNAL},";
+          version+="${var.scsepp.sc-sepp-version},";
+        fi;
+        echo ${name%,} > ${base.OUTPUT_DIR}/var.new-dependency-name;
+        echo ${repo%,} > ${base.OUTPUT_DIR}/var.new-dependency-repo;
+        echo ${version%,} > ${base.OUTPUT_DIR}/var.new-dependency-version;
+
+  package:
+    - task: prepare-local
+      description: Package and Publish eric-sc-spider chart in INTERNAL repo with the updated dirty eric-sc-bsf, eric-sc-scp, eric-sc-sepp versions
+      docker-image: base.inca
+      docker-envs:
+        # git parameters
+        - SKIP_GIT_CLONE=true
+        - SKIP_GIT_COMMIT=${env.INCA_SKIP_GIT_COMMIT}
+        - GERRIT_USERNAME=${env.base.USER}
+        - GERRIT_PASSWORD=${var.base.gerrit-password}
+        - GIT_REPO_URL=${env.GIT_REPO_URL}
+        - GIT_BRANCH=${env.GIT_BRANCH}
+        # helm parameters
+        - CHART_PATH=${CHART_PATH}
+        - CHART_NAME="${var.new-dependency-name}"
+        - CHART_REPO="${var.new-dependency-repo}"
+        - CHART_VERSION="${var.new-dependency-version}"
+        - HELM_USER=${env.HELM_USER}
+        - HELM_INTERNAL_REPO=${HELM_REPO_URL_INTERNAL}
+        - HELM_DROP_REPO=${HELM_REPO_URL_DROP}
+        - HELM_RELEASED_REPO=${HELM_REPO_URL_RELEASED}
+        - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+        - HELM_REPO_CREDENTIALS=${base.OUTPUT_DIR}/${base.REPO_CREDENTIALS_FILE}
+        - ARM_API_TOKEN=${var.base.serodocker-api-token}
+        - CI_HELM=true
+        - UPLOAD_INTERNAL=true
+        # versioning parameters
+        - UPDATE_APP_VERSION=true
+        - VERSION_CHECK=${env.VERSION_CHECK}
+        - ALLOW_DOWNGRADE=${env.ALLOW_DOWNGRADE}
+      cmd: ihc-auto prepare
+              --debug
+    - task: prepare-ci
+      description: Package and Publish eric-sc-spider chart in INTERNAL repo with the updated dirty eric-sc-bsf, eric-sc-scp, eric-sc-sepp versions
+      docker-image: base.inca
+      docker-envs:
+        # git parameters
+        - SKIP_GIT_CLONE=true
+        - SKIP_GIT_COMMIT=${env.INCA_SKIP_GIT_COMMIT}
+        - GERRIT_USERNAME
+        - GERRIT_PASSWORD
+        - GIT_REPO_URL=${env.GIT_REPO_URL}
+        - GIT_BRANCH=${env.GIT_BRANCH}
+        # helm parameters
+        - CHART_NAME
+        - CHART_REPO
+        - CHART_VERSION
+        - CHART_PATH=${CHART_PATH}
+        - HELM_USER=${env.HELM_USER}
+        - HELM_INTERNAL_REPO=${HELM_REPO_URL_INTERNAL}
+        - HELM_DROP_REPO=${HELM_REPO_URL_DROP}
+        - HELM_RELEASED_REPO=${HELM_REPO_URL_RELEASED}
+        - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+        - HELM_REPO_CREDENTIALS=${base.OUTPUT_DIR}/${base.REPO_CREDENTIALS_FILE}
+        - ARM_API_TOKEN=${env.ARM_API_TOKEN}
+        - CI_HELM=true
+        - UPLOAD_INTERNAL=true
+        # versioning parameters
+        - UPDATE_APP_VERSION=true
+        - AUTOMATIC_RELEASE=${env.base.RELEASE}
+        - VERSION_CHECK=${env.VERSION_CHECK}
+        - ALLOW_DOWNGRADE=${env.ALLOW_DOWNGRADE}
+      cmd: ihc-auto prepare
+              --debug
+    - task: publish-local
+      description: Package and Publish eric-sc-spider chart to DROP or RELEASE repo with the updated DROP eric-bsf and eric-bsf-diameter versions
+      docker-image: base.inca
+      docker-envs:
+        # git parameters
+        - SKIP_GIT_CLONE=true
+        - GERRIT_USERNAME=${env.base.USER}
+        - GERRIT_PASSWORD=${var.base.gerrit-password}
+        - GERRIT_TOPIC="${CHART_NAME}"
+        - GIT_TAG_ENABLED=false
+        - GIT_REPO_URL=${env.GIT_REPO_URL}
+        - GIT_BRANCH=${env.GIT_BRANCH}
+        - VCS_REPO_URL=${env.GIT_REPO_URL}
+        - VCS_BRANCH=${env.GIT_BRANCH}
+        # helm parameters
+        - CHART_PATH=${CHART_PATH}
+        - CHART_NAME="${scbsf.CHART_NAME},${scscp.CHART_NAME},${scsepp.CHART_NAME}"
+        - CHART_REPO="${scbsf.HELM_REPO_URL_DROP},${scscp.HELM_REPO_URL_DROP},${scsepp.HELM_REPO_URL_DROP}"
+        - CHART_VERSION="${var.scbsf.sc-bsf-version},${var.scscp.sc-scp-version},${var.scsepp.sc-sepp-version}"
+        - HELM_USER=${env.HELM_USER}
+        - HELM_INTERNAL_REPO=${HELM_REPO_URL_INTERNAL}
+        - HELM_DROP_REPO=${HELM_REPO_URL_DROP}
+        - HELM_RELEASED_REPO=${HELM_REPO_URL_RELEASED}
+        - HELM_REPO_CREDENTIALS=${base.OUTPUT_DIR}/${base.REPO_CREDENTIALS_FILE}
+        - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+        - ARM_API_TOKEN=${var.base.serodocker-api-token}
+        - CI_HELM=true
+        # versioning parameters
+        - AUTOMATIC_RELEASE=false
+        - ALWAYS_RELEASE=false
+        - IGNORE_NON_RELEASED=false
+        - UPDATE_APP_VERSION=true
+        - ALLOW_DOWNGRADE=${env.ALLOW_DOWNGRADE}
+        - VERSION_STEP_STRATEGY_DEPENDENCY=${env.VERSION_STRATEGY}
+        - VERSION_STEP_STRATEGY_MANUAL=${env.VERSION_STRATEGY}
+        - VERSION_CHECK=${env.VERSION_CHECK}
+        # general parameters
+        - SKIP_INFO=true
+      cmd: ihc-auto publish
+              --debug
+    - task: publish-ci
+      description: Package and Publish eric-sc-spuder chart to DROP or RELEASE repo based on the provided CHART_VERSION (drop or pra) version of the CHART_NAME dependency
+      docker-image: base.inca
+      docker-envs:
+        # git parameters
+        - SKIP_GIT_CLONE=false
+        - GERRIT_USERNAME
+        - GERRIT_PASSWORD
+        - GERRIT_REFSPEC
+        - GERRIT_TOPIC="${CHART_NAME}"
+        - GIT_TAG_ENABLED=true
+        - GIT_REPO_URL=${env.GIT_REPO_URL}
+        - GIT_BRANCH=${env.GIT_BRANCH}
+        - VCS_REPO_URL=${env.VCS_REPO_URL}
+        - VCS_BRANCH=${env.VCS_BRANCH}
+        # helm parameters
+        - CHART_NAME
+        - CHART_REPO
+        - CHART_VERSION
+        - CHART_PATH=${CHART_PATH}
+        - HELM_USER=${env.HELM_USER}
+        - HELM_INTERNAL_REPO=${HELM_INTERNAL_REPO}
+        - HELM_DROP_REPO=${HELM_DROP_REPO}
+        - HELM_RELEASED_REPO=${HELM_RELEASED_REPO}
+        - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+        - ARM_API_TOKEN=${env.ARM_API_TOKEN}
+        - CI_HELM=true
+        # versioning parameters
+        - IGNORE_NON_RELEASED=false
+        - ALWAYS_RELEASE=false
+        - AUTOMATIC_RELEASE=${env.RELEASE}
+        - ALLOW_DOWNGRADE=${env.ALLOW_DOWNGRADE}
+        - VERSION_STEP_STRATEGY_DEPENDENCY=${env.VERSION_STRATEGY}
+        - VERSION_STEP_STRATEGY_MANUAL=${env.VERSION_STRATEGY}
+        - VERSION_CHECK=${env.VERSION_CHECK}
+        - UPDATE_APP_VERSION=true
+        # general parameters
+        - SKIP_INFO=true
+        - SOURCE=${env.JENKINS_URL}/job/${env.JOB_NAME}/${env.BUILD_NUMBER}
+      cmd: ihc-auto publish
+              --debug
+
+  post-package:
+    - task: create-dependencies-folder
+      cmd: mkdir -p ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER}
+    - task: fetch-dependency
+      docker-image: base.cihelm
+      description: Downloads "<CHART_NAME>-<CHART_VERSION>.tgz" chart from <CHART_REPO>
+      cmd:
+        --username ${env.HELM_USER}
+        --password ${env.ARM_API_TOKEN}
+        --retry-timeout '${env.CIHELM_RETRY_TIMEOUT}'
+        --retry-sleep '${env.CIHELM_RETRY_SLEEP}'
+        --http-retry '${env.CIHELM_HTTP_RETRY}'
+        fetch
+          '${env.CHART_NAME}'
+          '${env.CHART_VERSION}'
+          '${env.CHART_REPO}'
+          --destination ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER}
+    - task: fetch-dependencies
+      docker-image: base.cihelm
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+      description: Downloads all spider dependencies
+      cmd:
+        --retry-timeout '${env.CIHELM_RETRY_TIMEOUT}'
+        --retry-sleep '${env.CIHELM_RETRY_SLEEP}'
+        --http-retry '${env.CIHELM_HTTP_RETRY}'
+        --helm-credentials ${base.OUTPUT_DIR}/${base.REPO_CREDENTIALS_FILE}
+        dependency download
+          ${CHART_PATH}/Chart.yaml
+          --destination ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER}
+          --output ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER}/${CHART_DEPENDENCIES_FILE}
+    - task: archive-dependencies-info
+      docker-image: base.helm-builder-py3
+      description: Stores CHART_NAME, CHART_REPO, CHART_VERSION for each spider dependency in artifact.properties. The dependencies must have been fetched using the cihelm "dependency download" command.
+      cmd:
+        # SC-DSC
+        - /bin/bash -c "echo \"SC_DSC_CHART_NAME=${SC_DSC_NAME}\" >> artifact.properties"
+        - /bin/bash -c "chart_repo=\$(jq -r '.dependencies[] | select(.name == \"${SC_DSC_NAME}\").repository' ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER}/${CHART_DEPENDENCIES_FILE});
+                        echo \"SC_DSC_CHART_REPO=\$chart_repo\" >> artifact.properties"
+        - /bin/bash -c "chart_version=\$(jq -r '.dependencies[] | select(.name == \"${SC_DSC_NAME}\").version' ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER}/${CHART_DEPENDENCIES_FILE});
+                        echo \"SC_DSC_CHART_VERSION=\$chart_version\" >> artifact.properties"
+        # SC-BSF
+        - /bin/bash -c "echo \"BSF_CHART_NAME=${scbsf.CHART_NAME}\" >> artifact.properties"
+        - /bin/bash -c "chart_repo=\$(jq -r '.dependencies[] | select(.name == \"${scbsf.CHART_NAME}\").repository' ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER}/${CHART_DEPENDENCIES_FILE});
+                        echo \"BSF_CHART_REPO=\$chart_repo\" >> artifact.properties"
+        - /bin/bash -c "chart_version=\$(jq -r '.dependencies[] | select(.name == \"${scbsf.CHART_NAME}\").version' ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER}/${CHART_DEPENDENCIES_FILE});
+                        echo \"BSF_CHART_VERSION=\$chart_version\" >> artifact.properties"
+        # SC-SCP
+        - /bin/bash -c "echo \"SCP_CHART_NAME=${scscp.CHART_NAME}\" >> artifact.properties"
+        - /bin/bash -c "chart_repo=\$(jq -r '.dependencies[] | select(.name == \"${scscp.CHART_NAME}\").repository' ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER}/${CHART_DEPENDENCIES_FILE});
+                        echo \"SCP_CHART_REPO=\$chart_repo\" >> artifact.properties"
+        - /bin/bash -c "chart_version=\$(jq -r '.dependencies[] | select(.name == \"${scscp.CHART_NAME}\").version' ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER}/${CHART_DEPENDENCIES_FILE});
+                        echo \"SCP_CHART_VERSION=\$chart_version\" >> artifact.properties"
+        # SC-SEPP
+        - /bin/bash -c "echo \"SEPP_CHART_NAME=${scsepp.CHART_NAME}\" >> artifact.properties"
+        - /bin/bash -c "chart_repo=\$(jq -r '.dependencies[] | select(.name == \"${scsepp.CHART_NAME}\").repository' ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER}/${CHART_DEPENDENCIES_FILE});
+                        echo \"SEPP_CHART_REPO=\$chart_repo\" >> artifact.properties"
+        - /bin/bash -c "chart_version=\$(jq -r '.dependencies[] | select(.name == \"${scsepp.CHART_NAME}\").version' ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER}/${CHART_DEPENDENCIES_FILE});
+                        echo \"SEPP_CHART_VERSION=\$chart_version\" >> artifact.properties"
+        # SC-CS
+        - /bin/bash -c "echo \"CS_CHART_NAME=${SC_CS_NAME}\" >> artifact.properties"
+        - /bin/bash -c "chart_repo=\$(jq -r '.dependencies[] | select(.name == \"${SC_CS_NAME}\").repository' ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER}/${CHART_DEPENDENCIES_FILE});
+                        echo \"CS_CHART_REPO=\$chart_repo\" >> artifact.properties"
+        - /bin/bash -c "chart_version=\$(jq -r '.dependencies[] | select(.name == \"${SC_CS_NAME}\").version' ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER}/${CHART_DEPENDENCIES_FILE});
+                        echo \"CS_CHART_VERSION=\$chart_version\" >> artifact.properties"
+        # CNCS-BASE
+        - /bin/bash -c "echo \"CNCS_BASE_CHART_NAME=${CNCS_BASE_NAME}\" >> artifact.properties"
+        - /bin/bash -c "chart_repo=\$(jq -r '.dependencies[] | select(.name == \"${CNCS_BASE_NAME}\").repository' ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER}/${CHART_DEPENDENCIES_FILE});
+                        echo \"CNCS_BASE_CHART_REPO=\$chart_repo\" >> artifact.properties"
+        - /bin/bash -c "chart_version=\$(jq -r '.dependencies[] | select(.name == \"${CNCS_BASE_NAME}\").version' ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER}/${CHART_DEPENDENCIES_FILE});
+                        echo \"CNCS_BASE_CHART_VERSION=\$chart_version\" >> artifact.properties"
+        # CNCS-NF-ADDITIONS
+        - /bin/bash -c "echo \"CNCS_NF_ADDITIONS_CHART_NAME=${CNCS_ADDITIONS_NAME}\" >> artifact.properties"
+        - /bin/bash -c "chart_repo=\$(jq -r '.dependencies[] | select(.name == \"${CNCS_ADDITIONS_NAME}\").repository' ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER}/${CHART_DEPENDENCIES_FILE});
+                        echo \"CNCS_NF_ADDITIONS_CHART_REPO=\$chart_repo\" >> artifact.properties"
+        - /bin/bash -c "chart_version=\$(jq -r '.dependencies[] | select(.name == \"${CNCS_ADDITIONS_NAME}\").version' ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER}/${CHART_DEPENDENCIES_FILE});
+                        echo \"CNCS_NF_ADDITIONS_CHART_VERSION=\$chart_version\" >> artifact.properties"
+    - task: unpack-sc-dsc-chart
+      cmd:
+        - ls ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER} | grep ${SC_DSC_NAME} > ${base.OUTPUT_DIR}/var.sc-dsc-chart-tgz
+        - tar -xzvf ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER}/${var.sc-dsc-chart-tgz} -C ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER} >/dev/null 2>&1
+    - task: unpack-bsf-chart
+      cmd:
+        - ls ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER} | grep ${scbsf.CHART_NAME} > ${base.OUTPUT_DIR}/var.sc-bsf-chart-tgz
+        - tar -xzvf ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER}/${var.sc-bsf-chart-tgz} -C ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER} >/dev/null 2>&1
+    - task: unpack-scp-chart
+      cmd:
+        - ls ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER} | grep ${scscp.CHART_NAME} > ${base.OUTPUT_DIR}/var.sc-scp-chart-tgz
+        - tar -xzvf ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER}/${var.sc-scp-chart-tgz} -C ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER} >/dev/null 2>&1
+    - task: unpack-sepp-chart
+      cmd:
+        - ls ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER} | grep ${scsepp.CHART_NAME} > ${base.OUTPUT_DIR}/var.sc-sepp-chart-tgz
+        - tar -xzvf ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER}/${var.sc-sepp-chart-tgz} -C ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER} >/dev/null 2>&1
+    - task: unpack-sc-cs-chart
+      cmd:
+        - ls ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER} | grep ${SC_CS_NAME} > ${base.OUTPUT_DIR}/var.sc-cs-chart-tgz
+        - tar -xzvf ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER}/${var.sc-cs-chart-tgz} -C ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER} >/dev/null 2>&1
+    - task: unpack-cncs-b-chart
+      cmd:
+        - ls ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER} | grep ${CNCS_BASE_NAME} > ${base.OUTPUT_DIR}/var.cncs-base-chart-tgz
+        - tar -xzvf ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER}/${var.cncs-base-chart-tgz} -C ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER} >/dev/null 2>&1
+    - task: unpack-cncs-a-chart
+      cmd:
+        - ls ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER} | grep ${CNCS_ADDITIONS_NAME} > ${base.OUTPUT_DIR}/var.cncs-add-chart-tgz
+        - tar -xzvf ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER}/${var.cncs-add-chart-tgz} -C ${base.OUTPUT_DIR}/${CHART_DEPENDENCIES_FOLDER} >/dev/null 2>&1

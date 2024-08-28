@@ -1,0 +1,428 @@
+#%RAML 1.0
+---
+title: Alarm Handler (AH) Service REST
+baseUri: http://localhost:{port}/ah/api/{version}
+baseUriParameters:
+  port:
+    description: Port to be use in case of clear text (5005) or TLS/mTLS (5006)
+    enum: ["5005", "5006"]
+version: v0
+mediaType: application/json
+
+documentation:
+  - title:  "Document Information"
+    content: |
+      ```
+        Ericsson   |   DocNo 1/155 19-CAF 101 15/1 Uen   |   Rev D   |   Interwork Description
+      ```
+  - title: Introduction
+    content: |
+      This is a specification of the Alarm Handler (AH) Service REST API.
+
+  - title: Revision History
+    content: |
+      - 0.5.0 version:
+         - Added Clear Use Cases
+         - Added port defenition in the baseUri to support clearText and TLS/mTLS
+      - 0.4.0 version:
+         - Added Retrieve active alarms, all or a subset
+         - Added Retrieve active alarm based on alarm key
+         - Added Retrieve alarm summary, based on all active alarms or a subset
+
+  - title: Supported Use Cases
+    content: |
+      The following use cases are supported:
+      - Active alarms:
+         - Retrieve active alarms (all or a subset)
+         - Retrieve active alarm based on alarm key
+         - Retrieve alarm summary, based on all active alarms or a subset
+         - Clear an active alarm
+
+      These use cases for Active Alarms are typically applicable to a dashboard
+      application. See the /alarms resource.
+
+resourceTypes:
+    baseResource:
+      usage: |
+        This is base resource type described common request and response
+        headers and error response codes.
+        All AH resources should use it.
+      get?: &common
+        headers:
+        queryParameters:
+        responses:
+          400:
+            description: |
+              Bad Request - The request input data is not according to the specification. Either
+              parameters in the uri, the headers, or the body are not valid or missing.
+            body: &errorSchemas
+                application/json:
+                    type: Message
+                    example: |
+                        {"message": "Malformed content"}
+          500:
+            description: |
+              Server errors - something went wrong on AH Service end.
+            body: *errorSchemas
+          503:
+            description: |
+              Server unavailable error - AH Server cannot handle request, due to
+              a temporary problem, for example overload or that the backend is
+              not available. Request can be retried.
+            body: *errorSchemas
+      put?: *common
+      post?: *common
+      patch?: *common
+      delete?: *common
+
+types:
+    Alarm:
+        type: !include schema/Alarm
+    AlarmList:
+        type: !include schema/AlarmList
+    LastChanged:
+        type: !include schema/LastChanged
+    Message:
+        type: !include schema/Message
+    SeveritySummary:
+        type: !include schema/SeveritySummary
+    ClearAlarm:
+        type: !include schema/ClearAlarm
+
+/alarms:
+  type: baseResource
+  displayName: Alarms
+  description: |
+    The list of active alarms and alarm statistics are exposed under this resource.
+
+    The user can retrieve all active alarms or a subset depending on filtering query,
+    or a summary based on all alarms or a subset.
+  get:
+    description: |
+      Returns alarm information according to specified output format.
+
+      The information can be filtered using the query parameters. If several
+      query parameters of different types are specified they will
+      be ANDed together. Some query parameters can be repeated
+      and they will ORed together in that case.
+    queryParameters:
+      alarmName:
+        type: array
+        items: string
+        description: The alarm name
+        required: false
+        example: [CertificateManagementError]
+      serviceName:
+        type: array
+        items: string
+        description: The service name
+        required: false
+        example: [ericsson-sc]
+      faultyResource:
+        type: array
+        items: string
+        description: The faulty resource
+        required: false
+        example: ["/keystore/asymmetric-keys/asymmetric-key[name=<value>]/certificates/certificate[name=<value>]"]
+      severity:
+        type: array
+        items: string
+        description: The severity
+        required: false
+        example: [Major]
+      maxReturn:
+        type: integer
+        description: |
+          Limit the number of alarms to return or be processed in case of
+          SeveritySummary output format.
+        required: false
+        example: 10
+      endTime:
+        type: integer
+        description: |
+          Sets the end time, relative to current time.
+          Defines the end point of a time interval.
+          The endTime relative to current time in seconds.
+          The time interval will be (now - endTime) >= t >= 0.
+          If not specified endTime will be 0 and the time interval will end
+          at current time. This can be used to filter out recent alarms.
+        default: 0
+        required: false
+        example: 3600
+      startTime:
+        type: integer
+        description: |
+          Sets the start time, relative to end time.
+          Defines the start point of a time interval. The startTime relative to
+          endTime in seconds. The time interval will be
+          (now - endTime - startTime) <= t <= (now - endTime).
+          startTime can be used to filter out old alarms.
+          If not specified the time interval will start from the epoch
+          0 <= t <= (now - endTime).
+        required: false
+        example: 3600
+      searchHistory:
+        type: boolean
+        description: |
+          Search for matches in the history attribute also.
+          By default the search filter is limited to attribute matches in the
+          latest update of the alarm only. If set to true it will also match
+          attributes in the history attribute also. This can be used together
+          with severity and endTime.
+        required: false
+        default: false
+        example: true
+      timeZone:
+        type: string
+        description: The time zone to use for the displayed event times.
+        required: false
+        default: UTC
+        example: Europe/Stockholm
+      timeOutputFormat:
+        enum: [Normal, Iso8601, Source]
+        type: string
+        description: |
+          The time format for the displayed event times.
+
+          Normal means the following ISO 8601 date and time format
+          YYYY-MM-DDTHH:MM:SS.mmmmmm is used followed by a space and a time
+          zone name, e.g. CEST for Central European Summer Time (UTC+1).
+          This format is intended for humans, but can be processed in order to
+          get a ISO 8601 compliant timestamp with timezone offset also. In that case
+          just remove the trailing time zone name and replace it with a ISO 8601
+          timezone offset, for the default time zone replace " UTC" with "Z".
+          Examples:
+          2018-09-10T03:17:05.000679 CET
+          2018-09-20T18:05:05.123456 UTC
+
+          Iso8601 means the following format YYYY-MM-DDTHH:MM:SS.mmmmmmz,
+          where z is the relative time zone offset in hours and minutes to
+          UTC in the format +hhmm or -hhmm. If UTC is used z will be
+          "Z" instead of "+0000". Timezone's with zero offset like GMT
+          will however be displayed as "+0000".
+          Examples:
+          2018-09-10T03:17:05.000679+0200
+          2018-09-20T18:05:05.123456Z
+
+          Source means number of microseconds since 1 Jan 1970 (minus leap
+          seconds) in UTC. This is intended for machine to machine
+          communication. Since Source is always in UTC, the timeZone parameter
+          is not applicable.
+        required: false
+        default: Normal
+        example: Source
+      pp:
+        type: string
+        description: If defined prints the JSON data in a pretty print format.
+        required: false
+        example: pp
+      outputFormat:
+        enum: [ShortAlarmList, FullAlarmList, SeveritySummary, LastChanged]
+        default: ShortAlarmList
+        description: |
+          Output format according to AlarmList, SeveritySummary or
+          LastChanged schemas. ShortAlarmList means no changes information
+          just the current state,
+          while FullAlarmList also includes the history attribute and the
+          alarm type attributes (vendor, code, category, probableCause, specificProblem).
+        required: false
+        example: SeveritySummary
+    responses:
+      200:
+        body:
+          application/json:
+            type: AlarmList
+            example: |
+              [
+                {
+                  "alarmName": "CertificateManagementError",
+                  "serviceName": "ericsson-sc",
+                  "faultyResource":"/keystore/asymmetric-keys/asymmetric-key[name=<value>]/certificates/certificate[name=<value>]",
+                  "severity": "Major",
+                  "description": "The threshold before certificate expiration has been crossed, please renewed them to prevent a secure service failure",
+                  "eventTime": 1519666844294000,
+                  "vendor": 193,
+                  "code": 9699329,
+                  "category": "ProcessingErrorAlarm",
+                  "probableCause": 351,
+                  "specificProblem": "Certificate Management, Certificate is about to Expire"
+                }
+              ]
+      400:
+        body:
+          application/json:
+            type: Message
+            example: |
+              { "message": "Malformed URI parameter: Invalid severity 'Major'" }
+
+/alarm:
+  type: baseResource
+  displayName: Alarm
+  description: |
+    A single active alarm is exposed under this resource.
+
+    The user can:
+     - Retrieve a specific alarm by the alarm key, which is
+    a combination of alarmName, serviceName and optionally faultyResource
+     - Clear a specific alarm by the alarm key
+
+  get:
+    description: |
+      Returns alarm information for specified alarm key and
+      according to specified output format.
+    queryParameters:
+      alarmName:
+        type: string
+        description: The alarm name
+        required: true
+        example: CertificateManagementError
+      serviceName:
+        type: string
+        description: The service name
+        required: true
+        example: ericsson-sc
+      faultyResource:
+        type: string
+        description: The faulty resource
+        required: false
+        example: /keystore/asymmetric-keys/asymmetric-key[name=<value>]/certificates/certificate[name=<value>]
+      timeZone:
+        type: string
+        description: The time zone to use for the displayed event times.
+        required: false
+        default: UTC
+        example: Europe/Stockholm
+      timeOutputFormat:
+        enum: [Normal, Iso8601, Source]
+        type: string
+        description: |
+          The time format for the displayed event times.
+
+          Normal means the following ISO 8601 date and time format
+          YYYY-MM-DDTHH:MM:SS.mmmmmm is used followed by a space and a time
+          zone name, e.g. CEST for Central European Summer Time (UTC+1).
+          This format is intended for humans, but can be processed in order to
+          get a ISO 8601 compliant timestamp with timezone offset also. In that case
+          just remove the trailing time zone name and replace it with a ISO 8601
+          timezone offset, for the default time zone replace " UTC" with "Z".
+          Examples:
+          2018-09-10T03:17:05.000679 CET
+          2018-09-20T18:05:05.123456 UTC
+
+          Iso8601 means the following format YYYY-MM-DDTHH:MM:SS.mmmmmmz,
+          where z is the relative time zone offset in hours and minutes to
+          UTC in the format +hhmm or -hhmm. If UTC is used z will be
+          "Z" instead of "+0000". Timezone's with zero offset like GMT
+          will however be displayed as "+0000".
+          Examples:
+          2018-09-10T03:17:05.000679+0200
+          2018-09-20T18:05:05.123456Z
+
+          Source means number of microseconds since 1 Jan 1970 (minus leap
+          seconds) in UTC. This is intended for machine to machine
+          communication. Since Source is always in UTC, the timeZone parameter
+          is not applicable.
+        required: false
+        default: Normal
+        example: Source
+      pp:
+        type: string
+        description: If defined prints the JSON data in a pretty print format.
+        required: false
+        example: pp
+      outputFormat:
+        enum: [ShortAlarm, FullAlarm]
+        default: ShortAlarm
+        description: |
+          Output format according to Alarm.
+          ShortAlarm means no changes information just the current state,
+          while FullAlarm also includes the history attribute and the
+          alarm type attributes (vendor, code, category, probableCause, specificProblem).
+        required: false
+        example: ShortAlarm
+    responses:
+      200:
+        body:
+          application/json:
+            type: Alarm
+            example: |
+              {
+                "alarmName": "CertificateManagementError",
+                "serviceName": "ericsson-sc",
+                "faultyResource":"/keystore/asymmetric-keys/asymmetric-key[name=<value>]/certificates/certificate[name=<value>]",
+                "severity": "Major",
+                "description": "The threshold before certificate expiration has been crossed, please renewed them to prevent a secure service failure",
+                "eventTime": 1519666844294000,
+                "vendor": 193,
+                "code": 9699329,
+                "category": "ProcessingErrorAlarm",
+                "probableCause": 351,
+                "specificProblem": "Certificate Management, Certificate is about to Expire"
+              }
+      400:
+        description: |
+          Invalid or missing URI parameter, or some other request input error.
+        body:
+          application/json:
+            type: Message
+            example: |
+              { "message": "Required URI parameter missing: serviceName" }
+      404:
+        description: |
+          Alarm not found in active alarm list.
+        body:
+          application/json:
+            type: Message
+            example: |
+              { "message": "Alarm not found" }
+
+  delete:
+    description: |
+      Cleares a specified alarm key.
+    queryParameters:
+      alarmName:
+        type: string
+        description: The alarm name
+        required: true
+        example: CertificateManagementError
+      serviceName:
+        type: string
+        description: The service name
+        required: true
+        example: ericsson-sc
+      faultyResource:
+        type: string
+        description: The faulty resource
+        required: false
+        example: /keystore/asymmetric-keys/asymmetric-key[name=<value>]/certificates/certificate[name=<value>]
+    body:
+      type: ClearAlarm
+      example: |
+        {
+          "description": "REST based clearance"
+        }
+    responses:
+      200:
+        body:
+          application/json:
+            type: Message
+            example: |
+              {
+                "message": "Cleared alarm with key CertificateManagementError, ericsson-sc, /keystore/asymmetric-keys/asymmetric-key[name=<value>]/certificates/certificate[name=<value>]"
+              }
+      400:
+        description: |
+          Invalid or missing URI parameter, or some other request input error.
+        body:
+          application/json:
+            type: Message
+            example: |
+              { "message": "Required URI parameter missing: serviceName" }
+      404:
+        description: |
+          Alarm not found in active alarm list.
+        body:
+          application/json:
+            type: Message
+            example: |
+              { "message": "Alarm not found" }

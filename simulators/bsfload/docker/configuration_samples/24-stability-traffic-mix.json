@@ -1,0 +1,57 @@
+{
+  "duration": 86400,
+  "target-port": 80,
+  "metrics": {
+    "export-metrics": [
+      "PROMETHEUS"
+    ]
+  },
+  "setup-traffic-mix": [
+    {
+      "name": "setupRegister",
+      "order": 1,
+      "tps": 2000,
+      "target-host": "192.168.1.1",
+      "type": "register",
+      "num-requests": 2000000,
+      "ip-range": {
+        "start-ip": "170.0.0.1",
+        "range": 2000000
+      }
+    }
+  ],
+  "traffic-mix": [
+    {
+      "name": "registerSet",
+      "order": 1,
+      "tps": 3000,
+      "target-host": "192.168.1.1",
+      "type": "register",
+      "num-requests": 10000,
+      "ip-range": {
+        "start-ip": "10.0.0.1",
+        "range": 10000
+      }
+    },
+    {
+      "name": "discoverySet",
+      "order": 2,
+      "tps": 3000,
+      "target-host": "192.168.1.1",
+      "type": "discovery",
+      "num-requests": 10000,
+      "ip-range": {
+        "start-ip": "170.0.0.1",
+        "range": 10000
+      }
+    },
+    {
+      "name": "deregisterSet",
+      "order": 3,
+      "tps": 3000,
+      "target-host": "192.168.1.1",
+      "type": "deregister",
+      "traffic-set-ref": "registerSet"
+    }
+  ]
+}

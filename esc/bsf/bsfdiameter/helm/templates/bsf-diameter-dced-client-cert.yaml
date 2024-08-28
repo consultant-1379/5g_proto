@@ -1,0 +1,25 @@
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+# START Bsf-diameter only files
+metadata:
+  name: bsf-diameter-dced-client-cert
+  labels:
+    app.kubernetes.io/name: {{ template "eric-stm-diameter-proxy-grpc.name" . }}
+    app.kubernetes.io/version: {{ template "eric-stm-diameter-proxy-grpc.version" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- include "eric-stm-diameter-proxy-grpc.config-labels" . | indent 4 }}
+  annotations:
+{{- include "eric-stm-diameter-proxy-grpc.config-annotations" . | indent 4 }}
+{{- include "eric-stm-diameter-proxy-grpc.product-info" . | indent 4 }}
+spec:
+  kubernetes:
+    generatedSecretName: eric-bsf-diameter-dced-client-cert
+  certificate:
+    subject:
+      cn: root
+    issuer:
+      reference: eric-data-distributed-coordinator-ed-sc-ca
+    extendedKeyUsage:
+      tlsClientAuth: true
+      tlsServerAuth: false
+# STOP Bsf-diameter only files

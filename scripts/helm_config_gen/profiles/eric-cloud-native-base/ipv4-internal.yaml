@@ -1,0 +1,9 @@
+eric-data-search-engine:
+  service:
+    network:
+      protocol:
+        IPv6: false
+
+eric-fh-snmp-alarm-provider:
+  sourceIdentifierType: 1
+  sourceIdentifier: 127.0.0.1

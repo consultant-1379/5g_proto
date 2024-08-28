@@ -1,0 +1,10 @@
+productName: "eric-monitor"
+productNumber: "CXC 174 2925"
+images:
+  monitor:
+    productName: "Monitor"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: monitor_repo_path
+    name: monitor_image_name
+    tag: monitor_image_tag

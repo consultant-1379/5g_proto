@@ -1,0 +1,25 @@
+# Copyright 2019 Ericsson GmbH
+{{- if eq (include "eric-bsf.tls" .) "true" }}
+{{- if or (eq (include "eric-bsf.manager.dcedsc.tls" .) "true")  (eq (include "eric-bsf.worker.dcedsc.tls" .) "true") }}
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+  name: {{ template "eric-bsf.name" . }}-dcedsc-client-certificate
+  labels:
+{{- include "eric-bsf.labels" . | indent 4 }}
+  annotations:
+{{- include "eric-bsf.helm-annotations" . | indent 4 }}
+{{- include "eric-bsf.config-annotations" . | indent 4 }}
+spec:
+  kubernetes:
+    generatedSecretName: {{ template "eric-bsf.name" . }}-dcedsc-client-certificate
+  certificate:
+    subject:
+      cn: root
+    issuer:
+      reference: {{ .Values.sc.common.etcd.hostname }}-ca
+    extendedKeyUsage:
+      tlsClientAuth: true
+      tlsServerAuth: false
+{{- end }} 
+{{- end }}

@@ -1,0 +1,225 @@
+modelVersion: 2.0
+
+description: "SCP Subchart"
+
+import:
+  base: ../rulesets/ruleset2.0-eric-base.yaml
+  certntf: ../eric-sc-certnotifier/ruleset2.0.yaml
+  sds: ../eric-sc-sds/ruleset2.0.yaml
+  tapagent: ../eric-sc-tapagent/ruleset2.0.yaml
+  tapcol: ../eric-sc-tapcollector/ruleset2.0.yaml
+  tlskeylogagent: ../eric-sc-tlskeylogagent/ruleset2.0.yaml
+  logfwdr: ../eric-sc-logforwarder/ruleset2.0.yaml
+  envoywrk: ../eric-sc-envoyworker/ruleset2.0.yaml
+
+properties:
+  - HELM_REPO_INTERNAL: "proj-sc-all-internal-helm"
+  - HELM_REPO_DROP: "proj-sc-all-drop-helm"
+  - DOCKER_REPO_INTERNAL: "proj-sc-all-internal"
+  - DOCKER_REPO_DROP: "proj-sc-all-drop"
+  - CHART_NAME: "eric-scp"
+  - MANAGER_IMAGE_NAME: ${CHART_NAME}-manager
+  - CHART_PATH: ${CHART_NAME}/charts/${CHART_NAME}
+  - MANAGER_DOCKERFILE_PATH: "./esc/scp/scpmgr" # TODO: change to eric-scp folder path when source code is isolated
+
+env:
+  # Common container images
+  - CERTNOTIFIER_IMAGE_NAME
+  - CERTNOTIFIER_IMAGE_VERSION
+  - CERTNOTIFIER_IMAGE_REPO
+  - TLSKEYLOGAGENT_IMAGE_NAME
+  - TLSKEYLOGAGENT_IMAGE_VERSION
+  - TLSKEYLOGAGENT_IMAGE_REPO
+  - TAPCOLLECTOR_IMAGE_NAME
+  - TAPCOLLECTOR_IMAGE_VERSION
+  - TAPCOLLECTOR_IMAGE_REPO
+  - TAPAGENT_IMAGE_NAME
+  - TAPAGENT_IMAGE_VERSION
+  - TAPAGENT_IMAGE_REPO
+  - ENVOYWORKER_IMAGE_NAME
+  - ENVOYWORKER_IMAGE_VERSION
+  - ENVOYWORKER_IMAGE_REPO
+  - LOGFORWARDER_IMAGE_NAME
+  - LOGFORWARDER_IMAGE_VERSION
+  - LOGFORWARDER_IMAGE_REPO
+  - SDS_IMAGE_NAME
+  - SDS_IMAGE_VERSION
+  - SDS_IMAGE_REPO
+  # the GERRIT username
+  - GERRIT_USERNAME
+  # the GERRIT password (Gerrit HTTP password)
+  - GERRIT_PASSWORD
+  # the ARM functional user token for Helm repository (J-Frog ARM Token)
+  - HELM_TOKEN
+  # Run git related actions in dry-run
+  - DRY_RUN (default=true)
+
+# variables' names include "scp" because they will be stored in .bob/ of 5g_proto
+# TODO: remove "scp" from the variables' names when scp source code gets isolated
+# and the chart is moved to a separate git repo
+var:
+  - scp-version
+  - scp-image-repo
+  - scp-chart-repo
+  - commithash
+  - branch
+
+rules:
+
+  all-local:
+    - rule: init
+    - rule: pre-package
+    - task: package:chart-local
+    - task: publish:chart-local
+    - task: clean:release-auto-tmp-folder
+
+  all-ci:
+    - rule: init
+    - rule: pre-package
+    - task: package:chart-ci
+    - task: publish:chart-ci
+    - rule: post-publish
+    - task: clean:release-auto-tmp-folder
+
+  clean:
+    - task: release-auto-tmp-folder
+      cmd: rm -rf ${base.OUTPUT_DIR}/untar_tmp
+
+  init:
+    - task: version
+      docker-image: base.adp-release-auto
+      cmd: version-handler generate
+            --is-release ${env.base.RELEASE}
+            --user ${env.base.USER}
+            --output scp-version
+            --git-repo-path .
+            --version-prefix-file ./${CHART_NAME}/VERSION_PREFIX
+    - task: image-repo
+      cmd: /bin/bash -c 'if [ \"${env.base.RELEASE}\" == \"false\" ];
+                         then
+                            echo ${DOCKER_REPO_INTERNAL} > ${base.OUTPUT_DIR}/var.scp-image-repo;
+                         else
+                            echo ${DOCKER_REPO_DROP} > ${base.OUTPUT_DIR}/var.scp-image-repo;
+                         fi;'
+    - task: chart-repo
+      cmd: /bin/bash -c 'if [ \"${env.base.RELEASE}\" == \"false\" ];
+                         then
+                            echo ${HELM_REPO_INTERNAL} > ${base.OUTPUT_DIR}/var.scp-chart-repo;
+                         else
+                            echo ${HELM_REPO_DROP} > ${base.OUTPUT_DIR}/var.scp-chart-repo;
+                         fi;'
+
+  pre-package:
+    - task: build-manager-image
+      cmd: docker build ${MANAGER_DOCKERFILE_PATH}/
+                --file ${MANAGER_DOCKERFILE_PATH}/Dockerfile
+                --build-arg DOCKER_BASE_IMG=${base.SC_CBOS_IMG}
+                --tag ${base.DOCKER_REGISTRY_URL}/${var.scp-image-repo}/${MANAGER_IMAGE_NAME}:${var.scp-version}
+    - task: publish-manager-image
+      cmd: docker push ${base.DOCKER_REGISTRY_URL}/${var.scp-image-repo}/${MANAGER_IMAGE_NAME}:${var.scp-version}
+
+  package:
+    - task: chart-local
+      description: package helm chart by replacing the images' repo paths with the internal repo
+      docker-image: base.adp-release-auto
+      cmd: helm-package
+        --folder ${CHART_PATH}
+        --workdir ${base.OUTPUT_DIR}
+        --output ${base.OUTPUT_DIR}
+        --version ${var.scp-version}
+        --replace eric-product-info.yaml:scp_manager_repo_path=${var.scp-image-repo}
+        --replace eric-product-info.yaml:scp_manager_image_name=${MANAGER_IMAGE_NAME}
+        --replace eric-product-info.yaml:scp_manager_image_tag=${var.scp-version}
+        --replace eric-product-info.yaml:scp_worker_repo_path=${var.envoywrk.envoywrk-image-repo}
+        --replace eric-product-info.yaml:scp_worker_image_name=${envoywrk.IMAGE_NAME}
+        --replace eric-product-info.yaml:scp_worker_image_tag=${var.envoywrk.envoywrk-image-version}
+        --replace eric-product-info.yaml:sds_repo_path=${var.sds.sds-image-repo}
+        --replace eric-product-info.yaml:sds_image_name=${sds.IMAGE_NAME}
+        --replace eric-product-info.yaml:sds_image_tag=${var.sds.sds-image-version}
+        --replace eric-product-info.yaml:certnotifier_repo_path=${var.certntf.certnotifier-image-repo}
+        --replace eric-product-info.yaml:certnotifier_image_name=${certntf.IMAGE_NAME}
+        --replace eric-product-info.yaml:certnotifier_image_tag=${var.certntf.certnotifier-image-version}
+        --replace eric-product-info.yaml:logfwdr_repo_path=${var.logfwdr.logfwdr-image-repo}
+        --replace eric-product-info.yaml:logfwdr_image_name=${logfwdr.IMAGE_NAME}
+        --replace eric-product-info.yaml:logfwdr_image_tag=${var.logfwdr.logfwdr-image-version}
+        --replace eric-product-info.yaml:tlskeylogagent_repo_path=${var.tlskeylogagent.tlskeylogagent-image-repo}
+        --replace eric-product-info.yaml:tlskeylogagent_image_name=${tlskeylogagent.IMAGE_NAME}
+        --replace eric-product-info.yaml:tlskeylogagent_image_tag=${var.tlskeylogagent.tlskeylogagent-image-version}
+        --replace eric-product-info.yaml:tapcollector_repo_path=${var.tapcol.tapcollector-image-repo}
+        --replace eric-product-info.yaml:tapcollector_image_name=${tapcol.IMAGE_NAME}
+        --replace eric-product-info.yaml:tapcollector_image_tag=${var.tapcol.tapcollector-image-version}
+        --replace eric-product-info.yaml:tapagent_repo_path=${var.tapagent.tapagent-image-repo}
+        --replace eric-product-info.yaml:tapagent_image_name=${tapagent.IMAGE_NAME}
+        --replace eric-product-info.yaml:tapagent_image_tag=${var.tapagent.tapagent-image-version}
+        --debug
+    - task: chart-ci
+      description: package helm chart by replacing the images' repo paths with the internal repo
+      docker-image: base.adp-release-auto
+      cmd: helm-package
+        --folder ${CHART_PATH}
+        --workdir ${base.OUTPUT_DIR}
+        --output ${base.OUTPUT_DIR}
+        --version ${var.scp-version}
+        --replace eric-product-info.yaml:scp_manager_repo_path=${var.scp-image-repo}
+        --replace eric-product-info.yaml:scp_manager_image_name=${MANAGER_IMAGE_NAME}
+        --replace eric-product-info.yaml:scp_manager_image_tag=${var.scp-version}
+        --replace eric-product-info.yaml:scp_worker_repo_path=${env.ENVOYWORKER_IMAGE_REPO}
+        --replace eric-product-info.yaml:scp_worker_image_name=${env.ENVOYWORKER_IMAGE_NAME}
+        --replace eric-product-info.yaml:scp_worker_image_tag=${env.ENVOYWORKER_IMAGE_VERSION}
+        --replace eric-product-info.yaml:sds_repo_path=${env.SDS_IMAGE_REPO}
+        --replace eric-product-info.yaml:sds_image_name=${env.SDS_IMAGE_NAME}
+        --replace eric-product-info.yaml:sds_image_tag=${env.SDS_IMAGE_VERSION}
+        --replace eric-product-info.yaml:certnotifier_repo_path=${env.CERTNOTIFIER_IMAGE_REPO}
+        --replace eric-product-info.yaml:certnotifier_image_name=${env.CERTNOTIFIER_IMAGE_NAME}
+        --replace eric-product-info.yaml:certnotifier_image_tag=${env.CERTNOTIFIER_IMAGE_VERSION}
+        --replace eric-product-info.yaml:logfwdr_repo_path=${env.LOGFORWARDER_IMAGE_REPO}
+        --replace eric-product-info.yaml:logfwdr_image_name=${env.LOGFORWARDER_IMAGE_NAME}
+        --replace eric-product-info.yaml:logfwdr_image_tag=${env.LOGFORWARDER_IMAGE_VERSION}
+        --replace eric-product-info.yaml:tlskeylogagent_repo_path=${env.TLSKEYLOGAGENT_IMAGE_REPO}
+        --replace eric-product-info.yaml:tlskeylogagent_image_name=${env.TLSKEYLOGAGENT_IMAGE_NAME}
+        --replace eric-product-info.yaml:tlskeylogagent_image_tag=${env.TLSKEYLOGAGENT_IMAGE_VERSION}
+        --replace eric-product-info.yaml:tapcollector_repo_path=${env.TAPCOLLECTOR_IMAGE_REPO}
+        --replace eric-product-info.yaml:tapcollector_image_name=${env.TAPCOLLECTOR_IMAGE_NAME}
+        --replace eric-product-info.yaml:tapcollector_image_tag=${env.TAPCOLLECTOR_IMAGE_VERSION}
+        --replace eric-product-info.yaml:tapagent_repo_path=${env.TAPAGENT_IMAGE_REPO}
+        --replace eric-product-info.yaml:tapagent_image_name=${env.TAPAGENT_IMAGE_NAME}
+        --replace eric-product-info.yaml:tapagent_image_tag=${env.TAPAGENT_IMAGE_VERSION}
+        --debug
+
+  publish:
+    - task: chart-local
+      docker-image: base.inca
+      cmd: arm-upload
+        --file ${base.OUTPUT_DIR}/${CHART_NAME}-${var.scp-version}.tgz
+        --destination ${base.ARMSERO_ARTIFACTORY_URL}/${var.scp-chart-repo}/${CHART_NAME}/
+        --token ${var.base.serodocker-api-token}
+    - task: chart-ci
+      docker-image: base.inca
+      docker-envs:
+        - HELM_TOKEN
+      cmd: arm-upload
+        --file ${base.OUTPUT_DIR}/${CHART_NAME}-${var.scp-version}.tgz
+        --destination ${base.ARMSERO_ARTIFACTORY_URL}/${var.scp-chart-repo}/${CHART_NAME}/
+        --token ${env.HELM_TOKEN}
+
+  post-publish:
+    - task: get-commit
+      docker-image: base.adp-release-auto
+      cmd: git rev-parse --short HEAD > .bob/var.commithash
+    - task: get-branch
+      docker-image: base.adp-release-auto
+      cmd: git rev-parse --abbrev-ref HEAD > .bob/var.branch
+    - task: git-tag
+      docker-image: base.adp-release-auto
+      description: Create and push git tag. Example "eric-scp/1.0.0-55"
+      docker-envs:
+        - GERRIT_USERNAME
+        - GERRIT_PASSWORD
+      cmd: version-handler create-git-tag
+           --git-repo-url ${base.GIT_REPO_URL}
+           --tag ${CHART_NAME}/${var.scp-version}
+           --message "Release ${var.scp-version}"
+           --commitid ${var.commithash}
+           --branch ${var.branch}
+           --dry-run ${env.DRY_RUN}
+           --debug

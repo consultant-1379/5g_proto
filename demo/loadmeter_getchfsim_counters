@@ -1,0 +1,220 @@
+#!/usr/bin/perl
+use strict;
+use Time::HiRes qw(usleep nanosleep tv_interval gettimeofday );
+
+my $port = shift;
+
+if ($port) {
+} else {
+   $port = 20000;
+}
+
+my %relations_chfsimcounters = (
+        "10.92.164.137 → 10.0.0.241" => "OCC1",
+        "10.92.164.137 → 10.0.0.242" => "OCC2",
+        "10.92.164.137 → 11.0.0.240" => "OCC3",
+#        "10.0.0.240 → 10.92.164.137" => "OCC4",
+        "vDSC → HSS1" => "OCC1",
+        "vDSC → HSS2" => "OCC2",
+        "vDSC → HSS3" => "OCC3"
+#        "MME1 → vDSC" => "OCC4"
+        );
+
+my @occ_names = ("OCC1","OCC2","OCC3","OCC4","OCC5","OCC6","OCC7");
+
+my %relations = %relations_chfsimcounters;
+	
+my %traffic_counters;	
+my $starttime = 0;
+my $key;
+
+my ($len, $index, $rel, $node, $value, $item, $num_diameter);
+my ($cc_output,$slc_output,$chInstanceId,$counter);
+my ($time_diff, $elapsed, $t0, $occ);
+
+my %oldCChash ;
+my %newCChash ;
+my %diffCChash ;
+my %oldSLChash ;
+my %newSLChash ;
+my %diffSLChash ;
+
+my @data;
+
+sub inithash {
+    %traffic_counters = ();
+#    foreach $rel ( keys %relations) {
+#        $traffic_counters{$relations{$rel}} = 0;	
+#    }
+    foreach $occ ( @occ_names) {
+        $traffic_counters{$occ} = 0;	
+    }
+}
+
+sub parse_cc_counters {
+    my $cc_input = shift;    
+    #print STDERR "$cc_input\n";
+
+    %oldCChash = %newCChash;
+    %newCChash = ();
+    %diffCChash = ();
+
+    my $i = 0;
+    my @lines = split /\n/, $cc_input;
+    foreach my $line (@lines) {
+       $i++;
+       if ($line =~ /\"name\": \"\[chInstanceId\]=\[(\w+)\]\"/)  {
+          $chInstanceId = $1;
+
+          if ($lines[$i] =~ /\"value\":\s*(\d+)/)  {
+             $counter = $1;
+             if ($newCChash{$chInstanceId}) {
+		$newCChash{$chInstanceId} = $newCChash{$chInstanceId} + $counter;
+	     } else {
+		$newCChash{$chInstanceId} = $counter;
+             }
+             #print STDERR  "CC: $chInstanceId -> $counter\n";
+          }  
+       }
+    }
+    #print STDERR "\n";
+    
+	foreach $key (keys %newCChash) {
+	   if ($oldCChash {$key}) {
+	      $diffCChash{$key} = $newCChash {$key} - $oldCChash {$key};
+	   } else {
+	      $diffCChash{$key} = 0 ;
+	   }
+           print STDERR "CC: $key --> $diffCChash{$key}\n"
+	}
+	
+}
+
+sub parse_slc_counters {
+    my $slc_input = shift;    
+    #print STDERR "$slc_input\n";
+
+    %oldSLChash = %newSLChash;
+    %newSLChash = ();
+    %diffSLChash = ();
+
+    my $i = 0;
+    my @lines = split /\n/, $slc_input;
+    foreach my $line (@lines) {
+       $i++;
+       if ($line =~ /\"name\": \"\[subscriptionId\]=\[(\w+)\]\"/)  {
+          $chInstanceId = $1;
+
+          if ($lines[$i] =~ /\"value\":\s*(\d+)/)  {
+             $counter = $1;
+             if ($newSLChash{$chInstanceId}) {
+		$newSLChash{$chInstanceId} = $newSLChash{$chInstanceId} + $counter;
+	     } else {
+		$newSLChash{$chInstanceId} = $counter;
+             }
+             #print STDERR  "SLC: $chInstanceId -> $counter\n";
+          }  
+       }
+    }
+    #print STDERR "\n";
+    
+	foreach $key (keys %newSLChash) {
+	   if ($oldSLChash {$key}) {
+	      $diffSLChash{$key} = $newSLChash {$key} - $oldSLChash {$key};
+	   } else {
+	      $diffSLChash{$key} = 0 ;
+	   }
+           print STDERR "SLC: $key --> $diffSLChash{$key}\n"
+	}
+	
+}
+
+sub write2file {
+
+    $len = 0;
+    $index=4;
+    push(@data, "LoadData:$index:xx                  \n");
+
+    foreach $node (sort keys %traffic_counters) {
+        $index++;
+        $value = $traffic_counters{$node};
+        print STDERR "$node:$index:$value 0 0\n";
+        push(@data, "$node:$index:$value 0 0\n");
+    }
+    my $date_out = `date`;
+
+    print STDERR "-------------$date_out";
+		
+    foreach $item (@data) {
+        $len += length($item);
+    }
+
+    $len++;                     # don't know why, but length needs to be increased by one
+
+    if ($len> 99) {
+        $len++;
+    }                           # only works for len > 10 && < 1000
+
+    $data[0] = "Loaddata:4:$len                  \n";
+		
+    open(OUTFILE, "> temp_data_$port.txt");
+    foreach $item (@data) {
+        print OUTFILE $item;
+    }
+
+    close(OUTFILE);
+    @data = ();
+    inithash();
+
+}
+
+
+
+
+inithash();
+
+#open(TSHARK,"/usr/bin/tshark -f \"ip host 10.92.164.137\" -i eth1 -i eth2 -z \"proto,colinfo,tcp.srcport,tcp.srcport\" -z \"proto,colinfo,tcp.dstport,tcp.dstport\" -z \"proto,colinfo,diameter,diameter\" -Y \"diameter\" -n | ");
+
+#print STDERR "/usr/bin/tshark -f \"ip host 10.92.164.137\" -i eth1 -i eth2 -z \"proto,colinfo,tcp.srcport,tcp.srcport\" -z \"proto,colinfo,tcp.dstport,tcp.dstport\" -z \"proto,colinfo,diameter,diameter\" -Y \"diameter\" -n \n";
+
+
+system ("./loadmeter_server $port & ");
+
+#system ("rm -rf /tmp/wire* > /dev/null 2>&1" );
+
+
+while (1)
+{
+    #sleep(1);
+
+    $t0 = [gettimeofday];
+
+    $cc_output = `curl -s -X GET "http://$ENV{NODE_IP}:$ENV{MONITOR_PORT}/monitor/api/v0/commands?command=counter" | jq '.results[].counters[] | select(.name =="eric_chfsim_nchf_convergedcharging_http_in_requests_total")' `;
+
+    parse_cc_counters($cc_output);
+
+    $slc_output = `curl -s -X GET "http://$ENV{NODE_IP}:$ENV{MONITOR_PORT}/monitor/api/v0/commands?command=counter" | jq '.results[].counters[] | select(.name =="eric_chfsim_nchf_spendinglimitcontrol_http_in_requests_total")' `;
+
+    parse_slc_counters($slc_output);
+
+    $traffic_counters{"OCC1"} = $diffCChash{"occ1"} + $diffSLChash{"occ1"};	
+    $traffic_counters{"OCC2"} = $diffCChash{"occ2"} + $diffSLChash{"occ2"};	
+    $traffic_counters{"OCC3"} = $diffCChash{"occ3"} + $diffSLChash{"occ3"};	
+
+    write2file();
+
+    $elapsed = tv_interval ($t0);
+
+    $time_diff = (1000000)-$elapsed*1000*1000;
+    #print STDERR "$time_diff\n";
+
+    if ($time_diff> -19000) { # allow deviation of 0.019 seconds, makes calculated counter values max 2% off
+        if  ($time_diff>0) {
+            usleep($time_diff);
+        }
+    } else {
+        print "\nWARNING: Next values are not reliable, since time to calculate and print was greater than the sample time\nTime to calculate and print: $elapsed sec\n";
+    }
+
+}
+

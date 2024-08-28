@@ -1,0 +1,4 @@
+apiVersion: v1
+description: Signaling Controller BSF NF. (c) Ericsson AB 2019.
+name: eric-bsf
+version: 1.0.0-0

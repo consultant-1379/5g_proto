@@ -1,0 +1,3 @@
+{{- if eq (include "eric-sc-monitor.logshipper-enabled" . ) "true" }}
+  {{- include "eric-log-shipper-sidecar.logshipper-tls-cert-lt-client" . }}
+{{- end }}

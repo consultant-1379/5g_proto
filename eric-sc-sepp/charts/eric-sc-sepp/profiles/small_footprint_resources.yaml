@@ -1,0 +1,4 @@
+##### ALPHA version not to be included in production ####
+# This values file contain configuration to deploy certain services
+# with minimum foot print.
+# The values are experimental and not to be used in production

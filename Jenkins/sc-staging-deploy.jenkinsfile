@@ -1,0 +1,500 @@
+def AGENT_LABEL = null
+def HELM_CMD
+def GIT_CMD
+def PYTHON_CMD
+def values
+def TROUBLESHOOTING_FAILURE_REASON=[]
+node('SERO_GIC') {
+    stage('Check pre-conditions'){
+        echo "env.BSF:  ${env.BSF}\nenv.NLF:  ${env.NLF}\nenv.SCP:  ${env.SCP}\nenv.SEPP: ${env.SEPP}\nenv.SLF:  ${env.SLF}\nenv.RLF:  ${env.RLF}"
+        // Applications checks:
+        // if no Jenkins-parameters exists or all set to false the default will be to deploy all
+        if (env.BSF != 'true' && env.SCP != 'true' && env.SEPP != 'true') {
+            echo('no application selected; BSF, SCP, SEPP, SLF and RLF will be deployed!')
+            BSF = true;
+            NLF = true;
+            SCP = true;
+            SEPP = true;
+            SLF = true;
+            RLF = true;
+        } // if
+        if ( "${env.SCP}" == 'true' || "${SCP}" == 'true' || "${env.SEPP}" == 'true' || "${SEPP}" == 'true' || "${env.BSF}" == 'true' || "${BSF}" == 'true'){
+            PVTB = true;
+            TAPCOLLECTOR = true;
+            VTAPRECORDER = true;
+        }
+    } //stage
+    stage('Set agent'){
+        if (env.IP_VERSION == '6') {
+            AGENT_LABEL = '5G-SC-IPv6' // move to IPv6 buildslave(s)
+        } // if
+        else {
+            AGENT_LABEL = '5G-SC' // move to IPv4 buildslave(s)
+        } // else
+    } // stage
+} // node
+pipeline {
+    agent {
+         //Set label according to IP_VERSION parameter
+        label "${AGENT_LABEL}"
+    }
+    options {
+        timeout(time: 60, unit: 'MINUTES')
+        timestamps()
+    }
+    environment {
+        // Variables needed for the ruleset
+        BSF = "${env.BSF}"
+        SCP = "${env.SCP}"
+        SEPP = "${env.SEPP}"
+        
+        BSF_LEADER_ELECTION = true
+        SCP_LEADER_ELECTION = true
+        SEPP_LEADER_ELECTION = true
+        
+        NLF = "${env.NLF}"
+        SLF = "${env.SLF}"
+        RLF = "${env.RLF}"
+        WCDB = "${env.BSF}"    // WCDB only needed for BSF
+        BSF_DIAMETER = "${env.BSF}"
+        
+        BSF_TLS = false // TODO: check why this is needed
+        SCP_TLS = false // TODO: check why this is needed
+        
+        TAPAGENT = true
+        TAPCOLLECTOR = "${TAPCOLLECTOR}"
+        PVTB="${PVTB}"
+        VTAPRECORDER="${VTAPRECORDER}"
+        
+        LOGGING = true
+        PRODUCTION = true
+        RESOURCES = "${RESOURCES}"
+        
+        // Pipe Variables Used in Jenkins
+        DOCKER_RUN="docker run --rm  --user \$(id -u):\$(id -g) "
+        BUILDER_WORK_DIR = " -w ${env.WORKSPACE} "
+        BUILDER_DOCKER_IMAGE = "armdocker.rnd.ericsson.se/sandbox/adp-staging/adp-cicd/bob-py3kubehelmbuilder:fd49f94"
+        BUILDER_DOCKER_VOLUMES ="-v ${env.WORKSPACE}/helm-home:/home/jenkins/.helm -v ${env.WORKSPACE}:${env.WORKSPACE}"
+        BUILDER_DOCKER_ENV = "--env KUBECONFIG=${env.WORKSPACE}/.bob/${env.KUBE_HOST}.admin.conf"
+        HELM_ARGS="--home /home/jenkins/.helm"
+        HELM_RELEASE_NAME="bsf-app-staging-trial"
+        OUTPUT_DIR=".bob"
+
+        // ADP staging CHART_X parameters injected by Spinnaker or Jenkins, no need to define it here
+        //CHART_NAME = "${CHART_NAME}"
+        //CHART_REPO = "${CHART_REPO}"
+        //CHART_VERSION = "${CHART_VERSION}"
+        
+        KUBE_HOST = "${KUBE_HOST}"
+        //ARTIFACTORY_TOKEN = "${ARTIFACTORY_TOKEN}"
+        //NIGHTLY = "${NIGHTLY}"
+        NAMESPACE = "${NAMESPACE}"
+        PACKAGING = "${PACKAGING}"
+        PROJECT = "${PROJECT}"
+        PATH_REQYAML = "esc/helm/eric-sc-umbrella"
+        
+        DEPLOY_CRD = false
+        PMBR_OBJECT_STORAGE = "${PMBR_OSMN_SFTP}"
+        OBJECT_STORAGE = "${PMBR_OSMN_SFTP}"
+        SFTP = "${PMBR_OSMN_SFTP}"
+        SYSLOG = "${SYSLOG}"
+    }
+    stages {
+        stage('Print env vars') {
+            steps {
+                sh 'printenv | sort'
+                script {
+                    // set displayed build name
+                    currentBuild.displayName = "#${BUILD_NUMBER}>${env.CHART_NAME}:${env.CHART_VERSION}"
+                    // set displayed description
+                    currentBuild.description = "${env.NODE_NAME}, ${env.KUBE_HOST}<br>${env.CHART_REPO},  ${env.CHART_NAME}, ${env.CHART_VERSION}<br>${env.COMMIT}";
+                    if ( fileExists("/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh") ) { 
+                        // Log current job 
+                        sh "/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh -start"
+                    } // if                    
+                } //script
+            } //steps
+        } //stage
+        stage('Cleaning WS on Buildslaves') {
+            // only if no other instance of the same job is running in parallel
+            // if another instance is running this procedure would delete its WS and make it failing
+            when {
+                expression { currentBuild.getPreviousBuildInProgress() == null && !(env.NODE_NAME =~ /5G-LMVL/) }
+            } // when
+            steps {
+                // remove all (!) content (including the git repo)
+                sh '''#!/bin/bash -x
+                    IP_ADDRESS_TMP=`hostname -i`;
+                    BUILD_PATH_TMP=`pwd`;
+
+                    for ip in 10.210.174.60 10.210.174.61 10.210.155.84 10.210.155.137 10.210.174.209;
+                    do
+                        if [ "${IP_ADDRESS_TMP}" != "${ip}" ];
+                        then
+                            ssh eiffelesc@${ip} "if [ -d ${BUILD_PATH_TMP} ]; then rm -rf ${BUILD_PATH_TMP}/; else echo \"Nothing to clean\"; fi;"
+                        fi;
+                    done;'''
+            } // steps
+        } // stage
+        stage('Initialize') {
+            steps {
+                echo "BRANCH: ${env.BRANCH}"
+                echo "COMMIT: ${env.COMMIT}"
+                echo "CHART NAME: ${env.CHART_NAME}"
+                echo "CHART REPO: ${env.CHART_REPO}"
+                echo "CHART VERSION: ${env.CHART_VERSION}"
+                echo "KUBE HOST: ${env.KUBE_HOST}"
+                echo "NAMESPACE: ${env.NAMESPACE}"
+                echo "UPGRADE_CRDS: ${env.UPGRADE_CRDS}"
+                echo "CLEAN_CRDS: ${env.CLEAN_CRDS}"
+                echo ("The following will be deployed:\n"+
+                    "BSF : $BSF \n"+
+                    "NLF : $NLF \n"+
+                    "SCP : $SCP \n"+
+                    "SEPP: $SEPP \n"+
+                    "SLF : $SLF \n"+
+                    "RLF : $RLF \n"+
+                    "WCDB : $WCDB \n"+
+                    "BSF_DIAMETER : $BSF_DIAMETER \n"+
+                    "PMBR_OBJECT_STORAGE : $PMBR_OBJECT_STORAGE \n"+
+                    "OBJECT_STORAGE : $OBJECT_STORAGE \n"+
+                    "SFTP : $SFTP")
+                script {
+                    PYTHON_CMD = "${DOCKER_RUN} ${BUILDER_DOCKER_VOLUMES} -w ${env.WORKSPACE} ${BUILDER_DOCKER_ENV} ${BUILDER_DOCKER_IMAGE} python"
+                    HELM_CMD = "${DOCKER_RUN} ${BUILDER_DOCKER_VOLUMES} ${BUILDER_DOCKER_ENV} ${BUILDER_DOCKER_IMAGE} helm"
+                } // script
+            } // steps 
+        } // stage
+        stage('Init Env') {
+            steps {
+                echo pwd()
+                sh 'ls -ltrh'
+                //sh 'git submodule update --init --recursive'
+                //sh './bob/bob base.base-image'
+                sh './bob/bob base.init:create-output-dir'
+                sh './bob/bob init:set-kube-config'
+                sh './bob/bob init:set-build-proxy'
+                sh './bob/bob init:set-namespace'
+                sh './bob/bob init:set-supreme-properties'
+                sh './bob/bob base.init:api-tokens'
+                sh './bob/bob init:set-ingressHost'
+                sh 'printenv | sort'
+            } // steps 
+        } // stage
+        stage('Init Versions') {
+            steps {
+                // extract esc version of build from requirements.yaml
+                sh 'cat esc/helm/eric-sc-umbrella/requirements.yaml | grep $(cat VERSION_PREFIX) | tail -n 1 | awk -F \"version: \" \'{print $2}\' > .bob/var.esc-version'
+                // Copy umbrella chart folder to .bob directory
+                sh "./bob/bob update-umbrella:copy"
+                script{
+                    // Input from CHART_NAME, CHART_REPO, CHART_VERSION 
+                    // Update chart name/repo/version
+                    sh "./bob/bob update-umbrella-generic:service;"
+                     
+                    // Update umbrella package
+                    // product:number -> cxp-number
+                    // product:revision -> cxp-rev-number
+                    sh './bob/bob init:cxp-number'
+                    sh './bob/bob init:cxp-rev-number'
+                    sh './bob/bob init:product-info'
+                    sh "./bob/bob update-umbrella:update-product-numbers"
+                } // script
+            } // steps
+        } // stage
+        stage('Package/Deploy CRDs') {
+            when {
+                anyOf {
+                    environment name: 'CLEAN_CRDS', value: 'true';
+                    environment name: 'UPGRADE_CRDS', value: 'true';
+                } // anyOf
+            } // when
+            steps { 
+                script {
+                    // no crds in the cluster or corrupted,clean & install all that SC is using
+                    // Uninstall releases 
+                    // remove crds kept behind because of policy with label
+                    if ("${CLEAN_CRDS}"== "true") {    
+                        sh "./bob/bob undeploy-crds:clean-crds"
+                        sh "./bob/bob fetch-crds:clean;"
+                        sh "./bob/bob deploy-crds;"
+                    } 
+                    // check the new CHART and deploy its needed crd resource
+                    // use generic helm install & upgrade only this one
+                    // it uses CHART_NAME & CHART_VERSION from parameters 
+                    // package and upgrade/install
+                    if ("${UPGRADE_CRDS}"== "true") {
+                        sh "echo this is a service that is a CRD one!"
+                        sh "./bob/bob deploy-crds-generic:package-deploy-crd-generic"
+                    }
+                    
+                } //script
+            } // steps
+        } // stage
+        stage('Create package') {
+            steps {
+                // Create needed charts folder
+                // Fetch all dependencies and store in umbrella/charts
+                // Package umbrella chart and store in .bob folder
+                // Temporary store .tgz charts in 5g_proto/charts
+                sh "./bob/bob package-umbrella-fast"
+
+                // User .bob folder requirements and
+                // add all chart repo to local repo
+                // then helm package with dependency updates
+                // and store tgz package in .bob folder
+                //sh "./bob/bob package-umbrella"
+            } // steps 
+        } // stage
+        stage('Day-0 config') {
+            parallel {
+                stage('create certificates') {
+                    steps {
+                        echo 'Creating day-0 certificates...'
+                        sh "./bob/bob create-certificates:rootca create-certificates:netconf-tls create-certificates:transformer"
+                        echo 'Creating CERTM config json file for day-0 certificates...'
+                        sh "./bob/bob deploy:create-certm-config"
+                    } // steps 
+                } // stage
+                stage('install secrets/certs') {
+                    steps {
+                        echo 'Install day-0 secrets...'
+                        sh "./bob/bob deploy:adp-secrets"
+                    } // steps 
+                } // stage
+                stage('install regcred secret') {
+                    steps {
+                        echo 'Fetching registry credentials...'
+                        sh "./bob/bob install-regcred-automation:applyDefaultPullSecret"
+                    } // steps 
+                } // stage
+                stage('create SC config') {
+                    steps {
+                        echo 'Generate day-0 configuration...'
+                        sh "./bob/bob generate-values"
+                    } // steps 
+                } // stage
+                stage('install tapagent config') {
+                    steps {
+                        echo 'Create tapagent sftp secret...'
+                        sh "./bob/bob config-tapagent:sftp-secret"
+                        echo 'Install tapagent configmap...'
+                        sh "./bob/bob config-tapagent:configmaps"
+                    } // steps 
+                } // stage
+            } // parallel 
+        } // stage
+        stage('Deploy') {
+            steps {
+                // helm install previously created sc umbrella package
+                echo 'Starting to install SC integration chart...'
+                sh "./bob/bob deploy:ihc"
+            } // steps 
+        } // stage
+        stage('Deploy HTTPProxy') {
+            steps {
+                // Install internally used pm httpproxy
+                // Install internally used osmn httpproxy
+                echo 'Deploy httpproxy resources for local verification activities...'
+                sh "./bob/bob deploy:pm-httpproxy deploy:osmn-httpproxy deploy:envoy-admin-httpproxy deploy:search-engine-httpproxy"
+            } // steps 
+        } // stage
+        stage("Wait for base resources") {
+            steps {
+                sh """./bob/bob wait-for-deployed-resources:services;
+                      sleep 60;"""
+            } // steps 
+        } // stage
+        stage('View resources') {
+            parallel {
+                stage('Show pods') {
+                    steps {
+                        sh "kubectl get pods -n \$(cat .bob/var.namespace) --kubeconfig ${env.OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+                    } // steps
+                } // stage
+                stage('Show services') {
+                    steps {
+                        sh "kubectl get svc -n \$(cat .bob/var.namespace) --kubeconfig ${env.OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+                    } // steps
+                } // stage
+                stage('Show httpproxies') {
+                    steps {
+                        sh "kubectl get httpproxy -n \$(cat .bob/var.namespace) --kubeconfig ${env.OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+                    } // steps
+                } // stage
+            } // parallel
+        } // stage
+        stage("Install Default Users") {
+            steps {
+                sh "./bob/bob install-default-users:default-users"
+            } // steps
+        } // stage
+        stage("Install Default Certificates") {
+            steps {
+                sh """./bob/bob install-certificates:rootca;
+                      ./bob/bob install-certificates:nbi;
+                      ./bob/bob install-certificates:nlf;
+                      ./bob/bob install-certificates:scp-manager;
+                      ./bob/bob install-certificates:scp-worker;
+                      ./bob/bob install-certificates:slf;
+                      ./bob/bob install-certificates:sepp-manager;
+                      ./bob/bob install-certificates:sepp-worker;
+                      ./bob/bob install-certificates:bsf-manager;
+                      ./bob/bob install-certificates:bsf-worker;
+                      ./bob/bob install-certificates:diameter;
+                      ./bob/bob install-certificates:transformer;
+                      ./bob/bob install-certificates:syslog;
+                      sleep 60;"""
+            } // steps 
+        } // stage
+        stage("Install simulated tools certs") { //This stage is executed only for simulated tools in order to add certs
+            when {
+                environment name: 'TEST_TYPE', value: 'SimulatedTools';
+            } // when
+            steps {
+                sh "cd scripts/; ./install_certs.sh chfsim-dynamic seppsim-dynamic k6-dynamic nrfsim-dynamic"  
+                //TODO : adapt these with supreme tool   
+            } // steps 
+        } //stage
+        stage("Install Default Configuration") {
+            steps {
+                sh """#!/bin/bash
+                      ./bob/bob loadConfig:sc;
+                      """
+            } // steps 
+        } //stage
+        stage("Wait for SC resources") {
+            steps {
+                script {
+                    sh """#!/bin/bash
+                      ./bob/bob wait-for-deployed-resources:selectedApps;
+                      """
+                    sh "echo 'Deleting certm deployment configuration secret...'; ./bob/bob deploy:delete-certm-config-secret"
+                } // script
+            } // steps 
+        } // stage
+        stage("Checking tools existense!") {
+            steps {
+                script {
+                    if ("$TEST_TYPE".contains("AdpStaging")) {
+                        sh "kubectl --kubeconfig ${env.OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf -n ${env.NAMESPACE} get pods | grep atmoz"
+                        sh "kubectl --kubeconfig ${env.OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf -n ${env.NAMESPACE} get pods | grep k6"
+                        sh "kubectl --kubeconfig ${env.OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf -n ${env.NAMESPACE} get pods | grep nels"
+                    } // if
+                    if ("$TEST_TYPE".contains("SimulatedTools")) {
+                        sh "kubectl --kubeconfig ${env.OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf -n ${env.NAMESPACE} get pods | grep chfsim"
+                        sh "kubectl --kubeconfig ${env.OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf -n ${env.NAMESPACE} get pods | grep k6"
+                        sh "kubectl --kubeconfig ${env.OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf -n ${env.NAMESPACE} get pods | grep nels"
+                        } // if
+                } // script
+            } // steps
+        } // stage
+        stage("Archiving parameters for downstream Test pipeline") {
+            steps {
+                sh '''
+                    echo "COMMIT=`echo ${env.COMMIT}`" >> test.properties;
+                    echo "KUBE_HOST=$(echo ${KUBE_HOST})" > test.properties;
+                    echo "NAMESPACE=`cat ${env.OUTPUT_DIR}/var.namespace`" >> test.properties;
+                    echo "CHART_NAME=$(echo ${CHART_NAME})" >> test.properties;
+                    echo "CHART_REPO=$(echo ${CHART_REPO})" >> test.properties;
+                    echo "CHART_VERSION=$(echo ${CHART_VERSION})" >> test.properties;
+                    echo "BRANCH=$(echo ${BRANCH})" > test.properties;
+                '''
+                archiveArtifacts artifacts: 'test.properties', onlyIfSuccessful: true
+            } // steps
+        } // stage
+    } // stages
+    post {
+        always {
+            script{
+                // Log current job
+                if ( fileExists("/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh") ) { 
+                    sh "/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh -stop"
+                } // if
+            } // script
+        } // always
+        success {
+            cleanWs()
+        } // success
+        failure {
+            script {
+                try{
+                    sh "./scripts/collect_ADP_logs.sh -c ~/.kube/${env.KUBE_HOST}.config -n `cat .bob/var.namespace`"
+                    archiveArtifacts allowEmptyArchive: true, artifacts: 'logs_*.tgz', onlyIfSuccessful: false
+                } // try
+                catch(exc) {
+                    sh 'echo Exception during collect adp logs script happened!'
+                } // catch
+                // do not undeploy for troubleshooting purposes
+                if (env.CLEANCLUSTER != 'FALSE') {          
+                    try {
+                        timeout(time: 10, unit: 'MINUTES') {
+                            // clean cluster due to failure in pipeline
+                            sh "./bob/bob clean-resources:delete-namespace"
+                            sh "./bob/bob clean-resources:create-namespace"
+                            sh "./bob/bob clean-resources:remove-cluster-resources"
+                        } // timeout
+                    } // try
+                    catch (exc) {
+                        TROUBLESHOOTING_FAILURE_REASON += ("Failed to clean cluster forcefully after failure")
+                    } // catch
+                } // if
+                COLOR = "<body style=\"background-color: LightYellow;\">"
+                // TEST_TYPE is AdpStaging -> inform Challengers
+                if ("$TEST_TYPE".contains("AdpStaging")) {
+                    emailext body: "$COLOR" + "Hello ADP CICD owners,<br><br> SC application deployment failed while testing ${CHART_NAME} ${CHART_REPO} ${CHART_VERSION}.<br>Please take appropriate actions!<br><br> .Folowing are the possible Troubleshooting reasons: ${TROUBLESHOOTING_FAILURE_REASON} <br><br>.Please check:<br>",
+                    mimeType: 'text/html',
+                    subject: "SC ADP CICD Staging deploy failed",
+                    to: "IXG-ChallengersTeam@ericsson.onmicrosoft.com"
+                } // if
+                // CHART_NAME is WCDB -> inform IXG3
+                if ("$CHART_NAME".contains("eric-data-wide-column-database-cd")) {
+                    emailext body: "$COLOR" + "Hello IXG3 team,<br><br> SC application deployment failed while testing ${CHART_NAME} ${CHART_REPO} ${CHART_VERSION}.<br>Please take appropriate actions!<br><br> .Folowing are the possible Troubleshooting reasons: ${TROUBLESHOOTING_FAILURE_REASON} <br><br>.Please check:<br>",
+                    mimeType: 'text/html',
+                    subject: "WCDB deploy failed",
+                    to: "dsc_ixg3@ericsson.onmicrosoft.com"
+                } // if
+                // CHART_NAME is stm-diameter -> inform IXG3
+                else if ("$CHART_NAME".contains("eric-stm-diameter")) {
+                    emailext body: "$COLOR" + "Hello IXG3 team,<br><br> SC application deployment failed while testing ${CHART_NAME} ${CHART_REPO} ${CHART_VERSION}.<br>Please take appropriate actions!<br><br> .Folowing are the possible Troubleshooting reasons: ${TROUBLESHOOTING_FAILURE_REASON} <br><br>.Please check:<br>",
+                    mimeType: 'text/html',
+                    subject: "Stm diameter deploy failed",
+                    to: "dsc_ixg3@ericsson.onmicrosoft.com"
+                } // else if
+                if ("${UPGRADE_CRDS}"== "true") {
+                    try {
+                        timeout(time: 10, unit: 'MINUTES') {
+                            // Install the old charts' CRD if it exists
+                            // undeploy specific chart
+                            sh "./bob/bob undeploy-crds-generic"
+                            sh "./bob/bob deploy-crds-generic:package-deploy-crd-generic-old"
+                        } // timeout
+                    } // try
+                    catch (exc) {
+                        TROUBLESHOOTING_FAILURE_REASON += ("Failed to clean crds gracefully after failure")
+                        sh "./bob/bob undeploy-crds"
+                        sh "./bob/bob fetch-crds"
+                        sh "./bob/bob deploy-crds;"
+                    } // catch
+                } // if
+            } // script
+        } // failure
+        aborted {
+            script {
+                sh 'echo Pipeline aborted due to timeout'
+                try {
+                    timeout(time: 10, unit: 'MINUTES') {
+                        // clean cluster due to failure in pipeline
+                        sh "./bob/bob clean-resources:delete-namespace"
+                        sh "./bob/bob clean-resources:create-namespace"
+                        sh "./bob/bob clean-resources:remove-namespace-resources"
+                        sh "./bob/bob clean-resources:remove-cluster-resources"
+                    } // timeout
+                } // try
+                catch (exc) {
+                    TROUBLESHOOTING_FAILURE_REASON += ("Failed to clean cluster forcefully after abort")
+                } // catch
+            } // script
+        } // abort
+    } // post
+} // pipeline

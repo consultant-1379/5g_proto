@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eric-scp-schema-configmap
+  labels:
+{{- include "eric-scp.labels" . | indent 4 }}
+  annotations:
+{{- include "eric-scp.helm-annotations" . | indent 4 }}
+{{- include "eric-scp.config-annotations" . | indent 4 }}
+data:
+{{ (.Files.Glob "configarchives/ericsson-scp.json").AsConfig | indent 2 }}
+{{- $vtapSchemaConfig := .Files.Get "configarchives/ericsson-vtap-pc5gc.json" }}
+{{- if $vtapSchemaConfig }}
+{{ (.Files.Glob "configarchives/ericsson-vtap-pc5gc.json").AsConfig | indent 2 }}
+{{- end }}
+binaryData:
+  ericsson-scp.tar.gz: {{ .Files.Get "configarchives/ericsson-scp.tar.gz" | b64enc | indent 2 }}

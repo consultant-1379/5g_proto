@@ -1,0 +1,38 @@
+modelVersion: 2.0
+
+import:
+  base: ruleset2.0-eric-base.yaml
+
+description: "Supreme: certificate handler"
+
+rules:
+  init:
+    - task: base.init:create-output-dir
+    - task: base.init:set-build-proxy
+    - task: base.init:git-properties
+
+  build:
+    - task: supreme
+      docker-image: base.java-maven-builder
+      cmd: /bin/bash -c "mvn -s ${var.base.build-proxy} -Duser.home=. -f pom.xml ${base.MVN_ARGS} -am -pl devtools/supreme install"
+
+  push-image:
+    - task: supreme
+      docker-image: base.java-maven-builder
+      cmd: /bin/bash -c """set -x; mvn --version;
+
+              mvn_args=\"
+                    -Dcbos-image.name=${base.SC_CBOS_IMG}
+                    -Darmdocker.repo=${base.ARM_DOCKER_REGISTRY}/supreme/
+                    -Djib.container.creationTime=${var.base.git-commit-date}
+                    -Djib.from.auth.username=${env.base.USER}
+                    -Djib.from.auth.password=${var.base.armdocker-api-token}
+                    -Djib.to.auth.username=${env.base.USER}
+                    -Djib.to.auth.password=${var.base.armdocker-api-token}\";
+              
+              mvn --no-transfer-progress -e -s ${var.base.build-proxy} -Duser.home=. -f pom.xml -am -pl devtools/supreme package com.google.cloud.tools:jib-maven-plugin:build \$mvn_args;"""
+
+
+  clean:
+    - task: directories
+      cmd: /bin/bash -c "mvn -s ${var.base.build-proxy} -Duser.home=. -f pom.xml ${base.MVN_ARGS} -am -pl devtools/supreme clean"

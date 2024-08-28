@@ -1,0 +1,41 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2023-11-24 16:30
+FOSS:
+    # Available in Bazaar
+    FOSSName: cppkafka
+    # Available in Bazaar
+    FOSSVersion: 0.3.1
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://www.tcpdump.org/release/libpcap-{{FOSSVersion}}.tar.gz
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 1/CTX1026548
+    # Not Available in Bazaar
+    Primary: N
+    # Available in Bazaar
+    STAKOCode: Not for a new Design
+    # Available in Bazaar
+    STAKOReason: Product verison is older than 54 months
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: The Packet Capture library provides a high level interface to packet capture systems. All packets on the network, even those destined for other hosts, are accessible through this mechanism.
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: BSD 2-Clause "Simplified" License (BSD-2-Clause)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: BSD 2-Clause "Simplified" License (BSD-2-Clause)
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: NO
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ZARISAR Aristeidis Sarras

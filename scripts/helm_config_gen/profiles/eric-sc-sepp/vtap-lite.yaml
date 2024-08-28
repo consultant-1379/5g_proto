@@ -1,0 +1,6 @@
+eric-sepp:
+  tapagent:
+    worker:
+      enabled: true
+    manager:
+      enabled: true

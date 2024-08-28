@@ -1,0 +1,264 @@
+modelVersion: 2.0
+
+import:
+  base: ruleset2.0-eric-base.yaml
+
+description: "Charging Function Simulator"
+
+properties:
+  - CHFSIM_SERVICE_NAME: eric-chfsim
+  - REDIS_SERVICE_NAME: eric-chfsim-redis
+
+  - CHFSIM_IMAGE_NAME: ${CHFSIM_SERVICE_NAME}
+  - REDIS_IMAGE_NAME: ${REDIS_SERVICE_NAME}
+
+  - EXPORT_DIR: ${base.OUTPUT_DIR}/export-chfsim
+
+  #To build a new redis base image, set the version here and run the rule images:redis-base-sles before deploying
+  - REDIS_VERSION: 7.0.8
+  - REDIS_BASE_IMAGE_NAME: eric-redis-base
+  - REDIS_BASE_IMAGE: armdocker.rnd.ericsson.se/proj-5g-bsf/redis/${REDIS_BASE_IMAGE_NAME}:${REDIS_VERSION}
+  - REDIS_STANDALONE_IMAGE_NAME: eric-redis
+  - REDIS_STANDALONE_IMAGE: armdocker.rnd.ericsson.se/proj-5g-bsf/redis/${REDIS_STANDALONE_IMAGE_NAME}:${REDIS_VERSION}
+
+env:
+ - BOB_FORCE_IMAGE_PULL (default=false)
+ - RELEASE (default=false)
+ - TEST_TYPE (default=)
+
+var:
+ - chfsim-version
+ - redis-version
+
+rules:
+  redis-base-image:
+    - task: image:redis-base-sles
+    - task: push:redis-base-sles
+    - task: image:redis-standalone-sles
+    - task: push:redis-standalone-sles
+
+  init:
+    - task: base.init:create-output-dir
+    - task: base.init:set-namespace
+    - task: base.init:set-kube-config
+    - task: base.init:set-build-proxy
+    - task: base.init:set-supreme-properties
+    - task: base.init:api-tokens
+    - task: redis-version
+      docker-image: base.adp-release-auto
+      cmd: generate-version --is-release ${env.RELEASE} --output redis-version
+    - task: chfsim-version
+      docker-image: base.adp-release-auto
+      cmd: generate-version --is-release ${env.RELEASE} --output chfsim-version
+
+  build:
+    - task: esc-parent
+      docker-image: base.java-maven-builder
+      cmd: mvn -s ${var.base.build-proxy} -Duser.home=. -DskipTests -Djacoco.skip=true -am -pl :eric-chfsim ${base.MVN_ARGS} package
+
+  image:
+    - task: build-eric-chfsim-redis
+      cmd: docker build ./devtools/redis/
+           --file devtools/redis/Dockerfile
+           --build-arg DOCKER_BASE_IMG=${REDIS_BASE_IMAGE}
+           --tag ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${REDIS_IMAGE_NAME}:${var.redis-version}
+    - task: build-eric-chfsim
+      cmd: docker build ./simulators/chfsim/
+           --file simulators/chfsim/Dockerfile
+           --build-arg DOCKER_BASE_IMG=${base.SC_CBOS_IMG}
+           --tag ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${CHFSIM_IMAGE_NAME}:${var.chfsim-version}
+    #This fetches the given Redis version from Github, compiles it and stores the binary in a CBOS image
+    #It should not be used during a normal build and only be run if the Redis version is to be updated
+    - task: redis-base-sles
+      cmd: docker build ./devtools/redis/
+           --file devtools/redis/Dockerfile.base
+           --build-arg ADP_DEV_REPO=${base.ADP_DEV_REPO}
+           --build-arg CBOS_REPO=${base.CBOS_REPO}
+           --build-arg DOCKER_BASE_IMG=${base.CBOS_ZYPPER_IMG}
+           --build-arg REDIS_VERSION=${REDIS_VERSION}
+           --tag ${REDIS_BASE_IMAGE}
+    - task: redis-standalone-sles
+      cmd: docker build ./devtools/redis/
+           --file devtools/redis/Dockerfile
+           --build-arg DOCKER_BASE_IMG=${REDIS_BASE_IMAGE}
+           --tag ${REDIS_STANDALONE_IMAGE}
+
+  lint:
+    - task: helm-redis
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: helm lint ${base.OUTPUT_DIR}/${REDIS_SERVICE_NAME}
+    - task: helm-chfsim-py3
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: helm lint ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}
+
+  package:
+    - task: helm-chart-redis
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "
+           rm -f ${base.OUTPUT_DIR}/${REDIS_SERVICE_NAME}-*.tgz;
+           rm -rf ${base.OUTPUT_DIR}/${REDIS_SERVICE_NAME};
+           mkdir -p ${base.OUTPUT_DIR}/${REDIS_SERVICE_NAME};
+           cp -r devtools/redis/helm/* ${base.OUTPUT_DIR}/${REDIS_SERVICE_NAME};
+           update_values.rb ${base.OUTPUT_DIR}/${REDIS_SERVICE_NAME}/values.yaml
+           imageCredentials:registry:url=${base.DOCKER_REGISTRY_URL} imageCredentials:repoPath=${base.DOCKER_REPO_PATH}/${env.base.USER}
+           spec:image=${REDIS_IMAGE_NAME} spec:tag=${var.redis-version} spec:affinity:podAffinity=false > ${base.OUTPUT_DIR}/${REDIS_SERVICE_NAME}/values.tmp.yaml;
+           mv ${base.OUTPUT_DIR}/${REDIS_SERVICE_NAME}/values.tmp.yaml ${base.OUTPUT_DIR}/${REDIS_SERVICE_NAME}/values.yaml;
+           helm package --version ${var.redis-version} --app-version ${var.redis-version} ${base.OUTPUT_DIR}/${REDIS_SERVICE_NAME}/ -d ${base.OUTPUT_DIR}/";
+      #Copying is seperated as for the "normal" deployment, tools/remove-deployments will be invoked to delete the additional deployments
+    - task: helm-chart-redis-jkube
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "
+           rm -f ${base.OUTPUT_DIR}/${REDIS_SERVICE_NAME}-*.tgz;
+           rm -rf ${base.OUTPUT_DIR}/${REDIS_SERVICE_NAME};
+           mkdir -p ${base.OUTPUT_DIR}/${REDIS_SERVICE_NAME};
+           cp -r devtools/redis/helm/* ${base.OUTPUT_DIR}/${REDIS_SERVICE_NAME};
+           update_values.rb ${base.OUTPUT_DIR}/${REDIS_SERVICE_NAME}/values.yaml
+           imageCredentials:registry:url=${base.DOCKER_REGISTRY_URL} imageCredentials:repoPath=${base.DOCKER_REPO_PATH}/${env.base.USER}
+           spec:image=${REDIS_IMAGE_NAME} spec:tag=${var.redis-version} spec:affinity:podAffinity=true > ${base.OUTPUT_DIR}/${REDIS_SERVICE_NAME}/values.tmp.yaml;
+           mv ${base.OUTPUT_DIR}/${REDIS_SERVICE_NAME}/values.tmp.yaml ${base.OUTPUT_DIR}/${REDIS_SERVICE_NAME}/values.yaml;
+           helm package --version ${var.redis-version} --app-version ${var.redis-version} ${base.OUTPUT_DIR}/${REDIS_SERVICE_NAME}/ -d ${base.OUTPUT_DIR}/";
+      #Copying is seperated as for the "normal" deployment, tools/remove-deployments will be invoked to delete the additional deployments
+    - task: copy-helm-chart-chfsim
+      cmd: /bin/bash -c "
+           rm -f ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}-*.tgz;
+           rm -rf ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME};
+           mkdir -p ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME};
+           cp -r simulators/chfsim/helm/* ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}";
+    - task: copy-helm-chart-chfsim-sepp
+      cmd: /bin/bash -c "
+           rm -f ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}-*.tgz;
+           rm -rf ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME};
+           mkdir -p ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}; cp -r simulators/chfsim/helm/* ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME};
+           rm -fr ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/templates;
+           mv ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/templates-sepp ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/templates;
+           cp  -r simulators/chfsim/helm/templates/_helpers.tpl ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/templates";
+    - task: helm-chart-chfsim
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c " update_values.rb ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/values.yaml
+           imageCredentials:registry:url=${base.DOCKER_REGISTRY_URL} imageCredentials:repoPath=${base.DOCKER_REPO_PATH}/${env.base.USER}
+           spec:image=${CHFSIM_IMAGE_NAME} spec:tag=${var.chfsim-version} > ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/values.tmp.yaml;
+           mv ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/values.tmp.yaml ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/values.yaml;
+           helm package --version ${var.chfsim-version} --app-version ${var.chfsim-version} ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/ -d ${base.OUTPUT_DIR}/";
+
+  push:
+    - task: docker-image-redis
+      cmd: docker push ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${REDIS_IMAGE_NAME}:${var.redis-version}
+    - task: redis-base-sles
+      cmd: docker push ${REDIS_BASE_IMAGE}
+    - task: redis-standalone-sles
+      cmd: docker push ${REDIS_STANDALONE_IMAGE}
+    - task: helm-chart-redis
+      cmd: "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\" --upload-file ${base.OUTPUT_DIR}/${REDIS_SERVICE_NAME}-${var.redis-version}.tgz \"${base.HELM_CHART_REPO}/${REDIS_SERVICE_NAME}-${var.redis-version}.tgz\""
+    - task: docker-image-chfsim
+      cmd: docker push ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${CHFSIM_IMAGE_NAME}:${var.chfsim-version}
+    - task: helm-chart-chfsim
+      cmd: "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\" --upload-file ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}-${var.chfsim-version}.tgz \"${base.HELM_CHART_REPO}/${CHFSIM_SERVICE_NAME}-${var.chfsim-version}.tgz\""
+
+  deploy:
+    - task: deploy-redis
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: /bin/bash -c 'helm install --namespace ${var.base.namespace} ${REDIS_SERVICE_NAME}-${env.base.USER} ${base.OUTPUT_DIR}/${REDIS_SERVICE_NAME}-${var.redis-version}.tgz'
+    - task: deploy-chfsim
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: /bin/bash -c 'if [[ "${env.TEST_TYPE}" = "IaaS_Stability_tools_on_separate_workers" ]];
+                        then
+                            helm install --namespace ${var.base.namespace} --set usage=tools ${CHFSIM_SERVICE_NAME}-${env.base.USER} ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}-${var.chfsim-version}.tgz;
+                        else
+                            helm install --namespace ${var.base.namespace} ${CHFSIM_SERVICE_NAME}-${env.base.USER} ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}-${var.chfsim-version}.tgz;
+                        fi;
+                        '
+
+  download:
+    - task: download-chfsim
+      cmd: "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\" -O https://arm.seli.gic.ericsson.se/artifactory/proj-5g-bsf-helm-local/${CHFSIM_SERVICE_NAME}-${var.chfsim-version}.tgz"
+
+  undeploy:
+    - task: undeploy-redis
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: helm uninstall --namespace ${var.base.namespace} ${REDIS_SERVICE_NAME}-${env.base.USER}
+    - task: undeploy-chfsim
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: helm uninstall --namespace ${var.base.namespace} ${CHFSIM_SERVICE_NAME}-${env.base.USER}
+
+  tools:
+    - task: remove-deployments
+      cmd: /bin/bash -c "rm ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/templates/chfsim4.yaml;
+           rm ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/templates/chfsim5.yaml;
+           rm ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/templates/chfsim6.yaml;
+           rm ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/templates/chfsim7.yaml;
+           rm ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/templates/chfsim8.yaml;
+           rm ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/templates/chfsim9.yaml;
+           rm ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/templates/chfsim10.yaml;
+           rm ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/templates/chfsim11.yaml;
+           rm ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/templates/chfsim12.yaml;";
+    - task: remove-deployments-non-stability
+      cmd:
+        - rm -f rm ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/templates/chfsim9.yaml
+        - rm -f rm ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/templates/chfsim10.yaml
+        - rm -f rm ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/templates/chfsim11.yaml
+        - rm -f rm ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/templates/chfsim12.yaml
+
+  export:
+    - task: clean:export
+    - task: folders
+      cmd: mkdir -p ${EXPORT_DIR}; mkdir -p ${EXPORT_DIR}/helm; mkdir -p ${EXPORT_DIR}/docker; mkdir -p ${EXPORT_DIR}/certificates/chfsim
+    - task: helm
+      cmd: cp ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}-${var.chfsim-version}.tgz ${base.OUTPUT_DIR}/${REDIS_SERVICE_NAME}-${var.redis-version}.tgz ${EXPORT_DIR}/helm
+    - task: image
+      cmd:
+        - docker save ${base.DOCKER_REGISTRY_URL}/${base.DOCKER_REPO_PATH}/${env.base.USER}/${CHFSIM_IMAGE_NAME}:${var.chfsim-version} > ${EXPORT_DIR}/docker/${CHFSIM_IMAGE_NAME}-${var.chfsim-version}.tar
+        - docker save ${base.DOCKER_REGISTRY_URL}/${base.DOCKER_REPO_PATH}/${env.base.USER}/${REDIS_IMAGE_NAME}:${var.redis-version} > ${EXPORT_DIR}/docker/${REDIS_IMAGE_NAME}-${var.redis-version}.tar
+    - task: create-certificates
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d chfsim -p ${base.CERTS_OUT_DIR}/supreme.yaml
+    - task: copy-certificates
+      cmd: cp -R ${base.CERTS_OUT_DIR}/chfsim/* ${EXPORT_DIR}/certificates/chfsim
+
+  clean:
+    - task: base.init:create-output-dir
+    - task: base.init:set-build-proxy
+    - task: chfsim-certificates
+      cmd: rm -rf ${base.CERTS_OUT_DIR}/chfsim
+    - task: chfsim-helm
+      cmd:
+        - rm -f ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}-*.tgz
+        - rm -rf ${base.OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}
+    - task: chfsim-version
+      cmd: rm -f ${base.OUTPUT_DIR}/var.chfsim-version
+    - task: export
+      cmd: rm -rf ${EXPORT_DIR}
+    - task: maven
+      docker-image: base.java-maven-builder
+      cmd: mvn -s ${var.base.build-proxy} -Duser.home=. -DskipTests -am -pl :eric-chfsim ${base.MVN_ARGS} clean
+    - task: redis-helm
+      cmd:
+        - rm -f ${base.OUTPUT_DIR}/${REDIS_SERVICE_NAME}-*.tgz
+        - rm -rf ${base.OUTPUT_DIR}/${REDIS_SERVICE_NAME}
+    - task: redis-version
+      cmd: rm -f ${base.OUTPUT_DIR}/var.redis-version

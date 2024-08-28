@@ -1,0 +1,34 @@
+openapi: 3.0.0
+
+info:
+  version: '1.0.0'
+  title: 'Napi_Test'
+  description: |
+    Definition of a common handler for testing purposes only.
+    � 2022 Ericsson GmbH. All rights reserved.
+
+servers:
+  - url: '{api-root}/napi-test/v1'
+    variables:
+      apiRoot:
+        default: https://example.com
+        description: apiRoot as defined in clause 4.4 of 3GPP TS 29.501
+
+paths:
+  /message-screening/mirror:
+    get:
+      operationId: MirrorRequestBody
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+ 

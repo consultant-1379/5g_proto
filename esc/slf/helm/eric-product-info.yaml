@@ -1,0 +1,25 @@
+productName: "Subscription Locator Function (eric-sc-slf)"
+productNumber: product_number
+productRevision: product_revision
+images:
+  slf:
+    productName: "SLF"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+    name: slf_image_name
+    tag: slf_image_tag
+  tapagent:
+    productName: "SLF TAP agent"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+    name: tap_agent_image_name
+    tag: tap_agent_image_tag
+  tlskeylogagent:
+    productName: "SCPSLFTLS Keylog Agent"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+    name: tlskeylogagent_image_name
+    tag: tlskeylogagent_image_tag

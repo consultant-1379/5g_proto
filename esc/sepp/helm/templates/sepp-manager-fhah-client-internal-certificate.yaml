@@ -1,0 +1,22 @@
+{{- if eq (include "eric-sepp.tls" .) "true" }}
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+  name: {{ template "eric-sepp.name" . }}-manager-fhah-client-certificate
+  annotations:
+{{- include "eric-sepp.helm-annotations" . | indent 4 }}
+{{- include "eric-sepp.config-annotations" . | indent 4 }}
+  labels:
+{{- include "eric-sepp.labels" . | indent 4 }}
+spec:
+  kubernetes:
+    generatedSecretName: sepp-manager-fhah-client-if-certificate-secret
+  certificate:
+    subject:
+      cn: eric-sepp-manager
+    issuer:
+      reference: eric-fh-alarm-handler-fi-server-client-ca
+    extendedKeyUsage:
+      tlsClientAuth: true
+      tlsServerAuth: false
+{{- end }}

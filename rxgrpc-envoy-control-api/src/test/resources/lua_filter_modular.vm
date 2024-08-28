@@ -1,0 +1,73 @@
+## NOTE: The Velocity templates seem to remove the newline-character at the end
+##       of comment lines. It wouldn't matter in HTML (which is what Velocity
+##       templates are probably made for), but here it does.
+##       That's why comments are always on their own line, never at the end of a line.
+
+function envoy_on_request(request_handle)
+  local path = request_handle:headers():get(":path")
+  request_handle:logDebug("Path: " .. path) 
+  local operation  
+  #foreach ( $handler in $handlers )
+  # start request_handle for $handler.name
+      #foreach ( $action in $handler.actions )   
+      ##$action.getLuaCode() 
+      $action.getIndentedLuaCode()               
+      #end
+  # end request_handle for $handler.name    
+  #end     
+end
+
+
+
+
+function envoy_on_response(response_handle)
+  request_handle:logDebug("Path: " .. path)
+  local operation
+  local connection = response_handle:connection()
+  local location = response_handle:headers():get("location")
+   if (location)
+    response_handle:logDebug(location) 
+   end
+  #foreach ( $handler in $handlers )
+  # response_handle for $handler.name
+  #foreach ( $handler in $handlers )
+  # request_handle for $handler.name
+      #foreach ( $action in $handler.actions )
+          #if($action.logDebug)
+          request_handle:logDebug("$action.logDebug")
+          #end
+      #end
+  #end    
+  #end
+end
+
+
+#macro( handle_control_actions $action ) 
+          #if($action.then)
+            then
+          #end        
+          #if($action.end)
+            end
+          #end 
+#end
+
+#macro( handle_condition_actions $action ) 
+          #if($action.whenVar)
+            if ($action.getVar().getName())
+          #end        
+#end
+
+
+#macro( handle_actions $action ) 
+          #if($action.logLevel != "")
+            $action.getLuaCode()                        
+          #end           
+#end
+
+
+#macro( handle_request_header_actions $action ) 
+          #if($action.addHttpHeader())
+            request_handle:headers():add("$action.header", $action.headerValue)
+          #end 
+#end
+

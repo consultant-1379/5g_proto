@@ -1,0 +1,412 @@
+#!/bin/bash
+
+export DEFAULT_CONFIG_PATH="/home/eiffelesc/.kube";
+export CONFIG_PATH=$1;
+[[ -z ${CONFIG_PATH} ]] && [[ -d ${DEFAULT_CONFIG_PATH} ]] && export CONFIG_PATH="${DEFAULT_CONFIG_PATH}";
+[[ -z ${KUBECONFIG} ]] && export KUBECONFIG="${CONFIG_PATH}/${KUBE_HOST}.config";
+[[ -z ${NAMESPACE} ]] && echo "ERROR: variable NAMESPACE not set/defined. Exiting" && exit 1 ;
+# associative array with the NF names (lowercase is key, uppercase is value)
+# also used to find which NFs are set
+declare -A NF_NAMES 
+export NR_CONFIGS="";
+
+checkNeededNfs(){
+    [[ "$BSF" == true ]] && NF_NAMES["bsf"]="BSF"
+    [[ "$SCP" == true ]] && NF_NAMES["scp"]="SCP"
+    [[ "$SEPP" == true ]] && NF_NAMES["sepp"]="SEPP"
+    echo "NFS: ${NF_NAMES[@]}"
+    if [ ${#NF_NAMES[@]} -eq 0 ]; then
+        echo "ERROR: NFs not set. Exiting"
+        exit 1
+    fi
+}
+
+###########################
+# Extract NF IP and Ports #
+###########################
+extractAndSetNfValues(){
+    [[ -z "$1" ]] && echo "extractAndSetNfValues(): no NF provided" && return
+    SVC_NAME="eric-$1-worker";
+    NF_UPPER="${NF_NAMES[$1]}"
+    unset PORT
+    unset TLS_PORT
+    unset IP_V4
+    unset IP_V6
+    ips_array=()
+    SVC_TYPE=`kubectl get svc ${SVC_NAME} --kubeconfig $KUBECONFIG --namespace ${NAMESPACE} -o jsonpath="{.spec.type}"`;
+    echo "Extracting information from service $SVC_NAME, type $SVC_TYPE"
+    if [ "${SVC_TYPE}" == "LoadBalancer" ]; then
+        ips_array=( `kubectl get svc ${SVC_NAME} --kubeconfig $KUBECONFIG --namespace ${NAMESPACE} -o jsonpath="{.status.loadBalancer.ingress[*].ip}"` )
+        if [ ${#ips_array[@]} -ne 0 ]; then
+            export ${NF_UPPER}_WRKR_PORT=`kubectl get svc ${SVC_NAME} --kubeconfig $KUBECONFIG --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"unencrypted-port\")].port}"`
+            export ${NF_UPPER}_WRKR_TLS_PORT=`kubectl get svc ${SVC_NAME} --kubeconfig $KUBECONFIG --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"encrypted-port\")].port}"`
+        else
+            #no ips retrieved due to port conflicts and status pending, fallback to nodeports
+            echo "LoadBalancer seems to be in state <Pending> due to port conflicts on 80 or 443. Falling back to combination of <NodeIP>:<NodePort>.";
+        fi
+        
+    fi
+    ## nodeIp/nodePort handling, either because service is not of type loadbalancer or no loadbalancer IP(s) have been assigned
+    if [ ${#ips_array[@]} -eq 0 ]; then
+        ips_array=( `kubectl get nodes --kubeconfig $KUBECONFIG --namespace ${NAMESPACE} -l '!node-role.kubernetes.io/master' -o jsonpath='{.items[0].status.addresses[?(@.type == "InternalIP" )].address}'` )
+        if [ ${#ips_array[@]} -eq 0 ]; then
+            echo "Error: Could not retrieve IP(s) for service ${SVC_NAME}. Exiting"
+            exit 1
+        fi
+        export ${NF_UPPER}_WRKR_PORT=`kubectl get svc ${SVC_NAME} --kubeconfig $KUBECONFIG --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"unencrypted-port\")].nodePort}"`
+        export ${NF_UPPER}_WRKR_TLS_PORT=`kubectl get svc ${SVC_NAME} --kubeconfig $KUBECONFIG --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"encrypted-port\")].nodePort}"`
+    fi
+
+    for ip in ${ips_array[@]}; do
+        if [[ $ip == *":"* ]]; then
+            #found ipv6
+            IP_V6="$ip" 
+        else 
+            IP_V4="$ip"
+        fi
+    done
+    # export the IP to be used
+    # check the ip version through IP_VERSION_EXT. if that's not set, fall back to legacy
+    # IP_VERSION  
+    if [[ -n "$IP_VERSION_EXT" ]]; then
+      IP_STACK_VERSION=$IP_VERSION_EXT
+      IP_VERSION_VARNAME=IP_VERSION_EXT
+    else
+      IP_STACK_VERSION=$IP_VERSION
+      IP_VERSION_VARNAME=IP_VERSION
+    fi
+    PORT="${NF_UPPER}_WRKR_PORT"
+    TLS_PORT="${NF_UPPER}_WRKR_TLS_PORT"
+    echo "Extracted values (IP and Ports) for $NF_UPPER
+    $IP_VERSION_VARNAME : $IP_STACK_VERSION
+    IPv4           : $IP_V4
+    IPv6           : $IP_V6
+    PORT           : ${!PORT}
+    TLS_PORT       : ${!TLS_PORT}"
+
+    #make sure at least one port is retrieved, their names are already exported
+    if [[ -z "${!PORT}" && -z "${!TLS_PORT}" ]]; then
+        echo "ERROR: no ports found for $SVC_NAME, exiting"
+        exit 1
+    fi
+
+    case $IP_STACK_VERSION in
+        DS)  # either of the v4/v6. v4 preferred
+            if [[ -n "$IP_V4" ]]; then
+                export ${NF_UPPER}_WRKR_IP="$IP_V4"
+            else
+                export ${NF_UPPER}_WRKR_IP="$IP_V6"
+            fi        
+            ;;
+        4)
+            if [[ -n "$IP_V4" ]]; then
+                export ${NF_UPPER}_WRKR_IP="$IP_V4"
+            else
+                echo "ERROR: The parameter $IP_VERSION_VARNAME was set to 4, but no IPv4 address could be identified. Exiting "
+                exit 1
+            fi
+            ;;
+        6)
+            if [[ -n "$IP_V6" ]]; then
+                export ${NF_UPPER}_WRKR_IP="$IP_V6"
+            else
+                echo "ERROR: The parameter $IP_VERSION_VARNAME was set to 6, but no IPv6 address could be identified. Exiting "
+                exit 1
+            fi
+            ;;
+
+        *)
+            echo "ERROR: The parameter $IP_VERSION_VARNAME has an unknown value: $IP_STACK_VERSION. Exiting"
+            exit 1
+            ;;
+    esac
+}
+
+
+#for the time being, only the eric-cm-yang-provider-external serivce is used in SC,
+# regardless of type of deployment (v4/v6/Dualstack). The service is defined as singlestack
+# so only one IP is expected
+extractAndSetCmValues(){
+    unset CMM_PORT
+    unset CMM_IP
+    unset IP_V4
+    unset IP_V6
+    
+    SVC_NAME="eric-cm-yang-provider-external";
+    echo "Extract CMYP ip:port information from service $SVC_NAME"
+    SVC_TYPE=`kubectl get svc ${SVC_NAME} --kubeconfig $KUBECONFIG --namespace ${NAMESPACE} -o jsonpath='{.spec.type}'`
+    if [[ -z "$SVC_TYPE" ]]; then
+        echo "Error: Service $SVC_NAME not found, exiting"
+        exit 1
+    fi
+    ips_array=()
+    if [ "${SVC_TYPE}" == "LoadBalancer" ]; then
+        ips_array=( `kubectl get svc ${SVC_NAME} --kubeconfig $KUBECONFIG --namespace ${NAMESPACE} -o jsonpath='{.status.loadBalancer.ingress[*].ip}'` )
+        if [ ${#ips_array[@]} -ne 0 ]; then
+            export CMM_PORT=`kubectl get svc ${SVC_NAME} --kubeconfig $KUBECONFIG --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"netconf\")].port}"`
+        else 
+            #no ips retrieved due to port conflicts and status pending, fallback to nodeports
+            echo "LoadBalancer seems to be in state <Pending> due to port conflicts. Falling back to combination of <NodeIP>:<NodePort>."
+        fi
+    fi
+    if [ ${#ips_array[@]} -eq 0 ]; then
+        ## nodeIp/nodePort handling, either because service is not of type loadbalancer or no loadbalancer IP(s) have been assigned
+        ips_array=( `kubectl get nodes --kubeconfig $KUBECONFIG --namespace ${NAMESPACE} -l '!node-role.kubernetes.io/master' -o jsonpath='{.items[0].status.addresses[?(@.type == "InternalIP" )].address}'` )
+        if [ ${#ips_array[@]} -eq 0 ]; then
+            echo "Error: Could not retrieve IP(s) for service ${SVC_NAME}. Exiting"
+            exit 1
+        fi
+        export CMM_PORT=`kubectl get svc ${SVC_NAME} --kubeconfig $KUBECONFIG --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"netconf\")].nodePort}"`
+    fi
+    for ip in ${ips_array[@]}; do
+        if [[ $ip == *":"* ]]; then
+            #found ipv6
+            IP_V6="$ip" 
+        else 
+            IP_V4="$ip"
+        fi
+    done
+    # export the IP to be used
+    # check the ip version through IP_VERSION_EXT. if that's not set, fall back to legacy
+    # IP_VERSION  
+    if [[ -n "$IP_VERSION_EXT" ]]; then
+      IP_STACK_VERSION=$IP_VERSION_EXT
+      IP_VERSION_VARNAME=IP_VERSION_EXT
+    else
+      IP_STACK_VERSION=$IP_VERSION
+      IP_VERSION_VARNAME=IP_VERSION
+    fi
+    echo "Extracted values (IP and Ports) for service $SVC_NAME
+    $IP_VERSION_VARNAME : $IP_STACK_VERSION
+    IPv4           : $IP_V4
+    IPv6           : $IP_V6
+    PORT           : $CMM_PORT"
+
+    # A this point at least one IP is retrieved, verify that also a port is present 
+    if [[ -z "$CMM_PORT" ]]; then
+        echo "ERROR: No valid IP:port combination found for $SVC_NAME, exiting"
+        exit 1
+    fi
+
+    case $IP_STACK_VERSION in
+    DS)  # either of the v4/v6. v4 preferred
+        if [[ -n "$IP_V4" ]]; then
+            export CMM_IP="$IP_V4"
+        else
+            export CMM_IP="$IP_V6"
+        fi        
+        ;;
+    4)
+        if [[ -n "$IP_V4" ]]; then
+            export CMM_IP="$IP_V4"
+        else
+            echo "ERROR: The parameter $IP_VERSION_VARNAME was set to 4, but no IPv4 address could be identified. Exiting "
+            exit 1
+        fi
+        ;;
+    6)
+        if [[ -n "$IP_V6" ]]; then
+            export CMM_IP="$IP_V6"
+        else
+            echo "ERROR: The parameter $IP_VERSION_VARNAME was set to 6, but no IPv6 address could be identified. Exiting "
+            exit 1
+        fi
+        ;;
+
+    *)
+        echo "ERROR: The parameter $IP_VERSION_VARNAME has an unknown value: $IP_STACK_VERSION. Exiting"
+        exit 1
+        ;;
+    esac
+}
+
+
+####################################
+# Generate NEW config netconf file #
+####################################
+createTempConfig() {
+    if [[ ${NF_NAMES["bsf"]} ]]; then
+        if [[ "$BSF_DIAMETER" == "false" ]]; then
+            export BSF_DEFAULTCONFIG="./Jenkins/PipeConfig/sample_bsf_func_without_diameter.netconf"
+            export INIT_DB_ACTION="./Jenkins/PipeConfig/action_bsf_init_db.netconf";
+        else
+            export BSF_DEFAULTCONFIG="./Jenkins/PipeConfig/sample_bsf_func_and_diameter.netconf"
+            export INIT_DB_ACTION="./Jenkins/PipeConfig/action_bsf_init_db.netconf";
+        fi
+    fi
+ 
+    if [ "$IP_VERSION" == "6" ]; then
+        [[ ${NF_NAMES["scp"]} ]] && export SCP_DEFAULTCONFIG="./Jenkins/PipeConfig/sample_config_rcc_nrf_scp_ipv6.netconf";
+    else
+        [[ ${NF_NAMES["scp"]} ]] && export SCP_DEFAULTCONFIG="./Jenkins/PipeConfig/sample_config_scp.netconf";
+        [[ ${NF_NAMES["sepp"]} ]] && export SEPP_DEFAULTCONFIG="./Jenkins/PipeConfig/sample_sepp_poc_config.netconf";
+        [[ "$PVTB" == "true" ]] && export PVTB_DEFAULTCONFIG="./Jenkins/PipeConfig/sample_broker_config.netconf";
+    fi;
+
+    echo "Adding new config files to .bob/tempConfig.netconf"
+    [[ ! -z "${BSF_DEFAULTCONFIG}" ]] && cat ${BSF_DEFAULTCONFIG} >> .bob/tempConfig.netconf;
+    [[ ! -z "${INIT_DB_ACTION}" ]] && cat ${INIT_DB_ACTION} >> .bob/tempConfig.netconf;
+    [[ ! -z "${SCP_DEFAULTCONFIG}" ]] && cat ${SCP_DEFAULTCONFIG} >> .bob/tempConfig.netconf;
+    [[ ! -z "${SEPP_DEFAULTCONFIG}" ]] && cat ${SEPP_DEFAULTCONFIG} >> .bob/tempConfig.netconf;
+    [[ ! -z "${PVTB_DEFAULTCONFIG}" ]] && cat ${PVTB_DEFAULTCONFIG} >> .bob/tempConfig.netconf;
+
+    cat .bob/tempConfig.netconf;
+    NR_CONFIGS=$(( `grep -c "/rpc" .bob/tempConfig.netconf` - `grep -c "<initialize" .bob/tempConfig.netconf` ));
+}
+
+
+replaceValuesConfig(){
+    for NF in ${NF_NAMES[@]}; do
+        IP="${NF}_WRKR_IP"
+        PORT="${NF}_WRKR_PORT"
+        TLS_PORT="${NF}_WRKR_TLS_PORT"
+        sed -i "s/<${NF}_WRKR_IP>/${!IP}/g" .bob/tempConfig.netconf
+        sed -i "s/<${NF}_WRKR_PORT>/${!PORT}/g" .bob/tempConfig.netconf
+        sed -i "s/<${NF}_WRKR_TLS_PORT>/${!TLS_PORT}/g" .bob/tempConfig.netconf 
+    done;
+}
+
+
+####################################
+# Generate GET config netconf file #
+####################################
+createGetConfig(){
+    [[ ${NF_NAMES["bsf"]} ]] && export BSF_GETCONFIG="./Jenkins/PipeConfig/getConfBsf.netconf";
+    [[ ${NF_NAMES["scp"]} ]] && export SCP_GETCONFIG="./Jenkins/PipeConfig/getConfScp.netconf";
+    [[ ${NF_NAMES["sepp"]} ]] && export SEPP_GETCONFIG="./Jenkins/PipeConfig/getConfSepp.netconf";
+
+    echo "Adding get config files to .bob/tempGetConfig.netconf"
+    [[ ! -z "${BSF_GETCONFIG}" ]] && cat ${BSF_GETCONFIG} >> .bob/tempGetConfig.netconf;
+    [[ ! -z "${SCP_GETCONFIG}" ]] && cat ${SCP_GETCONFIG} >> .bob/tempGetConfig.netconf;
+    [[ ! -z "${SEPP_GETCONFIG}" ]] && cat ${SEPP_GETCONFIG} >> .bob/tempGetConfig.netconf;
+    cat .bob/tempGetConfig.netconf;
+}
+
+###############
+# Load Config #
+###############
+loadConfig(){
+pwd
+/usr/bin/expect <( cat << EOS
+exp_internal 0
+set timeout 120
+spawn ssh -t -p $CMM_PORT sc-admin@$CMM_IP -s netconf
+expect {
+    "continue connecting (yes/no" {
+        send "yes\r"
+        expect "*Password: "
+        send "scsc\r"
+    }
+    "*Password: " {
+        send "scsc\r"
+    }
+}
+sleep 10
+expect "]]>]]>"
+send [ exec cat ./Jenkins/PipeConfig/hello.netconf ]
+set foundOk 0
+set wait_time 2
+set timeout 20
+send_user "This is the value of foundOK: \$foundOk ##### Zing ####"
+while { [expr \$foundOk < $NR_CONFIGS ] } {
+    send_user " Now in the while loop ###### Zong ####### "
+    send_user "The value of foundOk is: \$foundOk"
+    if { [expr \$foundOk == 0 ] } {
+	    send [ exec cat .bob/tempConfig.netconf ]
+    }
+    sleep 8
+    expect {
+        "<ok/></rpc-reply>]]>]]>" {
+            set foundOk "[expr \$foundOk + 1]"
+            set wait_time 2
+        }
+        "</rpc-error></rpc-reply>]]>]]>" {
+            puts "Received an error while loading the configuration. Exiting"
+        }
+    }
+    send_user " The waiting time is: \$wait_time "
+    sleep \$wait_time
+    set wait_time "[expr 2 * \$wait_time]"
+    if { \$wait_time > 128 } {
+        send_user " Waiting Time exceed 4 min. The deploy will be aborted. Please check the ADP logs. "
+        send [ exec cat ./Jenkins/PipeConfig/close.netconf ]
+        expect "]]>]]>"
+        exit 1
+    }
+}
+send [ exec cat ./Jenkins/PipeConfig/close.netconf ]
+expect "]]>]]>"
+EOS
+)
+# rm -rf .bob/tempConfig.netconf #keep for troubleshooting
+}
+
+################
+# CHECK CONFIG #
+################
+checkConfig(){
+/usr/bin/expect <( cat << EOS
+exp_internal 0
+set timeout 120
+spawn ssh -t -p $CMM_PORT sc-admin@$CMM_IP -s netconf
+expect {
+    "continue connecting (yes/no" {
+        send "yes\r"
+        expect "*Password: "
+        send "scsc\r"
+    }
+    "*Password: " {
+        send "scsc\r"
+    }
+}
+sleep 10
+expect "]]>]]>"
+send [ exec cat ./Jenkins/PipeConfig/hello.netconf ]
+set foundOk "false"
+set wait_time 2
+set timeout 20
+while { [string compare \$foundOk "false"] == 0 } {
+    send [ exec cat .bob/tempGetConfig.netconf ]
+    sleep 8
+    expect {
+        -re "\/(scp|bsf|sepp)-function><\/data><\/rpc-reply>]]>]]>" {
+            set foundOk "true"
+        }
+        "<data></data></rpc-reply>]]>]]>" {
+            puts "No config found. Aborting."
+        }
+    }
+    sleep \$wait_time
+    set wait_time "[expr 2 * \$wait_time]"
+    if { \$wait_time > 128 } {
+        send_user "Waiting Time exceed 4 min. The deploy will be aborted. Please check the ADP logs."
+        send [ exec cat ./Jenkins/PipeConfig/close.netconf ]
+        expect "]]>]]>"
+        exit 1
+    }
+}
+send [ exec cat ./Jenkins/PipeConfig/close.netconf ]
+expect "]]>]]>"
+EOS
+)
+# rm -rf .bob/tempGetConfig.netconf #keep for troubleshooting
+}
+
+main(){
+    rm -rf .bob/tempGetConfig.netconf .bob/tempConfig.netconf
+    checkNeededNfs
+    extractAndSetCmValues
+    for NF in ${!NF_NAMES[@]}; do
+       extractAndSetNfValues $NF;
+    done;
+
+    ssh-keygen -R ["$CMM_IP"]:"$CMM_PORT"
+    sleep 3
+    createTempConfig;
+    replaceValuesConfig $NF;
+    loadConfig;
+    createGetConfig;
+    sleep 9;
+    checkConfig;
+}
+main;

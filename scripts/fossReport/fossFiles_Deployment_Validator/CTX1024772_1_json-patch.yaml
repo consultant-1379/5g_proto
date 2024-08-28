@@ -1,0 +1,38 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2019-06-10 12:24
+FOSS:
+    # Available in Bazaar
+    FOSSName: json-patch
+    # Available in Bazaar
+    FOSSVersion: 1.6 
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/java-json-tools/json-patch/archive/1.6.zip
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 1/CTX1024772
+    # Not Available in Bazaar
+    PRIMNumber(CTC): CTC1014468
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: An RFC 6902 (JSON Patch) and reverse, plus RFC 7386 (JSON Merge Patch), implementation in Java using Jackson (2.2.x).
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: (GNU Lesser General Public License V3, Apache License 2.0)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'com.github.fge:json-patch:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ENTNGRG Georgios Antoniou

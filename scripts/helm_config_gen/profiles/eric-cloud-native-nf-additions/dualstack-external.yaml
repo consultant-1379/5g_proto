@@ -1,0 +1,23 @@
+global:
+  ipFamilyPolicy: PreferDualStack
+
+eric-cm-yang-provider:
+  service:
+    externalIPv4:
+      enabled: false
+    externalIPv6:
+      enabled: false
+
+eric-data-sftp-server:
+  service:
+    externalIPv4:
+      enabled: false
+    externalIPv6:
+      enabled: false
+      
+eric-pm-bulk-reporter:
+  service:
+    externalIPv4:
+      enabled: false
+    externalIPv6:
+      enabled: false

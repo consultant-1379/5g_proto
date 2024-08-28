@@ -1,0 +1,15 @@
+ARG DOCKER_BASE_IMG
+FROM $DOCKER_BASE_IMG
+
+ARG BINARY
+COPY $BINARY /usr/local/bin/envoy
+COPY $BINARY.version /usr/local/bin/VERSION_INFO
+COPY stdout-redirect /
+RUN chmod 555 /usr/local/bin/envoy &&\
+    chmod 555 /usr/local/bin/VERSION_INFO &&\
+    chmod 555 /stdout-redirect
+
+ARG ENVOY_DEBUG_SYMBOLS_ARCHIVE
+COPY $ENVOY_DEBUG_SYMBOLS_ARCHIVE /
+ARG ENVOY_SOURCE_ARCHIVE
+COPY $ENVOY_SOURCE_ARCHIVE /

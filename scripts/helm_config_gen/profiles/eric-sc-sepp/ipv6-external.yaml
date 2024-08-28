@@ -1,0 +1,10 @@
+global:
+  externalIPv4:
+    enabled: false
+  externalIPv6:
+    enabled: true
+
+eric-sepp:
+  service:
+    worker:
+      ipFamilyPolicy: SingleStack

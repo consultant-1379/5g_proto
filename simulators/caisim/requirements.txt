@@ -1,0 +1,11 @@
+flask==1.1.2
+flask_restful
+flask_httpauth
+requests==2.22.0
+isodate
+pyopenssl
+flask-restplus==0.12.1
+gunicorn==19.9.0
+Werkzeug==0.16.1
+jsonschema==3.2.0
+environs

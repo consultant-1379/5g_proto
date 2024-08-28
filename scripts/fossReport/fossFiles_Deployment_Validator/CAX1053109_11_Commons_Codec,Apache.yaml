@@ -1,0 +1,38 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2019-06-21 12:24
+FOSS:
+    # Available in Bazaar
+    FOSSName: Commons Codec, Apache
+    # Available in Bazaar
+    FOSSVersion: 1.11
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: http://archive.apache.org/dist/commons/codec/binaries/commons-codec-1.9-bin.zip
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 11/CAX1053109
+    # Not Available in Bazaar
+    PRIMNumber(CTC): CTC 101 4444
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: Commons Codec provides implementations of common encoders and decoders such as Base64, Hex, Phonetic and URLs.
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: Apache Software License 1.1
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache Software License 1.1
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'commons-codec:commons-codec:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: EEDBJHE Bjoern Hellebrand

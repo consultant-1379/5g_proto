@@ -1,0 +1,615 @@
+diff --git a/src/main/java/com/ericsson/sc/vertx/trace/VertxSocketTracer.java b/src/main/java/com/ericsson/sc/vertx/trace/VertxSocketTracer.java
+new file mode 100644
+index 000000000..24ef1d162
+--- /dev/null
++++ b/src/main/java/com/ericsson/sc/vertx/trace/VertxSocketTracer.java
+@@ -0,0 +1,357 @@
++/**
++ * COPYRIGHT ERICSSON GMBH 2019
++ *
++ * The copyright to the computer program(s) herein is the property
++ * of Ericsson GmbH, Germany.
++ *
++ * The program(s) may be used and/or copied only with the written
++ * permission of Ericsson GmbH in accordance with
++ * the terms and conditions stipulated in the agreement/contract
++ * under which the program(s) have been supplied.
++ *
++ * Created on: Oct 21, 2022
++ *     Author: echfari
++ */
++
++package com.ericsson.sc.vertx.trace;
++
++import java.net.InetSocketAddress;
++import java.time.Instant;
++import java.util.Objects;
++import java.util.concurrent.atomic.AtomicReference;
++
++import io.netty.buffer.ByteBuf;
++import io.netty.buffer.ByteBufAllocator;
++import io.netty.channel.Channel;
++import io.netty.channel.ChannelDuplexHandler;
++import io.netty.channel.ChannelHandlerContext;
++import io.netty.channel.ChannelPromise;
++import io.netty.channel.socket.ServerSocketChannel;
++import io.netty.channel.socket.SocketChannel;
++import io.netty.util.internal.logging.InternalLogger;
++import io.netty.util.internal.logging.InternalLoggerFactory;
++
++public class VertxSocketTracer
++{
++    static final AtomicReference<VertxSocketTracer> globalTracer = new AtomicReference<>();
++
++    public static void setGlobalTracer(TraceListener observer)
++    {
++        Objects.requireNonNull(observer);
++        globalTracer.set(new VertxSocketTracer(observer));
++    }
++
++    public static void disableGlobalTracer()
++    {
++        globalTracer.set(null);
++    }
++
++    public static VertxSocketTracer getGlobalTracer()
++    {
++        return globalTracer.get();
++    }
++
++    private final TraceListener connectionObserver;
++
++    public VertxSocketTracer(TraceListener connectionObserver)
++    {
++        Objects.requireNonNull(connectionObserver);
++        this.connectionObserver = connectionObserver;
++    }
++
++    public void addTraceHandler(Channel ch)
++    {
++        EventConsumer sev = connectionObserver.onNewTrace();
++        ch.pipeline() //
++          .addLast(VertxSocketTracer.class.getName(), new TracingChannelHandler(sev));
++    }
++
++    public interface TraceListener
++    {
++        EventConsumer onNewTrace();
++    }
++
++    public interface EventConsumer
++    {
++        void onEvent(NettySocketTraceEvent data);
++
++        void onCompleted();
++    }
++
++    public static final class Connection
++    {
++        public boolean isServer()
++        {
++            return isServer;
++        }
++
++        public InetSocketAddress getLocalAddress()
++        {
++            return localAddress;
++        }
++
++        public InetSocketAddress getRemoteAddress()
++        {
++            return remoteAddress;
++        }
++
++        public Connection(boolean isServer,
++                          InetSocketAddress localAddress,
++                          InetSocketAddress remoteAddress)
++        {
++            this.isServer = isServer;
++            this.localAddress = localAddress;
++            this.remoteAddress = remoteAddress;
++        }
++
++        final boolean isServer;
++        final InetSocketAddress localAddress;
++        final InetSocketAddress remoteAddress;
++
++    }
++
++    public static final class NettySocketTraceEvent
++    {
++        public EventType getType()
++        {
++            return operation;
++        }
++
++        public ByteBuf getData()
++        {
++            return data;
++        }
++
++        public Connection getConnection()
++        {
++            return this.connection;
++        }
++
++        public Instant getTimestamp()
++        {
++            return this.timestamp;
++        }
++
++        public enum EventType
++        {
++            READ,
++            WRITE,
++            CONNECT,
++            CLOSED
++        }
++
++        private final EventType operation;
++        private final ByteBuf data;
++        private final Connection connection;
++        private final Instant timestamp;
++
++        public NettySocketTraceEvent(EventType operation,
++                                     Connection connection,
++                                     Instant timestamp,
++                                     ByteBuf data)
++        {
++            this.data = data;
++            this.operation = operation;
++            this.timestamp = timestamp;
++            this.connection = connection;
++        }
++    }
++
++    private static final class TracingChannelHandler extends ChannelDuplexHandler
++    {
++        /**
++         * Logger for logging events
++         */
++        private final InternalLogger logger = InternalLoggerFactory.getInstance(TracingChannelHandler.class);
++
++        /**
++         * Type of the channel this handler is registered on
++         */
++        private boolean isSocketChannel;
++
++        private Connection connection;
++
++        /**
++         * Whether this handler is initialized (headers written, channel type
++         * inferred).No need to make it thread-safe because channel is single-threaded
++         */
++        private boolean initialized;
++
++        private ByteBuf consolidatedTcpBuf;
++
++        private final EventConsumer eventConsumer;
++
++        TracingChannelHandler(EventConsumer eventConsumer)
++        {
++            this.eventConsumer = eventConsumer;
++        }
++
++        private void initializeIfNecessary(ChannelHandlerContext ctx)
++        {
++            if (initialized)
++            {
++                return;
++            }
++
++            ByteBufAllocator byteBufAllocator = ctx.alloc();
++            this.consolidatedTcpBuf = byteBufAllocator.buffer();
++
++            // infer channel type
++            if (ctx.channel() instanceof SocketChannel)
++            {
++                isSocketChannel = true;
++
++                final boolean isServerSocket = (ctx.channel().parent() instanceof ServerSocketChannel);
++                this.connection = (new Connection(isServerSocket,
++                                                  (InetSocketAddress) ctx.channel().localAddress(),
++                                                  (InetSocketAddress) ctx.channel().remoteAddress()));
++                final NettySocketTraceEvent connectEvent = new NettySocketTraceEvent(NettySocketTraceEvent.EventType.CONNECT, connection, Instant.now(), null);
++                this.eventConsumer.onEvent(connectEvent);
++            }
++
++            initialized = true;
++        }
++
++        @Override
++        public void channelActive(ChannelHandlerContext ctx) throws Exception
++        {
++            try
++            {
++                initializeIfNecessary(ctx);
++            }
++            catch (Exception e)
++            {
++                logger.debug("Unexpected error in tracer handler, ignored", e);
++            }
++            super.channelActive(ctx);
++        }
++
++        @Override
++        public void channelInactive(ChannelHandlerContext ctx) throws Exception
++        {
++            logger.info("CHANNEL IS INACTIVE");
++            try
++            {
++                this.eventConsumer.onEvent(new NettySocketTraceEvent(NettySocketTraceEvent.EventType.CLOSED, connection, Instant.now(), null));
++                this.eventConsumer.onCompleted();
++            }
++            catch (Exception e)
++            {
++                logger.debug("Unexpected error in tracer handler, ignored", e);
++            }
++            super.channelInactive(ctx);
++        }
++
++        @Override
++        public void channelRead(ChannelHandlerContext ctx,
++                                Object msg) throws Exception
++        {
++            try
++            {
++                initializeIfNecessary(ctx);
++                handleTCP(msg, false);
++            }
++            catch (Exception e)
++            {
++                logger.debug("Unexpected error in tracer handler, ignored", e);
++            }
++            super.channelRead(ctx, msg);
++        }
++
++        @Override
++        public void write(ChannelHandlerContext ctx,
++                          Object msg,
++                          ChannelPromise promise) throws Exception
++        {
++            try
++            {
++                initializeIfNecessary(ctx);
++                handleTCP(msg, true);
++            }
++            catch (Exception e)
++            {
++                logger.debug("Unexpected error in tracer handler, ignored", e);
++            }
++            super.write(ctx, msg, promise);
++        }
++
++        @Override
++        public void flush(ChannelHandlerContext ctx) throws Exception
++        {
++            final ByteBuf packet = this.consolidatedTcpBuf;
++            try
++            {
++                if (packet.readableBytes() > 0) // suppress empty packets
++                {
++                    eventConsumer.onEvent(new NettySocketTraceEvent(NettySocketTraceEvent.EventType.WRITE, this.connection, Instant.now(), packet.duplicate()));
++                }
++            }
++            catch (Exception e)
++            {
++                logger.error("Unexpected error in tracing handler, ignored", e);
++            }
++            packet.clear();
++            ctx.flush();
++        }
++
++        @Override
++        public void handlerRemoved(ChannelHandlerContext ctx) throws Exception
++        {
++            try
++            {
++                this.eventConsumer.onEvent(new NettySocketTraceEvent(NettySocketTraceEvent.EventType.CLOSED, connection, Instant.now(), null));
++                this.eventConsumer.onCompleted();
++            }
++            catch (Exception e)
++            {
++                logger.error("Unexpected exception while removing tracing handler, ignored", e);
++            }
++
++            this.consolidatedTcpBuf.release();
++            super.handlerRemoved(ctx);
++        }
++
++        @Override
++        public void exceptionCaught(ChannelHandlerContext ctx,
++                                    Throwable cause) throws Exception
++        {
++            try
++            {
++                // TODO convey error instead of simulating connection close
++                this.eventConsumer.onEvent(new NettySocketTraceEvent(NettySocketTraceEvent.EventType.CLOSED, connection, Instant.now(), null));
++                this.eventConsumer.onCompleted();
++            }
++            catch (Exception e)
++            {
++                logger.error("Unexpected error in tracer handler, ignored", e);
++            }
++            super.exceptionCaught(ctx, cause);
++        }
++
++        private void handleTCP(Object msg,
++                               boolean isWriteOperation)
++        {
++            if (this.isSocketChannel && msg instanceof ByteBuf)
++            {
++                ByteBuf packet = ((ByteBuf) msg).duplicate().asReadOnly();
++                if (isWriteOperation)
++                {
++                    // Handle socket write op
++                    this.consolidatedTcpBuf.writeBytes(packet);
++                }
++                else
++                {
++                    // handle socket read op
++                    if (packet.readableBytes() > 0) // suppress empty packets
++                    {
++                        this.eventConsumer.onEvent(new NettySocketTraceEvent(NettySocketTraceEvent.EventType.READ, this.connection, Instant.now(), packet));
++                    }
++                }
++            }
++            else
++            {
++                logger.debug("Discarded tracing for Object: {}", msg);
++            }
++        }
++    }
++}
+diff --git a/src/main/java/io/vertx/core/http/HttpClientOptions.java b/src/main/java/io/vertx/core/http/HttpClientOptions.java
+index 2f6a37d8a..6f503107a 100755
+--- a/src/main/java/io/vertx/core/http/HttpClientOptions.java
++++ b/src/main/java/io/vertx/core/http/HttpClientOptions.java
+@@ -235,6 +235,11 @@ public class HttpClientOptions extends ClientOptionsBase {
+    */
+   public static final String DEFAULT_NAME = "__vertx.DEFAULT";
+ 
++  /**
++   * Default value of whether global tracing is enabled = {@code false}
++   */
++  public static final boolean DEFAULT_GLOBAL_TRACING = false;
++
+   private boolean verifyHost = true;
+   private boolean keepAlive;
+   private int keepAliveTimeout;
+@@ -274,6 +279,7 @@ public class HttpClientOptions extends ClientOptionsBase {
+ 
+   private boolean shared;
+   private String name;
++  private boolean globalTracing = false;
+ 
+   private PoolOptions poolOptions;
+ 
+@@ -338,6 +344,7 @@ public class HttpClientOptions extends ClientOptionsBase {
+     this.shared = other.shared;
+     this.name = other.name;
+     this.poolOptions = other.poolOptions != null ? new PoolOptions(other.poolOptions) : new PoolOptions();
++    this.globalTracing = other.globalTracing;
+   }
+ 
+   /**
+@@ -402,6 +409,7 @@ public class HttpClientOptions extends ClientOptionsBase {
+     shared = DEFAULT_SHARED;
+     name = DEFAULT_NAME;
+     poolOptions = new PoolOptions();
++    globalTracing = DEFAULT_GLOBAL_TRACING;
+   }
+ 
+   @Override
+@@ -1519,4 +1527,24 @@ public class HttpClientOptions extends ClientOptionsBase {
+   public PoolOptions getPoolOptions() {
+     return poolOptions;
+   }
++  
++  /** 
++   * @return the global tracing.
++   */
++  public boolean getGlobalTracing()
++  {
++    return this.globalTracing;
++  }
++
++  /**
++   * Set whether the global tracing feature is enabled.
++   * 
++   * @param enabled
++   * @return a reference to this, so the API can be used fluently
++   */
++  public HttpClientOptions setGlobalTracing(boolean enabled)
++  {
++    this.globalTracing = enabled;
++    return this;
++  }
+ }
+diff --git a/src/main/java/io/vertx/core/http/HttpServerOptions.java b/src/main/java/io/vertx/core/http/HttpServerOptions.java
+index da4869c07..8f005e629 100755
+--- a/src/main/java/io/vertx/core/http/HttpServerOptions.java
++++ b/src/main/java/io/vertx/core/http/HttpServerOptions.java
+@@ -183,6 +183,11 @@ public class HttpServerOptions extends NetServerOptions {
+    * HTTP/2 RST floods DDOS protection, time window duration unit = {@link TimeUnit#SECONDS}.
+    */
+   public static final TimeUnit DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION_TIME_UNIT = TimeUnit.SECONDS;
++  
++  /**
++   *  Default value of whether global tracing is enabled = {@code false}
++   */
++  public static final boolean DEFAULT_GLOBAL_TRACING = false;
+ 
+   private boolean compressionSupported;
+   private int compressionLevel;
+@@ -212,6 +217,7 @@ public class HttpServerOptions extends NetServerOptions {
+   private int http2RstFloodMaxRstFramePerWindow;
+   private int http2RstFloodWindowDuration;
+   private TimeUnit http2RstFloodWindowDurationTimeUnit;
++  private boolean globalTracing = false;
+ 
+   /**
+    * Default constructor
+@@ -257,6 +263,7 @@ public class HttpServerOptions extends NetServerOptions {
+     this.http2RstFloodMaxRstFramePerWindow = other.http2RstFloodMaxRstFramePerWindow;
+     this.http2RstFloodWindowDuration = other.http2RstFloodWindowDuration;
+     this.http2RstFloodWindowDurationTimeUnit = other.http2RstFloodWindowDurationTimeUnit;
++    this.globalTracing = other.globalTracing;
+   }
+ 
+   /**
+@@ -309,6 +316,7 @@ public class HttpServerOptions extends NetServerOptions {
+     http2RstFloodMaxRstFramePerWindow = DEFAULT_HTTP2_RST_FLOOD_MAX_RST_FRAME_PER_WINDOW;
+     http2RstFloodWindowDuration = DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION;
+     http2RstFloodWindowDurationTimeUnit = DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION_TIME_UNIT;
++    globalTracing = DEFAULT_GLOBAL_TRACING;
+   }
+ 
+   @Override
+@@ -1179,6 +1187,26 @@ public class HttpServerOptions extends NetServerOptions {
+       throw new NullPointerException();
+     }
+     this.http2RstFloodWindowDurationTimeUnit = http2RstFloodWindowDurationTimeUnit;
++        return this;
++  }
++  
++  /**
++  *  @return the global tracing.
++  */
++  public boolean getGlobalTracing()
++  {
++    return this.globalTracing;
++  }
++
++  /**
++   * Set whether the global tracing feature is enabled.
++   * 
++   * @param enabled
++   * @return a reference to this, so the API can be used fluently
++   */
++  public HttpServerOptions setGlobalTracing(boolean enabled)
++  {
++    this.globalTracing = enabled;
+     return this;
+   }
+ }
+diff --git a/src/main/java/io/vertx/core/http/impl/HttpChannelConnector.java b/src/main/java/io/vertx/core/http/impl/HttpChannelConnector.java
+index 0db104814..96fc74ab6 100644
+--- a/src/main/java/io/vertx/core/http/impl/HttpChannelConnector.java
++++ b/src/main/java/io/vertx/core/http/impl/HttpChannelConnector.java
+@@ -40,6 +40,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
+ import java.util.ArrayList;
+ import java.util.List;
+ import java.util.Map;
++import com.ericsson.sc.vertx.trace.VertxSocketTracer;
+ 
+ import static io.vertx.core.http.HttpMethod.OPTIONS;
+ 
+@@ -90,6 +91,15 @@ public class HttpChannelConnector {
+     netClient.connectInternal(proxyOptions, server, peerAddress, this.options.isForceSni() ? peerAddress.host() : null, ssl, useAlpn, false, promise, context, 0);
+   }
+ 
++  private void addPcapHandler(Channel ch)
++  {
++    VertxSocketTracer tracer = VertxSocketTracer.getGlobalTracer();
++    if(tracer != null)
++    {
++      VertxSocketTracer.getGlobalTracer().addTraceHandler(ch);
++    }    
++  }
++
+   public Future<HttpClientConnection> wrap(ContextInternal context, NetSocket so_) {
+     NetSocketImpl so = (NetSocketImpl) so_;
+     Object metric = so.metric();
+@@ -108,6 +118,10 @@ public class HttpChannelConnector {
+ 
+     //
+     Channel ch = so.channelHandlerContext().channel();
++    if (this.options.getGlobalTracing())
++    {
++      addPcapHandler(pipeline.channel());
++    }
+     if (ssl) {
+       String protocol = so.applicationLayerProtocol();
+       if (useAlpn) {
+diff --git a/src/main/java/io/vertx/core/http/impl/HttpServerWorker.java b/src/main/java/io/vertx/core/http/impl/HttpServerWorker.java
+index c0afdb73b..0c24e8451 100644
+--- a/src/main/java/io/vertx/core/http/impl/HttpServerWorker.java
++++ b/src/main/java/io/vertx/core/http/impl/HttpServerWorker.java
+@@ -39,6 +39,7 @@ import java.util.List;
+ import java.util.function.BiConsumer;
+ import java.util.function.Function;
+ import java.util.function.Supplier;
++import com.ericsson.sc.vertx.trace.VertxSocketTracer;
+ 
+ /**
+  * A channel initializer that will takes care of configuring a blank channel for HTTP
+@@ -101,36 +102,17 @@ public class HttpServerWorker implements BiConsumer<Channel, SslChannelProvider>
+ 
+   @Override
+   public void accept(Channel ch, SslChannelProvider sslChannelProvider) {
+-    if (HAProxyMessageCompletionHandler.canUseProxyProtocol(options.isUseProxyProtocol())) {
+-      IdleStateHandler idle;
+-      io.netty.util.concurrent.Promise<Channel> p = ch.eventLoop().newPromise();
+-      ch.pipeline().addLast(new HAProxyMessageDecoder());
+-      if (options.getProxyProtocolTimeout() > 0) {
+-        ch.pipeline().addLast("idle", idle = new IdleStateHandler(0, 0, options.getProxyProtocolTimeout(), options.getProxyProtocolTimeoutUnit()));
+-      } else {
+-        idle = null;
+-      }
+-      ch.pipeline().addLast(new HAProxyMessageCompletionHandler(p));
+-      p.addListener((GenericFutureListener<Future<Channel>>) future -> {
+-        if (future.isSuccess()) {
+-          if (idle != null) {
+-            ch.pipeline().remove(idle);
+-          }
+-          configurePipeline(future.getNow(), sslChannelProvider);
+-        } else {
+-          //No need to close the channel.HAProxyMessageDecoder already did
+-          handleException(future.cause());
+-        }
+-      });
+-    } else {
+-      configurePipeline(ch, sslChannelProvider);
+-    }
++    configurePipeline(ch, sslChannelProvider); 
+   }
+ 
+   private void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider) {
+     ChannelPipeline pipeline = ch.pipeline();
+     if (options.isSsl()) {
+       pipeline.addLast("ssl", sslChannelProvider.createServerHandler());
++      if (options.getGlobalTracing())
++      {
++       this.addPcapHandler(ch);
++      }
+       ChannelPromise p = ch.newPromise();
+       pipeline.addLast("handshaker", new SslHandshakeCompletionHandler(p));
+       p.addListener(future -> {
+@@ -151,6 +133,10 @@ public class HttpServerWorker implements BiConsumer<Channel, SslChannelProvider>
+         }
+       });
+     } else {
++      if (options.getGlobalTracing())
++      {
++        this.addPcapHandler(ch);
++      }
+       if (disableH2C) {
+         handleHttp1(ch, sslChannelProvider);
+       } else {
+@@ -200,6 +186,15 @@ public class HttpServerWorker implements BiConsumer<Channel, SslChannelProvider>
+     }
+   }
+ 
++  private void addPcapHandler(Channel ch)
++  {
++    VertxSocketTracer tracer = VertxSocketTracer.getGlobalTracer();
++    if(tracer != null)
++    {
++      VertxSocketTracer.getGlobalTracer().addTraceHandler(ch);
++    }
++  }
++
+   private void handleException(Throwable cause) {
+     context.emit(cause, exceptionHandler);
+   }

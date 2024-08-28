@@ -1,0 +1,42 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2023-10-16 13:30
+FOSS:
+    # Available in Bazaar
+    FOSSName: Jakarta Activation
+    # Available in Bazaar
+    FOSSVersion: 2.1.0
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/eclipse-ee4j/jaf/archive/refs/tags/{{FOSSVersion}}.zip 
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 8/CAX1054051
+    # Not Available in Bazaar
+    Primary: N
+    # Available in Bazaar
+    STAKOCode: Not for a New Design
+    # Available in Bazaar
+    STAKOReason: Product version is older than 18 months. Newer versions exists
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: "Jakarta Activation defines a set of standard services to: determine the MIME type of an arbitrary piece of data; encapsulate access to it; discover the operations available on it; and instantiate the appropriate bean to perform the operation(s)."
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: Eclipse Distribution License 1.0 (EDL-1.0), GNU General Public License v2.0 w/Classpath exception, BSD 3-Clause, Common Development and Distribution License 1.1
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Eclipse Distribution License 1.0 (EDL-1.0)
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'jakarta.activation:jakarta.activation-api:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ZARISAR Aristeidis Sarras

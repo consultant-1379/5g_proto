@@ -1,0 +1,29 @@
+eric-data-document-database-pg:
+  enabled: true
+
+eric-fh-alarm-handler-db-pg:
+  enabled: false
+
+eric-fh-alarm-handler:
+  backend:
+    hostname: eric-data-document-database-pg
+    dbuser: scusr
+    dbname: sc_database
+
+eric-lm-combined-server-db-pg:
+  enabled: false
+
+eric-lm-combined-server:
+  database:
+    host: eric-data-document-database-pg
+    userName: scusr
+    name: sc_database
+
+eric-cm-mediator-db-pg:
+  enabled: false
+
+eric-cm-mediator:
+  backend:
+    hostname: eric-data-document-database-pg
+    dbuser: scusr
+    dbname: sc_database

@@ -1,0 +1,55 @@
+# Copyright 2019 Ericsson GmbH
+---
+# IPfamilies supported deployment (singlestack of choice or dualstack)
+# Service options under service.externalIPvX are used. Service names has suffix of IPfamilies
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ template "eric-sepp.name" . }}-worker
+  labels:
+    ericsson.com/tapcollector-traffic-service: {{ template "eric-sepp.name" . }}-worker
+{{- include "eric-sepp.labels" . | indent 4 }}
+    app: {{ template "eric-sepp.name" . }}-worker
+  annotations:
+{{- include "eric-sepp.helm-annotations" . | indent 4 }}
+{{- include "eric-sepp.config-annotations" . | indent 4 }}
+{{- include "eric-sepp.workerLB-annotations" . | indent 4 }}
+{{- include "eric-sepp.metallb-annotations" . | indent 4 }}
+spec:
+  type: {{ .Values.service.worker.type }}
+  allocateLoadBalancerNodePorts: {{ .Values.service.worker.allocateLoadBalancerNodePorts }}
+{{- include "eric-sepp.ipfamilypolicy" . | indent 2 }}
+  # Conditional ipFamilyPolicy != "RequireDualStack"
+  {{- if ne ( .Values.service.worker.ipFamilyPolicy | toString ) "RequireDualStack" }}
+  # ipFamily value for Service type LoadBalancer
+  {{- $isIpV4Enabled := include "eric-sepp.enabled-IPv4" .}}
+  {{- $isIpV6Enabled := include "eric-sepp.enabled-IPv6" .}}
+  {{- if ne $isIpV4Enabled $isIpV6Enabled }}
+    {{- if $isIpV4Enabled }}
+  ipFamilies: ["IPv4"]
+    {{- end }}
+    {{- if $isIpV6Enabled }}
+  ipFamilies: ["IPv6"]
+    {{- end }}
+  {{- end }}
+  {{- end }}
+  {{- if not .Values.service.worker.annotations.loadBalancerIPs }}
+  {{- if .Values.service.worker.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.service.worker.loadBalancerIP | quote }}
+  {{- end }}
+  {{- end }}
+  {{- if .Values.service.worker.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ .Values.service.worker.externalTrafficPolicy | quote }}
+  {{ end }}
+  ports:
+  - name: unencrypted-port
+    protocol: TCP
+    port: {{ .Values.service.worker.port }}
+    targetPort: {{ .Values.service.worker.portName }}
+  - name: encrypted-port
+    protocol: TCP
+    port: {{ .Values.service.worker.tlsport }}
+    targetPort: {{ .Values.service.worker.tlsPortName }}
+  selector:
+    app: {{ template "eric-sepp.name" . }}-worker

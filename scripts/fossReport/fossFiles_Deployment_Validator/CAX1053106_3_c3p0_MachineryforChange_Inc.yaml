@@ -1,0 +1,38 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2019-07-03 16:00
+FOSS:
+    # Available in Bazaar
+    FOSSName: c3p0, Machinery for Change, Inc
+    # Available in Bazaar
+    FOSSVersion: 0.9.1.2
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: http://www.mchange.com/projects/c3p0/,%20http://sourcefo
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 3/CAX1053106
+    # Not Available in Bazaar
+    PRIMNumber(CTC): CTC 101 5260
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: c3p0 is an easy-to-use library for making traditional JDBC drivers 'enterpriseready' by augmenting them with functionality defined by the jdbc3 spec and the optional extensions to jdbc2
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: (Eclipse Public License (EPL) 1.0, LGPL GNU Lesser General Public License V2.1)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Eclipse Public License (EPL) 1.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'c3p0:c3p0:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ENTNGRG Georgios Antoniou

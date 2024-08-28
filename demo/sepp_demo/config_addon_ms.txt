@@ -1,0 +1,43 @@
+<hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <capabilities>
+        <capability>urn:ietf:params:netconf:base:1.0</capability>
+    </capabilities>
+</hello>
+]]>]]>
+
+<?xml version="1.0"?>
+<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:ns2="urn:com:ericsson:ecim:1.0" xmlns:ns3="http://tail-f.com/ns/netconf/actions/1.0" xmlns:ns4="urn:ietf:params:xml:ns:yang:ietf-netconf-monitoring"
+    xmlns:ns5="urn:ietf:params:xml:ns:netconf:notification:1.0" message-id="0">
+    <edit-config>
+        <target>
+            <running />
+        </target>
+        <config>
+            <scp-function xmlns="urn:rdns:com:ericsson:oammodel:ericsson-scp">
+                <nf-instance>
+                    <name>instance_1</name>
+	            <own-network>
+                        <name>internalNetwork</name>
+                        <in-request-screening-case-ref>ingress_req</in-request-screening-case-ref>
+                    </own-network>
+                    <request-screening-case>
+                        <name>ingress_req</name>
+                        <message-data-ref>setID_data</message-data-ref>
+                        <screening-rule>
+                           <name>ignore_priority</name>
+                           <condition>var.setid=='set1.udmset.5gc.mnc073.mcc262'</condition>
+                            <screening-action>
+                              <name>udm_remove_priority_header</name>
+                              <action-remove-header>
+                                 <name>3gpp-sbi-priority</name>
+                              </action-remove-header>
+                            </screening-action>
+                        </screening-rule>
+                    </request-screening-case>
+                </nf-instance>
+            </scp-function>
+        </config>
+    </edit-config>
+</rpc>
+]]>]]>
+

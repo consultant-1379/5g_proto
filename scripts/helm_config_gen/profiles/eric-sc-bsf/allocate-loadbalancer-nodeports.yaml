@@ -1,0 +1,4 @@
+eric-bsf:
+  service:
+    worker:
+      allocateLoadBalancerNodePorts: true

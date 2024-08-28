@@ -1,0 +1,788 @@
+<!--
+2 discovered CHF NFs in nfSetId setA, locality WEST
+2 discovered CHF NFs in nfSetId setB. locality WEST
+2 UDM NFs in whatever NFset, setC is used
+2 SEPP NFs in nfset SetD
+
+1 discovered CHF NF in nfSetId setC. locality EAST
+
+Routing rules excluded from stability: 40, 70, 80, 190
+Routing rule 45 is for Option C enhncement for Inter-plmn
+
+For plmn-list attributes, use the format below:
+
+plmnId: {"mcc":345,"mnc":012}
+
+e.g '3gpp-sbi-discovery-requester-plmn-list: [{"mcc":345,"mnc":012}]'
+Important: Use single quotes around headers that contain double quotes themselves so as envoy to receive them correctly.
+
+If more services are needed in discovery header then it should be given as below:
+"3gpp-sbi-discovery-service-names: nudm-sdm,nchf-convergedcharging"
+
+Release Seminar - Support for Delegated Discovery in SCP:
+https://ericsson.sharepoint.com/:p:/r/sites/5GSCDevelopment/Documents/SC%20Releases/SC%201.12/Release%20Seminar/Delta%20Presentation%20-%20Support%20for%20Delegated%20Discovery%20in%20SCP.pptx?d=w549526a8bd1e463a9104f18762052adb&csf=1&web=1&e=bSzV2l
+-->
+
+<hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <capabilities>
+        <capability>urn:ietf:params:netconf:base:1.0</capability>
+    </capabilities>
+</hello>]]>]]>
+
+<?xml version="1.0"?>
+<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:ns2="urn:com:ericsson:ecim:1.0" xmlns:ns3="http://tail-f.com/ns/netconf/actions/1.0" xmlns:ns4="urn:ietf:params:xml:ns:yang:ietf-netconf-monitoring" xmlns:ns5="urn:ietf:params:xml:ns:netconf:notification:1.0" message-id="0">
+  <edit-config>
+    <target>
+      <running/>
+    </target>
+      <config>
+            <scp-function operation="replace" xmlns="urn:rdns:com:ericsson:oammodel:ericsson-scp">
+                <nf-instance xmlns="urn:rdns:com:ericsson:oammodel:ericsson-scp">
+                    <name>instance_1</name>                
+                    <service-address>
+                        <name>internalAddress</name>
+                        <!-- change based on your deployment -->
+                        <port>30608</port>
+                        <tls-port>31983</tls-port>
+                        <fqdn>scp.ericsson.se</fqdn>
+                        <!-- change based on your deployment -->          
+                        <ipv4-address>10.102.111.55</ipv4-address>
+                    </service-address>
+                    <own-network>
+                        <name>internalNetwork</name>
+                        <service-address-ref>internalAddress</service-address-ref>
+				        <ingress-connection-profile-ref>default_profile</ingress-connection-profile-ref>
+                        <routing-case-ref>default_routing</routing-case-ref>
+                    </own-network>
+                    <ingress-connection-profile>
+                        <name>default_profile</name>
+				        <max-connection-duration>0</max-connection-duration>
+				        <hpack-table-size>0</hpack-table-size>
+                    </ingress-connection-profile>
+                    <ingress-connection-profile-ref>default_profile</ingress-connection-profile-ref>
+              
+                    <nrf-group>
+                        <name>West</name>
+                        <nrf>
+                            <name>nrf_West1</name>
+                            <fqdn>eric-nrfsim</fqdn>
+                            <scheme>http</scheme>
+                            <priority>1</priority>
+                            <ip-endpoint>
+                                <name>nrf_West1_ep</name>
+                                <!-- Update the address to match your nrfsim address -->
+                                <ipv4-address>10.100.92.120</ipv4-address>
+                                <port>80</port>
+                            </ip-endpoint>
+                        </nrf>
+                    </nrf-group>
+                    <nrf-service>
+                        <nf-discovery>
+                            <nrf-group-ref>West</nrf-group-ref>
+                        </nf-discovery>
+                    </nrf-service>
+
+<!-- --------------------- Static NFs ---------------------------------------- -->
+                        
+                    <static-nf-instance-data>
+                        <name>static_udm</name>
+                        <static-nf-instance>
+                            <name>udm1</name>
+                            <nf-type>UDM</nf-type>
+			                <nf-set-id>setW</nf-set-id>
+                            <static-nf-service>
+                                <name>nudm-sdm</name>
+                                <address>
+                                    <scheme>http</scheme>
+                                <!-- Update the address to match one of your seppsim address -->
+                                    <fqdn>eric-seppsim-p1-mcc-206-mnc-33</fqdn>
+                                </address>
+                            </static-nf-service>
+                        </static-nf-instance>
+
+                        <static-nf-instance>
+                            <name>udm2</name>
+                            <nf-type>UDM</nf-type>
+			                <nf-set-id>setW</nf-set-id>
+                            <static-nf-service>
+                                <name>nudm-sdm</name>
+                                <address>
+                                    <scheme>http</scheme>
+                                <!-- Update the address to match one of your seppsim address -->
+                                    <fqdn>eric-seppsim-p2-mcc-206-mnc-33</fqdn>
+                                </address>
+                            </static-nf-service>
+                        </static-nf-instance>
+                    </static-nf-instance-data>
+
+                   <static-scp-instance-data>
+                        <name>static_scp</name>
+                        <static-scp-instance>
+                            <name>scp1</name>
+                            <nf-type>SCP</nf-type>
+                            <static-nf-service>
+                                <name>default</name>
+                                <address>
+                                    <scheme>http</scheme>
+                                <!-- Update the address to match one of your seppsim address -->
+                                    <fqdn>eric-seppsim-c</fqdn>
+                                </address>
+                            </static-nf-service>
+                        </static-scp-instance>
+
+                        <static-scp-instance>
+                            <name>scp2</name>
+                            <nf-type>SCP</nf-type>
+                            <static-nf-service>
+                                <name>default</name>
+                                <address>
+                                    <scheme>http</scheme>
+                                <!-- Update the address to match one of your seppsim address -->
+                                    <fqdn>eric-seppsim-p</fqdn>
+                                </address>
+                            </static-nf-service>
+                        </static-scp-instance>
+                    </static-scp-instance-data>
+
+<!-- ---------------------------------Pool configuration ------------------- -->
+                    <nf-pool>
+                        <name>chf_setA</name>       
+				        <temporary-blocking>
+				            <blocking-time>5</blocking-time>
+				            <consecutive-failures>3</consecutive-failures>
+				        </temporary-blocking>              
+                        <nf-pool-discovery>
+                            <name>chf_poolA</name>
+                            <update-interval>5s</update-interval>
+                           <nrf-query>
+                              <name>chf_setA</name>
+                              <nf-type>CHF</nf-type>
+                              <nf-set-id>setA</nf-set-id>
+                           </nrf-query>
+                        </nf-pool-discovery>
+                   </nf-pool>
+
+                   <nf-pool>
+                        <name>chf_setB</name>       
+				        <temporary-blocking>
+				            <blocking-time>5</blocking-time>
+				            <consecutive-failures>3</consecutive-failures>
+				        </temporary-blocking>              
+                        <nf-pool-discovery>
+                            <name>chf_poolB</name>
+                            <update-interval>5s</update-interval>
+                           <nrf-query>
+                              <name>chf_setB</name>
+                              <nf-type>CHF</nf-type>
+                              <nf-set-id>setB</nf-set-id>
+                           </nrf-query>
+                        </nf-pool-discovery>
+                   </nf-pool>
+
+                   <nf-pool>
+                        <name>udm</name>       
+				        <temporary-blocking>
+				            <blocking-time>5</blocking-time>
+				            <consecutive-failures>3</consecutive-failures>
+				        </temporary-blocking>              
+                        <nf-pool-discovery>
+                            <name>static_udm_pool</name>
+                            <static-nf-instance-data-ref>static_udm</static-nf-instance-data-ref>
+                        </nf-pool-discovery>
+                   </nf-pool>
+
+		           <nf-pool>
+                        <name>sepp_pool</name>
+				        <temporary-blocking>
+				          <blocking-time>5</blocking-time>
+				          <consecutive-failures>3</consecutive-failures>
+				        </temporary-blocking>
+                        <static-scp-instance-data-ref>static_scp</static-scp-instance-data-ref>			
+        		    </nf-pool>
+
+                    <nf-pool>
+                        <name>scp_pool_for_indirect_routing</name>
+				        <temporary-blocking>
+				          <blocking-time>5</blocking-time>
+				          <consecutive-failures>3</consecutive-failures>
+				        </temporary-blocking>
+                        <static-scp-instance-data-ref>static_scp</static-scp-instance-data-ref>		
+                        <nf-pool-discovery>
+                           <name>chf_setC</name>
+			   <update-interval>5s</update-interval>
+                           <nrf-query>
+                              <name>chf_setC</name>
+                              <nf-type>CHF</nf-type>
+                              <nf-set-id>setC</nf-set-id>
+                           </nrf-query>
+                        </nf-pool-discovery>
+                        <priority-group>
+                           <name>locality-East</name>
+                           <priority>1</priority>
+                           <nf-match-condition>
+                             nfdata.locality == 'EastRegion'
+                           </nf-match-condition>
+                           <static-scp-instance-data-ref>static_scp</static-scp-instance-data-ref>	
+                        </priority-group>
+        	   </nf-pool>
+
+<!--  -------------------------Failover profile ------------------------------------------ -->
+                    <failover-profile>
+			               <name>fop1</name>
+			               <request-time-budget>10000</request-time-budget>
+                           <retry-condition>                          
+                            <http-status>502</http-status> 
+                            <http-status>503</http-status> 
+                            <http-status>504</http-status> 
+                            <reset>false</reset>
+                            <connect-failure>true</connect-failure> 
+                            <refused-stream>false</refused-stream> 
+                        </retry-condition> 
+                        <preferred-host-retries-max>1</preferred-host-retries-max> 
+                        <target-nf-pool-reselects-max>1</target-nf-pool-reselects-max> 
+                        <target-timeout>2000</target-timeout> 
+                    </failover-profile>
+
+<!-- ----------------------------------------- Message data ------------------------------------- -->
+					<message-data>
+						<name>ServiceRequestType</name>
+                        <path></path>
+                        <extractor-regex>(?P&lt;svc&gt;nchf-convergedcharging|nchf-spendinglimitcontrol|nudm-uecm|nudm-sdm)</extractor-regex>
+                    </message-data>
+					<message-data>
+						<name>routing_binding_data</name>
+                        <header>3gpp-Sbi-Routing-Binding</header>
+                        <extractor-regex>nfset=(?P&lt;bindingNfSet&gt;.*);?</extractor-regex>
+                    </message-data>
+					<message-data>
+						<name>disc_targetNfSetId_data</name>
+                        <header>3gpp-Sbi-Discovery-target-nf-set-id</header>
+                        <variable-name>DiscHeaderTargetNfSetId</variable-name>
+                    </message-data>
+					<message-data>
+						<name>disc_targetPlmn_data</name>
+                        <header>3gpp-sbi-discovery-target-plmn-list</header>
+                        <extractor-regex>({ *"mcc":(?P&lt;mcc&gt;\d+) *, *"mnc":(?P&lt;mnc&gt;\d+) *})</extractor-regex>
+                    </message-data>
+
+<!-- ----------------------------------------- Routing ------------------------------------- -->
+                    <routing-case>
+                        <name>default_routing</name>
+                        <message-data-ref>routing_binding_data</message-data-ref>
+						<message-data-ref>ServiceRequestType</message-data-ref>
+						<message-data-ref>disc_targetNfSetId_data</message-data-ref>
+						<message-data-ref>disc_targetPlmn_data</message-data-ref>
+
+             <!-- --------------------------Inter PLMN ----------------------- -->
+                   
+<!--
+UDM SDM retrieve a UE's subscribed NSSAI
+curl -v --resolve scp.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X GET -H "Content-Type: application/json" -H '3gpp-sbi-discovery-target-plmn-list:[{"mcc":505,"mnc":93}]' -H "3gpp-sbi-discovery-target-nf-type: UDM" -H "3gpp-sbi-discovery-requester-nf-type: SMF" -H "3gpp-sbi-discovery-service-names: nudm-sdm" -H '3gpp-sbi-discovery-requester-plmn-list:[{"mcc":202,"mnc":13}]' http://scp.ericsson.se:$SCP_PORT/nudm-sdm/v2/432-35-123456789/nssai
+
+Towards nrf:
+
+curl --http2-prior-knowledge -X GET "http://$NODE_IP:$NRFSIM_PORT/nnrf-disc/v1/nf-instances?requester-nf-type=SMF&target-nf-type=UDM&requester-plmn-list=\[\{\"mcc\":505,\"mnc\":93\},\{\"mcc\":262,\"mnc\":4\}\]&service-names=nudm-sdm"
+
+OR
+UDM SDM subscribe to notifications
+curl -v --resolve scp.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST -H "Content-Type: application/json" -H '3gpp-sbi-discovery-target-plmn-list: [{"mcc":505,"mnc":93}]' -H "3gpp-sbi-discovery-target-nf-type: UDM" -H "3gpp-sbi-discovery-requester-nf-type: SMF" -H "3gpp-sbi-discovery-service-names: nudm-sdm" -H '3gpp-sbi-discovery-requester-plmn-list: [{"mcc":202,"mnc":13}]' -H "3gpp-sbi-discovery-nf-set-id: setD" http://scp.ericsson.se:$SCP_PORT/nudm-sdm/v2/432-35-123456789/sdm-subscriptions
+-->                      
+
+                       <routing-rule>
+                            <name>10_option-d-initial-inter-plmn</name>
+                            <condition>not req.header['3gpp-sbi-target-apiroot'] exists and req.header['3gpp-sbi-discovery-target-plmn-list'] exists and var.mcc == '505' and var.mnc == '93'</condition>
+                            <routing-action>
+                                <name>perform_nf_discovery</name>
+                                <action-nf-discovery>
+					               <nrf-group-ref>West</nrf-group-ref>
+                                   <use-discovery-parameter>
+					     	         <use-selected>
+						            	<name>target-nf-type</name>
+							            <name>requester-nf-type</name>
+							            <name>service-names</name>
+							            <name>target-plmn-list</name>
+							            <name>requester-plmn-list</name>
+						             </use-selected>
+                                   </use-discovery-parameter>
+                                </action-nf-discovery>	
+                            </routing-action>							
+
+                            <routing-action>
+                                <name>rr_sepp_pool</name>
+                                <action-route-remote-round-robin>
+                                    <target-nf-pool>
+                                        <nf-pool-ref>sepp_pool</nf-pool-ref>
+                                    </target-nf-pool>
+                                    <failover-profile-ref>fop1</failover-profile-ref>
+				                 	<preserve-disc-param-if-indirect>
+					                	<preserve-selected>
+						                	<name>3gpp-sbi-discovery-target-nf-type</name>
+						                	<name>3gpp-sbi-discovery-requester-nf-type</name>
+					                 	</preserve-selected>
+				                  	</preserve-disc-param-if-indirect>
+                                </action-route-remote-round-robin>								
+                            </routing-action>
+                       </routing-rule>
+
+<!-- 
+Unsubscribe operation
+curl -v --resolve scp.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST -H "Content-Type: application/json" -H "3gpp-Sbi-Target-apiRoot: http://eric-seppsim-c:80" -H "3gpp-sbi-Routing-Binding: bl=nf-set; nfset=setD" http://scp.ericsson.se:$SCP_PORT/nudm-sdm/v2/imsi-460001357924675/sdm-subscriptions/id-000000001
+-->
+                       <routing-rule>
+                            <name>20_option-d-subsequent-inter-plmn-with-binding-info</name>
+                            <condition>req.header['3gpp-sbi-target-apiroot'] exists and req.header['3gpp-Sbi-Routing-Binding'] exists  and var.bindingNfSet == 'setD'</condition>						
+                            <routing-action>
+                                <name>rr_sepp_pool</name>
+                                <action-route-round-robin>
+                                    <target-nf-pool>
+                                        <nf-pool-ref>sepp_pool</nf-pool-ref>
+                                    </target-nf-pool>
+                                    <failover-profile-ref>fop1</failover-profile-ref>
+                                </action-route-round-robin>								
+                            </routing-action>
+                       </routing-rule>
+
+<!-- 
+Unsubscribe operation
+curl -v --resolve scp.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST -H "Content-Type: application/json" -H "3gpp-Sbi-Target-apiRoot: http://eric-seppsim-c:80" -H "3gpp-sbi-discovery-target-nf-type: UDM" -H "3gpp-sbi-discovery-requester-nf-type: SMF" -H "3gpp-sbi-discovery-target-nf-set-id: setD" http://scp.ericsson.se:$SCP_PORT/nudm-sdm/v2/imsi-460001357924675/sdm-subscriptions/id-000000001
+-->
+
+                       <routing-rule>
+                            <name>30_option-d-subsequent-inter-plmn-no-binding-info</name>
+                            <condition>req.header['3gpp-sbi-target-apiroot'] exists and req.header['3gpp-Sbi-Discovery-target-nf-set-id'] exists and req.header['3gpp-Sbi-Discovery-target-nf-type'] exists and req.header['3gpp-Sbi-Discovery-requester-nf-type'] exists and var.DiscHeaderTargetNfSetId == 'setD'</condition>						
+                            <routing-action>
+                                <name>rr_sepp_pool</name>
+                                <action-route-round-robin>
+                                    <target-nf-pool>
+                                        <nf-pool-ref>sepp_pool</nf-pool-ref>
+                                    </target-nf-pool>
+                                    <failover-profile-ref>fop1</failover-profile-ref>
+                                </action-route-round-robin>								
+                            </routing-action>
+                       </routing-rule>
+
+<!-- Option C enhancement 
+curl -v --resolve scp.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X GET -H "Content-Type: application/json" -H "3gpp-Sbi-Target-apiRoot: http://eric-seppsim-p:80"  -H "3gpp-sbi-discovery-target-nf-type: UDM" -H "3gpp-sbi-discovery-target-nf-set-id: setW" -H "3gpp-sbi-discovery-requester-nf-type: SMF" -H "3gpp-sbi-discovery-service-names: nudm-sdm" -H '3gpp-sbi-discovery-target-plmn-list: [{"mcc":505,"mnc":93}]' -H '3gpp-sbi-discovery-requester-plmn-list:[{"mcc":202,"mnc":13}]' http://scp.ericsson.se:$SCP_PORT/nudm-sdm/v2/432-35-123456789/nssai
+-->
+                       <routing-rule>
+                            <name>45_option-c-with delegated-discovery-initial-inter-plmn</name>
+                            <condition>req.header['3gpp-sbi-target-apiroot'] exists and req.header['3gpp-Sbi-Discovery-target-nf-set-id'] exists and req.header['3gpp-Sbi-Discovery-target-nf-type'] exists and req.header['3gpp-sbi-discovery-target-plmn-list'] exists and var.mcc == '505' and var.mnc == '93'</condition>		
+                            <routing-action>
+                                <name>perform_nf_discovery</name>
+                                <action-nf-discovery>
+					               <nrf-group-ref>West</nrf-group-ref>
+                                   <use-discovery-parameter>
+					     	         <use-all></use-all>
+                                   </use-discovery-parameter>
+                                </action-nf-discovery>
+                            </routing-action>							
+
+                            <routing-action>
+                                <name>pr_sepp_pool</name>
+                                <action-route-remote-preferred>
+                                    <from-target-api-root-header></from-target-api-root-header>
+                                    <target-nf-pool>
+                                        <nf-pool-ref>sepp_pool</nf-pool-ref>
+                                    </target-nf-pool>
+                                    <failover-profile-ref>fop1</failover-profile-ref>
+                                </action-route-remote-preferred>
+                            </routing-action>
+                       </routing-rule>
+
+
+<!-- 
+UECM (UE context management) deregistration operation
+curl -v --resolve scp.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST -H "Content-Type: application/json" -H "3gpp-Sbi-Target-apiRoot: http://eric-seppsim-c:80" -H "3gpp-sbi-Routing-Binding: bl=nf-instance; nfinst=54804518-4191-46b3-955c-ac631f953ed8" http://scp.ericsson.se:$SCP_PORT/nudm-uecm/v1/ueid-000000001/registrations/amf-3gpp-access/dereg-amf
+-->
+                       <routing-rule>
+                            <name>40_option-d-subsequent-inter-plmn-routing-binding-with-no-nf-or-service-set-no-disc-headers</name>
+                            <condition>req.header['3gpp-sbi-target-apiroot'] exists and req.header['3gpp-Sbi-Routing-Binding'] exists  and var.bindingNfSet == '' and var.svc = 'nudm-uecm'</condition>
+                            <routing-action>
+                                <name>perform_nf_discovery</name>
+                                <action-nf-discovery>
+					               <nrf-group-ref>West</nrf-group-ref>
+ 					               <add-discovery-parameter>
+						                <name>requester-nf-type</name>
+						                <value>SMF</value>
+				            	   </add-discovery-parameter>   
+ 					               <add-discovery-parameter>
+						                <name>target-nf-type</name>
+						                <value>UDM</value>
+				            	   </add-discovery-parameter> 
+ 					               <add-discovery-parameter>
+						                <name>target-plmn-list</name>
+						                <value>05f539</value>
+				            	   </add-discovery-parameter>                              
+                                </action-nf-discovery>	
+                            </routing-action>
+
+                            <routing-action>
+                                <name>rr_sepp_pool</name>
+                                <action-route-remote-round-robin>
+                                    <target-nf-pool>
+                                        <nf-pool-ref>sepp_pool</nf-pool-ref>
+                                    </target-nf-pool>
+                                    <failover-profile-ref>fop1</failover-profile-ref>
+                                </action-route-remote-round-robin>								
+                            </routing-action>
+                       </routing-rule>	
+
+
+
+             <!-- --------------------------Intra PLMN chf NFs NLF triggering----------------------- -->
+
+<!-- 
+CC Create
+curl -v --resolve scp.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST -H "Content-Type: application/json" -H "3gpp-sbi-discovery-target-nf-type: CHF" -H "3gpp-sbi-discovery-requester-nf-type: SMF" -H "3gpp-sbi-discovery-service-names:nchf-convergedcharging" -d '{"notifyUri":"http://eric-chfsim-1:80/nchf-convergedcharging/v2/chargingdata/notify_cc_receiver"}' http://scp.ericsson.se:$SCP_PORT/nchf-convergedcharging/v2/chargingdata
+
+curl -v --resolve scp.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST -H "Content-Type: application/json" -H "3gpp-sbi-discovery-target-nf-type: CHF" -H "3gpp-sbi-discovery-requester-nf-type: SMF" -d '{"notifyUri":"http://eric-chfsim-1:80/nchf-convergedcharging/v2/chargingdata/notify_cc_receiver"}' http://scp.ericsson.se:$SCP_PORT/nchf-convergedcharging/v2/chargingdata
+-->
+                       <routing-rule>
+                            <name>50_option_d_initial_intra_plmn_chf_convergedcharging</name>
+                            <condition>var.svc = 'nchf-convergedcharging' and not req.header['3gpp-sbi-target-apiroot'] exists</condition>
+                            <routing-action>
+                                <name>perform_nf_discovery</name>
+                                <action-nf-discovery>
+				            	   <nrf-group-ref>West</nrf-group-ref>
+                                   <use-discovery-parameter>
+                                       <use-all></use-all>
+                                   </use-discovery-parameter>
+					               <add-discovery-parameter>
+						                <name>preferred-locality</name>
+						                <value>WestRegion</value>
+				            	   </add-discovery-parameter>  
+					               <nf-selection-on-priority>
+						               <variable-name-selected-host>chf_pref_host</variable-name-selected-host>
+						               <variable-name-nfset>chf_nfSetId</variable-name-nfset>
+					               </nf-selection-on-priority>
+                                </action-nf-discovery>								
+                            </routing-action>
+		               </routing-rule>
+
+<!-- 
+SLC Subscribe
+curl -v --resolve scp.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST -H "Content-Type: application/json" -H "3gpp-sbi-discovery-target-nf-type: CHF" -H "3gpp-sbi-discovery-requester-nf-type: PCF" -H "3gpp-sbi-discovery-service-names: nchf-spendinglimitcontrol" -H "3gpp-sbi-discovery-preferred-locality: EastRegion"  -d '{"notifyUri":"http://eric-chfsim-1:80/nchf-spendinglimitcontrol/v1/subscriptions/notify"}' http://scp.ericsson.se:$SCP_PORT/nchf-spendinglimitcontrol/v1/subscriptions?a=[1-1]
+-->
+                       <routing-rule>
+                            <name>60_option_d_initial_intra_plmn_chf_spendinglimitcontrol</name>
+                            <condition>var.svc = 'nchf-spendinglimitcontrol' and not req.header['3gpp-sbi-target-apiroot'] exists</condition>
+                            <routing-action>
+                                <name>perform_nf_discovery</name>
+                                <action-nf-discovery>
+				            	   <nrf-group-ref>West</nrf-group-ref>
+                                   <use-discovery-parameter>
+					        	     <use-selected>
+						            	<name>target-nf-type</name>
+							            <name>requester-nf-type</name>
+							            <name>service-names</name>
+						             </use-selected>
+                                   </use-discovery-parameter>
+					               <add-discovery-parameter>
+						                <name>preferred-locality</name>
+						                <value>WestRegion</value>
+				            	   </add-discovery-parameter>  
+					               <nf-selection-on-priority>
+						               <variable-name-selected-host>chf_pref_host</variable-name-selected-host>
+						               <variable-name-nfset>chf_nfSetId</variable-name-nfset>
+					               </nf-selection-on-priority>
+                                </action-nf-discovery>								
+                            </routing-action>
+		               </routing-rule>
+
+
+<!-- 
+CC Update
+curl -v --resolve scp.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST -H "Content-Type: application/json" -H "3gpp-Sbi-Target-apiRoot: http://eric-chfsim-1:80" -H "3gpp-sbi-Routing-Binding: bl=nf-instance; nfinst=54804518-4191-46b3-955c-ac631f953ed8" http://scp.ericsson.se:$SCP_PORT/nchf-convergedcharging/v2/chargingdata/occ1-10000000/update
+-->
+                       <routing-rule>
+                            <name>70_option-d-subsequent-intra-plmn-chf-routing-binding-with-no-nf-or-service-set-no-disc-headers</name>
+                            <condition>req.header['3gpp-sbi-target-apiroot'] exists and req.header['3gpp-Sbi-Routing-Binding'] exists  and var.bindingNfSet == '' and (var.svc = 'nchf-convergedcharging' or var.svc = 'nchf-spendinglimitcontrol')</condition>
+                            <routing-action>
+                                <name>perform_nf_discovery</name>
+                                <action-nf-discovery>
+					               <nrf-group-ref>West</nrf-group-ref>
+ 					               <add-discovery-parameter>
+						                <name>requester-nf-type</name>
+						                <value>SMF</value>
+				            	   </add-discovery-parameter>   
+ 					               <add-discovery-parameter>
+						                <name>target-nf-type</name>
+						                <value>CHF</value>
+				            	   </add-discovery-parameter>
+					               <nf-selection-on-priority>
+						               <variable-name-selected-host>chf_pref_host</variable-name-selected-host>
+						               <variable-name-nfset>chf_nfSetId</variable-name-nfset>
+					               </nf-selection-on-priority>                             
+                                </action-nf-discovery>	
+                            </routing-action>
+                       </routing-rule>	
+
+<!-- 
+Unsubscribe operation
+curl -v --resolve scp.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST -H "Content-Type: application/json" -H "3gpp-Sbi-Target-apiRoot: http://eric-seppsim-c:80" -H "3gpp-sbi-Routing-Binding: bl=nf-instance; nfinst=54804518-4191-46b3-955c-ac631f953ed8" http://scp.ericsson.se:$SCP_PORT/nudm-sdm/v2/imsi-460001357924675/sdm-subscriptions/id-000000001
+-->
+                       <routing-rule>
+                            <name>80_option-d-subsequent-intra-plmn-udm-routing-binding-with-no-nf-or-service-set-no-disc-headers</name>
+                            <condition>req.header['3gpp-sbi-target-apiroot'] exists and req.header['3gpp-Sbi-Routing-Binding'] exists  and var.bindingNfSet == '' and var.svc = 'nudm-sdm'</condition>
+                            <routing-action>
+                                <name>perform_nf_discovery</name>
+                                <action-nf-discovery>
+					               <nrf-group-ref>West</nrf-group-ref>
+ 					               <add-discovery-parameter>
+						                <name>requester-nf-type</name>
+						                <value>SMF</value>
+				            	   </add-discovery-parameter>   
+ 					               <add-discovery-parameter>
+						                <name>target-nf-type</name>
+						                <value>UDM</value>
+				            	   </add-discovery-parameter>
+					               <nf-selection-on-priority>
+						               <variable-name-selected-host>udm_pref_host</variable-name-selected-host>
+						               <variable-name-nfset>udm_nfSetId</variable-name-nfset>
+					               </nf-selection-on-priority>                             
+                                </action-nf-discovery>	
+                            </routing-action>
+                       </routing-rule>	
+
+                       <!-- --------------------------Intra PLMN chf NFs setA ----------------------- -->
+
+<!-- This routing rule is executed after rule 50 -->
+
+                       <routing-rule>
+                            <name>90_option_d_initial_intra_plmn_chf_after_discovery</name>
+                            <condition>var.chf_nfSetId == 'setA'</condition>
+                            <routing-action>
+                                <name>initial_preferred</name>
+                                <action-route-preferred>
+                                    <from-var-name>chf_pref_host</from-var-name>
+                                    <target-nf-pool>
+                                    <nf-pool-ref>chf_setA</nf-pool-ref>
+                                    </target-nf-pool>
+                                    <failover-profile-ref>fop1</failover-profile-ref>
+                                </action-route-preferred>
+                            </routing-action>		
+		               </routing-rule>
+
+
+<!-- 
+CC update
+curl -v --resolve scp.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST -H "Content-Type: application/json" -H "3gpp-Sbi-Target-apiRoot: http://eric-chfsim-1:80" -H "3gpp-sbi-Routing-Binding: bl=nf-set; nfset=setA" http://scp.ericsson.se:$SCP_PORT/nchf-convergedcharging/v2/chargingdata/occ1-10000000/update
+-->
+                       <routing-rule>
+                            <name>100_option_d_intra_plmn_chf_subsequent</name>
+                            <condition>(var.svc = 'nchf-convergedcharging' or var.svc = 'nchf-spendinglimitcontrol') and req.header['3gpp-sbi-target-apiroot'] exists and req.header['3gpp-Sbi-Routing-Binding'] exists  and var.bindingNfSet == 'setA'</condition>
+                            <routing-action>
+                                <name>SubsequentChf_prefferedRouting</name>
+                                <action-route-preferred>
+                                    <from-target-api-root-header></from-target-api-root-header>
+                                    <target-nf-pool>
+                                        <nf-pool-ref>chf_setA</nf-pool-ref>
+                                    </target-nf-pool>
+                                    <failover-profile-ref>fop1</failover-profile-ref>
+                                </action-route-preferred>
+                            </routing-action>
+		               </routing-rule>
+
+<!-- 
+CC update
+curl -v --resolve scp.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST -H "Content-Type: application/json" -H "3gpp-Sbi-Target-apiRoot: http://eric-chfsim-1:80" -H "3gpp-sbi-discovery-target-nf-type: CHF" -H "3gpp-sbi-discovery-requester-nf-type: SMF" -H "3gpp-sbi-discovery-target-nf-set-id: setA" http://scp.ericsson.se:$SCP_PORT/nchf-convergedcharging/v2/chargingdata/occ1-10000000/update
+-->
+                      <routing-rule>
+                            <name>110_option_d_intra_plmn_chf_subsequent_WithDiscoveryHeaders</name>
+                            <condition>(var.svc = 'nchf-convergedcharging' or var.svc = 'nchf-spendinglimitcontrol') and req.header['3gpp-sbi-target-apiroot'] exists and req.header['3gpp-Sbi-Discovery-target-nf-set-id'] exists and req.header['3gpp-Sbi-Discovery-target-nf-type'] exists and req.header['3gpp-Sbi-Discovery-requester-nf-type'] exists and var.DiscHeaderTargetNfSetId == 'setA'</condition>
+                            <routing-action>
+                                <name>subsequent_preferred</name>
+                                <action-route-preferred>
+                                    <from-target-api-root-header></from-target-api-root-header>
+                                    <target-nf-pool>
+                                        <nf-pool-ref>chf_setA</nf-pool-ref>
+                                    </target-nf-pool>
+                                    <failover-profile-ref>fop1</failover-profile-ref>
+                                </action-route-preferred>
+                            </routing-action>
+		              </routing-rule>
+
+                      <!-- --------------------------Intra PLMN chf NFs setB ----------------------- -->
+
+<!-- This routing rule is executed after rule 50. Covered by 90 -->
+
+                       <routing-rule>
+                            <name>120_option_d_initial_intra_plmn_chf_after_discovery</name>
+                            <condition>var.chf_nfSetId == 'setB'</condition>
+                            <routing-action>
+                                <name>initial_preferred</name>
+                                <action-route-preferred>
+                                    <from-var-name>chf_pref_host</from-var-name>
+                                    <target-nf-pool>
+                                        <nf-pool-ref>chf_setB</nf-pool-ref>
+                                   </target-nf-pool>
+                                    <failover-profile-ref>fop1</failover-profile-ref>
+                                </action-route-preferred>
+                            </routing-action>		
+		               </routing-rule>
+
+
+
+<!-- 
+CC update
+curl -v --resolve scp.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST -H "Content-Type: application/json" -H "3gpp-Sbi-Target-apiRoot: http://eric-chfsim-1:80" -H "3gpp-sbi-Routing-Binding: bl=nf-set; nfset=setB" http://scp.ericsson.se:$SCP_PORT/nchf-convergedcharging/v2/chargingdata/occ1-10000000/update
+-->
+                       <routing-rule>
+                            <name>130_option_d_intra_plmn_chf_subsequent</name>
+                            <condition>(var.svc = 'nchf-convergedcharging' or var.svc = 'nchf-spendinglimitcontrol') and req.header['3gpp-sbi-target-apiroot'] exists and req.header['3gpp-Sbi-Routing-Binding'] exists  and var.bindingNfSet == 'setB'</condition>
+                            <routing-action>
+                                <name>SubsequentChf_prefferedRouting</name>
+                                <action-route-preferred>
+                                    <from-target-api-root-header></from-target-api-root-header>
+                                    <target-nf-pool>
+                                        <nf-pool-ref>chf_setB</nf-pool-ref>
+                                    </target-nf-pool>
+                                    <failover-profile-ref>fop1</failover-profile-ref>
+                                </action-route-preferred>
+                            </routing-action>
+		               </routing-rule>
+
+
+<!-- 
+CC update
+curl -v --resolve scp.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST -H "Content-Type: application/json" -H "3gpp-Sbi-Target-apiRoot: http://eric-chfsim-1:80"-H "3gpp-sbi-discovery-target-nf-type: CHF" -H "3gpp-sbi-discovery-requester-nf-type: SMF" -H "3gpp-sbi-discovery-target-nf-set-id: setB" http://scp.ericsson.se:$SCP_PORT/nchf-convergedcharging/v2/chargingdata/occ1-10000000/update
+-->
+                      <routing-rule>
+                            <name>140_option_d_intra_plmn_chf_subsequent_WithDiscoveryHeaders</name>
+                            <condition>(var.svc = 'nchf-convergedcharging' or var.svc = 'nchf-spendinglimitcontrol') and req.header['3gpp-sbi-target-apiroot'] exists and req.header['3gpp-Sbi-Discovery-target-nf-set-id'] exists and req.header['3gpp-Sbi-Discovery-target-nf-type'] exists and req.header['3gpp-Sbi-Discovery-requester-nf-type'] exists and var.DiscHeaderTargetNfSetId == 'setB'</condition>
+                            <routing-action>
+                                <name>subsequent_preferred</name>
+                                <action-route-preferred>
+                                    <from-target-api-root-header></from-target-api-root-header>
+                                    <target-nf-pool>
+                                        <nf-pool-ref>chf_setB</nf-pool-ref>
+                                    </target-nf-pool>
+                                    <failover-profile-ref>fop1</failover-profile-ref>
+                                </action-route-preferred>
+                            </routing-action>
+		              </routing-rule>
+
+
+
+
+
+             <!-- --------------------------Intra PLMN UDM NFs----------------------- -->
+
+<!-- 
+UDM-SDM (subscriber data management)
+curl -v --resolve scp.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST -H "Content-Type: application/json" -H "3gpp-sbi-discovery-target-nf-type: UDM" -H "3gpp-sbi-discovery-requester-nf-type: SMF" -H "3gpp-sbi-discovery-service-names: nudm-sdm" -H "3gpp-sbi-discovery-preferred-locality: EastRegion" -H "3gpp-sbi-discovery-target-nf-set-id: setW" http://scp.ericsson.se:$SCP_PORT/nudm-sdm/v2/imsi-460001357924675/nssai 
+-->     
+                       <routing-rule>
+                            <name>150_option_d_initial_intra_plmn_udm_sdm</name>
+                            <condition>var.svc = 'nudm-sdm' and not req.header['3gpp-sbi-target-apiroot'] exists</condition>
+                            <routing-action>
+                                <name>perform_nf_discovery</name>
+                                <action-nf-discovery>
+				            	   <nrf-group-ref>West</nrf-group-ref>
+                                   <use-discovery-parameter>
+					        	     <use-selected>
+						            	<name>target-nf-type</name>
+							            <name>requester-nf-type</name>
+							            <name>service-names</name>
+							            <name>target-nf-set-id</name>
+						             </use-selected>
+                                   </use-discovery-parameter> 
+					               <nf-selection-on-priority>
+						               <variable-name-selected-host>udm_pref_host</variable-name-selected-host>
+						               <variable-name-nfset>udm_nfSetId</variable-name-nfset>
+					               </nf-selection-on-priority>
+                                </action-nf-discovery>								
+                            </routing-action>
+		               </routing-rule>
+
+<!-- This routing rule is executed after rule 150 -->
+
+                      <routing-rule>
+                            <name>160_option_d_initial_intra_plmn_udm_after_discovery</name>
+                            <condition>not var.udm_nfSetId isempty</condition>
+                            <routing-action>
+                                <name>initial_preferred</name>
+                                <action-route-preferred>
+                                    <from-var-name>udm_pref_host</from-var-name>
+                                    <target-nf-pool>
+                                        <nf-pool-ref>udm</nf-pool-ref>
+                                    </target-nf-pool>
+                                    <failover-profile-ref>fop1</failover-profile-ref>
+                                </action-route-preferred>
+                            </routing-action>		
+		               </routing-rule>
+
+<!-- 
+Unsubscribe operation
+curl -v --resolve scp.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST -H "Content-Type: application/json" -H "3gpp-Sbi-Target-apiRoot: http://eric-seppsim-c:80" -H "3gpp-sbi-Routing-Binding: bl=nf-set; nfset=setC" http://scp.ericsson.se:$SCP_PORT/nudm-sdm/v2/imsi-460001357924675/sdm-subscriptions/id-000000001
+-->
+                       <routing-rule>
+                            <name>170_option_d_intra_plmn_udm_subsequent</name>
+                            <condition>var.svc = 'nudm-sdm' and req.header['3gpp-sbi-target-apiroot'] exists and req.header['3gpp-Sbi-Routing-Binding'] exists  and not var.bindingNfSet isempty</condition>
+                            <routing-action>
+                                <name>SubsequentUdm_prefferedRouting</name>
+                                <action-route-preferred>
+                                    <from-target-api-root-header></from-target-api-root-header>
+                                    <target-nf-pool>
+                                        <nf-pool-ref>udm</nf-pool-ref>
+                                    </target-nf-pool>
+                                    <failover-profile-ref>fop1</failover-profile-ref>
+                                </action-route-preferred>
+                            </routing-action>
+		               </routing-rule>
+
+
+<!-- 
+Unsubscribe operation
+curl -v --resolve scp.ericsson.se:$SCP_PORT:$NODE_IP --http2-prior-knowledge -X POST -H "Content-Type: application/json" -H "3gpp-Sbi-Target-apiRoot: http://eric-seppsim-c:80" -H "3gpp-sbi-discovery-target-nf-type: UDM" -H "3gpp-sbi-discovery-requester-nf-type: SMF" -H "3gpp-sbi-discovery-target-nf-set-id: setC" http://scp.ericsson.se:$SCP_PORT/nudm-sdm/v2/imsi-460001357924675/sdm-subscriptions/id-000000001
+-->
+                      <routing-rule>
+                            <name>180_option_d_intra_plmn_udm_subsequent_WithDiscoveryHeaders</name>
+                            <condition>var.svc = 'nudm-sdm' and req.header['3gpp-sbi-target-apiroot'] exists and req.header['3gpp-Sbi-Discovery-target-nf-set-id'] exists and req.header['3gpp-Sbi-Discovery-target-nf-type'] exists and req.header['3gpp-Sbi-Discovery-requester-nf-type'] exists and not var.DiscHeaderTargetNfSetId isempty</condition>
+                            <routing-action>
+                                <name>subsequent_preferred</name>
+                                <action-route-preferred>
+                                    <from-target-api-root-header></from-target-api-root-header>
+                                    <target-nf-pool>
+                                        <nf-pool-ref>udm</nf-pool-ref>
+                                    </target-nf-pool>
+                                    <failover-profile-ref>fop1</failover-profile-ref>
+                                </action-route-preferred>
+                            </routing-action>
+		              </routing-rule>
+
+
+
+                <!-- -------------------------- Indirect routing -------------------- -->
+
+<!-- This routing rule is executed after rule 50 -->
+
+                       <routing-rule>
+                            <name>190_option_d_preferred</name>
+                            <condition>var.chf_nfSetId == 'chf_setC'</condition>
+                            <routing-action>
+                                <name>Indirect routing</name>
+                                <action-route-preferred>
+				                 	<preserve-disc-param-if-indirect>
+					                	<preserve-selected>
+						                	<name>3gpp-sbi-discovery-target-nf-type</name>
+						                	<name>3gpp-sbi-discovery-requester-nf-type</name>
+					                 	</preserve-selected>
+				                  	</preserve-disc-param-if-indirect>
+				                    <from-var-name>chf_pref_host</from-var-name>
+                                    <target-nf-pool>
+                                        <var-name>scp_pool</var-name>
+                                    </target-nf-pool>
+                                    <failover-profile-ref>fop1</failover-profile-ref>
+                                </action-route-preferred>								
+                            </routing-action>
+                       </routing-rule>                     
+                    </routing-case>
+
+                </nf-instance>
+            </scp-function>
+        </config>
+    </edit-config>
+</rpc>
+]]>]]>
+

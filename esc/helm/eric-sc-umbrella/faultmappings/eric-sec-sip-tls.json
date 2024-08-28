@@ -1,0 +1,12 @@
+[
+     {
+          "faultName": "InternalCAInternalCertificateCreationFailure",
+          "vendor": 193,
+          "code": 10223618,
+          "defaultSeverity": "Major",
+          "probableCause": 302,
+          "defaultDescription": "",
+          "specificProblem": "Internal CA Internal Certificate Creation Failure",
+          "category": "ProcessingErrorAlarm"
+     }
+]

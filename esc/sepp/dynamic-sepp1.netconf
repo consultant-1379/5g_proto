@@ -1,0 +1,449 @@
+<hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <capabilities>
+        <capability>urn:ietf:params:netconf:base:1.0</capability>
+    </capabilities>
+</hello>]]>]]>
+
+
+<?xml version="1.0"?>
+<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:ns2="urn:com:ericsson:ecim:1.0" xmlns:ns3="http://tail-f.com/ns/netconf/actions/1.0" xmlns:ns4="urn:ietf:params:xml:ns:yang:ietf-netconf-monitoring" xmlns:ns5="urn:ietf:params:xml:ns:netconf:notification:1.0" message-id="0">
+  <edit-config>
+    <target>
+      <running/>
+    </target>
+      <config>
+            <sepp-function operation="replace" xmlns="urn:rdns:com:ericsson:oammodel:ericsson-sepp">
+                <nf-instance xmlns="urn:rdns:com:ericsson:oammodel:ericsson-sepp">
+         <name>Sepp-Instance-1</name>
+         <own-fqdn>sepp.mnc.567.mcc.765.ericsson.de</own-fqdn>
+         <default-routing-case-ref>default_routing</default-routing-case-ref>
+         <vpn>
+           <name>VPN</name>
+           <port>32386</port>
+           <ipv4-address>10.107.83.190</ipv4-address>
+           <tls>off</tls>
+         </vpn>
+
+         <own-vpn-ref>VPN</own-vpn-ref>
+
+         <roaming-partner>
+
+           <name>RP-1</name>
+
+           <comment>RoamningPartner-1</comment>
+
+           <sepp-pool-ref>Pool_PSEPP1</sepp-pool-ref>
+
+           <vpn-ref>VPN</vpn-ref>
+
+         </roaming-partner>
+
+         <roaming-partner>
+
+           <name>RP-2</name>
+
+           <comment>RoamningPartner-2</comment>
+
+           <sepp-pool-ref>Pool_PSEPP2</sepp-pool-ref>
+
+           <vpn-ref>VPN</vpn-ref>
+
+         </roaming-partner>
+
+         <roaming-partner>
+
+           <name>RP-3</name>
+
+           <comment>RoamningPartner-3</comment>
+
+           <sepp-pool-ref>Pool_PSEPP3</sepp-pool-ref>
+
+           <vpn-ref>VPN</vpn-ref>
+
+         </roaming-partner>
+
+         <routing-data>
+
+           <name>apiRoot_data</name>
+
+           <header>3gpp-Sbi-target-apiRoot</header>
+
+           <extractor-regex>^(http(s?)://)?(?P&lt;nf&gt;.+?)\..+?\.(?P&lt;mnc&gt;.+?)\..+?\.(?P&lt;mcc&gt;.+?)\.</extractor-regex>
+
+         </routing-data>
+
+         <routing-data>
+
+           <name>path_data</name>
+
+           <path></path>
+
+           <extractor-regex>/(?P&lt;service&gt;nudm-sdm)/(?P&lt;version&gt;v\d+)/(?P&lt;sds&gt;shared-data-subscriptions)</extractor-regex>
+
+         </routing-data>
+
+         <routing-case>
+
+           <name>default_routing</name>
+
+           <routing-data-ref>apiRoot_data</routing-data-ref>
+
+           <routing-data-ref>path_data</routing-data-ref>
+
+           <routing-rule>
+
+             <name>csepp_to_RP-1</name>
+
+             <predicate-expression>var.mnc=="012" and var.mcc=="210"</predicate-expression>
+
+             <action-roaming-partner>RP-1</action-roaming-partner>
+
+           </routing-rule>
+
+           <routing-rule>
+
+             <name>csepp_to_RP-2</name>
+
+             <predicate-expression>var.mnc=="123" and var.mcc=="321"</predicate-expression>
+
+             <action-roaming-partner>RP-2</action-roaming-partner>
+
+           </routing-rule>
+
+           <routing-rule>
+
+             <name>csepp_to_RP-3</name>
+
+             <predicate-expression>var.mnc=="234" and var.mcc=="432"</predicate-expression>
+
+             <action-roaming-partner>RP-3</action-roaming-partner>
+
+           </routing-rule>
+
+           <routing-rule>
+
+             <name>pSepp_to_ownPLMN_NRF_universal</name>
+
+             <predicate-expression>var.nf=="nfNrf1" and var.mnc=="567" and var.mcc=="765"</predicate-expression>
+
+             <action-pool>universal_pool</action-pool>
+
+           </routing-rule>
+
+           <routing-rule>
+
+             <name>pSepp_to_ownPLMN_static_NfAmf</name>
+
+             <predicate-expression>(var.nf=="nfAmf1" or var.nf=="nfAmf2") and var.mnc=="567" and var.mcc=="765"</predicate-expression>
+
+             <action-pool>Pool_NfAmf</action-pool>
+
+           </routing-rule>
+
+           <routing-rule>
+
+             <name>pSepp_to_ownPLMN_static_NfAusf</name>
+
+             <predicate-expression>(var.nf=="nfAusf1") and var.mnc=="567" and var.mcc=="765"</predicate-expression>
+
+             <action-pool>Pool_NfAusf</action-pool>
+
+           </routing-rule>
+
+           <routing-rule>
+
+             <name>pSepp_to_ownPLMN_static_NfUdm</name>
+
+             <predicate-expression>(var.nf=="nfUdm1" or var.nf=="nfUdm2" or var.nf=="nfUdm3" or var.nf=="nfUdm99") and var.mnc=="567" and var.mcc=="765"</predicate-expression>
+
+             <action-pool>Pool_NfUdm</action-pool>
+
+           </routing-rule>
+
+           <routing-rule>
+
+             <name>pSepp_to_ownPLMN_universal</name>
+
+             <predicate-expression>var.mnc=="567" and var.mcc=="765"</predicate-expression>
+
+             <action-pool>universal_pool</action-pool>
+
+           </routing-rule>
+
+         </routing-case>
+
+         <static-nf-instance-data>
+
+           <name>staticNfInstanceData_Pool_PSEPP1_Ref1</name>
+
+         </static-nf-instance-data>
+
+         <static-nf-instance-data>
+
+           <name>staticNfInstanceData_Pool_PSEPP2_Ref1</name>
+
+         </static-nf-instance-data>
+
+         <static-nf-instance-data>
+
+           <name>staticNfInstanceData_Pool_PSEPP3_Ref1</name>
+
+         </static-nf-instance-data>
+
+         <static-nf-instance-data>
+
+           <name>staticNfInstanceData_Pool_NfAmf_Ref1</name>
+
+         </static-nf-instance-data>
+
+         <static-nf-instance-data>
+
+           <name>staticNfInstanceData_Pool_NfAusf_Ref1</name>
+
+         </static-nf-instance-data>
+
+         <static-nf-instance-data>
+
+           <name>staticNfInstanceData_Pool_NfUdm_Ref1</name>
+
+         </static-nf-instance-data>
+
+         <pool>
+
+           <name>Pool_PSEPP1</name>
+
+           <pool-discovery>
+
+             <name>remote_Pool_PSEPP1</name>
+
+             <static-nf-instance-data-ref>staticNfInstanceData_Pool_PSEPP1_Ref1</static-nf-instance-data-ref>
+
+           </pool-discovery>
+
+           <failover-behavior-ref>fob_default</failover-behavior-ref>
+
+           <routing-method>forward</routing-method>
+
+           <subpool>
+
+             <name>sepp_subpool</name>
+             <constraint-expression></constraint-expression>
+             <priority>1</priority>
+
+           </subpool>
+
+         </pool>
+
+         <pool>
+
+           <name>Pool_PSEPP2</name>
+
+           <pool-discovery>
+
+             <name>remote_Pool_PSEPP2</name>
+
+             <static-nf-instance-data-ref>staticNfInstanceData_Pool_PSEPP2_Ref1</static-nf-instance-data-ref>
+
+           </pool-discovery>
+
+           <failover-behavior-ref>fob_default</failover-behavior-ref>
+
+           <routing-method>forward</routing-method>
+
+           <subpool>
+
+             <name>sepp_subpool</name>
+             <constraint-expression></constraint-expression>
+             <priority>1</priority>
+
+           </subpool>
+
+         </pool>
+
+         <pool>
+
+           <name>Pool_PSEPP3</name>
+
+           <pool-discovery>
+
+             <name>remote_Pool_PSEPP3</name>
+
+             <static-nf-instance-data-ref>staticNfInstanceData_Pool_PSEPP3_Ref1</static-nf-instance-data-ref>
+
+           </pool-discovery>
+
+           <failover-behavior-ref>fob_default</failover-behavior-ref>
+
+           <routing-method>forward</routing-method>
+
+           <subpool>
+
+             <name>sepp_subpool</name>
+             <constraint-expression></constraint-expression>
+             <priority>1</priority>
+
+           </subpool>
+
+         </pool>
+
+         <pool>
+
+           <name>Pool_NfAmf</name>
+
+           <pool-discovery>
+
+             <name>static_Pool_NfAmf</name>
+
+             <static-nf-instance-data-ref>staticNfInstanceData_Pool_NfAmf_Ref1</static-nf-instance-data-ref>
+
+           </pool-discovery>
+
+           <failover-behavior-ref>fob_default</failover-behavior-ref>
+
+           <routing-method>target-api-root</routing-method>
+
+           <subpool>
+             <name>sepp_subpool</name>
+             <constraint-expression></constraint-expression>
+             <priority>1</priority>
+           </subpool>
+         </pool>
+         <pool>
+
+           <name>Pool_NfAusf</name>
+           <pool-discovery>
+             <name>static_Pool_NfAusf</name>
+<nrf-query><name>NF_AUSF</name><nf-type>chf</nf-type></nrf-query>             <static-nf-instance-data-ref>staticNfInstanceData_Pool_NfAusf_Ref1</static-nf-instance-data-ref>
+           </pool-discovery>
+           <failover-behavior-ref>fob_default</failover-behavior-ref>
+           <routing-method>target-api-root</routing-method>
+           <subpool>
+             <name>sepp_subpool</name>
+             <constraint-expression></constraint-expression>
+             <priority>1</priority>
+           </subpool>
+
+         </pool>
+         <pool>
+           <name>Pool_NfUdm</name>
+           <pool-discovery>
+             <name>static_Pool_NfUdm</name>
+             <static-nf-instance-data-ref>staticNfInstanceData_Pool_NfUdm_Ref1</static-nf-instance-data-ref>
+           </pool-discovery>
+
+           <failover-behavior-ref>fob_default</failover-behavior-ref>
+           <routing-method>target-api-root</routing-method>
+
+           <subpool>
+             <name>sepp_subpool</name>
+             <constraint-expression></constraint-expression>
+             <priority>1</priority>
+           </subpool>
+         </pool>
+
+         <pool>
+           <name>universal_pool</name>
+           <failover-behavior-ref>fob_default</failover-behavior-ref>
+           <routing-method>target-api-root</routing-method>
+
+         </pool>
+                    <failover-behavior>
+                        <name>fob_default</name>
+                        <request-timeout>5000</request-timeout>
+                        <retry-condition>
+                            <http-status>500</http-status>
+                            <http-status>501</http-status>
+                            <http-status>502</http-status>
+                            <http-status>503</http-status>
+                            <reset></reset>
+                            <connect-failure></connect-failure>
+                            <refused-stream></refused-stream>
+                        </retry-condition>
+                        <per-priority-retries-max>1</per-priority-retries-max>
+                        <total-retries-max>3</total-retries-max>
+                        <peer-timeout>3000</peer-timeout>
+                    </failover-behavior>
+
+                    <failover-behavior>
+                        <name>fob2</name>
+                        <request-timeout>5000</request-timeout>
+                        <retry-condition>
+                            <http-status>500</http-status>
+                            <http-status>501</http-status>
+                            <http-status>502</http-status>
+                            <http-status>503</http-status>
+                            <reset></reset>
+                            <connect-failure></connect-failure>
+                            <refused-stream></refused-stream>
+                        </retry-condition>
+                        <per-priority-retries-max>1</per-priority-retries-max>
+                        <total-retries-max>2</total-retries-max>
+                        <peer-timeout>3000</peer-timeout>
+                    </failover-behavior>
+                    <failover-behavior>
+                        <name>fob3</name>
+                        <request-timeout>5000</request-timeout>
+                        <retry-condition>
+                            <http-status>500</http-status>
+                            <http-status>501</http-status>
+                            <http-status>502</http-status>
+                            <http-status>503</http-status>
+                            <reset></reset>
+                            <connect-failure></connect-failure>
+                            <refused-stream></refused-stream>
+                        </retry-condition>
+                        <per-priority-retries-max>1</per-priority-retries-max>
+                        <total-retries-max>0</total-retries-max>
+                        <peer-timeout>3000</peer-timeout>
+                    </failover-behavior>
+
+                 <service-address>
+                        <name>west1SA</name>
+                        <fqdn>csa.ericsson.se</fqdn>
+                        <port>32386</port>
+                    </service-address>
+
+                    <nf-profile>
+                        <name>sepp_profile1</name>
+                        <nf-type>chf</nf-type>
+                        <service-address-ref>west1SA</service-address-ref>
+                        <nf-type>chf</nf-type>
+						<nf-service>
+							<service-instance-id>1</service-instance-id>
+							<service-name>nchf-spendinglimitcontrol</service-name>
+							<scheme>http</scheme>
+							<service-address-ref>west1SA</service-address-ref>
+						</nf-service>
+                    </nf-profile>
+
+                    <nrf-group>
+                        <name>East</name>
+                        <nf-profile-ref>sepp_profile1</nf-profile-ref>
+                        <nrf>
+                            <name>nrf_west1</name>
+                            <fqdn>eric-nrfsim.5g-bsf-eodnouk</fqdn>
+                            <scheme>http</scheme>
+                            <ip-endpoint>
+                                <name>nrf_west1_ep</name>
+                                <ipv4-address>10.105.236.108</ipv4-address>
+                                <port>80</port>
+                            </ip-endpoint>
+                            <priority>1</priority>
+                            <nf-profile-ref>sepp_profile1</nf-profile-ref>
+                        </nrf>
+                    </nrf-group>
+                    <nrf-service>
+                        <nf-discovery>
+                            <nrf-group-ref>East</nrf-group-ref>
+                        </nf-discovery>
+                        <nf-management>
+                            <nrf-group-ref>East</nrf-group-ref>
+                        </nf-management>
+                    </nrf-service>
+       </nf-instance>
+     </sepp-function>
+   </config>
+  </edit-config>
+</rpc>
+]]>
+]]>

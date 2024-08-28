@@ -1,0 +1,10 @@
+
+config	
+scp-function nf-instance scp_instance_1 nf-pool NfUdm_rr_pool priority-group NfUdm_rr_pg_prio1 nf-match-condition "nfdata.locality == 'South'"
+scp-function nf-instance scp_instance_1 nf-pool NfUdm_rr_pool priority-group NfUdm_rr_pg_prio1 priority 1
+scp-function nf-instance scp_instance_1 nf-pool NfUdm_rr_pool priority-group NfUdm_rr_pg_prio2 nf-match-condition "nfdata.locality == 'North'"
+scp-function nf-instance scp_instance_1 nf-pool NfUdm_rr_pool priority-group NfUdm_rr_pg_prio2 priority 2
+show configuration
+commit
+exit
+exit

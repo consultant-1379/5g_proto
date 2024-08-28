@@ -1,0 +1,16 @@
+global:
+  ipFamilyPolicy: PreferDualStack
+
+eric-fh-snmp-alarm-provider:
+  service:
+    externalIPv4:
+      enabled: false
+    externalIPv6:
+      enabled: false
+
+eric-tm-ingress-controller-cr:
+  service:
+    externalIPv4:
+      enabled: false
+    externalIPv6:
+      enabled: false

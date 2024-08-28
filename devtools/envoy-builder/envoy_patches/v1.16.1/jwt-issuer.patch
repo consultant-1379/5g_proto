@@ -1,0 +1,39 @@
+diff --git a/api/envoy/extensions/filters/http/jwt_authn/v3/config.proto b/api/envoy/extensions/filters/http/jwt_authn/v3/config.proto
+index 5588961bf..089dfa317 100644
+--- a/api/envoy/extensions/filters/http/jwt_authn/v3/config.proto
++++ b/api/envoy/extensions/filters/http/jwt_authn/v3/config.proto
+@@ -62,7 +62,7 @@ message JwtProvider {
+   // Example: https://securetoken.google.com
+   // Example: 1234567-compute@developer.gserviceaccount.com
+   //
+-  string issuer = 1 [(validate.rules).string = {min_len: 1}];
++  string issuer = 1;
+ 
+   // The list of JWT `audiences <https://tools.ietf.org/html/rfc7519#section-4.1.3>`_ are
+   // allowed to access. A JWT containing any of these audiences will be accepted. If not specified,
+diff --git a/generated_api_shadow/envoy/extensions/filters/http/jwt_authn/v3/config.proto b/generated_api_shadow/envoy/extensions/filters/http/jwt_authn/v3/config.proto
+index 5588961bf..089dfa317 100644
+--- a/generated_api_shadow/envoy/extensions/filters/http/jwt_authn/v3/config.proto
++++ b/generated_api_shadow/envoy/extensions/filters/http/jwt_authn/v3/config.proto
+@@ -62,7 +62,7 @@ message JwtProvider {
+   // Example: https://securetoken.google.com
+   // Example: 1234567-compute@developer.gserviceaccount.com
+   //
+-  string issuer = 1 [(validate.rules).string = {min_len: 1}];
++  string issuer = 1;
+ 
+   // The list of JWT `audiences <https://tools.ietf.org/html/rfc7519#section-4.1.3>`_ are
+   // allowed to access. A JWT containing any of these audiences will be accepted. If not specified,
+diff --git a/source/extensions/filters/http/jwt_authn/authenticator.cc b/source/extensions/filters/http/jwt_authn/authenticator.cc
+index 0e86ea6d9..2fbc0fad8 100644
+--- a/source/extensions/filters/http/jwt_authn/authenticator.cc
++++ b/source/extensions/filters/http/jwt_authn/authenticator.cc
+@@ -149,7 +149,7 @@ void AuthenticatorImpl::startVerify() {
+   ENVOY_LOG(debug, "{}: Verifying JWT token of issuer {}", name(), jwt_->iss_);
+   if (!jwt_->iss_.empty()) {
+     // Check if token extracted from the location contains the issuer specified by config.
+-    if (!curr_token_->isIssuerSpecified(jwt_->iss_)) {
++    if (!curr_token_->isIssuerSpecified("") && !curr_token_->isIssuerSpecified(jwt_->iss_)) {
+       doneWithStatus(Status::JwtUnknownIssuer);
+       return;
+     }

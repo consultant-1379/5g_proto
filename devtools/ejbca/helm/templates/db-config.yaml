@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ejbca-database-credentials
+type: Opaque
+data:
+  # "ejbca"
+  username: ZWpiY2E=
+  # "ejbca"
+  password: ZWpiY2E=
+  # "foo123"
+  password-root: Zm9vMTIz
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-mariadb-configmap
+data:
+  custom.cnf: |
+{{ tpl (.Files.Get "files/custom.cnf") . | indent 4 }}

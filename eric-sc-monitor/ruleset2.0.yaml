@@ -1,0 +1,152 @@
+modelVersion: 2.0
+
+description: "SC Monitor Subchart"
+
+import:
+  base: ../rulesets/ruleset2.0-eric-base.yaml
+
+properties:
+  - HELM_REPO_INTERNAL: "proj-sc-all-internal-helm"
+  - HELM_REPO_DROP: "proj-sc-all-drop-helm"
+  - DOCKER_REPO_INTERNAL: "proj-sc-all-internal"
+  - DOCKER_REPO_DROP: "proj-sc-all-drop"
+  - CHART_NAME: "eric-sc-monitor"
+  - CHART_PATH: ${CHART_NAME}/charts/${CHART_NAME}
+  - MONITOR_IMAGE_NAME: ${CHART_NAME}
+  - MONITOR_DOCKERFILE_PATH: "./esc/monitor/" # TODO: change to eric-sc-monitor folder when source code is isolated
+
+env:
+  # the GERRIT username
+  - GERRIT_USERNAME
+  # the GERRIT password (Gerrit HTTP password)
+  - GERRIT_PASSWORD
+  # the ARM functional user token for Helm repository (J-Frog ARM Token)
+  - HELM_TOKEN
+  # Run git related actions in dry-run
+  - DRY_RUN (default=true)
+
+# variables' names include "monitor" because they will be stored in .bob/ of 5g_proto
+# TODO: remove "monitor" from the variables' names when monitor source code gets isolated
+# and the chart is moved to a separate git repo
+var:
+  - monitor-version
+  - monitor-image-repo
+  - monitor-chart-repo
+  - commithash
+  - branch
+
+rules:
+
+  all-local:
+    - rule: init
+    - rule: pre-package
+    - task: package:chart-local
+    - task: publish:chart-local
+    - task: clean:release-auto-tmp-folder
+
+  all-ci:
+    - rule: init
+    - rule: pre-package
+    - task: package:chart-ci
+    - task: publish:chart-ci
+    - rule: post-publish
+    - task: clean:release-auto-tmp-folder
+
+  clean:
+    - task: release-auto-tmp-folder
+      cmd: rm -rf ${base.OUTPUT_DIR}/untar_tmp
+
+  init:
+    - task: version
+      docker-image: base.adp-release-auto
+      cmd: version-handler generate
+            --is-release ${env.base.RELEASE}
+            --user ${env.base.USER}
+            --output monitor-version
+            --git-repo-path .
+            --version-prefix-file ./${CHART_NAME}/VERSION_PREFIX
+    - task: image-repo
+      cmd: /bin/bash -c 'if [ \"${env.base.RELEASE}\" == \"false\" ];
+                         then
+                            echo ${DOCKER_REPO_INTERNAL} > ${base.OUTPUT_DIR}/var.monitor-image-repo;
+                         else
+                            echo ${DOCKER_REPO_DROP} > ${base.OUTPUT_DIR}/var.monitor-image-repo;
+                         fi;'
+    - task: chart-repo
+      cmd: /bin/bash -c 'if [ \"${env.base.RELEASE}\" == \"false\" ];
+                         then
+                            echo ${HELM_REPO_INTERNAL} > ${base.OUTPUT_DIR}/var.monitor-chart-repo;
+                         else
+                            echo ${HELM_REPO_DROP} > ${base.OUTPUT_DIR}/var.monitor-chart-repo;
+                         fi;'
+
+  pre-package:
+    - task: build-monitor-image
+      cmd: docker build ${MONITOR_DOCKERFILE_PATH}/
+                --file ${MONITOR_DOCKERFILE_PATH}/Dockerfile
+                --build-arg DOCKER_BASE_IMG=${base.SC_CBOS_IMG}
+                --tag ${base.DOCKER_REGISTRY_URL}/${var.monitor-image-repo}/${MONITOR_IMAGE_NAME}:${var.monitor-version}
+    - task: publish-monitor-image
+      cmd: docker push ${base.DOCKER_REGISTRY_URL}/${var.monitor-image-repo}/${MONITOR_IMAGE_NAME}:${var.monitor-version}
+
+  package:
+    - task: chart-local
+      description: package helm chart by replacing the images' repo paths with the internal repo
+      docker-image: base.adp-release-auto
+      cmd: helm-package
+        --folder ${CHART_PATH}
+        --workdir ${base.OUTPUT_DIR}
+        --output ${base.OUTPUT_DIR}
+        --version ${var.monitor-version}
+        --replace eric-product-info.yaml:monitor_repo_path=${var.monitor-image-repo}
+        --replace eric-product-info.yaml:monitor_image_name=${MONITOR_IMAGE_NAME}
+        --replace eric-product-info.yaml:monitor_image_tag=${var.monitor-version}
+    - task: chart-ci
+      description: package helm chart by replacing the images' repo paths with the internal repo
+      docker-image: base.adp-release-auto
+      cmd: helm-package
+        --folder ${CHART_PATH}
+        --workdir ${base.OUTPUT_DIR}
+        --output ${base.OUTPUT_DIR}
+        --version ${var.monitor-version}
+        --replace eric-product-info.yaml:monitor_repo_path=${var.monitor-image-repo}
+        --replace eric-product-info.yaml:monitor_image_name=${MONITOR_IMAGE_NAME}
+        --replace eric-product-info.yaml:monitor_image_tag=${var.monitor-version}
+
+  publish:
+    - task: chart-local
+      docker-image: base.inca
+      cmd: arm-upload
+        --file ${base.OUTPUT_DIR}/${CHART_NAME}-${var.monitor-version}.tgz
+        --destination ${base.ARMSERO_ARTIFACTORY_URL}/${var.monitor-chart-repo}/${CHART_NAME}/
+        --token ${var.base.serodocker-api-token}
+    - task: chart-ci
+      docker-image: base.inca
+      docker-envs:
+        - HELM_TOKEN
+      cmd: arm-upload
+        --file ${base.OUTPUT_DIR}/${CHART_NAME}-${var.monitor-version}.tgz
+        --destination ${base.ARMSERO_ARTIFACTORY_URL}/${var.monitor-chart-repo}/${CHART_NAME}/
+        --token ${env.HELM_TOKEN}
+
+  post-publish:
+    - task: get-commit
+      docker-image: base.adp-release-auto
+      cmd: git rev-parse --short HEAD > .bob/var.commithash
+    - task: get-branch
+      docker-image: base.adp-release-auto
+      cmd: git rev-parse --abbrev-ref HEAD > .bob/var.branch
+    - task: git-tag
+      docker-image: base.adp-release-auto
+      description: Create and push git tag. Example "eric-monitor/1.0.0-55"
+      docker-envs:
+        - GERRIT_USERNAME
+        - GERRIT_PASSWORD
+      cmd: version-handler create-git-tag
+           --git-repo-url ${base.GIT_REPO_URL}
+           --tag ${CHART_NAME}/${var.monitor-version}
+           --message "Release ${var.monitor-version}"
+           --commitid ${var.commithash}
+           --branch ${var.branch}
+           --dry-run ${env.DRY_RUN}
+           --debug

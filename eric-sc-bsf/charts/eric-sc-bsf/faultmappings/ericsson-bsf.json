@@ -1,0 +1,134 @@
+[
+  {
+    "faultName": "Test",
+    "vendor": 193,
+    "code": 8650752,
+    "defaultSeverity": "Warning",
+    "defaultDescription": "This is a test alarm, please ignore.",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "Test Alarm"
+  },
+  {
+    "faultName": "BsfNrfGroupUnavailable",
+    "vendor": 193,
+    "code": 8650753,
+    "defaultSeverity": "Major",
+    "defaultDescription": "The NRF-group is unavailable",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "BSF, NRF Group Unavailable"
+  },
+  {
+    "faultName": "BsfUnsuccBindingDbOperations",
+    "vendor": 193,
+    "code": 8650755,
+    "defaultSeverity": "Major",
+    "defaultDescription": "Unsuccessful Binding Database Operations",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "BSF, Unsuccessful Binding Database Operations"
+  },
+  {
+    "faultName": "BsfUnsuccDbSchemaInsertion",
+    "vendor": 193,
+    "code": 8650756,
+    "defaultSeverity": "Critical",
+    "defaultDescription": "Unsuccessful Binding Database Schema Insertion",
+    "category": "Other",
+    "specificProblem": "BSF, Unsuccessful Binding Database Schema Insertion"
+  },
+  {
+    "faultName": "MissingCertificate",
+    "vendor": 193,
+    "code": 8650757,
+    "defaultSeverity": "Critical",
+    "defaultDescription": "An asymmetric key or/and a certificate authority are unavailable which can result in the failure of the secure connection that uses them.",
+    "category": "Other",
+    "specificProblem": "BSF, Certificate Missing"
+  },
+  {
+    "faultName": "BsfBindingDbStorageHighUtilization",
+    "vendor": 193,
+    "code": 8650758,
+    "defaultSeverity": "Critical",
+    "defaultDescription": "Binding database storage high utilization.",
+    "category": "Other",
+    "specificProblem": "BSF, Binding Database Storage High Utilization"
+  },
+  {
+    "faultName": "BsfBindingDbConnectionErrors",
+    "vendor": 193,
+    "code": 8650759,
+    "defaultSeverity": "Major",
+    "defaultDescription": "Binding database connection errors.",
+    "category": "Other",
+    "specificProblem": "BSF, Binding Database Connection Errors"
+  },
+  {
+    "faultName": "BsfHighLoad",
+    "createAlarm" : true,
+    "vendor": 193,
+    "code": 8650760,
+    "defaultExpiration" : 0,
+    "defaultSeverity": "Major",
+    "defaultDescription": "BSF load has passed a defined threshold.",
+    "probableCause": 207,
+    "category": "Other",
+    "specificProblem": "BSF, High Load"
+  },
+  {
+    "faultName": "BsfThrottlingErrors",
+    "createAlarm" : true,
+    "vendor": 193,
+    "code": 8650761,
+    "defaultExpiration" : 0,
+    "defaultSeverity": "Warning",
+    "defaultDescription": "Requests rejected due to Request Throttling.",
+    "probableCause": 207,
+    "category": "Other",
+    "specificProblem": "BSF, Throttling Errors"
+  },
+  {
+    "faultName": "BsfVtapSegmentsDroppedRatio",
+    "createAlarm" : true,
+    "vendor": 193,
+    "code": 8650762,
+    "defaultExpiration" : 0,
+    "defaultSeverity": "Major",
+    "defaultDescription": "BSF, Vtap segments dropped ratio",
+    "probableCause": 207,
+    "category": "Other",
+    "specificProblem": "BSF, Vtap segments dropped ratio"
+  },
+  {
+    "faultName": "BsfCassandraNodeUnavailable",
+    "createAlarm" : true,
+    "vendor": 193,
+    "code": 8650763,
+    "defaultExpiration" : 0,
+    "defaultSeverity": "Critical",
+    "defaultDescription": "BSF, Cassandra Node Unavailable",
+    "probableCause": 14,
+    "category": "CommunicationsAlarm",
+    "specificProblem": "BSF, Cassandra Node Unavailable"
+  },
+  {
+    "faultName": "BsfCassandraDataCenterUnavailable",
+    "createAlarm" : true,
+    "vendor": 193,
+    "code": 8650764,
+    "defaultExpiration" : 0,
+    "defaultSeverity": "Critical",
+    "defaultDescription": "BSF, Cassandra Data Center Unavailable",
+    "probableCause": 14,
+    "category": "CommunicationsAlarm",
+    "specificProblem": "BSF, Cassandra Data Center Unavailable"
+  },
+  {
+    "faultName": "BsfUnresolvableHosts",
+    "vendor": 193,
+    "code": 8650765,
+    "defaultSeverity": "Major",
+    "defaultDescription": "One or more hostnames cannot be resolved",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "BSF, Unresolvable Hosts"
+  }
+]

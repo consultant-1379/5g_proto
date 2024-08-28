@@ -1,0 +1,6 @@
+README for the tool-package, consisting of K6 and CHFSim/Redis and NRFSim.
+
+Load and tag the images according to documentation.
+The script load_deploy.sh has been includedas convenience to perform these actions.
+The values-local.yaml applies the proper storage class and image credentials during installation to
+avoid the necessity of repacking the helm charts for deployment.

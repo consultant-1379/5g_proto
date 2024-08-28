@@ -1,0 +1,286 @@
+parameters:
+  ################################### Network variables #######################
+  ntp_server_ips: ['10.221.17.6']
+  dns_server_ips: ['10.221.16.11']
+  os_endpoint_ips: ['10.221.146.27']
+  director_external_network: 2c2485d3-a6cf-45a0-8120-6ad1c600ded8
+  security_groups_enabled: False
+
+  internal_subnet_cidr: "10.10.10.0/24"
+  internal_gw_ip: "10.10.10.1"
+  #ingressctrl_cluster_ip: 10.96.0.11
+ 
+  
+  # The list of remote CIDRs allowed to SSH to directors when SG are enabled
+  #director_ssh_allowed_cidrs: [<fill>]
+  # VRRP traffic might need to be specifically enabled when security groups are
+  # enabled on deployments running Openstack older than Pike release
+  #allow_vrrp_address_by_mac: False
+
+  ### Ingress/egress via LB ###################################################
+  #lb_enabled: True
+  #lb_external_network: <fill>
+  #lb_external_subnet: <fill>
+  # lb_external_security_groups: [<fill>]
+
+  ##################################### L4LB variables ########################
+
+  #lb_image: node-image
+  #lb_flavor: m1.medium
+
+  #lb_root_volume_size: 20
+
+  ################################### Master variables ########################
+  master_image: eccd-2.20.0-1081-182b0637-node-image.qcow2
+  master_flavor: eccd.flavor.master
+  masters_count: 3
+
+  master_root_volume_size: 48
+  master_config_volume_size: 16
+  master_server_group_policies: ['affinity']
+
+  ################################### Director variables ######################
+  director_image: eccd-2.20.0-1081-182b0637-director-image.qcow2
+  director_flavor: eccd.flavor.director
+  directors_count: 2
+
+  director_root_volume_size: 200
+  director_config_volume_size: 16
+
+  director_virtual_router_id: 50
+  director_server_group_policies: ['affinity']
+  director_external_vip: 10.117.19.203
+
+ ################################## Licensing variables ######################
+  ccd_licensing_domains:
+  - productType: ECCD
+    swltId: CCD_11
+    customerId: 800119
+  ccd_licensing_nels_host: 10.221.171.132:9095
+
+  ansible_variables:
+    container_registry_storage_size: '150Gi'
+    openstack_auth_url: http://n60-pod1-rhosp16.sc.sero.gic.ericsson.se:5000//v3
+    openstack_username: "SC-admin"
+    openstack_user_password: "admin"
+    openstack_project_name: "SC"
+    openstack_domain_name: "Default"
+    openstack_region: "regionOne"
+    dashboard_default_user: "admin"
+    dashboard_default_pw: "ericsson"
+    dashboard_ssl_subj: "/CN={{ dashboard_ingress_host }}"
+    dashboard_ingress_host: "dashboard.eccd.local"
+    kube_api_ingress_host: api.pikachu.ipv4.n60vpod1.sc.sero.gic.ericsson.se
+    ingressctrl_loadbalancer_ip: 10.117.41.209
+    
+    ecfe_enabled: True
+    ecfe_config_map_raw:
+      address-pools:
+      -   addresses:
+          - 10.117.41.208/28
+          name: SC-OAM
+          protocol: bgp
+      -   addresses:
+          - 10.117.23.64/30
+          name: SC-SIG-SCP
+          protocol: bgp
+      -   addresses:
+          - 10.117.23.242/31
+          name: SC-SIG-BSF
+          protocol: bgp
+      -   addresses:
+          - 10.117.23.244/32
+          name: SC-SIG-DIA1
+          protocol: bgp
+      -   addresses:
+          - 10.117.23.245/32
+          name: SC-SIG-DIA2
+          protocol: bgp
+      -   addresses:
+          - 10.117.23.68/30
+          name: SC-SIG-WCDB1
+          protocol: bgp
+      -   addresses:
+          - 10.117.23.72/30
+          name: SC-SIG-WCDB2
+          protocol: bgp
+      -   addresses:
+          - 10.117.23.76/30
+          name: SC-SIG-SEPP
+          protocol: bgp
+      bgp-peers:
+      -   my-asn: 8010
+          peer-asn: 4247584777
+          peer-address: 10.117.41.66
+          my-address-pools:
+          - SC-OAM
+      -   my-asn: 8010
+          peer-asn: 4247584777
+          peer-address: 10.117.41.67
+          my-address-pools:
+          - SC-OAM
+      -   my-asn: 8011
+          peer-asn: 4247584777
+          peer-address: 10.117.23.51
+          my-address-pools:
+          - SC-SIG-SCP
+          - SC-SIG-BSF
+          - SC-SIG-DIA1
+          - SC-SIG-DIA2
+          - SC-SIG-WCDB1
+          - SC-SIG-WCDB2
+          - SC-SIG-SEPP
+      -   my-asn: 8011
+          peer-asn: 4247584777
+          peer-address: 10.117.23.50
+          my-address-pools:
+          - SC-SIG-SCP
+          - SC-SIG-BSF
+          - SC-SIG-DIA1
+          - SC-SIG-DIA2
+          - SC-SIG-WCDB1
+          - SC-SIG-WCDB2
+          - SC-SIG-SEPP
+
+  ################################### Worker variables ########################
+  node_pools:
+  - name: pool1
+    image: eccd-2.20.0-1081-182b0637-node-image.qcow2
+    flavor: eccd.flavor.worker_12_65536
+    count: 11
+    root_volume_size: 60
+    external_networks:
+    - network: 907a9933-b3aa-402b-9583-c5a3b4ad1f61
+      port_extra_properties:
+        port_security_enabled: false
+    - network: 88a81e5b-f4df-42d0-b0af-d77b6844e0ad 
+      port_extra_properties:
+        port_security_enabled: false
+    #    # security_groups and allowed_address_pairs should not be defined
+    #    # if port_security_enabled is false. port_security_enabled must be
+    #    # false if external_networks_port_security_enabled is false.
+    #    port_security_enabled: true
+    #    # security_groups should not be defined if
+    #    # external_networks_security_groups_enabled is false
+    #    # To use security_groups, external_networks_security_groups_enabled
+    #    # and port_security_enabled must be true.
+    #    security_groups: ["security-group-name1", "security-group-name2"]
+    #    # allowed_address_pairs is a list of ip addresses or CIDR
+    #    allowed_address_pairs:
+    #      - ip_address: <fill>
+    #labels: ""
+    #node_role: "worker"
+    server_group_policies: ['soft-affinity']
+    nova_availability_zone: AZ-SC 
+    pre_join_user_script: |
+      #!/bin/bash
+      #Build Slaves
+      echo  "10.210.155.0/24 10.117.41.65 - -" >> /etc/sysconfig/network/ifroute-eth2
+      echo  "10.210.174.0/24 10.117.41.65 - -" >> /etc/sysconfig/network/ifroute-eth2
+      echo  "10.210.181.224/28 10.117.41.65 - -" >> /etc/sysconfig/network/ifroute-eth2
+      echo  "137.58.207.192/26 10.117.41.65 - -" >> /etc/sysconfig/network/ifroute-eth2
+      #VDIs
+      echo  "10.128.96.128/26 10.117.41.65 - -" >> /etc/sysconfig/network/ifroute-eth2
+      echo  "10.86.80.0/26 10.117.41.65 - -" >> /etc/sysconfig/network/ifroute-eth2
+      echo  "10.86.80.0/26 10.117.41.65 - -" >> /etc/sysconfig/network/ifroute-eth2
+      echo  "10.63.183.128/26 10.117.41.65 - -" >> /etc/sysconfig/network/ifroute-eth2
+      echo  "10.63.4.0/26 10.117.41.65 - -" >> /etc/sysconfig/network/ifroute-eth2
+      echo  "10.63.47.128/26 10.117.41.65 - -" >> /etc/sysconfig/network/ifroute-eth2
+      echo  "100.78.40.64/26 10.117.41.65 - -" >> /etc/sysconfig/network/ifroute-eth2
+      #Misc
+      echo  "10.61.14.129 10.117.41.65 - -" >> /etc/sysconfig/network/ifroute-eth2
+      echo  "10.86.187.143 10.117.41.65 - -" >> /etc/sysconfig/network/ifroute-eth2
+      echo  "131.160.146.22 10.117.41.65 - -" >> /etc/sysconfig/network/ifroute-eth2
+      echo  "164.48.42.0/24 10.117.41.65 - -" >> /etc/sysconfig/network/ifroute-eth2
+      systemctl restart network
+      echo "vm.max_map_count=262144" >> /etc/sysctl.conf
+      sudo sysctl -w vm.max_map_count=262144
+      sudo iptables -t mangle -A POSTROUTING -p TCP -d 10.155.107.224/28 -j DSCP --set-dscp 46 
+
+  ################################### Logger variables ########################
+  logger_enabled: False
+
+  ################################### Other variables #########################
+  nova_availability_zone: AZ-SC
+  #cinder_availability_zone: nova
+
+  os_cacert: |
+    -----BEGIN CERTIFICATE-----
+    MIIDlzCCAn+gAwIBAgIJALw61YdirEDUMA0GCSqGSIb3DQEBCwUAMGIxCzAJBgNV
+    BAYTAkRFMQwwCgYDVQQIDANOUlcxDzANBgNVBAcMBkFhY2hlbjERMA8GA1UECgwI
+    RXJpY3Nzb24xDDAKBgNVBAsMA0RTUzETMBEGA1UEAwwKVHJpcGxlTyBDQTAeFw0x
+    OTA3MDExMDM1MTZaFw00NDAyMjAxMDM1MTZaMGIxCzAJBgNVBAYTAkRFMQwwCgYD
+    VQQIDANOUlcxDzANBgNVBAcMBkFhY2hlbjERMA8GA1UECgwIRXJpY3Nzb24xDDAK
+    BgNVBAsMA0RTUzETMBEGA1UEAwwKVHJpcGxlTyBDQTCCASIwDQYJKoZIhvcNAQEB
+    BQADggEPADCCAQoCggEBALAezr4+4ndCSFYBcC8AOm3WdC2cxvFe23btqVdhxurA
+    e3jGuVcFJbSokFQbK+FkNl4NaMb4W3NQNx7O6ekQAKdNE+KIe576vpz6Z5I7aqho
+    HQkTjFelq53vSL+nB7s4Gq+9SdSuXlFqPeXM4sNrGsg2y4PUQAnz08nZMM0kxIMG
+    q7nve9Jo4m/LvKybzTJu6Lhmp3WYRHqfB1qO3bHNpvfEbgOgQ7aJCJofvrYEzBP3
+    ZJDaaZM5/gKBPSrR/Z8ztLsfoZ6JvLmZBfURzqq38n0N9eMq9IFiIaU0R93sakB9
+    MxhNoO1VKk0HfYAhioiBC8E+1YFTBtc3uKDUeqbuqzECAwEAAaNQME4wHQYDVR0O
+    BBYEFNXfkkcZxQeFp6+iaOr4WZRZ5OfSMB8GA1UdIwQYMBaAFNXfkkcZxQeFp6+i
+    aOr4WZRZ5OfSMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBABHYzDXm
+    ZD4oF3JNlDBQH/pnpu6bhyDJ+KJwM9TYdF+TmqWaysjJ0fy8oDyQQNiKdtMqMFzg
+    AJRHo9mxsQa47HeXqj6OwPjIURpXmvG6WsNXNTstptaFtstunCfpbGS+gXuVOmoP
+    Q5NwGFmdHOxoQGzVytSnHW4YNZvn1SiG7MFjTvyWXb9F9AGAtGIIrD0cZskaeHlj
+    2X0Xl+86aPN2ZS2egfqnvg3jhaymuM+pn1yGrhlHrPa23q+g6L59v0yiYlyxjwWh
+    zMUpGUke+3uPW9kFMopX8/PpTFF/YVrpZASVkqFrgRO6zG1JcAbmj7RYugpCG7Dj
+    4/z57PxZy/v3VeM=
+    -----END CERTIFICATE-----
+
+  ca_cert: |
+    -----BEGIN CERTIFICATE-----
+    MIIDgTCCAmmgAwIBAgIJAJOElJ+oR3fWMA0GCSqGSIb3DQEBCwUAMFcxCzAJBgNV
+    BAYTAkZJMRAwDgYDVQQIDAdVdXNpbWFhMQ4wDAYDVQQHDAVFc3BvbzEOMAwGA1UE
+    CgwFQ2xvdWQxFjAUBgNVBAMMDUt1YmVybmV0ZXMtY2EwHhcNMTkwMjExMTQ0NjMy
+    WhcNMjkwMjA4MTQ0NjMyWjBXMQswCQYDVQQGEwJGSTEQMA4GA1UECAwHVXVzaW1h
+    YTEOMAwGA1UEBwwFRXNwb28xDjAMBgNVBAoMBUNsb3VkMRYwFAYDVQQDDA1LdWJl
+    cm5ldGVzLWNhMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxHcE/Z7r
+    +7gTSClnZwN+W0VFyNAgvDcgn/0CaomCV87GsqSjX5kUnLdjeacFPFPp1Ppeijnm
+    L26QYr1tKhc8yMrrIch1PJeh8ENKxwpcwosLiACmK5b6SJ0SRSF5izJbOK+7HSQZ
+    +bp7drR2xIp61udxJxZCYZ/IFgUFEzD60R/43jR0Fv16/rA+/0JPNVDfyxw5UWPL
+    A1WaueUYxNMyIkuWW+T5ILjI8iXQKvsUe8eXrBZvmqsfHQinj0weZNq4whFfChem
+    sQu43svZuwT5yW0tWg2I72cQ5kQo4t0PK4Y+wjCLAxowmvZV+grywyWFSdlYIP0a
+    6UVhitFs4qTsRwIDAQABo1AwTjAdBgNVHQ4EFgQU7L9IkEUMWvEvk/h35NV8qX42
+    FeIwHwYDVR0jBBgwFoAU7L9IkEUMWvEvk/h35NV8qX42FeIwDAYDVR0TBAUwAwEB
+    /zANBgkqhkiG9w0BAQsFAAOCAQEAIYCPnnrNGNMFo7DtKfC0ahkTnRu+KdnCqFwl
+    uol5tOF7rVHYGZK1T72XKbz19usrRJA7VWkcNnZ0Y35Mu7vDfqcdenLSFsdZb2Hq
+    fui/ebhZdg2pe2Pa7sg+IhOQYNAeMUf6sWn6REdlTT5HhTSq1axNwFgK73ZD+IGI
+    jg+0ALEdeG9573sosgco4rN0xbDyLgLqSaVq1fWsRMl3DO9kUi/1igLlMtQ+CwaV
+    aWbgf63mton0agKV0TevYCK3X0zVoTVIgvlnbiW91DmvzJGoIZhJbapqbX+ihA4X
+    tm+0JpOXnte7JIVL5sh4tvDjuOKkUyfgFHU5EotwCTNg0tGM6Q==
+    -----END CERTIFICATE-----
+
+
+  ca_key: |
+    -----BEGIN RSA PRIVATE KEY-----
+    MIIEowIBAAKCAQEAxHcE/Z7r+7gTSClnZwN+W0VFyNAgvDcgn/0CaomCV87GsqSj
+    X5kUnLdjeacFPFPp1PpeijnmL26QYr1tKhc8yMrrIch1PJeh8ENKxwpcwosLiACm
+    K5b6SJ0SRSF5izJbOK+7HSQZ+bp7drR2xIp61udxJxZCYZ/IFgUFEzD60R/43jR0
+    Fv16/rA+/0JPNVDfyxw5UWPLA1WaueUYxNMyIkuWW+T5ILjI8iXQKvsUe8eXrBZv
+    mqsfHQinj0weZNq4whFfChemsQu43svZuwT5yW0tWg2I72cQ5kQo4t0PK4Y+wjCL
+    AxowmvZV+grywyWFSdlYIP0a6UVhitFs4qTsRwIDAQABAoIBAEFsYP0ULwFkCwe8
+    wfJL94ftSY/VvxDuSq78UhGoOP+EnCZhLQZos7R8XWPlepjcWMHTnifpn/2rk+lN
+    q0yY8GTtLd/SIThMRmD8B6rAiKNAKlbf4HYjkLUdmTfsLc1st3PpESZjH0NKFlMx
+    RVutwbpO2B9sCi74RmkOwuHhLaT1qxVrDGpiXhCt5UsiWHCRB3q3AmpGhiWe/IWL
+    CkAsCjA1Wg1jGRyoTp2MBgCh4JvMf7WijICscmeu+muAWAV4ALf9YSWKrnkPkWF5
+    kFrd4rTUGqQ+Y4lLOdtg/mnfj7E+ftR9SI0yqcj+iuDW1RUe6pN1wZgNecYaXtWt
+    JAtOUAECgYEA7LHSqXY9URtxTpfCi6WXiXyM3hY4DBOqTqI9P3DdwnDegwP3HdSa
+    XbZdI0k1EhkYtJUPZv+Ogm7ZCT2keiqwwUAL+ipsktJuWisiVu1QHpEMPaUAPIXc
+    QmmBqVn88vh3SFcLNAs0Be45TP67C3wLrgNzeedTeFcoojpZjPkinKcCgYEA1H0z
+    mZQwrKrM8fzOLHE1TSkKgqEqbVbVsEMcBv29AoFicedaQubA0gPqysNGvtjFFh1h
+    2OWEXWH4ajUwO86fAjS3xg8zeezm0b1LFbUj/kkAqTpjiqIMpX6ybiPs8rZFM8GG
+    mCjAvF4wajV5T91japQYS6uY6Oj2BtI0YeCpB2ECgYACTeDdIXeLWJcLytJsBZqq
+    DfpZFyJIi9B2n4G1ImYmRG8GG33GXpF6JBJYC5hmqrPg3iqeOBKtFmMqgd0eC1hZ
+    KUR0lQEllMLaQd09t2W2Rnc2CmssK6lvRBOtEGE0BFM08xP617kT7bPFGh28COMc
+    OJBhOW1ImKCeo67Hfo1ltQKBgQDFuUcllp6AXWLdnidfdWxqw1DTYxKusYmgPaI7
+    4ypYxXqMkQINlNlB04FMcc9H0T/7pxWglVnI51wXwCyEymxtyg5jj0uQHeBetKzE
+    o0y91sJ1ti5gFxB7gtyX3ngjFXZphaAvwGQwI9kbS2z54wEacHn3F9Luj7A3gqxZ
+    k4rVoQKBgDVRkCWoVWfFUS/ioXrT67boHOPkLgqIYLh2zYXZiYVmWhq+e2QnOQwQ
+    ks+Esr9K11g1D1Bvy+ggy+P85GO1nslo9trqaFrn5lXXTZ5wtXihSI17Y7f+zrLD
+    Nz/yeqVmj4mNwnZ+cGSQ2nifa85lyb7/8zPEeDraPbTFdWPvxjHU
+    -----END RSA PRIVATE KEY-----
+
+  public_key: >
+    ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC3Ergr+pDig+KnyJbag21snGbwwp+Q7EvnjVCLo1bx3/1r+G/XSfB71PVHwvUhjPFqTJWmCeSLQ6oeX9hm7zw+fsDNdPJFaibCBLBed4QceFc7ZEMd6oImsVbG4NsAzAsEHnvS7wL3LvSoWhEiLH6UoU0Kb/JIhaceos3Z6Dw/z+B3rEWh+O4KsvB5JE8OySkcfbX3UzyIZNrKNwnoSrvvAhsTR73teWAYGTdzfll//zo0osWXggqUau2gL4tc6IKDk8wlPTkEDo8EyMho3AnahuyfOHdU9cUeDGiLze0M9kUgJ1EsiCYwT+UKvcEjh38Ud1NjGE6cKnNNUig67QnJ Generated-by-Nova
+#    ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDR/XH18WtMBPwOLqDx2xanzHrRLujKhm4GhcOaULzTnSZgnRBaoWVm8qlmPrW1PaysN7zvgqzq1S4XFxWI9vxOt68/1yc4xT06kA95s4uEpavS7CM+VW1sX2kJimkLxZWnPq9l83kka4/+W4gLxQArkg0iaRqJIx1B23F3zcnu1qczZNQzg9sSiThgnK0k1F3x6UXjBZVe0yiOYHW+cVtVKVmOuJ1im6SCa0X67QNlVvqbIRckVe4L6S8xx2uXQidITc9f6EbTCHeTnVlv8sEWFXuaCbgbP5+SO32rk9p0aeaa7KyhhMM6TmoWWsNlFOP0Qg8OOQWtM7Y0gefpFTwvFQAV29TlictVfvifiY+CP6dnUdxaSxs+YaAjkOLsokgf/EsLnVrHnQ/EKeV1Zgua9r3oUAUaOICV3JnaYLj18HE+I9FLK3jvPrHE5uGwt6WZWII49s2rnqHNumQRe2wtswZQAwAexSLrgp/TZRtR+5tkjSbnT361vquwPp3UMeM= SC-admin@n60pod1clientvm

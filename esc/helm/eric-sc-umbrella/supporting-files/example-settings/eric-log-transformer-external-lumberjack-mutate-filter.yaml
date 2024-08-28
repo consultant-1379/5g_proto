@@ -1,0 +1,63 @@
+# This file represents a filtering example using the Logstash mutate plugin.
+# The filter should be added to the "eric-log-transformer-external-lumberjack-server-config.yaml"
+# file under the desired remote host.
+
+eric-log-transformer:
+  egress:
+    lumberjack:
+      enabled: true
+      certificates:
+        asymmetricKeyCertificateName:
+        trustedCertificateListName: sc-trusted-default-cas
+      remoteHosts:
+        - id: ext-lj-1
+          host: eric-ext-log-transformer-1
+          port: 5044
+          codec: json
+          exclusions:
+            - field: "[extra_data][asi][log_plane]"
+              value: "alarm"
+            - field: "[facility]"
+              contains: "security"
+          filter: |
+            if ([metadata][namespace]) {
+              mutate {
+                add_field => { "[tmp][namespace]" => "%{[metadata][namespace]}" }
+              }
+            }
+            if ([metadata][node_name]) {
+              mutate {
+                add_field => { "[tmp][node][name]" => "%{[metadata][node_name]}" }
+              }
+            }
+            if ([metadata][pod_name]) {
+              mutate {
+                add_field => { "[tmp][pod][name]" => "%{[metadata][pod_name]}" }
+              }
+            }
+            if ([metadata][pod_uid]) {
+              mutate {
+                add_field => { "[tmp][pod][uid]" => "%{[metadata][pod_uid]}" }
+              }
+            }
+            if ([metadata][container_name]) {
+              mutate {
+                add_field => { "[tmp][container][name]" => "%{[metadata][container_name]}" }
+              }
+            }
+
+            if [kubernetes] {
+              mutate {
+                merge => { "[kubernetes]" => "[tmp]"}
+                remove_field => [ "tmp" ]
+              }
+            }
+            else {
+              mutate {
+                rename => { "[tmp]" => "[kubernetes]" }
+              }
+            }
+
+            mutate {
+              remove_field => [ "metadata" ]
+            }

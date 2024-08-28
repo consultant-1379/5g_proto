@@ -1,0 +1,64 @@
+################################################################################
+# $Revision: 1.1 $                                                             #
+#   $Author: eustone $                                                         #
+#     $Date: 2014/09/23 15:37:13 $                                             #
+################################################################################
+#                                                                              #
+# (C) COPYRIGHT ERICSSON GMBH 2014                                             #
+#                                                                              #
+# The copyright to the computer program(s) herein is the property of           #
+# Ericsson GmbH, Germany.                                                      #
+#                                                                              #
+# The program(s) may be used and/or copied only with the written permission    #
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in   #
+# the agreement/contract under which the program(s) have been supplied.        #
+#                                                                              #
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Get current hostname from the GEP.
+# Input:
+#  -
+#
+# Output:
+#  - Hostname or the string "-"
+#
+proc GEP_get_hostname {} {
+    global spawn_id
+
+    # Some internal variables
+    set hostname "-"
+
+    # Send command
+    send -- "hostname\r"
+
+    # Wait for result and new prompt
+    expect {
+        -re "^(\[^\n\r\]+)\r*\n" {
+            # Single lines
+            set line $expect_out(1,string)
+
+            if { [string match "hostname: command not found" $line] } {
+                # Error, we are not able to determine the hostname
+                set hostname "-"
+            } else {
+                set hostname $line
+            }
+            exp_continue
+        }
+        -re "SC-\[12\]\[^\n\]*$" {
+            # Ready for next command
+        }
+        -re "PL-\[0-9\]+\[^\n\]*$" {
+            # Ready for next command
+        }
+        timeout {
+            return $hostname
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    return $hostname
+}

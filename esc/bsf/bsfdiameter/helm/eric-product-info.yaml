@@ -1,0 +1,47 @@
+productName: "DiameterProxyGrpc"
+productNumber: "CXD1010304"
+images:
+  diameterproxygrpc:
+    productName: "DiameterProxyGrpc"
+    productNumber: "CXU1010127"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-adp-diameter-released"
+    name: "eric-stm-diameter-proxy-grpc"
+    tag: "1.42.0-11"
+  dsl:
+    productName: "Dsl"
+    productNumber: "CXU1010123"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-adp-dsl-released"
+    name: "eric-slt-dsl"
+    tag: "1.44.0-12"
+  hooklauncher:
+    productName: "Smart Helm Hooks Image"
+    productNumber: "CXU1011909"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-adp-shh-released"
+    name: "eric-lcm-smart-helm-hooks-hooklauncher"
+    tag: "2.16.0-20"
+  logshipper:
+    productName: "ADP Log Shipper Sidecar Image"
+    productNumber: "CXU1011191"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-adp-log-released"
+    name: "eric-log-shipper-sidecar"
+    tag: "19.0.0-18"
+#START
+  bsfdiameter:
+    productName: "BSF Diameter"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+    name: bsfdiameter_image_name
+    tag: bsfdiameter_image_tag
+  cddjmxexporter:
+    productName: "cdd jmx exporter BSF diameter"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+    name: cddjmxexporter_image_name
+    tag: cddjmxexporter_image_tag
+#STOP

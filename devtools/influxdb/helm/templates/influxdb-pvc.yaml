@@ -1,0 +1,13 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ template "eric-influxdb.name" . }}-pvc
+  labels:
+    app: {{ template "eric-influxdb.name" . }}
+spec:
+  storageClassName: {{ .Values.persistentVolumeClaim.storageClassName }}
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.persistentVolumeClaim.requestStorage }}

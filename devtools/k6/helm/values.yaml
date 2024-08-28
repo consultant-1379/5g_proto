@@ -1,0 +1,32 @@
+# k6 Load Test
+
+service:
+  name: "eric-k6"
+
+# global:
+  # registry:
+    # url: "armdocker.rnd.ericsson.se"
+    # imagePullPolicy: IfNotPresent
+  # repoPath: "proj-5g-bsf"
+
+imageCredentials:
+  registry:
+    url: # overrides global registry url
+    imagePullPolicy: # overrides global image pull policy
+    pullSecret: "regcred"
+  repoPath: # overrides global repoPath 
+
+spec:
+  replicas: "1"
+  image: 
+  tag: latest
+  port: "80"
+  resources:
+    requests:
+      cpu: 0.7
+      memory: 2Gi     
+    limits:
+      cpu: 1800m
+      memory: 5Gi
+vm:
+  hello-slogan: "This is a HELM packaged Kubernetes POD saying hello to the world!"

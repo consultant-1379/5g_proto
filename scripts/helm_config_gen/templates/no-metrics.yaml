@@ -1,0 +1,35 @@
+eric-data-distributed-coordinator-ed:
+  metricsexporter:
+    enabled: false
+    
+eric-data-distributed-coordinator-ed-sc:
+  metricsexporter:
+    enabled: false
+
+eric-sec-key-management:
+  metrics:
+    enabled: false
+
+eric-cm-yang-provider:
+  pmMetrics:
+    enabled: false
+
+eric-data-document-database-pg:
+  metrics:
+    enabled: false
+
+eric-data-coordinator-zk:
+  metrics:
+    enabled: false
+
+eric-data-search-engine:
+  metrics:
+    enabled: false
+    
+eric-log-transformer:
+  metrics:
+    enabled: false
+
+eric-sec-ldap-server:
+  metrics:
+    enabled: false

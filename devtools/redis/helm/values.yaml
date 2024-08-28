@@ -1,0 +1,26 @@
+# Redis Backend for CHF Simulator
+
+service:
+  name: "eric-chfsim-redis"
+  
+imageCredentials:
+  registry:
+    url: "armdocker.rnd.ericsson.se"
+  pullSecret: "regcred"
+  repoPath: "proj-5g-bsf"
+  pullPolicy: Always  
+
+spec:
+  replicas: "1"
+  image: 
+  tag: latest
+  port: "6379"
+  resources:
+    requests:
+      cpu: 0.1
+      memory: 64Mi
+    limits:
+      cpu: 0.3
+      memory: 128Mi
+  affinity:
+    podAffinity: 

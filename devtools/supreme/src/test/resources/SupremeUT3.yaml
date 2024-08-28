@@ -1,0 +1,53 @@
+generation:
+  certificates:
+  - name: sepp-worker1
+    outputDir: ./src/test/resources/testdata/sepp1
+    algorithm:
+      bits: 4096
+    expirationDays: 365
+    commonName: sepp1.ericsson.se
+    sans: ["sepp1.ericsson.se", "*.ericsson.se"]
+    sign:
+      certificateAuthority: ca1
+      selfSigned: false
+  - name: sepp-worker2
+    outputDir: ./src/test/resources/testdata/sepp2
+    algorithm:
+      bits: 4096
+    expirationDays: 365
+    commonName: sepp2.ericsson.se
+    sans: ["sepp2.ericsson.se", "*.ericsson.se"]
+    sign:
+      certificateAuthority: ca2
+      selfSigned: false
+  - name: sepp-worker3
+    outputDir: ./src/test/resources/testdata/sepp3
+    algorithm:
+      bits: 4096
+    expirationDays: 365
+    commonName: sepp3.ericsson.se
+    sans: ["sepp3.ericsson.se", "*.ericsson.se"]
+    sign:
+      selfSigned: true
+  certificateAuthorities:
+  - name: ca1
+    outputDir: ./src/test/resources/testdata/nonexisting1
+    algorithm:
+      bits: 4096
+    expirationDays: 365
+    commonName: ca1.ericsson.se
+  - name: ca2
+    outputDir: ./src/test/resources/testdata/nonexisting2
+    algorithm:
+      bits: 4096
+    expirationDays: 365
+    commonName: ca2.ericsson.se
+
+admin:
+  namespace: 5g-bsf-enocakh
+  yangProvider:
+    ip: localhost
+    username: sepp
+    password: seppsepp
+
+

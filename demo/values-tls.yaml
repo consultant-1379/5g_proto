@@ -1,0 +1,6 @@
+service:
+  manager:
+    tls: false
+  worker:
+    tls: true
+

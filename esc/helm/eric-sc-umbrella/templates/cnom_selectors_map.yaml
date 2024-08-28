@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eric-cnom-metrics-selector-config
+  labels:
+{{- include "eric-sc.de-facto-labels" . | indent 4 }}
+  annotations:
+{{- include "eric-sc.product-annotations" . | indent 4 }}
+data:
+{{ (.Files.Glob "cnom_selectors/*").AsConfig | indent 4 }}

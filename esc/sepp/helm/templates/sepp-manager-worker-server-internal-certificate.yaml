@@ -1,0 +1,23 @@
+# Copyright 2022 Ericsson GmbH
+{{- if eq (include "eric-sepp.n32c.resp.tls" .) "true" }}
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+  name: {{ template "eric-sepp.name" . }}-manager-worker-server-internal-certificate
+  annotations:
+{{- include "eric-sepp.helm-annotations" . | indent 4 }}
+{{- include "eric-sepp.config-annotations" . | indent 4 }}
+  labels:
+{{- include "eric-sepp.labels" . | indent 4 }}
+spec:
+  kubernetes:
+    generatedSecretName: sepp-manager-worker-server-if-certificate-secret
+    certificateName: tls.crt
+    privateKeyName: tls.key
+  certificate:
+    subject:
+      cn: eric-sepp-manager
+    extendedKeyUsage:
+      tlsClientAuth: false
+      tlsServerAuth: true
+{{- end }}

@@ -1,0 +1,42 @@
+---
+
+service:
+  name: eric-caisim
+  replicaCount: 1
+  port: 5000
+
+imageCredentials: 
+  registry:
+    url: "armdocker.rnd.ericsson.se"
+    # pullSecret: "armdocker"  
+  repoPath: proj-eric-si-asih-dev
+  pullPolicy: Always
+
+images:
+  simulator:
+    name: cai-simulator
+    tag: "1.0"
+
+resources:
+  simulator:
+    limits:
+      cpu: 180m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 64Mi
+
+env:
+  delay: 1
+  retry_after: 1
+  cai_path_base: /application-info-collector/api/v1
+  content_type: application/json
+  log_report_cai: false
+  secure: false
+  certCustomResources:
+    enabled: true
+    trustedCert: cai-default-trusted-cert
+    key: cai-default-key
+    cert: cai-default-cert
+    
+

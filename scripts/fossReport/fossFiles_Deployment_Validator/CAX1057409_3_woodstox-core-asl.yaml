@@ -1,0 +1,38 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2019-07-08 16:00
+FOSS:
+    # Available in Bazaar
+    FOSSName: woodstox-core-asl
+    # Available in Bazaar
+    FOSSVersion: 4.3.0
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: http://repo1.maven.org/maven2/org/codehaus/woodstox/woodstox-core-asl/4.3.0/woodstox-core-asl-4.3.0-sources.jar
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 3/CAX1057409
+    # Not Available in Bazaar
+    PRIMNumber(CTC): CTC 101 5344
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: Woodstox is a high-performance validating namespace-aware StAX-compliant Open Source XML-processor written in Java.
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: (LGPL GNU Lesser General Public License V2.1, Apache License 2.0)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'org.codehaus.woodstox:woodstox-core-asl:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ENTNGRG Georgios Antoniou

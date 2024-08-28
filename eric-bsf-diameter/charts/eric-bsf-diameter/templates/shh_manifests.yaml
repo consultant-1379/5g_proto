@@ -1,0 +1,1 @@
+{{- include "eric-stm-diameter-proxy-grpc.hkln.manifests" (dict "shh" . "top" .) -}}

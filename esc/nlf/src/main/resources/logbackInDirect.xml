@@ -1,0 +1,21 @@
+<configuration>
+	<!-- Enable JMX control -->
+	<jmxConfigurator />
+
+	<!-- Stop output INFO at start -->
+	<statusListener class="ch.qos.logback.core.status.NopStatusListener" />
+
+	<conversionRule conversionWord="pid" converterClass="com.ericsson.utilities.logger.ProcessIdConverter" />
+	<conversionRule conversionWord="toSeverity" converterClass="com.ericsson.utilities.logger.ToSeverityConverter" />
+	<conversionRule conversionWord="toJson" converterClass="com.ericsson.utilities.logger.ToJsonConverter" />
+
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>{"version":"1.1.0","timestamp":"%date{yyyy-MM-dd'T'HH:mm:ss.SSSXXX}","service_id":"${SERVICE_ID}","severity":"%toSeverity(%level)","message":%toJson(nlf[%pid]||%thread||%logger{30}||%L||%method||%msg)}%n</pattern>
+		</encoder>
+	</appender>
+
+	<root level="INFO">
+		<appender-ref ref="STDOUT" />
+	</root>
+</configuration>

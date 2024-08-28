@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:ns2="urn:com:ericsson:ecim:1.0" xmlns:ns3="http://tail-f.com/ns/netconf/actions/1.0" xmlns:ns4="urn:ietf:params:xml:ns:yang:ietf-netconf-monitoring"
+    xmlns:ns5="urn:ietf:params:xml:ns:netconf:notification:1.0" message-id="0">
+    <edit-config>
+        <target>
+            <running />
+        </target>
+        <config>
+            <scp-function operation="replace" xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                <nf-instance xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                    <name>West1</name>
+                    <dynamic-producer-registration>
+                        <producer-heartbeat>5</producer-heartbeat>
+                        <deregistration-time>1</deregistration-time>
+                    </dynamic-producer-registration>
+
+                    <service-address xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                        <name>west1SA</name>
+                        <fqdn>csa.ericsson.se</fqdn>
+                        <port><CSA_WRKR_PORT></port>
+                        <tls-port><CSA_WRKR_TLS_PORT></tls-port>
+                    </service-address>
+
+                    <ingress-connection-profile xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                        <name>ConnectionProfile1</name>
+                        <max-connection-duration>0</max-connection-duration>
+                    </ingress-connection-profile>
+
+                    <ingress-connection-profile-ref>ConnectionProfile1</ingress-connection-profile-ref>
+
+                    <producer-pool xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                        <name>Pool1</name>
+                        <priority>1</priority>
+                        <producer xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                            <name>OCC 1</name>
+                            <label>occ1</label>
+                            <capacity>100</capacity>
+                            <address xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                                <name>occ1Sa</name>
+                                <fqdn>eric-chfsim-1</fqdn>
+                                <port>80</port>
+                                <tls>off</tls>
+                            </address>
+                        </producer>
+                        <producer xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                            <name>OCC 2</name>
+                            <label>occ2</label>
+                            <capacity>100</capacity>
+                            <address xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                                <name>occ2Sa</name>
+                                <fqdn>eric-chfsim-2</fqdn>
+                                <port>80</port>
+                                <tls>off</tls>
+                            </address>
+                        </producer>
+                        <producer xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                            <name>OCC 3</name>
+                            <label>occ3</label>
+                            <capacity>100</capacity>
+                            <address xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                                <name>occ3Sa</name>
+                                <fqdn>eric-chfsim-3</fqdn>
+                                <port>80</port>
+                                <tls>off</tls>
+                            </address>
+                        </producer>
+                    </producer-pool>
+
+                    <scp-service xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                        <name>ConvergedChargingService</name>
+
+                        <selector xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                            <name>ccSelector</name>
+                            <handler-ref>ccHandler</handler-ref>
+                            <simple-selector xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                                <service-address-ref>west1SA</service-address-ref>
+                                <api-prefix />
+                                <api-name>nchf-convergedcharging</api-name>
+                            </simple-selector>
+                        </selector>
+
+                        <handler xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                            <name>ccHandler</name>
+                            <handler-type>converged-charging</handler-type>
+                            <converged-charging-handler xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                                <producer-pool-ref>Pool1</producer-pool-ref>
+                                <label-selector>([^-]+)</label-selector>
+                                <request-timeout>2000</request-timeout>
+                                <producer-reselects-max>3</producer-reselects-max>
+                                <producer-retries-max>1</producer-retries-max>
+                                <producer-timeout>250</producer-timeout>
+                                <notification-retries-max>1</notification-retries-max>
+                                <notification-timeout>3000</notification-timeout>
+                                <temporary-blocking>
+                                    <blocking-time>3</blocking-time> <!-- seconds -->
+                                    <consecutive-failures>3</consecutive-failures>
+                                </temporary-blocking>
+                            </converged-charging-handler>
+                        </handler>
+                    </scp-service>
+
+                    <scp-service xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                        <name>SpendingLimitService</name>
+
+                        <selector xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                            <name>slcSelector</name>
+                            <handler-ref>slcHandler</handler-ref>
+                            <simple-selector xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                                <service-address-ref>west1SA</service-address-ref>
+                                <api-prefix />
+                                <api-name>nchf-spendinglimitcontrol</api-name>
+                            </simple-selector>
+                        </selector>
+
+                        <handler xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                            <name>slcHandler</name>
+                            <handler-type>spending-limit-control</handler-type>
+                            <spending-limit-control-handler xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                                <producer-pool-ref>Pool1</producer-pool-ref>
+                                <request-timeout>2000</request-timeout>
+                                <producer-reselects-max>3</producer-reselects-max>
+                                <producer-timeout>250</producer-timeout>
+                                <notification-retries-max>5</notification-retries-max>
+                                <notification-timeout>3500</notification-timeout>
+                                <temporary-blocking>
+                                    <blocking-time>3</blocking-time> <!-- seconds -->
+                                    <consecutive-failures>3</consecutive-failures>
+                                </temporary-blocking>
+                            </spending-limit-control-handler>
+                        </handler>
+                    </scp-service>
+
+                    <nf-profile>
+                        <name>scp_profile1</name>
+                        <nf-type>chf</nf-type>
+                        <service-address-ref>west1SA</service-address-ref>
+                        <nf-type>chf</nf-type>
+                        <requested-heartbeat-timer>20</requested-heartbeat-timer>
+                        <locality>ericsson.se</locality>
+                        <allowed-nf-domain>ericsson.se</allowed-nf-domain>
+                        <allowed-nf-type>nrf</allowed-nf-type>
+                        <allowed-nf-type>udm</allowed-nf-type>
+                        <allowed-nf-type>sepp</allowed-nf-type>
+                        <snssai>
+                            <sst>150</sst>
+                            <sd>AbB109</sd>
+                        </snssai>
+                        <allowed-plmn>
+                            <mcc>262</mcc>
+                            <mnc>72</mnc>
+                        </allowed-plmn>
+                        <plmn>
+                            <mcc>262</mcc>
+                            <mnc>72</mnc>
+                        </plmn>
+                        <nf-specific-info>
+                            <chf-info>
+                                <plmn-range>
+                                    <id>50</id>
+                                    <plmn-start>10015</plmn-start>
+                                    <plmn-end>600999</plmn-end>
+                                </plmn-range>
+                                <gpsi-range>
+                                    <id>11445</id>
+                                    <identity-start>20</identity-start>
+                                    <identity-end>10000</identity-end>
+                                </gpsi-range>
+                            </chf-info>
+                        </nf-specific-info>
+
+                        <nf-service>
+                            <service-instance-id>nchf-convergedcharging-no-tls</service-instance-id>
+                            <service-name>nchf-convergedcharging</service-name>
+                            <scheme>http</scheme>
+                            <allowed-plmn>
+                                <mcc>262</mcc>
+                                <mnc>200</mnc>
+                            </allowed-plmn>
+                            <api-prefix>chf-</api-prefix>
+                            <service-priority>1</service-priority>
+                            <service-address-ref>west1SA</service-address-ref>
+                        </nf-service>
+
+                        <nf-service>
+                            <service-instance-id>nchf-spendinglimitcontrol-no-tls</service-instance-id>
+                            <service-name>nchf-spendinglimitcontrol</service-name>
+                            <scheme>http</scheme>
+                            <allowed-plmn>
+                                <mcc>262</mcc>
+                                <mnc>200</mnc>
+                            </allowed-plmn>
+                            <api-prefix>chf-</api-prefix>
+                            <service-priority>1</service-priority>
+                            <service-address-ref>west1SA</service-address-ref>
+                        </nf-service>
+
+                        <service-priority>1</service-priority>
+                        <capacity>100</capacity>
+                    </nf-profile>
+
+                    <nrf-group xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                        <name>West</name>
+                        <nf-profile-ref>scp_profile1</nf-profile-ref>
+                        <nrf>
+                            <name>nrf_west1</name>
+                            <fqdn>eric-nrfsim</fqdn>
+                            <scheme>http</scheme>
+                            <ip-endpoint>
+                                <name>nrf_west1_ep</name>
+                                <ipv4-address>100.100.100.100</ipv4-address>
+                                <port>80</port>
+                            </ip-endpoint>
+                            <priority>1</priority>
+                            <nf-profile-ref>scp_profile1</nf-profile-ref>
+                        </nrf>
+                    </nrf-group>
+
+                    <nrf-service>
+                        <nf-discovery>
+                            <nrf-group-ref>West</nrf-group-ref>
+                        </nf-discovery>
+                        <nf-management>
+                            <nrf-group-ref>West</nrf-group-ref>
+                        </nf-management>
+                    </nrf-service>
+
+                </nf-instance>
+            </scp-function>
+        </config>
+    </edit-config>
+</rpc>
+]]>]]>

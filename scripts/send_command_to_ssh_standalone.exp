@@ -1,0 +1,4277 @@
+#!/usr/bin/expect
+
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 2.19
+#  Date     : 2020-12-18 14:10:49
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2017, 2018, 2020
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# ------------------------------- Procedures ----------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+
+# -----------------------------------------------------------------------------
+# Show syntax and help information.
+# Input:
+#  -
+#
+# Output:
+#  -
+#
+proc show_syntax {} {
+    global argv0
+
+    #              1         2         3         4         5         6         7         8
+    #     12345678901234567890123456789012345678901234567890123456789012345678901234567890
+    puts "This script connects to the node (being either GEP OAM VIP, DMX/BSP NBI or even"
+    puts "a Linux prompt) and executes one or more commands provided either on the"
+    puts "command line or via a command file."
+    puts ""
+    puts "Then it executes one or more commands provided either on the command"
+    puts "line or via a command file. The commands are executed in the order"
+    puts "in which they have been specified. As an option, command execution"
+    puts "can also stop if an error has been detected for a command in which"
+    puts "case none of the remaining commands will be executed."
+    puts ""
+    puts "The script will only automatically send commands needed to connect to the node"
+    puts "and to exit out of the connection."
+    puts ""
+    puts ""
+    puts "syntax:"
+    puts "======="
+    puts ""
+    puts "  $argv0 <mandatory> <optional>"
+    puts ""
+    puts "<mandatory> is:"
+    puts "   --ip=<IP address to the node via SSH>"
+    puts "   --user=<username for login>"
+    puts "   --password=<password for login>"
+    puts "    and one or more of:"
+    puts "   --command=<command to send>"
+    puts "   --command-file=<filename containing commands to send>"
+    puts ""
+    puts "<optional> is one or more of the following:"
+    puts "  --advanced-password=<password>"
+    puts "  --help"
+    puts "  --ignore-errors"
+    puts "  --log-append"
+    puts "  --log-file=<log file path>"
+    puts "  --new-password=<new password for login>"
+    puts "  --port=<port number>"
+    puts "  --replace-managedelement"
+    puts "  --root-access"
+    puts "  --root-password=<password>"
+    puts "  --shell=(cliss|dsc-connect-signalling-mgr|netconf|signmcli)"
+    puts "  --show-commands-to-send"
+    puts "  --stop-on-error"
+    puts "  --target-blade=<blade name>"
+    puts "  --timeout=<seconds>"
+    puts ""
+    puts "Where:"
+    puts ""
+    puts "  --advanced-password=<password>"
+    puts "    Set the password to be used when login to the node with user 'advanced'."
+    puts "    Default is 'ett,30' if not specified."
+    puts ""
+    puts "  --command=<command to send>"
+    puts "    This parameter specifies the command to send to the node and the parameter"
+    puts "    can be specified multiple times and also in combination with the --command-file"
+    puts "    parameter. The order of the commands to be sent will be determined by the order"
+    puts "    of the parameters."
+    puts ""
+    puts "  --command-file=<filename containing commands to send>"
+    puts "    This parameter specifies the command file to send to the node and the parameter"
+    puts "    can be specified multiple times and also in combination with the --command"
+    puts "    parameter. The order of the commands to be sent will be determined by the order"
+    puts "    of the parameters."
+    puts ""
+    puts "  --help"
+    puts "    Shows this help information."
+    puts ""
+    puts "  --ignore-errors"
+    puts "    If specified then any errors generated from the sent commands will simply"
+    puts "    be ignored, the default is to treat every error to a sent command as a failure."
+    puts "    This can also be controlled from the command to send by using one of the"
+    puts "    following commands:"
+    puts "    @@IGNORE_ERRORS"
+    puts "    @@DO_NOT_IGNORE_ERRORS"
+    puts ""
+    puts "  --ip=<IP address to the node via SSH>"
+    puts "    Set the IP-address to use for connecting to the node, the connection is"
+    puts "    done using the SSH protocol."
+    puts ""
+    puts "  --log-append"
+    puts "    If specified then any output is appended to an existing log file, the"
+    puts "    default is to overwrite the log file."
+    puts ""
+    puts "  --log-file=<log file path>"
+    puts "    If specified then output from executed commands are logged to the specified"
+    puts "    log file. The directory path must exist and it must be possible to write to"
+    puts "    the file."
+    puts ""
+    puts "  --new-password=<new password for login>"
+    puts "    If specified and the node asks to change the password by the following"
+    puts "    prompts then this parameter will be used as the new password:"
+    puts "       Password:"
+    puts "       Password expired. Change your password now."
+    puts "       Current Password:"
+    puts "       New Password:"
+    puts "       Reenter new Password:"
+    puts ""
+    puts "  --password=<password for login>"
+    puts "    Set the user password to use for connecting to the node, the connection is"
+    puts "    done using the SSH protocol."
+    puts ""
+    puts "  --port=<port number>"
+    puts "    Set the port number to use for connecting to the node."
+    puts "    If not specified then the default value used would be '22'."
+    puts ""
+    puts "  --replace-managedelement"
+    puts "    If specified it will replace any occurance of the string 'ManagedElement=1'"
+    puts "    in the sent commands with the real element name."
+    puts "    This parameter only make sense if the connection is towards the CLISS shell."
+    puts ""
+    puts "  --root-access"
+    puts "    if specified then a switch to root account is done before sending commands."
+    puts ""
+    puts "  --root-password=<password>"
+    puts "    Set the password to be used when login to the node with user 'root'."
+    puts "    Default is 'rootroot' or 'tre,14' if not specified."
+    puts ""
+    puts "  --shell=(cliss|dsc-connect-signalling-mgr|netconf|signmcli)"
+    puts "    Connect to a specific shell after connection to node has been established."
+    puts ""
+    puts "  --show-commands-to-send"
+    puts "    If specified then all commands to be executed will be printed before"
+    puts "    execution starts."
+    puts ""
+    puts "  --stop-on-error"
+    puts "    If specified and a command results in an error then execution of all"
+    puts "    following commands will not take place."
+    puts "    by default if this parameter is not specified then execution will"
+    puts "    continue with all commands even if errors are detected."
+    puts ""
+    puts "  --target-blade=<blade name>"
+    puts "    If specified then after connecting to the wanted node it will first connect"
+    puts "    to the specified blade before executing any of the commands."
+    puts "    This parameter can be useful e.g. if you initially connect to the SC-1 IP-address"
+    puts "    but all the commands should be executed on the PL-3 blade."
+    puts "    It can also be used to connect to the active controller by giving <blade name>"
+    puts "    the value 'activecontroller'"
+    puts "    Example: --target-blade=sc-2"
+    puts "             --target-blade=activecontroller"
+    puts ""
+    puts "  --timeout=<seconds>"
+    puts "    Set the timeout value to use when sending a command to the node before a"
+    puts "    printout is returned back by the node."
+    puts "    If nothing is returned back from the node within this time frame or"
+    puts "    if the node prompt is not returned back after the last printout then it"
+    puts "    is considdered as a failure."
+    puts "    For long executing commands that takes longer than the default (1200) seconds"
+    puts "    to produce any printouts, set this parameter to a higher value."
+    puts "    Default is '1200' seconds if not specified."
+    puts ""
+    puts "  --user=<username for login>"
+    puts "    Set the user name to use for connecting to the node, the connection is"
+    puts "    done using the SSH protocol."
+    puts ""
+    puts ""
+    puts "Examples:"
+    puts "========="
+    puts ""
+    puts "Example 1:"
+    puts "Send command to DMX."
+    puts ""
+    puts "  $argv0 --user=expert --ip=10.87.80.116 --password='expert' --port=2024 --command='show configuration|nomore'"
+    puts ""
+    puts ""
+    puts "Example 2:"
+    puts "Send command to BSP CLISS."
+    puts ""
+    puts "  $argv0 --user=advanced --ip=10.87.80.116 --password='ett,30' --port=2024 --command='show all'"
+    puts ""
+    puts ""
+    puts "Example 3:"
+    puts "Send command to GEP CLISS."
+    puts ""
+    puts "  $argv0 --user=root --ip=10.87.80.116 --password='rootroot' --port=830 --shell=cliss --command='show-config'"
+    puts ""
+    puts ""
+    puts "Example 4:"
+    puts "Send command to GEP Signalling Manager CLI."
+    puts ""
+    puts "  $argv0 --user=root --ip=10.87.80.116 --password='rootroot' --port=830 --shell=dsc-connect-signalling-mgr --command='printall;'"
+    puts "     or"
+    puts "  $argv0 --user=root --ip=10.87.80.116 --password='rootroot' --port=830 --shell=signmcli --command='printall;'"
+    puts ""
+    puts ""
+    puts "The script returns:"
+    puts "==================="
+    puts ""
+    puts " 0: Successful termination"
+    puts " 1: Unsuccessful termination"
+    puts " 2: Unsuccessful login"
+    puts ""
+}
+################################################################################
+# $Revision: 1.4 $                                                             #
+#   $Author: EUSTONE $                                                         #
+#     $Date: 2017-03-06 14:01:14 $                                             #
+################################################################################
+#                                                                              #
+# (C) COPYRIGHT ERICSSON GMBH 2014                                             #
+#                                                                              #
+# The copyright to the computer program(s) herein is the property of           #
+# Ericsson GmbH, Germany.                                                      #
+#                                                                              #
+# The program(s) may be used and/or copied only with the written permission    #
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in   #
+# the agreement/contract under which the program(s) have been supplied.        #
+#                                                                              #
+################################################################################
+
+
+# -----------------------------------------------------------------------------
+# Get the ManagedElement name.
+#
+# This subroutine expects that it is already connected to the CLISS prompt.
+#
+# Input:
+#  -
+#
+# Output:
+#  - Name of the ManagedElement, if not changed it is "1"
+#    or the empty string "" on error
+#
+proc CLISS_get_ManagedElement_name {} {
+    global spawn_id
+
+    set errorcnt 0
+    set element_name "1"
+
+    # Go to the top of the object model
+    if { [CLISS_send_command top] != 0 } {
+        # We might be on an old 13A release where top only works in "configure" mode
+        if { [CLISS_send_command configure] != 0 } {
+            return ""
+        } else {
+            if { [CLISS_send_command top] != 0 } {
+                return ""
+            }
+        }
+    }
+
+    # Find the Managed Element name
+    send -- "show\r"
+    expect {
+        -re "ERROR:.+" {
+            # Some invalid command have been given, increment an error counter
+            incr errorcnt
+            exp_continue
+        }
+        -re "ManagedElement=(\[^\r\n\]+)\r*\n" {
+            # Managed Element name found, continue waiting
+            set element_name $expect_out(1,string)
+            exp_continue
+        }
+        "\n" {
+            # New line received, continue waiting
+            exp_continue
+        }
+        -re ">$" {
+            # Ready for next command
+        }
+        timeout {
+            return ""
+        }
+    }
+
+    if { $errorcnt > 0 } {
+        # Some failure occurred
+        return ""
+    } else {
+        # Successful
+        # Remove any double quotes from the beginning and end of the element name
+        set element_name [string trim $element_name '"']
+        return "$element_name"
+    }
+}
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.9
+#  Date     : 2016-11-18 13:59:50
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2014-2016
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Send a command to the CLISS shell.
+#
+# This subroutine expects that it is already connected to the CLISS prompt.
+#
+# Input:
+#  - Command to send
+#
+# Output:
+#  -  0: Success
+#    >0: Command returned an error
+#    -1: Timeout
+#
+proc CLISS_send_command {command} {
+    global spawn_id
+
+    set errorcnt 0
+
+    # Send the command
+    send -- "$command\r"
+
+    expect {
+        -re "ERROR: \[^\n\]*\n" {
+            # Some error have occurred, increment an error counter
+            incr errorcnt
+            exp_continue
+        }
+        "\n" {
+            # New line received, continue waiting
+            exp_continue
+        }
+        -re "<\[^>\]*>" {
+            # Part of a line received and not a prompt, continue waiting
+            # Work around for BSP cliss problems where e.g. <read-only> was sent
+            # to expect but the ending NL didn't come directly but after a few ms
+            # causing the ">$" prompt check below thinking it was a cliss prompt.
+            # Examples:
+            # .....<read-only>
+            # .....<empty>
+            # .....<default>
+            exp_continue
+        }
+        -re "\"SC-\[12\]\"" {
+            # Part of a line received and not a prompt, continue waiting
+            # Work around for BSP cliss problems where e.g. "SC-1" was sent
+            # to expect but the ending NL didn't come directly but after a few ms
+            # causing the "SC-\[12\]" prompt check below thinking it was a prompt.
+            # Example:
+            # ...  userLabel="SC-1"
+            exp_continue
+        }
+        -re ">$" {
+            # Ready for next command
+        }
+        -re "SC-2-\[12\]\[^\n\]*$" {
+            # On the BSP SCXB: Ready for next command
+        }
+        -re "SC-\[12\]\[^\n\]*$" {
+            # On the Controller Blades: Ready for next command
+        }
+        -re "(root|advanced|expert)\@blade_0_(0|25|26|28)\[^\n\]*$" {
+            # On the CMX: Ready for next command
+        }
+        timeout {
+            return -1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    return $errorcnt
+}
+################################################################################
+# $Revision: 1.2 $                                                             #
+#   $Author: eustone $                                                         #
+#     $Date: 2014/05/15 11:36:52 $                                             #
+################################################################################
+#                                                                              #
+# (C) COPYRIGHT ERICSSON GMBH 2014                                             #
+#                                                                              #
+# The copyright to the computer program(s) herein is the property of           #
+# Ericsson GmbH, Germany.                                                      #
+#                                                                              #
+# The program(s) may be used and/or copied only with the written permission    #
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in   #
+# the agreement/contract under which the program(s) have been supplied.        #
+#                                                                              #
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Send a command to the DMX.
+#
+# This subroutine expects that it is already connected to the DMX as expert.
+#
+# Input:
+#  - Command to send
+#
+# Output:
+#  -  0: Success
+#    >0: Command returned an error
+#    -1: Timeout
+#
+proc DMX_send_command {command} {
+    global spawn_id
+
+    set errorcnt 0
+
+    # Send the command
+    send -- "$command\r"
+
+    expect {
+        "\\\[error\\\]" {
+            # Some invalid command have been given, increment an error counter
+            incr errorcnt
+            exp_continue
+        }
+        "Discard changes and continue\? \\\[yes,no\\\]" {
+            # The user have changed something but forgot to commit the changes
+            # for now just discard the changes but step error counter.
+            incr errorcnt
+            send -- "yes\r"
+            exp_continue
+        }
+        "\n" {
+            # New line received, continue waiting
+            exp_continue
+        }
+        "\\-\\-More\\-\\-" {
+            # Most likely the command "show running-config" have been given
+            # which produces paged output requiring the user to press a space
+            # for getting the next page.
+            send -- " "
+            exp_continue
+        }
+        "expert@blade_0_*" {
+            # Ready for next command
+        }
+        "advanced@blade_0_*" {
+            # We are finished
+        }
+        "root@blade_0_*" {
+            # We are finished
+        }
+        timeout {
+            return -1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    return $errorcnt
+}
+################################################################################
+# $Revision: 1.1 $                                                             #
+#   $Author: EUSTONE $                                                         #
+#     $Date: 2015/10/28 17:34:01 $                                             #
+################################################################################
+#                                                                              #
+# (C) COPYRIGHT ERICSSON GMBH 2015                                             #
+#                                                                              #
+# The copyright to the computer program(s) herein is the property of           #
+# Ericsson GmbH, Germany.                                                      #
+#                                                                              #
+# The program(s) may be used and/or copied only with the written permission    #
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in   #
+# the agreement/contract under which the program(s) have been supplied.        #
+#                                                                              #
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Check if a specified command exists.
+#
+# This subroutine expects that it is already connected to the GEP Linux prompt.
+#
+# Input:
+#  - Command to check
+#
+# Output:
+#  -  0: Success
+#    >0: Command not found or other error
+#    -1: Timeout
+#
+proc GEP_check_valid_command {command} {
+    global spawn_id
+
+    set errorcnt 0
+    set command_path ""
+
+    # Find real path to the command if not given by searching the $PATH
+    send -- "which $command\r"
+
+    expect {
+        -re "^(\[^\r\n\]+)\r*\n" {
+            # Store received line
+            set command_path $expect_out(1,string);
+            exp_continue
+        }
+        "\n" {
+            # New line received, continue waiting
+            exp_continue
+        }
+        -re "SC-\[12\]\[^\n\]*$" {
+            # Ready for next command
+        }
+        -re "PL-\[0-9\]+\[^\n\]*$" {
+            # Ready for next command
+        }
+        timeout {
+            return -1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    set exitcode 0
+
+    # Check exitcode from previous command
+    send -- "echo \$?\r"
+
+    expect {
+        -re "^(\[0-9\]+)\r*\n" {
+            # Exit status returned
+            set exitcode $expect_out(1,string);
+            exp_continue
+        }
+        "\n" {
+            # New line received, continue waiting
+            exp_continue
+        }
+        -re "SC-\[12\]\[^\n\]*$" {
+            # Ready for next command
+        }
+        -re "PL-\[0-9\]+\[^\n\]*$" {
+            # Ready for next command
+        }
+        timeout {
+            return -1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    if { $exitcode != 0 } {
+        # We could not find the command, return failure
+        incr errorcnt
+    }
+
+
+    return $errorcnt
+}
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.4
+#  Date     : 2018-06-15 13:40:53
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2014,2015,2018
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+
+# -----------------------------------------------------------------------------
+# Connect to the specified node.
+#
+# This subroutine expects that it is already connected to the GEP Linux prompt.
+#
+# Input:
+#  - node name e.g. SC-1, SC-2, PL-3, PL-4 etc.
+#  - root password
+#
+# Output:
+#  -  0: Success, Connected to node
+#     1: Failure, Not able to connect to node
+#    -1: Timeout
+#
+proc GEP_connect_to_node {nodename root_password} {
+    global spawn_id
+
+    set connected 0
+    set errorcnt 0
+
+    # Convert the node name to uppercase
+    set nodename [string toupper $nodename]
+
+    # Connect to the peer node
+    send -- "ssh $nodename\r"
+
+    # Wait for password request from GEP
+    expect {
+        "Connection closed by foreign host*" {
+            # Login failed for some reason
+            incr errorcnt
+            exp_continue
+        }
+        "Could not resolve" {
+            # Login failed for some reason
+            incr error
+            exp_continue
+        }
+        "assword:" {
+            send "$root_password\r"
+            exp_continue
+        }
+        -re "$nodename:\[^\n\]*$" {
+            # We successfully logged in to the wanted node
+            set connected 1
+        }
+        -re "(SC-\[12\]|PL-\[0-9\]+):\[^\n\]*$" {
+            # We didn't log in to wanted node
+            set connected 0
+        }
+        "(yes/no)?" {
+            send "yes\r"
+            exp_continue
+        }
+        timeout {
+            return -1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    # Remove nasty colors by redefining the PS1 prompt
+    GEP_send_command "export PS1='\\h:\\w \\$ '"
+
+    if { $errorcnt > 0 } {
+        return 1
+    } elseif { $connected == 1 } {
+        return 0
+    } else {
+        return 1
+    }
+}
+################################################################################
+# $Revision: 1.2 $                                                             #
+#   $Author: eustone $                                                         #
+#     $Date: 2017-03-06 14:01:14 $                                             #
+################################################################################
+#                                                                              #
+# (C) COPYRIGHT ERICSSON GMBH 2014                                             #
+#                                                                              #
+# The copyright to the computer program(s) herein is the property of           #
+# Ericsson GmbH, Germany.                                                      #
+#                                                                              #
+# The program(s) may be used and/or copied only with the written permission    #
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in   #
+# the agreement/contract under which the program(s) have been supplied.        #
+#                                                                              #
+################################################################################
+
+
+# -----------------------------------------------------------------------------
+# Connect to the primary SC.
+#
+# This subroutine expects that it is already connected to the GEP Linux prompt.
+#
+# Input:
+#  - root password
+#
+# Output:
+#  -  0: Success, Connected to primary SC
+#     1: Failure, Not able to connect to primary SC
+#    -1: Timeout
+#
+proc GEP_connect_to_primary_sc {root_password} {
+    global spawn_id
+
+    set connected 0
+
+    # Get current hostname
+    set hostname [GEP_get_hostname]
+    if {$hostname == "-"} {
+        # Unable to determine current hostname
+        return 1
+    }
+
+    # Find out who is the primary SC
+    set primary_sc [GEP_get_primary_sc]
+    if {$primary_sc == "-"} {
+        # Unable to determine primary SC
+        return 1
+    }
+
+    if { $hostname == $primary_sc } {
+
+        # The current SC is primary
+        set connected 1
+
+    } else {
+
+        # Current node is not primary, try the primary SC
+
+        set connected_peer 0
+
+        # Connect to the peer node
+        send -- "ssh $primary_sc\r"
+
+        # Wait for password request from GEP
+        expect {
+            "Connection closed by foreign host" {
+                # Login failed for some reason
+                return 1
+            }
+            "assword:" {
+                send "$root_password\r"
+                exp_continue
+            }
+            -re "SC-\[12\]\[^\n\]*$" {
+                # We successfully logged in to the peer controller node
+                set connected_peer 1
+            }
+            "(yes/no)?" {
+                send "yes\r"
+                exp_continue
+            }
+            timeout {
+                return -1
+            }
+        }
+
+        # Read any pending output
+        expect -re ".*"
+
+        if { $connected_peer == 1 } {
+
+            # Connected successfully to peer node
+            set connected 1
+        }
+
+    }
+
+    if { $connected == 1 } {
+        return 0
+    } else {
+        return 1
+    }
+}
+################################################################################
+# $Revision: 1.1 $                                                             #
+#   $Author: eustone $                                                         #
+#     $Date: 2014/09/23 15:37:13 $                                             #
+################################################################################
+#                                                                              #
+# (C) COPYRIGHT ERICSSON GMBH 2014                                             #
+#                                                                              #
+# The copyright to the computer program(s) herein is the property of           #
+# Ericsson GmbH, Germany.                                                      #
+#                                                                              #
+# The program(s) may be used and/or copied only with the written permission    #
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in   #
+# the agreement/contract under which the program(s) have been supplied.        #
+#                                                                              #
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Get current hostname from the GEP.
+# Input:
+#  -
+#
+# Output:
+#  - Hostname or the string "-"
+#
+proc GEP_get_hostname {} {
+    global spawn_id
+
+    # Some internal variables
+    set hostname "-"
+
+    # Send command
+    send -- "hostname\r"
+
+    # Wait for result and new prompt
+    expect {
+        -re "^(\[^\n\r\]+)\r*\n" {
+            # Single lines
+            set line $expect_out(1,string)
+
+            if { [string match "hostname: command not found" $line] } {
+                # Error, we are not able to determine the hostname
+                set hostname "-"
+            } else {
+                set hostname $line
+            }
+            exp_continue
+        }
+        -re "SC-\[12\]\[^\n\]*$" {
+            # Ready for next command
+        }
+        -re "PL-\[0-9\]+\[^\n\]*$" {
+            # Ready for next command
+        }
+        timeout {
+            return $hostname
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    return $hostname
+}
+################################################################################
+# $Revision: 1.4 $                                                             #
+#   $Author: EUSTONE $                                                         #
+#     $Date: 2017-03-06 14:01:14 $                                             #
+################################################################################
+#                                                                              #
+# (C) COPYRIGHT ERICSSON GMBH 2014                                             #
+#                                                                              #
+# The copyright to the computer program(s) herein is the property of           #
+# Ericsson GmbH, Germany.                                                      #
+#                                                                              #
+# The program(s) may be used and/or copied only with the written permission    #
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in   #
+# the agreement/contract under which the program(s) have been supplied.        #
+#                                                                              #
+################################################################################
+
+
+# -----------------------------------------------------------------------------
+# Get primary SC where CLISS is running.
+#
+# Input:
+#  -
+#
+# Output:
+#  - Hostname or the string "-"
+#
+proc GEP_get_primary_sc {} {
+    global spawn_id
+
+    # Some internal variables
+    set hostname "-"
+
+    # Set command to use
+    set command ""
+
+    # Check which command is valid
+    if { [GEP_valid_command "dsc-show-active-controller"] == 0 } {
+        set command "dsc-show-active-controller -s COM"
+    } else {
+        if { [GEP_valid_command "dsc-show-primary-sc"] == 0 } {
+            set command "dsc-show-primary-sc"
+        } else {
+            # None of the two commands exists, exit now
+            return "-"
+        }
+    }
+
+    # Send command
+    send -- "$command\r"
+
+    # Wait for result and new prompt
+    expect {
+        -re "^(SC-\[12\])\r*\n" {
+            # Wanted line
+            set hostname $expect_out(1,string)
+            exp_continue
+        }
+        "\n" {
+            # Any other line
+            exp_continue
+        }
+        -re "SC-\[12\]\[^\n\]*$" {
+            # Ready for next command
+        }
+        -re "PL-\[0-9\]+\[^\n\]*$" {
+            # Ready for next command
+        }
+        timeout {
+            return $hostname
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    return $hostname
+}
+################################################################################
+# $Revision: 1.4 $                                                             #
+#   $Author: EUSTONE $                                                         #
+#     $Date: 2015/01/16 15:36:56 $                                             #
+################################################################################
+#                                                                              #
+# (C) COPYRIGHT ERICSSON GMBH 2014                                             #
+#                                                                              #
+# The copyright to the computer program(s) herein is the property of           #
+# Ericsson GmbH, Germany.                                                      #
+#                                                                              #
+# The program(s) may be used and/or copied only with the written permission    #
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in   #
+# the agreement/contract under which the program(s) have been supplied.        #
+#                                                                              #
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Find out if CLISS is running on the specified node.
+#
+# This subroutine expects that it is already connected to the GEP Linux prompt.
+#
+# Input:
+#  - Hostname
+#  - root password
+#
+# Output:
+#  -  0: Success, CLISS running on given node
+#     1: Failure, CLISS is not running on given node
+#    -1: Timeout
+#
+proc GEP_is_cliss_running {hostname root_psw} {
+    global spawn_id
+
+    set errorcnt 0
+    set found 0
+
+    if { $hostname == "localhost" } {
+        # Check if listen port 830 is active on current node
+        send -- "netstat -lnt | grep -w 830\r"
+
+        expect {
+            -re ":830 " {
+                # Yes, the CLISS seems to be running here
+                set found 1
+                exp_continue
+            }
+            -re "SC-\[12\]\[^\n\]*$" {
+                # Promt received
+            }
+            -re "PL-\[0-9\]+\[^\n\]*$" {
+                # Promt received
+            }
+            timeout {
+                return -1
+            }
+        }
+    } else {
+        # Execute the command on the given hostname
+        send -- "ssh $hostname netstat -lnt | grep -w 830\r"
+
+        expect {
+            -re ":830 " {
+                # Yes, the CLISS seems to be running here
+                set found 1
+                exp_continue
+            }
+            "Connection closed by foreign host" {
+                # Login failed for some reason
+                return 1
+            }
+            "assword:" {
+                send "$root_psw\r"
+                exp_continue
+            }
+            "(yes/no)?" {
+                send "yes\r"
+                exp_continue
+            }
+            -re "SC-\[12\]\[^\n\]*$" {
+                # Promt received
+            }
+            -re "PL-\[0-9\]+\[^\n\]*$" {
+                # Promt received
+            }
+            timeout {
+                return -1
+            }
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    if { $found == 0 } {
+        # Not running here
+        return 1
+    } else {
+        # Running here
+        return 0
+    }
+}
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.13
+#  Date     : 2018-12-11 14:24:55
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2014,2015,2016,2017,2018
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Send a command to the GEP board.
+#
+# This subroutine expects that it is already connected to the GEP Linux prompt.
+#
+# Input:
+#  - Command to send
+#
+# Output:
+#  -  0: Success
+#    >0: Command returned an error
+#    -1: Timeout
+#    -2: Connection lost
+#    -3: Broken pipe
+#
+proc GEP_send_command {command} {
+    global spawn_id
+
+    set errorcnt 0
+
+    # Send the command
+    send -- "$command\r"
+
+    expect {
+        -re "Retry\/Cancel\?\[^\n\]*$" {
+            # Probably the "parted /dev/sdX u s print" command on some invalid partition, send "c" and increment an error counter
+            send -- "c\r"
+            incr errorcnt
+            exp_continue
+        }
+        -re "^(\[^\r\n\]*)\r*\n" {
+            # New line received, check for special strings
+            set line $expect_out(1,string)
+            if {[regexp "^.*: Broken pipe$" $line junk] == 1} {
+                # packet_write_wait: Connection to 10.87.188.101 port 830: Broken pipe
+                return -3
+            }
+            exp_continue
+        }
+        -re "SC-\[12\]\[^\n\]*\[#>\$\]\[ \]$" {
+            # Ready for next command
+        }
+        -re "PL-\[0-9\]+\[^\n\]*\[#>\$\]\[ \]$" {
+            # Ready for next command
+        }
+        eof {
+            return -2
+        }
+        timeout {
+            return -1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    set exitcode -1
+
+    # Check exitcode from previous command
+    send -- "echo \$?\r"
+
+    expect {
+        -re "^(\[0-9\]+)\r*\n" {
+            # Exit status returned
+            set exitcode $expect_out(1,string);
+            exp_continue
+        }
+        "\n" {
+            # New line received, continue waiting
+            exp_continue
+        }
+        -re "SC-\[12\]\[^\n\]*\[#>\$\]\[ \]$" {
+            # Ready for next command
+        }
+        -re "PL-\[0-9\]+\[^\n\]*\[#>\$\]\[ \]$" {
+            # Ready for next command
+        }
+        eof {
+            return -2
+        }
+        timeout {
+            return -1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    if { $exitcode == 0 } {
+        # Command executed successfully
+        return $exitcode
+    } elseif { $errorcnt > 0 } {
+        # Some error was detected
+        return $errorcnt
+    } elseif { $exitcode == -1 } {
+        # No exit code could be found, return back failure
+        return 1
+    } else {
+        # The command returned some non zero return code, return this value to the caller
+        return $exitcode
+    }
+}
+################################################################################
+# $Revision: 1.9 $                                                             #
+#   $Author: EUSTONE $                                                         #
+#     $Date: 2019-10-10 15:20:44 $                                             #
+################################################################################
+#                                                                              #
+# (C) COPYRIGHT ERICSSON GMBH 2014-2019                                        #
+#                                                                              #
+# The copyright to the computer program(s) herein is the property of           #
+# Ericsson GmbH, Germany.                                                      #
+#                                                                              #
+# The program(s) may be used and/or copied only with the written permission    #
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in   #
+# the agreement/contract under which the program(s) have been supplied.        #
+#                                                                              #
+################################################################################
+
+
+# -----------------------------------------------------------------------------
+# Start the CLISS shell by first determening where it is running.
+#
+# This subroutine expects that it is already connected to the GEP Linux prompt.
+#
+# Input:
+#  - root password
+#
+# Output:
+#  -  0: Success, Connected to CLISS
+#     1: Failure, Not able to connect to CLISS
+#    -1: Timeout
+#
+proc GEP_start_cliss {root_password} {
+    global spawn_id
+
+    set connected 0
+    set hostname "localhost"
+
+    # Find out if CLISS is running here
+    set result [GEP_is_cliss_running $hostname $root_password]
+    if { $result == 0 } {
+
+        # CLISS seems to be running on currently connected node
+
+        # Connect to CLISS
+        send -- "/opt/com/bin/cliss\r"
+
+        expect {
+            -re "command not found$" {
+                # Some invalid command have been given
+                exp_continue
+            }
+            -re "Connection to COM failed" {
+                # For some reason CLISS is not responding
+                exp_continue
+            }
+            "\n" {
+                # New line received, continue waiting
+                exp_continue
+            }
+            -re ">$" {
+                # CLISS prompt
+                set connected 1
+            }
+            -re "SC-\[12\]\[^\n\]+$" {
+                # Ready for next command
+            }
+            -re "PL-\[0-9\]+\[^\n\]+$" {
+                # Ready for next command
+            }
+            timeout {
+                return -1
+            }
+        }
+
+        # Read any pending output
+        expect -re ".*"
+
+    } elseif { $result == 1 } {
+
+        # Cliss does not seem to be running on this node, try the peer node
+
+        set found 0
+        # Find the peer node
+        send -- "cat /etc/cluster/nodes/peer/hostname\r"
+
+        expect {
+            -re "No such file or directory" {
+                # Probably on a payload node, mark failure
+                exp_continue
+            }
+            -re "(SC-\[12\])\r*\n" {
+                # We found the peer node
+                set hostname $expect_out(1,string);
+                set found 1
+                exp_continue
+            }
+            "\n" {
+                # New line received, continue waiting
+                exp_continue
+            }
+            -re "SC-\[12\]\[^\n\]+$" {
+                # Prompt received
+            }
+            -re "PL-\[0-9\]+\[^\n\]+$" {
+                # Prompt received
+            }
+            timeout {
+                return -1
+            }
+        }
+
+        # Read any pending output
+        expect -re ".*"
+
+        if { $found == 1 } {
+
+            set connected_peer 0
+
+            # Connect to the peer node
+            send -- "ssh $hostname\r"
+
+            # Wait for password request from GEP
+            expect {
+                "Connection closed by foreign host" {
+                    # Login failed for some reason
+                    return 1
+                }
+                "assword:" {
+                    send "$root_password\r"
+                    exp_continue
+                }
+                "\n" {
+                    # New line received, continue waiting
+                    exp_continue
+                }
+                -re "$hostname\[^\n\]+$" {
+                    # We successfully logged in to the peer controller node
+                    set connected_peer 1
+                }
+                -re "SC-\[12\]\[^\n\]+$" {
+                    # Login failed for some reason
+                    return 1
+                }
+                "(yes/no)?" {
+                    send "yes\r"
+                    exp_continue
+                }
+                timeout {
+                    return -1
+                }
+            }
+
+            # Read any pending output
+            expect -re ".*"
+
+            if { $connected_peer == 1 } {
+
+                # Connected successfully to peer node
+
+                # Connect to CLISS
+                send -- "/opt/com/bin/cliss\r"
+
+                expect {
+                    -re "command not found$" {
+                        # Some invalid command have been given
+                        exp_continue
+                    }
+                    -re "Connection to COM failed" {
+                        # For some reason CLISS is not responding
+                        exp_continue
+                    }
+                    "\n" {
+                        # New line received, continue waiting
+                        exp_continue
+                    }
+                    -re ">$" {
+                        # CLISS prompt
+                        set connected 1
+                    }
+                    -re "SC-\[12\]\[^\n\]+$" {
+                        # Ready for next command
+                    }
+                    -re "PL-\[0-9\]+\[^\n\]+$" {
+                        # Ready for next command
+                    }
+                    timeout {
+                        return -1
+                    }
+                }
+
+                # Read any pending output
+                expect -re ".*"
+
+                if { $connected == 0 } {
+                    # Something went wrong when connecting to CLISS
+                    # We need to disconnec from the peer
+
+                    # Send the command
+                    send -- "exit\r"
+
+                    expect {
+                        "\n" {
+                            # New line received, continue waiting
+                            exp_continue
+                        }
+                        -re "SC-\[12\]\[^\n\]+$" {
+                            # Prompt received
+                        }
+                        -re "PL-\[0-9\]+\[^\n\]+$" {
+                            # Prompt received
+                        }
+                        timeout {
+                            return -1
+                        }
+                    }
+
+                    # Read any pending output
+                    expect -re ".*"
+                }
+            }
+        }
+
+    } elseif { $result == -1 } {
+
+        # Timeout occurred
+        return -1
+    }
+
+    if { $connected == 1 } {
+        return 0
+    } else {
+        return 1
+    }
+}
+################################################################################
+#
+#  Author   : eustone, eedvam
+#
+#  Revision : 1.11
+#  Date     : 2018-11-07 13:33:16
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2014,2015,2017
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+
+# -----------------------------------------------------------------------------
+# Start the SIGNMCLI shell.
+#
+# This subroutine expects that it is already connected to the GEP Linux prompt.
+#
+# Input:
+#  -
+#
+# Output:
+#  -  0: Success, Connected to SIGNMCLI
+#     1: Failure, Not able to connect to SIGNMCLI
+#    -1: Timeout
+#
+proc GEP_start_signmcli {} {
+    global spawn_id
+
+    set connected 0
+    set long_execution 0
+    set retry 0
+    set try_old_command 0
+
+    # Check which command is available
+    if { [GEP_check_valid_command "/opt/dsc/cli/dsc-connect-signalling-mgr"] == 0 } {
+        set command "/opt/dsc/cli/dsc-connect-signalling-mgr"
+    } elseif { [GEP_check_valid_command "/opt/dsc/cli/signmcli"] == 0 } {
+        set command "/opt/dsc/cli/signmcli"
+    } else {
+        # Unable to find the command to connect to the signaling manager
+        return 1
+    }
+
+    # Connect to the signaling CLI
+    send -- "$command\r"
+    expect {
+        -re "\(yes,no,abort\).*" {
+            # Problems to connect to signmcli, most likely because somebody else is using it.
+            # We assume that we have the right to remove the lock file so we can execute our commands
+            # so answer "no" to continue.
+            send -- "no\r"
+            exp_continue
+        }
+        -re "command not found" {
+            # Try the older "signmcli" command
+            if { $command == "/opt/dsc/cli/dsc-connect-signalling-mgr" } {
+                set try_old_command 1
+            }
+            exp_continue
+        }
+        -re "If the operation takes longer time than expected, abort it with Ctrl-D." {
+            set long_execution 1
+            exp_continue
+        }
+        -re "Timed out while waiting for response.\r*\nERROR\r*\ncli> $" {
+            set connected 0
+        }
+        -re "cli> $" {
+            # We successfully connected to the signaling CLI
+            set connected 1
+        }
+        -re "SC-\[12\]\[^\n\]*$" {
+            # We failed to connect to the signaling CLI
+            if { $try_old_command == 1 } {
+                set command "signmcli"
+                set try_old_command 0
+                send -- "$command\r"
+                exp_continue
+            }
+        }
+        timeout {
+            if { $long_execution == 1 } {
+                if { $retry > 3 } {
+                    return -1
+                } else {
+                    incr retry
+                    exp_continue
+                }
+            } elseif { $retry == 0 } {
+                sleep_seconds 60 10
+                set retry 1
+                send -- "$command\r"
+                exp_continue
+            } else {
+                return -1
+            }
+        }
+    }
+    # Read any pending output
+    expect -re ".*"
+
+    if { $connected == 1 } {
+        return 0
+    } else {
+        return 1
+    }
+}
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.1
+#  Date     : 2017-03-21 15:23:56
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2017
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Change user to root on GEP.
+#
+# This subroutine expects that it is already logged in to the GEP.
+#
+# Input:
+#  - Password for root user
+#
+# Output:
+#  - 0: Success
+#    1: Timeout or other error
+#
+proc GEP_su_root {root_psw} {
+    global spawn_id
+
+    set errorcnt 0
+
+    # Check what user is currently logged in
+    set current_user ""
+    send -- "whoami\r"
+
+    # Wait for result of command
+    expect {
+        -re "^(\[^\r\n\]*)\r*\n" {
+            # New line received, check contents and then continue waiting
+            set line $expect_out(1,string);
+
+            if { [regexp "^whoami$" $line junk] == 1 } {
+                # Command echoed back, ignore it and continue waiting
+            } elseif { [regexp "^(\[^ \]+)$" $line junk current_user] == 1 } {
+                # Current user, store it and continue waiting
+            } else {
+                # Some other information received, just ignore it
+            }
+
+            exp_continue
+        }
+        -re "SC-\[12\]\[^\n\]*$" {
+            # Ready for next command
+        }
+        -re "PL-\[0-9\]+\[^\n\]*$" {
+            # Ready for next command
+        }
+        timeout {
+            return 1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    if { $current_user == "root" } {
+        # No need to switch to root
+        return 0
+    }
+
+    set attempt 0
+
+    # Switch user id to root
+    send -- "su - root\r"
+
+    # Wait for password request from SCXB
+    expect {
+        "assword:" {
+            incr attempt
+            if { $attempt > 2 } {
+                # Failed twice, Send CTRL-C to exit
+                send "\x03"
+            } else {
+                send "$root_psw\r"
+            }
+            exp_continue
+        }
+        -re "^(\[^\r\n\]*)\r*\n" {
+            # New line received, check contents and then continue waiting
+            set line $expect_out(1,string);
+
+            if { [regexp "^su - root$" $line junk] == 1 } {
+                # Command echoed back, ignore it and continue waiting
+            } elseif { [regexp "^(\[^ \]+)$" $line junk current_user] == 1 } {
+                # Current user, store it and continue waiting
+            } else {
+                # Some other information received, just ignore it
+            }
+
+            exp_continue
+        }
+        -re "SC-\[12\]\[^\n\]*$" {
+            # Ready for next command
+        }
+        -re "PL-\[0-9\]+\[^\n\]*$" {
+            # Ready for next command
+        }
+        timeout {
+            return 1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    # Check that switch to root was successful
+    set current_user ""
+    send -- "whoami\r"
+
+    # Wait for result of command
+    expect {
+        -re "^(\[^\r\n\]*)\r*\n" {
+            # New line received, check contents and then continue waiting
+            set line $expect_out(1,string);
+
+            if { [regexp "^whoami$" $line junk] == 1 } {
+                # Command echoed back, ignore it and continue waiting
+            } elseif { [regexp "^(\[^ \]+)$" $line junk current_user] == 1 } {
+                # Current user, store it and continue waiting
+            } else {
+                # Some other information received, just ignore it
+            }
+
+            exp_continue
+        }
+        -re "SC-\[12\]\[^\n\]*$" {
+            # Ready for next command
+        }
+        -re "PL-\[0-9\]+\[^\n\]*$" {
+            # Ready for next command
+        }
+        timeout {
+            return 1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    if { $current_user == "root" } {
+        # Success
+        return 0
+    } else {
+        return 1
+    }
+}
+################################################################################
+# $Revision: 1.1 $                                                             #
+#   $Author: EUSTONE $                                                         #
+#     $Date: 2015/04/17 13:34:49 $                                             #
+################################################################################
+#                                                                              #
+# (C) COPYRIGHT ERICSSON GMBH 2014                                             #
+#                                                                              #
+# The copyright to the computer program(s) herein is the property of           #
+# Ericsson GmbH, Germany.                                                      #
+#                                                                              #
+# The program(s) may be used and/or copied only with the written permission    #
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in   #
+# the agreement/contract under which the program(s) have been supplied.        #
+#                                                                              #
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Check if a command is a valid command (in the PATH).
+#
+# This subroutine expects that it is already connected to the GEP Linux prompt.
+#
+# Input:
+#  - Command to check
+#
+# Output:
+#  -  0: Success, command is valid
+#    >0: Failure, command is not valid
+#    -1: Timeout
+#
+proc GEP_valid_command {command} {
+    global spawn_id
+
+    set errorcnt 0
+
+    # Send the command
+    send -- "which $command\r"
+
+    expect {
+        -re "which: no \[a-zA-Z_0-9\]+ in \[^\n\]\r*\n" {
+            # The command does not exist in the path, increment an error counter
+            incr errorcnt
+            exp_continue
+        }
+        -re "command not found\r*\n" {
+            # Some invalid command have been given, increment an error counter
+            incr errorcnt
+            exp_continue
+        }
+        "\n" {
+            # New line received, continue waiting
+            exp_continue
+        }
+        -re "SC-\[12\]\[^\n\]*$" {
+            # Ready for next command
+        }
+        -re "PL-\[0-9\]+\[^\n\]*$" {
+            # Ready for next command
+        }
+        timeout {
+            return -1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    set exitcode 0
+
+    # Check exitcode from previous command
+    send -- "echo \$?\r"
+
+    expect {
+        -re "^(\[0-9\]+)\r*\n" {
+            # Exit status returned
+            set exitcode $expect_out(1,string);
+            exp_continue
+        }
+        "\n" {
+            # New line received, continue waiting
+            exp_continue
+        }
+        -re "SC-\[12\]\[^\n\]*$" {
+            # Ready for next command
+        }
+        -re "PL-\[0-9\]+\[^\n\]*$" {
+            # Ready for next command
+        }
+        timeout {
+            return -1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    if { $exitcode != 0 } {
+        incr errorcnt
+    }
+
+    return $errorcnt
+}
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.0
+#  Date     : 2020-11-23 09:42:00
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2020
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Send a command to the NETCONF shell.
+#
+# This subroutine expects that it is already connected to the NETCONF prompt.
+#
+# Input:
+#  - Command to send
+#
+# Output:
+#  -  0: Success
+#    >0: Command returned an error
+#    -1: Timeout
+#    -2: Connection lost
+#
+proc NETCONF_send_command {command} {
+    global command_output_list
+    global spawn_id
+    global timeout
+    # Fetch any previously detected prompt and update the local prompt variable
+    global detected_prompt
+
+    # Save currently set timeout value
+    set default_timeout $timeout
+    # Set a shorter timeout for NETCONF commands
+    set timeout 10
+
+    set errorcnt 0
+    set okcnt 0
+
+    # Send the command
+    send -- "$command\r"
+
+    expect {
+        -re "^(\[^\r\n\]*\r*\n)" {
+            # New line received, check for special strings
+            set line $expect_out(1,string)
+            lappend command_output_list $line
+            if {[regexp "<rpc-error>" $line junk] == 1} {
+                # Something wrong with the message
+                incr errorcnt
+            } elseif {[regexp "<ok>" $line junk] == 1} {
+                # Something wrong with the message
+                incr okcnt
+            }
+            exp_continue
+        }
+        -re  "(.*)(\u005D\u005D\u003E\u005D\u005D\u003E)$" {
+            # NETCONF prompt "]]>]]>"
+            set timeout $default_timeout
+            set line $expect_out(1,string)
+            if {$line != ""} {
+                lappend command_output_list $expect_out(1,string)
+            }
+            set prompt $expect_out(2,string)
+            # Ready for next command
+        }
+        eof {
+            puts "\nWe lost the connection to the node\n"
+            set timeout $default_timeout
+            return -2
+        }
+        timeout {
+            puts "\nWe were unable to send the command due to a timeout\n"
+            set timeout $default_timeout
+            return -1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    # Restore default timeout value
+    set timeout $default_timeout
+
+    return $errorcnt
+}
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.5
+#  Date     : 2019-04-12 18:33:34
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2014,2018
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Send a command to the SIGNMCLI shell.
+#
+# This subroutine expects that it is already connected to the SIGNMCLI prompt.
+#
+# Input:
+#  - Command to send
+#
+# Output:
+#  -  0: Success
+#    >0: Command returned an error
+#    -1: Timeout
+#
+proc SIGNMCLI_send_command {command} {
+    global spawn_id
+
+    set errorcnt 0
+
+    # Send the command
+    send -- "$command\r"
+
+    expect {
+        -re "ERROR\[^\n\]\n" {
+            # Some error have occurred, increment an error counter
+            incr errorcnt
+            exp_continue
+        }
+        "\n" {
+            # New line received, continue waiting
+            exp_continue
+        }
+        -re "cli> $" {
+            # We successfully sent the command to the signaling CLI
+        }
+        -re " \\\[(PL|SC)-\[0-9\]+\\\]" {
+            # Part of the output e.g.:
+            # OAMP:0 [PL-3]    Running
+            # LOGD:0 [SC-1]    Running
+            # ECM:0 [SC-1]     Running
+            # ECM:1 [PL-3]     Running
+            # ECM:2 [PL-3]     Running
+            # ECM:3 [PL-4]     Running
+            # SAFOAM:0 [SC-1]  Running
+
+            # Continue waiting for remaining printout to complete the line
+            exp_continue
+        }
+        -re "SC-\[12\]\[^\n\]*$" {
+            if { [string tolower $command] != "exit" } {
+                if { [string tolower $command] != "exit;" } {
+                    # We failed to stay inside of the signaling CLI
+                    incr errorcnt
+                }
+            }
+        }
+        timeout {
+            return -1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    return $errorcnt
+}
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.4
+#  Date     : 2020-12-14 18:18:18
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2017, 2020
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Send a command to the UNIX host board.
+#
+# This subroutine expects that it is already connected to the UNIX/Linux prompt.
+#
+# Input:
+#  - Command to send
+#
+# Output:
+#  -  0: Success
+#    >0: Command returned an error
+#    -1: Timeout
+#    -2: Connection lost
+#
+proc UNIX_send_command {command} {
+    global spawn_id
+    global timeout
+    global shell_type
+
+    # Set below value to 1 if you want to get extra debug printouts for prompt handling
+    set debug_prompt 0
+
+    # Fetch any previously detected prompt and update the local prompt variable
+    global detected_prompt
+    if {$detected_prompt == ""} {
+        set default_prompt "aPromptThatShouldNeverBeMatched1234567890"
+        set prompt $default_prompt
+    } else {
+        set default_prompt $detected_prompt
+        set prompt $default_prompt
+    }
+    if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG UNIX_send_command 0: prompt='$prompt' <<<<<<<<<<<<<<<<<<<\n" }
+
+    set errorcnt 0
+
+    # Send the command
+    send -- "$command\r"
+
+    # Save currently set timeout value
+    set default_timeout $timeout
+
+    set potential_prompt 0
+
+    expect {
+        -re "No such file or directory\r*\n" {
+            # Some invalid command have been given, increment an error counter
+            incr errorcnt
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt $default_prompt
+
+            exp_continue
+        }
+        -re "command not found\r*\n" {
+            # Some invalid command have been given, increment an error counter
+            incr errorcnt
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt $default_prompt
+
+            exp_continue
+        }
+        -re "Retry\/Cancel\?\[^\n\]*$" {
+            # Probably the "parted /dev/sdX u s print" command on some invalid partition, send "c" and increment an error counter
+            send -- "c\r"
+            incr errorcnt
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt $default_prompt
+
+            exp_continue
+        }
+        -re "^syntax error: \[^\r\n\]*\r*\n" {
+            # Looks like a CMYP CLI shell error, check to make sure
+            if {$shell_type == "CMYP-CLI"} {
+                # Some invalid command have been given, increment an error counter
+                incr errorcnt
+            }
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt $default_prompt
+
+            exp_continue
+        }
+        "\n" {
+            # New line received, continue waiting
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt $default_prompt
+
+            exp_continue
+        }
+        -re "\\-\\-More\\-\\-\[^\r\n\]*$" {
+            # Most likely the command "show running-config" have been given
+            # which produces paged output requiring the user to press a space
+            # for getting the next page.
+            send -- " "
+            exp_continue
+        }
+        -re "\(END\)\[^\r\n\]*$" {
+            # Most likely the command "show running-config" have been given
+            # which produces paged output requiring the user to press a space
+            # for getting the next page.
+            send -- " "
+            exp_continue
+        }
+        -re "$prompt$" {
+            if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG UNIX_send_command 1: prompt='$prompt' <<<<<<<<<<<<<<<<<<<\n" }
+            if { $prompt == "" } {
+                # Continue looking for prompt
+                exp_continue
+            } else {
+                # Restore timeout value
+                set timeout $default_timeout
+                # Ready for next command
+            }
+        }
+        -re "(\[^\r\n\]+)$" {
+            # We have received a potential prompt, wait max 1 second for something more to come
+            set timeout 1
+            set potential_prompt 1
+            set prompt $expect_out(1,string)
+            if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG UNIX_send_command 2: prompt='$prompt' <<<<<<<<<<<<<<<<<<<\n" }
+
+            exp_continue
+        }
+        eof {
+            puts "\nWe lost the connection to the node\n"
+            set timeout $default_timeout
+            return -2
+        }
+        timeout {
+            if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG UNIX_send_command: TIMEOUT <<<<<<<<<<<<<<<<<<<\n" }
+            if { $potential_prompt == 1 } {
+                # Treat this as a success but first restore timeout value
+                set timeout $default_timeout
+            } else {
+                puts "\nWe were unable to send the command due to a timeout\n"
+                set timeout $default_timeout
+                return -1
+            }
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    # Update the detected prompt , if needed
+    if {$prompt != $detected_prompt} {
+        # Convert all non-ASCII and Tcl-significant characters into \u escape sequences by using regsub and subst in combination
+        # Code copied from example on web page: https://www.tcl.tk/man/tcl8.4/TclCmd/regsub.htm
+        set RE {[][{}\$\s\u0100-\uffff]}
+        set substitution {[format \\\\u%04x [scan "\\&" %c]]}
+        set prompt [subst [regsub -all $RE $prompt $substitution]]
+
+        set default_prompt $prompt
+        set detected_prompt $prompt
+    }
+    if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG UNIX_send_command 3: prompt='$prompt' <<<<<<<<<<<<<<<<<<<\n" }
+
+    # Special handling for CMYP-CLI which does not support "echo $?"
+    if {$shell_type == "CMYP-CLI"} {
+        return $errorcnt
+    }
+
+    set exitcode 0
+    set potential_prompt 0
+
+    # Check exitcode from previous command
+    send -- "echo \$?\r"
+
+    expect {
+        -re "^(\[0-9\]+)\r*\n" {
+            # Exit status returned
+            set exitcode $expect_out(1,string)
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt $default_prompt
+            exp_continue
+        }
+        "\n" {
+            # New line received, continue waiting
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt $default_prompt
+            exp_continue
+        }
+        -re "$prompt$" {
+            if { $prompt == "" } {
+                # Continue looking for prompt
+                exp_continue
+            } else {
+                # Ready for next command
+                set timeout $default_timeout
+            }
+        }
+        -re "(\[^\r\n\]+)$" {
+            # We have received a potential prompt, wait max 1 second for something more to come
+            set timeout 1
+            set potential_prompt 1
+            set prompt $expect_out(1,string)
+
+            exp_continue
+        }
+        eof {
+            puts "\nWe lost the connection to the node\n"
+            set timeout $default_timeout
+            return -2
+        }
+        timeout {
+            if { $potential_prompt == 1 } {
+                # Treat this as a success but first restore timeout value
+                set timeout $default_timeout
+            } else {
+                puts "\nWe were unable to send the command due to a timeout\n"
+                set timeout $default_timeout
+                return -1
+            }
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    # Update the detected prompt , if needed
+    if {$prompt != $detected_prompt} {
+        # Convert all non-ASCII and Tcl-significant characters into \u escape sequences by using regsub and subst in combination
+        # Code copied from example on web page: https://www.tcl.tk/man/tcl8.4/TclCmd/regsub.htm
+        set RE {[][{}\$\s\u0100-\uffff]}
+        set substitution {[format \\\\u%04x [scan "\\&" %c]]}
+        set prompt [subst [regsub -all $RE $prompt $substitution]]
+
+        set detected_prompt $prompt
+    }
+
+    if { $exitcode != 0 } {
+        incr errorcnt
+    }
+
+    return $errorcnt
+}
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.0
+#  Date     : 2017-02-03 16:57:00
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2017
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Change user to root on GEP.
+#
+# This subroutine expects that it is already connected to the UNIX/Linux prompt.
+#
+# Input:
+#  - Password for root user
+#
+# Output:
+#  -  0: Success
+#     1: Timeout or other error
+#
+proc UNIX_su_root {root_psw} {
+    global spawn_id
+    global timeout
+
+    set errorcnt 0
+
+    # Save currently set timeout value
+    set default_timeout $timeout
+
+    set potential_prompt 0
+    set prompt ""
+
+    # Check what user is currently logged in
+    set current_user ""
+    send -- "whoami\r"
+
+    expect {
+        -re "^(\[^\r\n\])*\r*\n" {
+            # New line received, check contents and then continue waiting
+            set line $expect_out(1,string);
+
+            if { [regexp "^whoami$" $line junk] == 1 } {
+                # Command echoed back, ignore it and continue waiting
+            } elseif { [regexp "^(\[^ \]+)$" $line junk current_user] == 1 } {
+                # Current user, store it and continue waiting
+            } else {
+                # Some other information received, just ignore it
+            }
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt ""
+
+            exp_continue
+        }
+        -re "(\[^\r\n\]+)$" {
+            # We have received a potential prompt, wait max 1 second for something more to come
+            set timeout 1
+            set potential_prompt 1
+            set prompt $expect_out(1,string);
+
+            exp_continue
+        }
+        eof {
+            puts "\nWe lost the connection to the node\n"
+            set timeout $default_timeout
+            return 1
+        }
+        timeout {
+            if { $potential_prompt == 1 } {
+                # Treat this as a success but first restore timeout value
+                set timeout $default_timeout
+            } else {
+                puts "\nWe were unable to login to the node due to a timeout\n"
+                set timeout $default_timeout
+                return 1
+            }
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    if { $current_user == "root" } {
+        # No need to switch to root
+        return 0
+    }
+
+    set potential_prompt 0
+    set prompt ""
+    set attempt 0
+
+    # Switch user id to root
+    send -- "su - root\r"
+
+    # Wait for password request from SCXB
+    expect {
+        "assword:" {
+            incr attempt
+            if { $attempt > 2 } {
+                # Failed twice, Send CTRL-C to exit
+                send "\x03"
+            } else {
+                send "$root_psw\r"
+            }
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt ""
+
+            exp_continue
+        }
+        -re "^(\[^\r\n\]*)\r*\n" {
+            # New line received, check contents and then continue waiting
+            set line $expect_out(1,string);
+
+            if { [regexp "^su - root$" $line junk] == 1 } {
+                # Command echoed back, ignore it and continue waiting
+            } elseif { [regexp "^(\[^ \]+)$" $line junk current_user] == 1 } {
+                # Current user, store it and continue waiting
+            } else {
+                # Some other information received, just ignore it
+            }
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt ""
+
+            exp_continue
+        }
+        -re "(\[^\r\n\]+)$" {
+            # We have received a potential prompt, wait max 1 second for something more to come
+            set timeout 1
+            set potential_prompt 1
+            set prompt $expect_out(1,string);
+
+            exp_continue
+        }
+        eof {
+            puts "\nWe lost the connection to the node\n"
+            set timeout $default_timeout
+            return 1
+        }
+        timeout {
+            if { $potential_prompt == 1 } {
+                # Treat this as a success but first restore timeout value
+                set timeout $default_timeout
+            } else {
+                puts "\nWe were unable to login to the node due to a timeout\n"
+                set timeout $default_timeout
+                return 1
+            }
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    set potential_prompt 0
+    set prompt ""
+
+    # Check that switch to root was successful
+    set current_user ""
+    send -- "whoami\r"
+
+    expect {
+        -re "^(\[^\r\n\]*)\r*\n" {
+            # New line received, check contents and then continue waiting
+            set line $expect_out(1,string);
+
+            if { [regexp "^whoami$" $line junk] == 1 } {
+                # Command echoed back, ignore it and continue waiting
+            } elseif { [regexp "^(\[^ \]+)$" $line junk current_user] == 1 } {
+                # Current user, store it and continue waiting
+            } else {
+                # Some other information received, just ignore it
+            }
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt ""
+
+            exp_continue
+        }
+        -re "(\[^\r\n\]+)$" {
+            # We have received a potential prompt, wait max 1 second for something more to come
+            set timeout 1
+            set potential_prompt 1
+            set prompt $expect_out(1,string);
+
+            exp_continue
+        }
+        eof {
+            puts "\nWe lost the connection to the node\n"
+            set timeout $default_timeout
+            return 1
+        }
+        timeout {
+            if { $potential_prompt == 1 } {
+                # Treat this as a success but first restore timeout value
+                set timeout $default_timeout
+            } else {
+                puts "\nWe were unable to login to the node due to a timeout\n"
+                set timeout $default_timeout
+                return 1
+            }
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    if { $current_user == "root" } {
+        # Success
+        return 0
+    } else {
+        return 1
+    }
+}
+################################################################################
+# $Revision: 1.3 $                                                             #
+#   $Author: eustone $                                                         #
+#     $Date: 2014/10/31 15:06:15 $                                             #
+################################################################################
+#                                                                              #
+# (C) COPYRIGHT ERICSSON GMBH 2014                                             #
+#                                                                              #
+# The copyright to the computer program(s) herein is the property of           #
+# Ericsson GmbH, Germany.                                                      #
+#                                                                              #
+# The program(s) may be used and/or copied only with the written permission    #
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in   #
+# the agreement/contract under which the program(s) have been supplied.        #
+#                                                                              #
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Print an error message.
+# Input:
+#  - Error message (text that can contain multiple lines)
+#
+# Output:
+#  -
+#
+proc error_message { message } {
+    global spawn_id
+
+    puts ""
+    puts "***************************"
+    puts "** An error has occurred **"
+    puts "***************************"
+    puts "$message"
+    return 0
+}
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.20
+#  Date     : 2020-12-14 18:18:18
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2014-2017, 2020
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Exit out of all shells.
+# Input:
+#  -
+#
+# Output:
+#  - 0: Success
+#
+proc exit_all {} {
+    global spawn_id
+    global timeout
+
+    set errorcnt 0
+    set abortcnt 0
+    set endcnt 0
+    set default_timeout $timeout
+
+    # Set timeout value to a much lower value to speed up the exit in case of problems
+    # to communicate with the node.
+    set timeout 10
+
+    while 1 {
+        set potential_prompt 0
+        send -- "exit\r"
+        expect {
+            "Discard changes and continue\? \\\[yes,no\\\]" {
+                # The user have changed something but forgot to commit the changes
+                # for now just discard the changes but step error counter.
+                incr errorcnt
+                send -- "yes\r"
+                exp_continue
+            }
+            -re "ERROR: At top node, use 'end' to leave configuration mode.*" {
+                # Error from CLISS, the user forgot to do "commit" or "abort" before doing "exit"
+                send -- "end\r"
+                incr errorcnt
+                exp_continue
+            }
+            -re "ERROR: Unable to exit from incomplete object.*" {
+                # Error from CLISS, the user forgot to do "commit" or "abort" before doing "exit"
+                send -- "abort\r"
+                incr errorcnt
+                exp_continue
+            }
+            -re "ERROR: Command not found.*" {
+                # Error from CLISS, something was missing that causes "commit" to fail
+                if { $abortcnt == 0 } {
+                    send -- "abort\r"
+                    incr errorcnt
+                    incr abortcnt
+                    exp_continue
+                } else {
+                    if { $endcnt == 0 } {
+                        send -- "end\r"
+                        incr errorcnt
+                        incr endcnt
+                        exp_continue
+                    } else {
+                        # Just drop the connection
+                    }
+                }
+            }
+            -re "ERROR: Current cardinality of .*" {
+                # Error from CLISS, something went wrong while loading PBR rules
+                send -- "abort\r"
+                incr errorcnt
+                exp_continue
+            }
+            -re "The configuration contains unsaved changes, use \"FORCE\" to quit without saving.*" {
+                # Error from signmcli, something went wrong while loading SS7CAF data
+                send -- "exit:force;\r"
+                incr errorcnt
+                exp_continue
+            }
+            "\n" {
+                # New line received, continue waiting
+                set potential_prompt 0
+                exp_continue
+            }
+            "expert@blade_0_*" {
+                # New prompt, send exit again
+            }
+            "advanced@blade_0_*" {
+                # New prompt, send exit again
+            }
+            "advanced@localhost*" {
+                # New prompt, send exit again
+            }
+            "root@blade_0_*" {
+                # New prompt, send exit again
+            }
+            "blade_0_0 login:*" {
+                # Login prompt for left SCXB, time to get out
+                break
+            }
+            "blade_0_25 login:*" {
+                # Login prompt for right SCXB, time to get out
+                break
+            }
+            "blade_0_*" {
+                # New prompt, send exit again
+            }
+            -re "CMX\[-_\]0\[-_\]\[0-9\]+.*\[#>\]$" {
+                # New prompt, send exit again
+            }
+            -re "CMX_\[LR\]_.+\[#>\]$" {
+                # New prompt, send exit again
+            }
+            -re "blade_0_\[0-9\]+.*\[#>\]$" {
+                # New prompt, send exit again
+            }
+            -re "SC-2-\[1-2\]:.+\[#$\]\[^\n\]*$" {
+                # New BSP, send exit again
+            }
+            -re "^\[\r\]*dmx\[^\n\]*#\[^\n\]*$" {
+                # ISS prompt, send exit again
+            }
+            -re "SC-\[12\] login:.*" {
+                # Login prompt for controller node, time to get out
+                break
+            }
+            -re "PL-\[0-9\]+ login:.*" {
+                # Login prompt for payload node, time to get out
+                break
+            }
+            -re "SC-2-\[12\] login:.*" {
+                # Login prompt for BSP node, time to get out
+                break
+            }
+            -re "SC-\[12\]\[^\n\]*\[\$#\]\[^\n\]*$" {
+                # New prompt, send exit again
+            }
+            -re "PL-\[0-9\]+\[^\n\]*\[\$#\]\[^\n\]*$" {
+                # New prompt, send exit again
+            }
+            -re ">\[^\n\]*$" {
+                # New CLISS prompt, send exit again
+            }
+            -re "bash-\[0-9\]+\.\[0-9\]+\[\$#\] $" {
+                # E.g. bash-3.2#
+                # Special CMX prompt when started from CMX bridge with "start-shell"
+                # Send exit again
+            }
+            -re "(\[^\r\n\]+)$" {
+                # We have received a potential prompt, wait max 1 second for something more to come
+                set timeout 1
+                set potential_prompt 1
+
+                exp_continue
+            }
+            timeout {
+                if { $potential_prompt == 1 } {
+                    # Treat this as a success but first restore timeout value
+                    set timeout 10
+                } else {
+                    # We have either received a "timeout" or "eof" where the spawned
+                    # process have terminated.
+                    break
+                }
+            }
+            eof {
+                # We lost connect where the spawned process have terminated.
+                break
+            }
+        }
+    }
+
+    # Set back the default timeout value
+    set timeout $default_timeout
+
+    return $errorcnt
+}
+################################################################################
+# $Revision: 1.4 $                                                             #
+#   $Author: EUSTONE $                                                         #
+#     $Date: 2015/07/06 07:38:13 $                                             #
+################################################################################
+#                                                                              #
+# (C) COPYRIGHT ERICSSON GMBH 2014                                             #
+#                                                                              #
+# The copyright to the computer program(s) herein is the property of           #
+# Ericsson GmbH, Germany.                                                      #
+#                                                                              #
+# The program(s) may be used and/or copied only with the written permission    #
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in   #
+# the agreement/contract under which the program(s) have been supplied.        #
+#                                                                              #
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Exit out of Expect and print an error message.
+# Input:
+#  - Exit return value (integer > 0)
+#  - Error message (text that can contain multiple lines)
+#
+# Output:
+#  -
+#
+proc exit_with_error_message { returnvalue errormessage } {
+    global spawn_id
+    global debug_list
+
+    puts ""
+    puts "**********************************************************"
+    puts "** Potential error(s) have occurred, check output above **"
+    puts "**********************************************************"
+    puts "$errormessage"
+    if { [info exists debug_list] } {
+        if { [llength $debug_list] > 0 } {
+            puts "\nThis error was triggered due to the following events:"
+            foreach line $debug_list {
+                puts "$line"
+            }
+            puts ""
+        }
+    }
+
+    exit $returnvalue
+}
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.8
+#  Date     : 2020-12-14 18:18:18
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2016, 2017, 2020
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Description:
+#
+# Try to determine what kind of shell we are connected to and return a string
+# describing the shell type.
+#
+# Input:
+#
+# Output:
+#  - Type of shell, one of the following
+#      CLISS
+#      CMXB-LINUX
+#      CYGWIN
+#      DIRECTOR-LINUX
+#      DMX
+#      GEP-LINUX
+#      GEP-SIGNMCLI
+#      ISS
+#      LINUX
+#      SCXB-LINUX-DMX
+#      SCXB-LINUX-BSP
+#      UNKNOWN
+#
+proc get_shell_type {} {
+
+    # Set below value to 1 if you want to get extra debug printouts for prompt handling
+    set debug_prompt 0
+
+    # Retrieve the global spawn_id
+    global spawn_id
+
+    global timeout
+    set default_timeout $timeout
+
+    # Fetch any previously detected prompt and update the local prompt variable
+    global detected_prompt
+    if {$detected_prompt == ""} {
+        set default_prompt "aPromptThatShouldNeverBeMatched1234567890"
+        set prompt $default_prompt
+    } else {
+        set default_prompt $detected_prompt
+        set prompt $default_prompt
+    }
+    if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG get_shell_type 0: prompt='$prompt' <<<<<<<<<<<<<<<<<<<\n" }
+
+    set potential_prompt 0
+    set shell_type "UNKNOWN"
+
+    # Send a CR to see what kind of prompt we get back
+    send -- "\r"
+
+    expect {
+        "\n" {
+            # New line received, continue waiting
+            # Restore timeout valye
+            set timeout $default_timeout
+            set prompt $default_prompt
+            set potential_prompt 0
+            exp_continue
+        }
+        -re ">$" {
+            # CLISS prompt which can be on GEP, BSP or CMXB, Ready for next command
+            set shell_type "CLISS"
+            set prompt $expect_out(0,string)
+        }
+        -re "SC-2-\[12\]\[^\n\]*$" {
+            # BSP SCXB prompt, Ready for next command
+            set shell_type "SCXB-LINUX-BSP"
+            set prompt $expect_out(0,string)
+        }
+        -re "SC-\[12\]\[^\n\]*$" {
+            # GEP Controller prompt, Ready for next command
+            set shell_type "GEP-LINUX"
+            set prompt $expect_out(0,string)
+        }
+        -re "PL-\[0-9\]+\[^\n\]*$" {
+            # GEP Payload prompt, Ready for next command
+            set shell_type "GEP-LINUX"
+            set prompt $expect_out(0,string)
+        }
+        -re "CMX\[-_\]0\[-_\]\[0-9\]+.*\[#>\]$" {
+            # CMX Bridge prompt, Ready for next command
+            set shell_type "CMXB-IMISH"
+            set prompt $expect_out(0,string)
+        }
+        -re "CMX_\[LR\]_.+\[#>\]$" {
+            # CMX Bridge prompt, Ready for next command
+            set shell_type "CMXB-IMISH"
+            set prompt $expect_out(0,string)
+        }
+        -re "expert@blade_0_0\[^\n\]*$" {
+            # DMX3.1 DMX prompt, Ready for next command
+            set shell_type "DMX"
+            set prompt $expect_out(0,string)
+        }
+        -re "expert@blade_0_25\[^\n\]*$" {
+            # DMX3.1 DMX prompt, Ready for next command
+            set shell_type "DMX"
+            set prompt $expect_out(0,string)
+        }
+        -re "(advanced|root)@blade_0_0\[^\n\]*$" {
+            # DMX3.1 SCXB Linux or DMX prompt, Ready for next command
+            set shell_type "SCXB-LINUX-DMX"
+            set prompt $expect_out(0,string)
+        }
+        -re "(advanced|root)@blade_0_25\[^\n\]*$" {
+            # DMX3.1 SCXB Linux prompt, Ready for next command
+            set shell_type "SCXB-LINUX-DMX"
+            set prompt $expect_out(0,string)
+        }
+        -re "(advanced|root)@blade_0_2\[68\]\[^\n\]*$" {
+            # DMX3.1 CMXB Linux or DMX prompt, Ready for next command
+            set shell_type "CMXB-LINUX"
+            set prompt $expect_out(0,string)
+        }
+        -re "bash-3\.2#\[^\n\]*$" {
+            # DMX3.1 CMXB Linux prompt, Ready for next command
+            set shell_type "CMXB-LINUX"
+            set prompt $expect_out(0,string)
+        }
+        -re "^\[\r\]*dmx\[^\n\]*#\[^\n\]*$" {
+            # ISS prompt, Ready for next command
+            set shell_type "ISS"
+            set prompt $expect_out(0,string)
+        }
+        -re "cli> $" {
+            # Signaling CLI, Ready for next command
+            set shell_type "GEP-SIGNMCLI"
+            set prompt $expect_out(0,string)
+        }
+        -re "director\[^\n\]*> $" {
+            # The director on the SC node Linux prompt, Ready for next command
+            set shell_type "DIRECTOR-LINUX"
+            set prompt $expect_out(0,string)
+        }
+        -re "^\[^@\]*@5gc-sc-testnode#$" {
+            # The CMYP-CLI shell on the SC node, Ready for next command
+            set shell_type "CMYP-CLI"
+            set prompt $expect_out(0,string)
+        }
+        -re "$prompt$" {
+            if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG get_shell_type 1: prompt='$prompt' <<<<<<<<<<<<<<<<<<<\n" }
+            # Restore timeout valye
+            if { $prompt == "" } {
+                # Continue looking for prompt
+                exp_continue
+            } else {
+                # Ready for next command
+                set timeout $default_timeout
+            }
+        }
+        -re "(\[^\r\n\]+)$" {
+            # We have received a potential prompt, wait max 1 second for something more to come
+            set timeout 1
+            set potential_prompt 1
+            set prompt $expect_out(1,string)
+            if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG get_shell_type 2: prompt='$prompt' <<<<<<<<<<<<<<<<<<<\n" }
+
+            exp_continue
+        }
+        eof {
+            # Lost connection to the node
+            set timeout $default_timeout
+            return $shell_type
+        }
+        timeout {
+            if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG get_shell_type: TIMEOUT <<<<<<<<<<<<<<<<<<<\n" }
+            if { $potential_prompt == 1 } {
+                # Treat this as a success but first restore timeout value
+                set timeout $default_timeout
+            } else {
+                puts "\nWe were unable to detect shell type due to a timeout\n"
+                set timeout $default_timeout
+                return $shell_type
+            }
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    set timeout $default_timeout
+
+    # Update the detected prompt , if needed
+    if {$prompt != $detected_prompt} {
+        # Convert all non-ASCII and Tcl-significant characters into \u escape sequences by using regsub and subst in combination
+        # Code copied from example on web page: https://www.tcl.tk/man/tcl8.4/TclCmd/regsub.htm
+        set RE {[][{}\$\s\u0100-\uffff]}
+        set substitution {[format \\\\u%04x [scan "\\&" %c]]}
+        set prompt [subst [regsub -all $RE $prompt $substitution]]
+
+        set default_prompt $prompt
+        set detected_prompt $prompt
+    }
+    if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG get_shell_type 3: prompt='$prompt' <<<<<<<<<<<<<<<<<<<\n" }
+
+    if { $shell_type == "UNKNOWN" } {
+        # Try to determine shell type from OS Type using "uname -o"
+        send -- "uname -o\r"
+
+        # Shorten the timeout
+        set timeout 2
+
+        expect {
+            "Linux" {
+                set shell_type "LINUX"
+
+                # New line received, continue waiting
+                exp_continue
+            }
+            "Cygwin" {
+                set shell_type "CYGWIN"
+
+                # New line received, continue waiting
+                exp_continue
+            }
+            "\n" {
+                # New line received, continue waiting
+                set timeout 2
+                set prompt $default_prompt
+                exp_continue
+            }
+            -re "$prompt$" {
+                if { $prompt == "" } {
+                    # Continue looking for prompt
+                    exp_continue
+                } else {
+                    # Restore timeout valye
+                    set timeout $default_timeout
+                    # Ready for next command
+                }
+            }
+            -re "(\[^\r\n\]+)$" {
+                # We have received a potential prompt, wait max 1 second for something more to come
+                set timeout 1
+                set potential_prompt 1
+                set prompt $expect_out(1,string)
+
+                exp_continue
+            }
+            eof {
+                # Lost connection to the node
+
+                # Restore timeout valye
+                set timeout $default_timeout
+
+                return $shell_type
+            }
+            timeout {
+
+                if { $potential_prompt == 1 } {
+                    # Treat this as a success but first restore timeout value
+                    set timeout $default_timeout
+                } else {
+                    puts "\nWe were unable to login to the node due to a timeout\n"
+                    set timeout $default_timeout
+                    return $shell_type
+                }
+
+                return $shell_type
+            }
+        }
+
+        # Read any pending output
+        expect -re ".*"
+
+    }
+
+    # Update the detected prompt , if needed
+    if {$prompt != $detected_prompt} {
+        # Convert all non-ASCII and Tcl-significant characters into \u escape sequences by using regsub and subst in combination
+        # Code copied from example on web page: https://www.tcl.tk/man/tcl8.4/TclCmd/regsub.htm
+        set RE {[][{}\$\s\u0100-\uffff]}
+        set substitution {[format \\\\u%04x [scan "\\&" %c]]}
+        set prompt [subst [regsub -all $RE $prompt $substitution]]
+
+        set detected_prompt $prompt
+    }
+
+    return $shell_type
+}
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.1
+#  Date     : 2020-11-18 16:52:00
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2018, 2020
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Start a new bash shell.
+#
+# Input:
+#  -
+#
+# Output:
+#  - 0: Success
+#    1: Timeout or failure to start bash
+#
+proc login_via_bash { } {
+    global spawn_id
+    global timeout
+
+    # Set below value to 1 if you want to get extra debug printouts for prompt handling
+    set debug_prompt 0
+
+    # Fetch any previously detected prompt and update the local prompt variable
+    global detected_prompt
+    if {$detected_prompt == ""} {
+        set default_prompt "aPromptThatShouldNeverBeMatched1234567890"
+        set prompt $default_prompt
+    } else {
+        set default_prompt $detected_prompt
+        set prompt $default_prompt
+    }
+    if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG login_via_bash 0: prompt='$prompt' <<<<<<<<<<<<<<<<<<<\n" }
+
+    # Start a new shell
+    if [catch "spawn -noecho bash" reason] {
+        puts "\nSpawn of 'bash' failed with reason: $reason\n"
+        exit 1
+    }
+
+    # Save currently set timeout value
+    set default_timeout $timeout
+
+    set potential_prompt 0
+
+    # Wait for password request from node
+    expect {
+        "\n" {
+            # Line received, wait for more
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set prompt $default_prompt
+            set potential_prompt 0
+
+            exp_continue
+        }
+        -re "$prompt$" {
+            if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG login_via_bash 1: prompt='$prompt' <<<<<<<<<<<<<<<<<<<\n" }
+            if { $prompt == "" } {
+                # Continue looking for prompt
+                exp_continue
+            } else {
+                # Restore timeout value
+                set timeout $default_timeout
+                # Ready for next command
+            }
+        }
+        -re "(\[^\r\n\]+\[$#><\] )$" {
+            # We have received something that looks like a normal Unix prompt
+            set prompt $expect_out(1,string)
+            if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG login_via_bash 2: prompt='$prompt' <<<<<<<<<<<<<<<<<<<\n" }
+        }
+        -re "(\[^\r\n\]+)$" {
+            # We have received a potential prompt, wait max 1 second for something more to come
+            set timeout 1
+            set potential_prompt 1
+            set prompt $expect_out(1,string)
+            if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG login_via_bash 3: prompt='$prompt' <<<<<<<<<<<<<<<<<<<\n" }
+
+            exp_continue
+        }
+        eof {
+            puts "\nWe were unable to start a new bash shell due to lost connection\n"
+            set timeout $default_timeout
+            return 1
+        }
+        timeout {
+            if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG login_via_bash: TIMEOUT <<<<<<<<<<<<<<<<<<<\n" }
+            if { $potential_prompt == 1 } {
+                # Treat this as a success but first restore timeout value
+                set timeout $default_timeout
+            } else {
+                puts "\nWe were unable to start a new bash shell due to a timeout\n"
+                set timeout $default_timeout
+                return 1
+            }
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    # Update the detected prompt , if needed
+    if {$prompt != $detected_prompt} {
+        # Convert all non-ASCII and Tcl-significant characters into \u escape sequences by using regsub and subst in combination
+        # Code copied from example on web page: https://www.tcl.tk/man/tcl8.4/TclCmd/regsub.htm
+        set RE {[][{}\$\s\u0100-\uffff]}
+        set substitution {[format \\\\u%04x [scan "\\&" %c]]}
+        set prompt [subst [regsub -all $RE $prompt $substitution]]
+
+        set default_prompt $prompt
+        set detected_prompt $prompt
+    }
+    if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG login_via_bash 4: prompt='$prompt' <<<<<<<<<<<<<<<<<<<\n" }
+
+    return 0
+}
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.8
+#  Date     : 2018-10-10 18:43:21
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2014,2015,2018
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Copy files using secure copy "scp".
+#
+# Input:
+#  - From data
+#  - To data
+#  - Password
+#  - Port (default is 22)
+#
+# Output:
+#  - 0: Success
+#    1: Timout or other error
+#
+
+# I really had problems to get the "spawn scp $from_data $to_data" to work
+# if the input to the procedure was:
+# "-r root@10.87.13.54:/home/daft/useraccount_backup" "." "rootroot"
+#
+# I tried the following logic:
+#    not working: spawn scp $from_data $to_data
+#    not working: spawn scp '$from_data $to_data'
+#    not working: spawn scp "$from_data $to_data"
+#    not working: send -- "scp $from_data $to_data\r"
+#        working: spawn scp -v -r root@10.87.13.54:/home/daft/user* .
+#        working: spawn scp -r root@10.87.13.54:/home/daft/useraccount* .
+#    not working: spawn scp $from_data .
+#        working: spawn scp -r root@10.87.13.54:/home/daft/useraccount* $to_data
+#        working: spawn scp -r root@10.87.13.54:/home/daft/useraccount_backup $to_data
+#        working: set from_data "root@10.87.13.54:/home/daft/useraccount_backup"; spawn scp -r $from_data $to_data
+#    not working: set from_data "-r root@10.87.13.54:/home/daft/useraccount_backup"; spawn scp $from_data $to_data
+#    not working: set from_data "\-r root@10.87.13.54:/home/daft/useraccount_backup"; spawn scp $from_data $to_data
+#    not working: set from_data "\\-r root@10.87.13.54:/home/daft/useraccount_backup"; spawn scp $from_data $to_data
+#    not working: set from_data "\\\-r root@10.87.13.54:/home/daft/useraccount_backup"; spawn scp $from_data $to_data
+#        working: spawn scp -pr $from_data $to_data
+#
+# So the problem seems to be the "-r " part, so for now I just hard code this
+
+proc login_via_scp {from_data to_data password {port 22} {options ""}} {
+    global spawn_id
+
+    set ipv6_address 0
+
+    # Check for IPv6 address in from_data
+    puts "\nChecking 'from_data' contents to detect possible IPv6 address:"
+    if { [regexp "^(.+):(.+)$" $from_data whole_match user_host_match file_match] == 1 } {
+        # We have a host and file in from_data meaning copy from remote node
+        if { [regexp "^(.+) (.+)@(.+)$" $user_host_match whole_match prefix_match user_match host_match] == 1 } {
+            # We have a prefix, username and hostname
+            if { [regexp "^\[0-9\]+.\[0-9\]+.\[0-9\]+.\[0-9\]+$" $host_match whole_match] == 1 } {
+                # We have something that looks like an IPv4 address
+                puts "1:IPv4 address detected in 'from_data'\n"
+            } elseif { [regexp "^.+:.*$" $host_match whole_match] == 1 } {
+                # We have something that looks like an IPv6 address
+                puts "2:IPv6 address detected in 'from_data'\n"
+                set ipv6_address 1
+                set from_data "$prefix_match $user_match@\\\[$host_match\\\]:$file_match"
+            } else {
+                # Does not look like an IPv4 or IPv6 address
+                puts "3:Neither IPv4 nor IPv6 address detected in 'from_data', maybe a hostname\n"
+            }
+        } elseif { [regexp "^(.+)@(.+)$" $user_host_match whole_match user_match host_match] == 1 } {
+            # We have a username and hostname
+            if { [regexp "^\[0-9\]+\.\[0-9\]+\.\[0-9\]+\.\[0-9\]+$" $host_match whole_match] == 1 } {
+                # We have something that looks like an IPv4 address
+                puts "4:IPv4 address detected in 'from_data'\n"
+            } elseif { [regexp "^.+:.+$" $host_match whole_match] == 1 } {
+                # We have something that looks like an IPv6 address
+                puts "5:IPv6 address detected in 'from_data'\n"
+                set ipv6_address 1
+                set from_data "$user_match@\\\[$host_match\\\]:$file_match"
+            } else {
+                # Does not look like an IPv4 or IPv6 address
+                puts "6:Neither IPv4 nor IPv6 address detected in 'from_data', maybe a hostname\n"
+            }
+        } elseif { [regexp "^(.+) (.+)$" $user_host_match whole_match prefix_match host_match] == 1 } {
+            # We have a prefix and hostname
+            if { [regexp "^\[0-9\]+\.\[0-9\]+\.\[0-9\]+\.\[0-9\]+$" $host_match whole_match] == 1 } {
+                # We have something that looks like an IPv4 address
+                puts "7:IPv4 address detected in 'from_data'\n"
+            } elseif { [regexp "^.+:.+$" $host_match whole_match] == 1 } {
+                # We have something that looks like an IPv6 address
+                puts "8:IPv6 address detected in 'from_data'\n"
+                set ipv6_address 1
+                set from_data "$prefix_match \\\[$host_match\\\]:$file_match"
+            } else {
+                # Does not look like an IPv4 or IPv6 address
+                puts "9:Neither IPv4 nor IPv6 address detected in 'from_data', maybe a hostname\n"
+            }
+        } elseif { [regexp "^\[0-9\]+\.\[0-9\]+\.\[0-9\]+\.\[0-9\]+$" $user_host_match whole_match] == 1 } {
+            # We have something that looks like an IPv4 address
+            puts "10:IPv4 address detected in 'from_data'\n"
+        } elseif { [regexp "^.+:.+$" $user_host_match whole_match] == 1 } {
+            # We have something that looks like an IPv6 address
+            puts "11:IPv6 address detected in 'from_data'\n"
+            set ipv6_address 1
+            set from_data "\\\[$user_host_match\\\]:$file_match"
+        } else {
+            puts "12:Did not detect a username in 'from_data', maybe using same user on remote host\n"
+        }
+    } else {
+        puts "13:Did not detect a remote host in 'from_data', maybe a local file\n"
+    }
+
+    # Check for IPv6 address in to_data
+    puts "Checking 'to_data' contents to detect possible IPv6 address:"
+    if { [regexp "^(.+):(.+)$" $to_data whole_match user_host_match file_match] == 1 } {
+        # We have a host and file in to_data meaning copy from remote node
+        if { [regexp "^(.+)@(.+)$" $user_host_match whole_match user_match host_match] == 1 } {
+            # We have a username and hostname
+            if { [regexp "^\[0-9\]+\.\[0-9\]+\.\[0-9\]+\.\[0-9\]+$" $host_match whole_match] == 1 } {
+                # We have something that looks like an IPv4 address
+                puts "1:IPv4 address detected in 'to_data'\n"
+            } elseif { [regexp "^.+:.+$" $host_match whole_match] == 1 } {
+                # We have something that looks like an IPv6 address
+                puts "2:IPv6 address detected in 'to_data'\n"
+                set ipv6_address 1
+                set to_data "$user_match@\\\[$host_match\\\]:$file_match"
+            } else {
+                # Does not look like an IPv4 or IPv6 address
+                puts "3:Neither IPv4 nor IPv6 address detected in 'to_data', maybe a hostname\n"
+            }
+        } elseif { [regexp "^\[0-9\]+\.\[0-9\]+\.\[0-9\]+\.\[0-9\]+$" $user_host_match whole_match] == 1 } {
+            # We have something that looks like an IPv4 address
+            puts "4:IPv4 address detected in 'to_data'\n"
+        } elseif { [regexp "^.+:.+$" $user_host_match whole_match] == 1 } {
+            # We have something that looks like an IPv6 address
+            puts "5:IPv6 address detected in 'to_data'\n"
+            set ipv6_address 1
+            set to_data "\\\[$user_host_match\\\]:$file_match"
+        } else {
+            puts "6:Did not detect a username in 'to_data', maybe using same user on remote host\n"
+        }
+    } else {
+        puts "7:Did not detect a remote host in 'to_data', maybe a local file\n"
+    }
+
+    # Copy the data
+    if { $ipv6_address == 1 } {
+        if [catch "spawn bash -c \"scp $options -6 -P $port $from_data $to_data\"" reason] {
+            puts "\nSpawn of 'scp' for IPv6 failed with reason: $reason\n"
+            exit 1
+        }
+    } else {
+        if [catch "spawn bash -c \"scp $options -P $port $from_data $to_data\"" reason] {
+            puts "\nSpawn of 'scp' for IPv4 failed with reason: $reason\n"
+            exit 1
+        }
+    }
+
+    # Wait for password request and finished transfer
+    expect {
+        "Connection closed by foreign host*" {
+            # Login failed for some reason
+            return 1
+        }
+        "lost connection*" {
+            # Login failed for some reason
+            return 1
+        }
+        "illegal option*" {
+            # Login failed due to some bad parameters
+            return 1
+        }
+        "Killed by signal*" {
+            # Login failed due to some bad parameters
+            return 1
+        }
+        "\n" {
+            # Any line
+            exp_continue
+        }
+        "assword:" {
+            send "$password\r"
+            exp_continue
+        }
+        "(yes/no)?" {
+            send "yes\r"
+            exp_continue
+        }
+        timeout {
+            return 1
+        }
+        eof {
+            # Copy finished
+            return 0
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    return 0
+}
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.4
+#  Date     : 2020-12-18 14:10:49
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2017, 2020
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Connect using a normal ssh connection to the node.
+#
+# Input:
+#  - IP-address of the node
+#  - username
+#  - password
+#  - port number, OPTIONAL
+#
+# Output:
+#  - 0: Success
+#    1: Timeout or failure to connect
+#
+proc login_via_ssh {ip user password {port  ""} {new_password ""}} {
+    global spawn_id
+    global timeout
+
+    # Set below value to 1 if you want to get extra debug printouts for prompt handling
+    set debug_prompt 0
+
+    # Fetch any previously detected prompt and update the local prompt variable
+    global detected_prompt
+    if {$detected_prompt == ""} {
+        set default_prompt "aPromptThatShouldNeverBeMatched1234567890"
+        set prompt $default_prompt
+    } else {
+        set default_prompt $detected_prompt
+        set prompt $default_prompt
+    }
+    if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG login_via_ssh 0: prompt='$prompt' <<<<<<<<<<<<<<<<<<<\n" }
+
+    set use_special_key 0
+
+    # Login to the node
+    if {$port == ""} {
+        if [catch "spawn -noecho ssh -q $user@$ip" reason] {
+            puts "\nSpawn of 'ssh' failed with reason: $reason\n"
+            exit 1
+        }
+    } else {
+        if [catch "spawn -noecho ssh -q $user@$ip -p $port" reason] {
+            puts "\nSpawn of 'ssh' to port $port failed with reason: $reason\n"
+            exit 1
+        }
+    }
+
+    set password_cnt 0
+    set new_password_cnt 0
+
+    # Save currently set timeout value
+    set default_timeout $timeout
+
+    set potential_prompt 0
+
+    # Wait for password request from node
+    expect {
+        "ew Password:" {
+            incr new_password_cnt
+            if {$new_password_cnt > 2} {
+                puts "\nAttempted to send the password 2 times without success\n"
+                set timeout $default_timeout
+                return 1
+            }
+            send "$new_password\r"
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt $default_prompt
+
+            exp_continue
+        }
+        "assword:" {
+            incr password_cnt
+            if {$password_cnt > 2} {
+                puts "\nAttempted to send the password 2 times without success\n"
+                set timeout $default_timeout
+                return 1
+            }
+            send "$password\r"
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt $default_prompt
+
+            exp_continue
+        }
+        "(yes/no)?" {
+            send "yes\r"
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt $default_prompt
+
+            exp_continue
+        }
+        -re "^Unable to negotiate with .+ no matching key exchange method found. Their offer: diffie-hellman-group1-sha1" {
+            # Unable to login to DMX because of weak algorithm from newer Linux version.
+            # Try specifically with the weak key
+            set use_special_key 1
+
+            exp_continue
+        }
+        "Connection refused" {
+            # We are probably trying to connect to the wrong IP
+            set timeout $default_timeout
+            return 1
+        }
+        "\n" {
+            # Line received, wait for more
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set prompt $default_prompt
+            set potential_prompt 0
+
+            exp_continue
+        }
+        -re "$prompt$" {
+            if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG login_via_ssh 1: prompt='$prompt' <<<<<<<<<<<<<<<<<<<\n" }
+            if { $prompt == "" } {
+                # Continue looking for prompt
+                exp_continue
+            } else {
+                # Restore timeout value
+                set timeout $default_timeout
+                # Ready for next command
+            }
+        }
+        -re  "(\u005D\u005D\u003E\u005D\u005D\u003E)$" {
+            # NETCONF prompt "]]>]]>"
+            set timeout $default_timeout
+            set prompt $expect_out(1,string)
+            # Ready for next command
+        }
+        -re "(\[^\r\n\]+\[$#><\] )$" {
+            # We have received something that looks like a normal Unix prompt
+            set prompt $expect_out(1,string)
+            if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG login_via_ssh 2: prompt='$prompt' <<<<<<<<<<<<<<<<<<<\n" }
+        }
+        -re "(\[^\r\n\]+)$" {
+            # We have received a potential prompt, wait max 1 second for something more to come
+            set timeout 1
+            set potential_prompt 1
+            set prompt $expect_out(1,string)
+            if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG login_via_ssh 3: prompt='$prompt' <<<<<<<<<<<<<<<<<<<\n" }
+
+            exp_continue
+        }
+        eof {
+            if { $use_special_key == 1 } {
+                # Try a new connection
+                puts "\nFailed to login using default key exchange, trying the weaker 'diffie-hellman-group1-sha1' key\n"
+                set timeout $default_timeout
+            } else {
+                puts "\nWe were unable to login to the node due to lost connection\n"
+                set timeout $default_timeout
+                return 1
+            }
+        }
+        timeout {
+            if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG login_via_ssh: TIMEOUT <<<<<<<<<<<<<<<<<<<\n" }
+            if { $potential_prompt == 1 } {
+                # Treat this as a success but first restore timeout value
+                set timeout $default_timeout
+            } else {
+                puts "\nWe were unable to login to the node due to a timeout\n"
+                set timeout $default_timeout
+                return 1
+            }
+        }
+    }
+
+    # Restore default timeout value
+    set timeout $default_timeout
+
+    # Update the detected prompt , if needed
+    if {$prompt != $detected_prompt} {
+        # Convert all non-ASCII and Tcl-significant characters into \u escape sequences by using regsub and subst in combination
+        # Code copied from example on web page: https://www.tcl.tk/man/tcl8.4/TclCmd/regsub.htm
+        set RE {[][{}\$\s\u0100-\uffff]}
+        set substitution {[format \\\\u%04x [scan "\\&" %c]]}
+        set prompt [subst [regsub -all $RE $prompt $substitution]]
+
+        set default_prompt $prompt
+        set detected_prompt $prompt
+    }
+    if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG login_via_ssh 4: prompt='$prompt' <<<<<<<<<<<<<<<<<<<\n" }
+
+    if { $use_special_key == 1 } {
+        # Login to the node
+        if {$port == ""} {
+            if [catch "spawn -noecho ssh -q -oKexAlgorithms=diffie-hellman-group1-sha1 $user@$ip" reason] {
+                puts "\nSpawn of 'ssh' failed with reason: $reason\n"
+                exit 1
+            }
+        } else {
+            if [catch "spawn -noecho ssh -q -oKexAlgorithms=diffie-hellman-group1-sha1 $user@$ip -p $port" reason] {
+                puts "\nSpawn of 'ssh' to port $port failed with reason: $reason\n"
+                exit 1
+            }
+        }
+
+        set password_cnt 0
+
+        set potential_prompt 0
+
+        # Wait for password request from node
+        expect {
+            "assword:" {
+                incr password_cnt
+                if {$password_cnt > 2} {
+                    puts "\nAttempted to send the password 2 times without success\n"
+                    set timeout $default_timeout
+                    return 1
+                }
+                send "$password\r"
+
+                # Restore default timeout value since we have not received the prompt
+                set timeout $default_timeout
+                set potential_prompt 0
+                set prompt $default_prompt
+
+                exp_continue
+            }
+            "(yes/no)?" {
+                send "yes\r"
+
+                # Restore default timeout value since we have not received the prompt
+                set timeout $default_timeout
+                set potential_prompt 0
+                set prompt $default_prompt
+
+                exp_continue
+            }
+            "Connection refused" {
+                # We are probably trying to connect to the wrong IP
+                set timeout $default_timeout
+                return 1
+            }
+            "\n" {
+                # Line received, wait for more
+
+                # Restore default timeout value since we have not received the prompt
+                set timeout $default_timeout
+                set potential_prompt 0
+                set prompt $default_prompt
+
+                exp_continue
+            }
+           -re  "$prompt$" {
+                # Restore timeout valye
+                set timeout $default_timeout
+                if { $prompt == "" } {
+                    # Continue looking for prompt
+                    exp_continue
+                } else {
+                    # Ready for next command
+                }
+            }
+           -re  "(\u005D\u005D\u003E\u005D\u005D\u003E)$" {
+                # NETCONF prompt "]]>]]>"
+                set timeout $default_timeout
+                set prompt $expect_out(1,string)
+                # Ready for next command
+            }
+            -re "(\[^\r\n\]+)$" {
+                # We have received a potential prompt, wait max 1 second for something more to come
+                set timeout 1
+                set potential_prompt 1
+                set prompt $expect_out(1,string)
+
+                exp_continue
+            }
+            eof {
+                puts "\nWe were unable to login to the node due to lost connection\n"
+                set timeout $default_timeout
+                return 1
+            }
+            timeout {
+                if { $potential_prompt == 1 } {
+                    # Treat this as a success but first restore timeout value
+                    set timeout $default_timeout
+                } else {
+                    puts "\nWe were unable to login to the node due to a timeout\n"
+                    set timeout $default_timeout
+                    return 1
+                }
+            }
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    # Update the detected prompt , if needed
+    if {$prompt != $detected_prompt} {
+        # Convert all non-ASCII and Tcl-significant characters into \u escape sequences by using regsub and subst in combination
+        # Code copied from example on web page: https://www.tcl.tk/man/tcl8.4/TclCmd/regsub.htm
+        set RE {[][{}\$\s\u0100-\uffff]}
+        set substitution {[format \\\\u%04x [scan "\\&" %c]]}
+        set prompt [subst [regsub -all $RE $prompt $substitution]]
+
+        set detected_prompt $prompt
+    }
+
+    return 0
+}
+################################################################################
+# $Revision: 1.1 $                                                             #
+#   $Author: EUSTONE $                                                         #
+#     $Date: 2015/10/15 12:46:54 $                                             #
+################################################################################
+#                                                                              #
+# (C) COPYRIGHT ERICSSON GMBH 2015                                             #
+#                                                                              #
+# The copyright to the computer program(s) herein is the property of           #
+# Ericsson GmbH, Germany.                                                      #
+#                                                                              #
+# The program(s) may be used and/or copied only with the written permission    #
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in   #
+# the agreement/contract under which the program(s) have been supplied.        #
+#                                                                              #
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Sleep for a specified number of seconds before continuing.
+# Input:
+#  - Number of seconds to sleep
+#  - Status message interval in seconds, default is 10 seconds
+#
+# Output:
+#  - 0: Success
+#
+proc sleep_seconds {delaytime {status_interval 10}} {
+    global spawn_id
+
+    if { $delaytime < 0 } {
+        set delaytime 0
+    }
+    if { $status_interval < 0 } {
+        set status_interval 0
+    }
+    if { $status_interval > $delaytime } {
+        set status_interval $delaytime
+    }
+
+    set secondsleft $delaytime
+    if { $delaytime > 0 } {
+        puts "\nSleeping for $delaytime seconds:"
+        while { $secondsleft > 0 } {
+            # Fetch current time
+            set current_time [clock format [clock seconds] -format "%Y-%m-%d %H:%M:%S"]
+            puts "  $current_time Waiting $secondsleft seconds"
+            sleep $status_interval
+            incr secondsleft -$status_interval
+            if { $status_interval > $secondsleft } {
+                set status_interval $secondsleft
+            }
+        }
+        set current_time [clock format [clock seconds] -format "%Y-%m-%d %H:%M:%S"]
+        puts "  $current_time End of sleep\n"
+    }
+
+    return 0
+}
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# ----------------------------- Main code loop --------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+
+# increased the default timeout to 1200 in order to let the long-running MAPIWF extension execute
+# Set timeout value in seconds to use for waiting for the expected string
+set timeout 1200
+
+# Initialize the global error counter
+set errorcnt 0
+
+# Initialize debug_list for the scripts that need it
+set debug_list {}
+
+set advanced_password ""
+set command ""
+set command_list {}
+set command_output_list {}
+set detected_prompt ""
+set element_name ""
+set filename ""
+set ignore_errors 0
+set ip ""
+set log_append 0
+set log_filename ""
+set new_password ""
+set shell ""
+set param ""
+set password ""
+set port ""
+set replace_managedelement 0
+set root_password ""
+set shell_type ""
+set show_commands_to_send 0
+set stop_on_error 0
+set switch_to_root 0
+set target_blade ""
+set user ""
+
+# Parse specific command line parameters
+foreach cmd_arg $argv {
+    append all_args $cmd_arg " "
+
+    # --shell=
+    if {[regexp "^(\-\-shell)=(.+)" $cmd_arg junk param value] == 1} {
+        set shell $value
+
+    }
+}
+if {$shell != ""} {
+    if {$shell == "cliss"} {
+        # Connect to GEP CLISS
+    } elseif {$shell == "dsc-connect-signalling-mgr"} {
+        # Connect to GEP signaling manager (new way)
+    } elseif {$shell == "netconf"} {
+        # Connect to NETCONF
+    } elseif {$shell == "signmcli"} {
+        # Connect to GEP signaling manager (old way)
+    } else {
+        exit_with_error_message 1 "Not supported shell type in parameter --shell, allowed values are (cliss|dsc-connect-signalling-mgr|netconf|signmcli)"
+    }
+}
+
+# Parse all command line parameters
+foreach cmd_arg $argv {
+    append all_args $cmd_arg " "
+
+    # --help
+    if {[regexp "^(\-\-help)$" $cmd_arg junk param] == 1} {
+        show_syntax
+        exit 1
+
+    # --advanced-password=
+    } elseif {[regexp "^(\-\-advanced-password)=(.+)" $cmd_arg junk param value] == 1} {
+        set advanced_password $value
+
+    # --command=
+    } elseif {[regexp "^(\-\-command)=(.+)" $cmd_arg junk param value] == 1} {
+        lappend command_list $value
+
+    # --command-file=
+    } elseif {[regexp "^(\-\-command-file)=(.+)" $cmd_arg junk param value] == 1} {
+        set command_file $value
+        #lappend command_list ""
+        set fh [open $command_file r]
+        if {$shell != "netconf"} {
+            # Append line by line from the file to command_list
+            while {[gets $fh command] != -1} {
+                lappend command_list $command
+            }
+        } else {
+            # Append the whole file content as one line to command_list
+            lappend command_list [read $fh]
+        }
+        close $fh
+
+    # --ignore-errors
+    } elseif {[regexp "^(\-\-ignore-errors)$" $cmd_arg junk param] == 1} {
+        set ignore_errors 1
+
+    # --ip=
+    } elseif {[regexp "^(\-\-ip)=(.+)" $cmd_arg junk param value] == 1} {
+        set ip $value
+
+    # --log-append
+    } elseif {[regexp "^(\-\-log-append)$" $cmd_arg junk param] == 1} {
+        set log_append 1
+
+    # --log-file=
+    } elseif {[regexp "^(\-\-log-file)=(.+)" $cmd_arg junk param value] == 1} {
+        set log_filename $value
+
+    # --new-password=
+    } elseif {[regexp "^(\-\-new-password)=(.+)" $cmd_arg junk param value] == 1} {
+        set new_password $value
+
+    # --password=
+    } elseif {[regexp "^(\-\-password)=(.+)" $cmd_arg junk param value] == 1} {
+        set password $value
+
+    # --port=
+    } elseif {[regexp "^(\-\-port)=(.+)" $cmd_arg junk param value] == 1} {
+        set port $value
+
+    # --replace-managedelement
+    } elseif {[regexp "^(\-\-replace-managedelement)$" $cmd_arg junk param] == 1} {
+        set replace_managedelement 1
+
+    # --root-access
+    } elseif {[regexp "^(\-\-root-access)$" $cmd_arg junk param] == 1} {
+        set switch_to_root 1
+
+    # --root-password=
+    } elseif {[regexp "^(\-\-root-password)=(.+)" $cmd_arg junk param value] == 1} {
+        set root_password $value
+
+    # --shell=
+    } elseif {[regexp "^(\-\-shell)=(.+)" $cmd_arg junk param value] == 1} {
+        # Ignore this parameter, already handled in loop above
+
+    # --show-commands-to-send
+    } elseif {[regexp "^(\-\-show-commands-to-send)$" $cmd_arg junk param] == 1} {
+        set show_commands_to_send 1
+
+    # --stop-on-error
+    } elseif {[regexp "^(\-\-stop-on-error)$" $cmd_arg junk param] == 1} {
+        set stop_on_error 1
+
+    # --target-blade=
+    } elseif {[regexp "^(\-\-target-blade)=(.+)" $cmd_arg junk param value] == 1} {
+        set target_blade $value
+        # puts "\t$param seen with $value"
+
+    # --timeout=
+    } elseif {[regexp "^(\-\-timeout)=(.+)" $cmd_arg junk param value] == 1} {
+        set timeout $value
+
+    # --user=
+    } elseif {[regexp "^(\-\-user)=(.+)" $cmd_arg junk param value] == 1} {
+        set user $value
+
+    } else {
+        exit_with_error_message 1 "Unknown parameter \"$cmd_arg\" detected, use parameter --help to see syntax"
+    }
+}
+
+# Check consistency of the parameters
+if {$ip != ""} {
+    if {$user == ""} {
+        exit_with_error_message 1 "Missing parameter --user="
+    }
+    if {$password == ""} {
+        exit_with_error_message 1 "Missing parameter --password="
+    }
+} else {
+    exit_with_error_message 1 "Missing parameter --ip="
+}
+if {[llength $command_list] == 0} {
+    exit_with_error_message 1 "You must specify at least one command with --command= or --command-file="
+}
+if { $switch_to_root == 1 } {
+    if { $root_password == "" } {
+        exit_with_error_message 1 "Missing parameter --root-password=, must be specifed when --root-access given"
+    }
+}
+
+# Workaround for problem which happens when this script is run as part of the
+# DAFT server playlist which runs the script using a terminal type "dumb" which
+# causes the CLISS to not show any prompt which causes all sent commands to
+# time out.
+# The workaround is to trick the terminal to use a terminal type of "xterm" which
+# at least seems to return back a proper CLISS prompt.
+set env(TERM) "xterm"
+
+# Connect to the node
+if { $ip == "localhost" } {
+    if {[login_via_bash] > 0} {
+        exit_with_error_message 2 "Unable to start a new bash shell"
+    }
+} elseif { $ip == "CHANGEME" } {
+    if {[login_via_bash] > 0} {
+        exit_with_error_message 2 "Unable to start a new bash shell"
+    }
+} elseif { $ip == "NOTUSED" } {
+    if {[login_via_bash] > 0} {
+        exit_with_error_message 2 "Unable to start a new bash shell"
+    }
+} else {
+    if {[login_via_ssh $ip $user $password $port $new_password] > 0} {
+        # Some error have occurred
+        if { $port != "" } {
+            exit_with_error_message 2 "Unable to login to node via SSH at IP address $ip and port $port"
+        } else {
+            exit_with_error_message 2 "Unable to login to node via SSH at IP address $ip"
+        }
+    }
+}
+
+if {$shell == "netconf"} {
+    # We cannot check shell type using the normal method since sending
+    # an empty line to netconf returns nothing, so we just say it's a
+    # netconf shell type.
+    set shell_type "NETCONF"
+} else {
+    # Determine what kind of shell we have connected to
+    set shell_type [get_shell_type]
+}
+
+if {$shell_type == "CLISS"} {
+    # BSP 8100 or GEP CLISS
+    # Nothing more to do
+} elseif {$shell_type == "DMX"} {
+    # DMX
+    # Nothing more to do
+} elseif { $shell_type == "GEP-LINUX" } {
+    # GEP Linux
+
+    # Check if we need to first connect to another blade
+    if { $target_blade == "activecontroller" } {
+        if { [GEP_connect_to_primary_sc "$password"] != 0 } {
+            incr errorcnt
+            exit_all
+            exit_with_error_message 1 "Unable to connect to active controller"
+        }
+    } elseif { $target_blade != "" } {
+        if { [GEP_connect_to_node $target_blade $password] != 0 } {
+            incr errorcnt
+            exit_all
+            exit_with_error_message 1 "Unable to connect to target blade at $target_blade"
+        }
+    }
+
+    # Check if we need to switch to root account
+    if { $switch_to_root == 1 } {
+        # Switch to root account
+        if { [GEP_su_root "$root_password"] > 0 } {
+            # Some error have occurred
+            exit_all
+            exit_with_error_message 1 "Unable to switch to root account"
+            exit 1
+        }
+    }
+
+    # Remove nasty colors by redefining the PS1 prompt
+    GEP_send_command "export PS1='\\h:\\w \\$ '"
+
+    if {$shell == "cliss"} {
+        # Connect to GEP CLISS
+        if {[GEP_start_cliss $password] != 0} {
+            exit_all
+            exit_with_error_message 1 "Unable to login to CLISS"
+        }
+        set shell_type "CLISS"
+    } elseif {$shell == "dsc-connect-signalling-mgr"} {
+        # Connect to signaling manager
+        if {[GEP_start_signmcli] != 0} {
+            exit_all
+            exit_with_error_message 1 "Unable to login to Signalling Manager CLI"
+        }
+        set shell_type "GEP-SIGNMCLI"
+    } elseif {$shell == "signmcli"} {
+        # Connect to signaling manager
+        if {[GEP_start_signmcli] != 0} {
+            exit_all
+            exit_with_error_message 1 "Unable to login to Signalling Manager CLI"
+        }
+        set shell_type "GEP-SIGNMCLI"
+    }
+} elseif {$shell_type == "LINUX"} {
+    # Some LINUX server, e.g. DAFT server
+
+    # Check if we need to switch to root account
+    if { $switch_to_root == 1 } {
+        # Switch to root account
+        if { [UNIX_su_root "$root_password"] > 0 } {
+            # Some error have occurred
+            exit_all
+            exit_with_error_message 1 "Unable to switch to root account"
+            exit 1
+        }
+    }
+
+    # Remove nasty colors by redefining the PS1 prompt
+    # UNIX_send_command "export PS1='\\h:\\w \\$ '"
+
+} elseif {$shell_type == "CYGWIN"} {
+    # Some Windows machine running Cygwin LINUX emulation
+
+    # Check if we need to switch to root account
+    if { $switch_to_root == 1 } {
+        # Switch to root account
+        if { [UNIX_su_root "$root_password"] > 0 } {
+            # Some error have occurred
+            exit_all
+            exit_with_error_message 1 "Unable to switch to root account"
+            exit 1
+        }
+    }
+
+} elseif {$shell_type == "DIRECTOR-LINUX"} {
+    # The director of the SC node
+
+    # Check if we need to switch to root account
+    if { $switch_to_root == 1 } {
+        # Switch to root account
+        if { [UNIX_su_root "$root_password"] > 0 } {
+            # Some error have occurred
+            exit_all
+            exit_with_error_message 1 "Unable to switch to root account"
+            exit 1
+        }
+    }
+
+    # Remove nasty colors by redefining the PS1 prompt
+    # UNIX_send_command "export PS1='\\h:\\w \\$ '"
+
+} elseif {$shell_type == "NETCONF"} {
+    # NETCONF
+    # Nothing more to do
+
+} elseif {$shell_type == "CMYP-CLI"} {
+    # CMYP CLI shell prompt
+    # Nothing more to do
+
+} else {
+    # CMXB-LINUX
+    # DMX
+    # GEP-SIGNMCLI
+    # ISS
+    # SCXB-LINUX-DMX
+    # SCXB-LINUX-BSP
+    # UNKNOWN
+    exit_all
+    exit_with_error_message 1 "Unable to determine the shell type or not supported shell type ($shell_type)"
+}
+
+if {$shell_type == "CLISS"} {
+    # BSP 8100 or GEP CLISS
+    if {$replace_managedelement == 1} {
+        set element_name [CLISS_get_ManagedElement_name]
+        if {$element_name == ""} {
+            exit_all
+            exit_with_error_message 1 "Unable to find ManagedElement name"
+        }
+    }
+}
+
+# Check if commands to send should be displayed to user
+if {$show_commands_to_send == 1} {
+    puts "\nCommands to be sent are the following:"
+    foreach command $command_list {
+        puts "$command"
+    }
+    puts ""
+}
+
+# Check if we should log output to a file
+if { $log_filename != "" } {
+    if { $log_append == 1 } {
+        # Append to existing file
+        log_file $log_filename
+    } else {
+        # Overwrite any existing file
+        log_file -noappend $log_filename
+    }
+}
+
+# Execute all commands on the CMXB COM CLI
+set linecnt 0
+foreach command $command_list {
+    # Remove white spaces from beginning and end
+    set command [string trimleft [string trimright $command]]
+
+    # Ignore comment lines and empty lines
+    if { [regexp "^\[ \t\]*#.*" $command] == 1 } {
+        # This is a comment line, ignore it
+        incr linecnt
+        continue
+    } elseif { [string length $command] == 0 } {
+        # This is an empty line, ignore it
+        incr linecnt
+        continue
+    } elseif { $command == "@@IGNORE_ERRORS" } {
+        # This is a special marker to tell us to ignore errors from this point on
+        set ignore_errors 1
+        continue
+    } elseif { $command == "@@DO_NOT_IGNORE_ERRORS" } {
+        # This is a special marker to tell us to stop for errors from this point on
+        set ignore_errors 0
+        continue
+    }
+
+    # Execute the command
+    if {$shell_type == "CLISS"} {
+        if { $replace_managedelement == 1 } {
+            # Replace all intances of "ManagedElement=1" with real element name
+            set command [string map -nocase [ list "ManagedElement=1" "ManagedElement=$element_name" ] $command]
+        }
+        set result [CLISS_send_command $command]
+    } elseif {$shell_type == "GEP-SIGNMCLI"} {
+        set result [SIGNMCLI_send_command $command]
+    } elseif {$shell_type == "DMX"} {
+        set result [DMX_send_command $command]
+    } elseif {$shell_type == "GEP-LINUX"} {
+        set result [GEP_send_command $command]
+    } elseif {$shell_type == "LINUX"} {
+        set result [UNIX_send_command $command]
+    } elseif {$shell_type == "CYGWIN"} {
+        set result [UNIX_send_command $command]
+    } elseif {$shell_type == "DIRECTOR-LINUX"} {
+        set result [UNIX_send_command $command]
+    } elseif {$shell_type == "NETCONF"} {
+        set result [NETCONF_send_command $command]
+    } elseif {$shell_type == "CMYP-CLI"} {
+        # For now treat it like a LINUX prompt
+        set result [UNIX_send_command $command]
+    }
+
+    # Check the result of command execution
+    if { $result == -1 } {
+        # A timout occurred, report it as an error and get out
+        incr errorcnt
+        error_message "A timeout occurred while sending command \"$command\""
+        break
+
+    } elseif { $result == -2 } {
+        # The connection was lost
+        if {$command == "exit"} {
+            # Special handling because the command 'exit' can also drop the connection to the node
+            if {$errorcnt > 0} {
+                exit_with_error_message 1 "Error Counter = $errorcnt"
+            } else {
+                # TODO: Maybe we need to check if there are any commands left to send and in such case exit with an error
+                puts "The connection to the node was lost after sending an \"exit\" command, we treat this as OK"
+                # Close any log file that was opened
+                if { $log_filename != "" } {
+                    log_file
+                }
+                exit 0
+            }
+        } else {
+            # The connection was lost, report it as an error and get out
+            incr errorcnt
+            error_message "The connection to the node was lost while sending command \"$command\""
+            break
+        }
+
+    } elseif { $ignore_errors == 1 } {
+        # Ignore any kind of error, except for timeouts
+
+    } elseif { $result > 0 } {
+        # the command gave an error, step the error counter
+        incr errorcnt $result
+        error_message "An error occurred while sending command \"$command\""
+        if { $stop_on_error == 1 } {
+            puts "\nCommands not yet executed:"
+            puts "--------------------------"
+            set i 0
+            foreach command $command_list {
+                if {$i >= $linecnt} {
+                    puts "  $command"
+                }
+                incr i
+            }
+            puts "--------------------------\n"
+            break
+        }
+    }
+    incr linecnt
+}
+
+# Close any log file that was opened
+if { $log_filename != "" } {
+    log_file
+}
+
+# Time to exit out of the node, send exit or end until the connection is dropped
+# but don't do it when connected to NETCONF
+if {$shell_type != "NETCONF"} {
+    exit_all
+}
+
+# Check for any errors
+if {$errorcnt > 0} {
+    exit_with_error_message 1 "Error Counter = $errorcnt"
+} else {
+    puts ""
+    exit 0
+}

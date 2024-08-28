@@ -1,0 +1,282 @@
+{{- $pmRemoteWrite := index .Values "eric-sc" "remoteWrite" }}
+{{- $globalTls := index .Values "global" "security" "tls" }}
+{{- $pm := index .Values "eric-pm-server" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eric-pm-server
+  labels:
+{{- include "eric-sc.de-facto-labels" . | indent 4 }}
+  annotations:
+{{- include "eric-sc.product-annotations" . | indent 4 }}
+data:
+  rules_sc.yml: |
+{{- include "eric-sc.recording-rules" . | indent 4 }}
+{{- if (index .Values "global" "ericsson" "bsf" "enabled") }}
+  rules_bsf.yml: |
+{{- include "eric-sc.bsf-recording-rules" . | indent 4 }}
+{{- end }}
+{{- if (index .Values "global" "ericsson" "bsfdiameter" "enabled") }}
+  rules_bsfdiameter.yml: |
+{{- include "eric-sc.bsfdiameter-recording-rules" . | indent 4 }}
+{{- end }}
+{{- if (index .Values "global" "ericsson" "nlf" "enabled") }}
+  rules_nlf.yml: |
+{{- include "eric-sc.nlf-recording-rules" . | indent 4 }}
+{{- end }}
+{{- if (index .Values "global" "ericsson" "rlf" "enabled") }}
+  rules_rlf.yml: |
+{{- include "eric-sc.rlf-recording-rules" . | indent 4 }}
+{{- end }}
+{{- if (index .Values "global" "ericsson" "scp" "enabled") }}
+  rules_scp.yml: |
+{{- include "eric-sc.scp-recording-rules" . | indent 4 }}
+{{- end }}
+{{- if (index .Values "global" "ericsson" "sepp" "enabled") }}
+  rules_sepp.yml: |
+{{- include "eric-sc.sepp-recording-rules" . | indent 4 }}
+{{- end }}
+{{- if (index .Values "global" "ericsson" "pvtb" "enabled") }}
+  rules_pvtb.yml: |
+{{- include "eric-sc.pvtb-recording-rules" . | indent 4 }}
+{{- end }}
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      scrape_timeout: 10s
+      evaluation_interval: 60s
+    rule_files:
+      - /etc/config/rules_sc.yml
+{{- if (index .Values "global" "ericsson" "bsf" "enabled") }}
+      - /etc/config/rules_bsf.yml
+{{- end }}
+{{- if (index .Values "global" "ericsson" "bsfdiameter" "enabled") }}
+      - /etc/config/rules_bsfdiameter.yml
+{{- end }}
+{{- if (index .Values "global" "ericsson" "nlf" "enabled") }}
+      - /etc/config/rules_nlf.yml
+{{- end }}
+{{- if (index .Values "global" "ericsson" "rlf" "enabled") }}
+      - /etc/config/rules_rlf.yml
+{{- end }}
+{{- if (index .Values "global" "ericsson" "scp" "enabled") }}
+      - /etc/config/rules_scp.yml
+{{- end }}
+{{- if (index .Values "global" "ericsson" "sepp" "enabled") }}
+      - /etc/config/rules_sepp.yml
+{{- end }}
+{{- if (index .Values "global" "ericsson" "pvtb" "enabled") }}
+      - /etc/config/rules_pvtb.yml
+{{- end }}
+    remote_write:
+      {{- if $globalTls.enabled }}
+      - url: "https://eric-odca-diagnostic-data-collector:50051/receive"
+        tls_config:
+          ca_file: /run/secrets/pm-int-rw-ca/client-cacertbundle.pem
+          cert_file: /run/secrets/int-rw-clicert/clicert.pem
+          key_file: /run/secrets/int-rw-clicert/cliprivkey.pem
+      {{- else }}
+      - url: "http://eric-odca-diagnostic-data-collector:50050/receive"
+      {{- end }}
+      {{- if $pm.externalRemoteWrite }}
+      {{ toYaml $pm.externalRemoteWrite | nindent 6 }}
+      {{- end }}
+    scrape_configs:
+      - job_name: prometheus
+        static_configs:
+          - targets:
+            - localhost:9090
+      - job_name: 'kubernetes-nodes-cadvisor'
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          insecure_skip_verify: true
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - target_label: __address__
+            replacement: kubernetes.default.svc:443
+          - source_labels: [__meta_kubernetes_node_name]
+            regex: (.+)
+            target_label: __metrics_path__
+            replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
+        metric_relabel_configs:
+          - source_labels: [namespace]
+            regex: {{ .Release.Namespace }}
+            action: keep
+          - source_labels: [__name__]
+            regex: "container_cpu_usage_seconds_total|container_memory_working_set_bytes|container_memory_usage_bytes|container_spec_cpu_period|container_spec_cpu_quota|container_spec_cpu_shares|container_spec_memory_limit_bytes"
+            action: keep
+      - job_name: 'tls-service-endpoints'
+        scheme: https
+        tls_config:
+          ca_file: /run/secrets/cacert/cacertbundle.pem
+          cert_file: /run/secrets/clicert/clicert.pem
+          key_file: /run/secrets/clicert/cliprivkey.pem
+          server_name: certified-scrape-target
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names:
+                - {{ .Release.Namespace }}
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_name]
+            action: replace
+            target_label: job
+          - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+            action: keep
+            regex: https
+          - source_labels: [__meta_kubernetes_pod_container_port_name]
+            action: keep
+            regex: .*tls.*
+          - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+            action: replace
+            target_label: __address__
+            regex: ((?:\[.+\])|(?:.+))(?::\d+);(\d+)
+            replacement: $1:$2
+          - action: labelmap
+            regex: __meta_kubernetes_service_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_service_name]
+            action: replace
+            target_label: kubernetes_name
+        metric_relabel_configs:
+          - source_labels: [__name__]
+            action: drop
+            regex: '^DSD_.*'
+      - job_name: 'non-tls-service-endpoints'
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names:
+                - {{ .Release.Namespace }}
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_name]
+            action: replace
+            target_label: job
+          - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+            action: drop
+            regex: https
+          - source_labels: [__meta_kubernetes_pod_container_port_name]
+            action: drop
+            regex: .*tls.*
+          - source_labels: [__meta_kubernetes_pod_container_port_name]
+            action: keep
+            regex: .*metrics.*|.*pm.*|.*perf.*
+          - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+            action: replace
+            target_label: __address__
+            regex: ((?:\[.+\])|(?:.+))(?::\d+);(\d+)
+            replacement: $1:$2
+          - action: labelmap
+            regex: __meta_kubernetes_service_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_service_name]
+            action: replace
+            target_label: kubernetes_name
+        metric_relabel_configs:
+          - source_labels: [__name__]
+            action: drop
+            regex: '^DSD_.*'
+      - job_name: 'kubernetes-pods-container'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - {{ .Release.Namespace }}
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+            action: drop
+            regex: https
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__meta_kubernetes_pod_container_port_name]
+            action: drop
+            regex: .*tls.*
+          - source_labels: [__meta_kubernetes_pod_container_port_name]
+            action: keep
+            regex: .*metrics.*|.*pm.*|.*perf.*
+          - source_labels: [__address__, __meta_kubernetes_pod_container_port_number]
+            action: replace
+            regex: ((?:\[.+\])|(?:.+))(?::\d+);(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name
+      - job_name: 'tls-pods-container'
+        scheme: https
+        tls_config:
+          ca_file: /run/secrets/cacert/cacertbundle.pem
+          cert_file: /run/secrets/clicert/clicert.pem
+          key_file: /run/secrets/clicert/cliprivkey.pem
+          server_name: certified-scrape-target
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - {{ .Release.Namespace }}
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+            action: replace
+            target_label: __scheme__
+            regex: (https?)
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__meta_kubernetes_pod_container_port_name]
+            action: keep
+            regex: .*tls.*
+          - source_labels: [__meta_kubernetes_pod_container_port_name]
+            action: keep
+            regex: .*metrics.*|.*pm.*|.*perf.*
+          - source_labels: [__address__, __meta_kubernetes_pod_container_port_number]
+            action: replace
+            regex: ((?:\[.+\])|(?:.+))(?::\d+);(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name
+        metric_relabel_configs:
+          - source_labels: [__name__]
+            action: drop
+            regex: '^DSD_.*'

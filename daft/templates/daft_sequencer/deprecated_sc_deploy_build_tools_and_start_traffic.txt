@@ -1,0 +1,105 @@
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.9
+#  Date     : 2024-04-12 17:31:03
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2023-2024
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+################################################################################
+# This file is used by the daft_sequencer.pl script and it contains commands to
+# be executed one-after-another.
+#
+# The file will first download the specific SC software from artifactory, then
+# remove any currently deployed software for the specific namespace and then
+# deploy the specified SC software and add users, certificates and
+# configuration data.
+# It will also build and install the tools and then start the traffic.
+#
+# NOTE:
+# This should be executed on the VDI since it needs a GIT build environment.
+################################################################################
+
+# Environment variables
+# ---------------------
+ENVIRONMENT_VARIABLE: DAFT_ARTIFACTORY_TOKEN="cmVmdGtuOjAxOjE3NDM3NTYxMjQ6TkhWdmFvMjVmY2xWZkY3QzJORDRTNVFOWGV1"
+ENVIRONMENT_VARIABLE: DAFT_ARTIFACTORY_URL="https://arm.seli.gic.ericsson.se/artifactory/proj-5g-bsf-generic-local/eiffelesc/"
+ENVIRONMENT_VARIABLE: DAFT_CLEAN_REGISTRY=no
+ENVIRONMENT_VARIABLE: DAFT_ENABLED_CNF=bsf-scp-slf-sepp
+ENVIRONMENT_VARIABLE: DAFT_DOWNLOAD_DIR="/home/eccd/download"
+ENVIRONMENT_VARIABLE: DAFT_PACKAGE_DIR=/home/eccd/daft
+ENVIRONMENT_VARIABLE: DAFT_TOOLS_NAMESPACE=eiffelesc-tools
+ENVIRONMENT_VARIABLE: DAFT_TRAFFIC_DURATION=indefinite
+ENVIRONMENT_VARIABLE: DAFT_WORKSPACE_DIR=/home/eccd/workspaces
+# Remove the comment (#) from the following lines if you don't want to specify the values on the command line.
+#ENVIRONMENT_VARIABLE: DAFT_NETWORK_CONFIG_FILE_HOST=network_config_files/Snorlax.xml
+#ENVIRONMENT_VARIABLE: DAFT_NETWORK_CONFIG_FILE_NODE=/home/eccd/daft/Snorlax.xml
+#ENVIRONMENT_VARIABLE: DAFT_NODE_IP=10.155.195.148
+#ENVIRONMENT_VARIABLE: DAFT_NODE_KUBECONFIG=/home/$USER/.kube/snorlax.config
+#ENVIRONMENT_VARIABLE: DAFT_SC_SOFTWARE_VERSION=1.12.0+43
+
+# Script variables
+# ----------------
+# Always stop on error when executing these commands
+SCRIPT_VARIABLE: stop-on-error=yes
+
+# Execute commands
+# ----------------
+
+# Create and cleanup directories on the node
+send_command_to_ssh.exp  --user=eccd --ip=$DAFT_NODE_IP --password=notneeded --command="mkdir -p $DAFT_PACKAGE_DIR" --command="rm -fr $DAFT_PACKAGE_DIR/*"
+
+# Create a new DAFT package
+make clean daft
+
+# Copy new DAFT package and network config file to the node
+scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o loglevel=ERROR DAFT_*.tar.gz eccd@$DAFT_NODE_IP:$DAFT_PACKAGE_DIR/
+scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o loglevel=ERROR $DAFT_NETWORK_CONFIG_FILE_HOST eccd@$DAFT_NODE_IP:$DAFT_NETWORK_CONFIG_FILE_NODE
+
+# Unpack the DAFT package on the node
+send_command_to_ssh.exp  --user=eccd --ip=$DAFT_NODE_IP --password=notneeded --command="cd $DAFT_PACKAGE_DIR" --command="tar xf DAFT_*.tar.gz" --command="rm -f DAFT_*.tar.gz"
+
+# Download the software package on the node
+send_command_to_ssh.exp --user=eccd --ip=$DAFT_NODE_IP --password=notneeded --command="$DAFT_PACKAGE_DIR/perl/bin/download_csar.pl --artifact-token $DAFT_ARTIFACTORY_TOKEN --noprogress --color=no -p $DAFT_SC_SOFTWARE_VERSION -l $DAFT_ARTIFACTORY_URL -t $DAFT_DOWNLOAD_DIR"
+
+# Clean the local registry on the node
+send_command_to_ssh.exp --user=eccd --ip=$DAFT_NODE_IP --password=notneeded --command="$DAFT_PACKAGE_DIR/perl/bin/execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE_NODE -w $DAFT_WORKSPACE_DIR  -p 108_Miscellaneous_Tasks                -j Clean_Registry                                   -v CLEAN_REGISTRY=$DAFT_CLEAN_REGISTRY -v INPUT_AVAILABLE=no -v PACK_TROUBLESHOOTING_LOGS_SEPARATELY=yes -v CREATE_PACKED_WORKSPACE_FILE_AT_SUCCESS=yes -v CREATE_PACKED_WORKSPACE_FILE_AT_FAILURE=yes"
+
+# Remove any node labels and taints from the workers on the node
+send_command_to_ssh.exp --user=eccd --ip=$DAFT_NODE_IP --password=notneeded --command="$DAFT_PACKAGE_DIR/perl/bin/execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE_NODE -w $DAFT_WORKSPACE_DIR  -p 103_Tools_Management                   -j Remove_Node_Label                                -v DO_REMOVE_TAINT=yes -v DO_REMOVE_LABEL=yes -v NODE_TAINTS=NoSchedule -v NODE_LABEL=usage=tools -v COLLECT_LOGS_AT_SUCCESS=yes -v INPUT_AVAILABLE=no -v PACK_TROUBLESHOOTING_LOGS_SEPARATELY=yes -v CREATE_PACKED_WORKSPACE_FILE_AT_SUCCESS=yes -v CREATE_PACKED_WORKSPACE_FILE_AT_FAILURE=yes"
+
+# Undeploy any tools on the node
+send_command_to_ssh.exp --user=eccd --ip=$DAFT_NODE_IP --password=notneeded --command="$DAFT_PACKAGE_DIR/perl/bin/execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE_NODE -w $DAFT_WORKSPACE_DIR  -p 003_Undeploy_SC                        -j Undeploy_Tools                                   -v SC_NAMESPACE=$DAFT_TOOLS_NAMESPACE -v SKIP_UNDEPLOY_CRD=yes -v CLEAN_REGISTRY=no -v INPUT_AVAILABLE=no -v PACK_TROUBLESHOOTING_LOGS_SEPARATELY=yes -v CREATE_PACKED_WORKSPACE_FILE_AT_SUCCESS=yes -v CREATE_PACKED_WORKSPACE_FILE_AT_FAILURE=yes"
+
+# Undeploy any SC software on the node
+send_command_to_ssh.exp --user=eccd --ip=$DAFT_NODE_IP --password=notneeded --command="$DAFT_PACKAGE_DIR/perl/bin/execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE_NODE -w $DAFT_WORKSPACE_DIR  -p 003_Undeploy_SC                        -j Undeploy_SC                                      -v SKIP_UNDEPLOY_CRD=no -v CLEAN_REGISTRY=no -v INPUT_AVAILABLE=no -v PACK_TROUBLESHOOTING_LOGS_SEPARATELY=yes -v CREATE_PACKED_WORKSPACE_FILE_AT_SUCCESS=yes -v CREATE_PACKED_WORKSPACE_FILE_AT_FAILURE=yes"
+
+# Deploy the SC software on the node
+send_command_to_ssh.exp --user=eccd --ip=$DAFT_NODE_IP --password=notneeded --command="$DAFT_PACKAGE_DIR/perl/bin/execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE_NODE -w $DAFT_WORKSPACE_DIR  -p 001_Deploy_SC                          -j Deploy_SC_$DAFT_SC_SOFTWARE_VERSION              -v SOFTWARE_DIR=$DAFT_DOWNLOAD_DIR/$DAFT_SC_SOFTWARE_VERSION -v ENABLED_CNF=$DAFT_ENABLED_CNF -v COLLECT_LOGS_AT_SUCCESS=yes -v SKIP_DEPLOY_UPGRADE_CRD=no -v INPUT_AVAILABLE=no -v PACK_TROUBLESHOOTING_LOGS_SEPARATELY=yes -v CREATE_PACKED_WORKSPACE_FILE_AT_SUCCESS=yes -v CREATE_PACKED_WORKSPACE_FILE_AT_FAILURE=yes"
+
+# Add users
+send_command_to_ssh.exp --user=eccd --ip=$DAFT_NODE_IP --password=notneeded --command="$DAFT_PACKAGE_DIR/perl/bin/execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE_NODE -w $DAFT_WORKSPACE_DIR  -p 005_User_Management                    -j Add_Users_SC_$DAFT_SC_SOFTWARE_VERSION -v INPUT_AVAILABLE=no -v PACK_TROUBLESHOOTING_LOGS_SEPARATELY=yes -v CREATE_PACKED_WORKSPACE_FILE_AT_SUCCESS=yes -v CREATE_PACKED_WORKSPACE_FILE_AT_FAILURE=yes"
+
+# Generate and Install Certificates
+send_command_to_ssh.exp --user=eccd --ip=$DAFT_NODE_IP --password=notneeded --command="$DAFT_PACKAGE_DIR/perl/bin/execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE_NODE -w $DAFT_WORKSPACE_DIR  -p 102_Supreme_Certificate_Management     -j Add_Certificates_SC_$DAFT_SC_SOFTWARE_VERSION    -v GENERATE_CERTIFICATES=yes -v CERTIFICATES_TO_GENERATE=rootca,scpmgr,scpwrk,seppmgr,seppwrk,nbi,diameter,transformer -v INSTALL_CERTIFICATES=yes -v CERTIFICATE_DIRECTORY=/home/eccd/certificates -v CERTIFICATE_VALIDITY_DAYS=7300 -v INPUT_AVAILABLE=no -v PACK_TROUBLESHOOTING_LOGS_SEPARATELY=yes -v CREATE_PACKED_WORKSPACE_FILE_AT_SUCCESS=yes -v CREATE_PACKED_WORKSPACE_FILE_AT_FAILURE=yes"
+
+# Build and Deploy Tools, this is triggered on the VDI
+                                                                                                                  execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE_HOST                         -p 105_Traffic_Tools_Build_And_Install    -j Build_Traffic_Tools                              -v TOOLS_TO_INSTALL=dscload,k6,nrfsim,seppsim,sftp -v TOOLS_NAMESPACE=$DAFT_TOOLS_NAMESPACE -v KUBECONFIG=$DAFT_NODE_KUBECONFIG -v CERTIFICATE_VALIDITY_DAYS=7300 -v NODE_CERTIFICATE_DIRECTORY=/home/eccd/certificates -v INPUT_AVAILABLE=no -v PACK_TROUBLESHOOTING_LOGS_SEPARATELY=yes -v CREATE_PACKED_WORKSPACE_FILE_AT_SUCCESS=yes -v CREATE_PACKED_WORKSPACE_FILE_AT_FAILURE=yes
+
+# Configure traffic on the node
+send_command_to_ssh.exp --user=eccd --ip=$DAFT_NODE_IP --password=notneeded --command="$DAFT_PACKAGE_DIR/perl/bin/execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE_NODE -w $DAFT_WORKSPACE_DIR  -p 107_Traffic_Tools_Configure_And_Start  -j Configure_Traffic_SC_$DAFT_SC_SOFTWARE_VERSION -v PASSWORD_EXPIRE=no -v SKIP_POST_HEALTHCHECK=no -v SKIP_PRE_HEALTHCHECK=yes -v TOOLS_NAMESPACE=$DAFT_TOOLS_NAMESPACE -v TRAFFIC_TO_CONFIGURE=automatic -v INPUT_AVAILABLE=no -v PACK_TROUBLESHOOTING_LOGS_SEPARATELY=yes -v CREATE_PACKED_WORKSPACE_FILE_AT_SUCCESS=yes -v CREATE_PACKED_WORKSPACE_FILE_AT_FAILURE=yes"
+
+# Start the traffic on the node
+send_command_to_ssh.exp --user=eccd --ip=$DAFT_NODE_IP --password=notneeded --command="$DAFT_PACKAGE_DIR/perl/bin/execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE_NODE -w $DAFT_WORKSPACE_DIR  -p 107_Traffic_Tools_Configure_And_Start  -j Start_Traffic_SC_$DAFT_SC_SOFTWARE_VERSION -v PASSWORD_EXPIRE=no -v TOOLS_NAMESPACE=$DAFT_TOOLS_NAMESPACE -v TRAFFIC_TO_START=automatic -v TRAFFIC_DURATION=$DAFT_TRAFFIC_DURATION -v INPUT_AVAILABLE=no -v PACK_TROUBLESHOOTING_LOGS_SEPARATELY=yes -v CREATE_PACKED_WORKSPACE_FILE_AT_SUCCESS=yes -v CREATE_PACKED_WORKSPACE_FILE_AT_FAILURE=yes"

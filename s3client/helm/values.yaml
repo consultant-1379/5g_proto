@@ -1,0 +1,71 @@
+# eric-sc-s3client configuration 
+
+product:
+  number:
+  revision:
+
+# global:
+  # pullSecret: ""
+  # registry:
+    # url: "armdocker.rnd.ericsson.se"
+    # imagePullSecret: IfNotPresent
+
+imageCredentials:
+  # pullSecret:
+  s3client:
+    repoPath: "proj-5g-bsf"
+    registry:
+      url: # overrides global registry url
+      imagePullPolicy: # overrides global image pull policy      
+spec:
+  s3client:
+    image:
+    tag:
+    updateStrategy:
+      type: RollingUpdate
+    tolerations:
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 0
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 0
+service:
+  s3client:
+    name: "eric-sc-s3client"
+
+configuration:
+  objectStorage:
+    directory: "/etc/coredumps"
+    debounceTimeout: 3000
+    throttleObjectStorageUpload: 60
+    bucket: "eric-sc-s3client"
+    hostname: "eric-sc-s3client"
+  endpointData:
+    endpoint: "eric-data-object-storage-mn"
+    endpointPort: 9000
+    endpointSSL: true
+  clientTimeout:
+    connectionTimeout: 300
+    readTimeout: 300
+    writeTimeout: 300
+  clientAccess:
+    objectStorageSecret: eric-data-object-storage-secret
+  certificates:
+    certificatePath: "/etc/coredumps"
+    caCertificate: eric-sec-sip-tls-trusted-root-cert
+
+jvm:
+  parameters:
+    hcagent: "-XX:MaxRAMPercentage=80"
+     
+resources:
+  s3client:
+    requests:
+      cpu: "50m"
+      memory: "100Mi"
+    limits:
+      cpu: "250m"
+      memory: "500Mi"

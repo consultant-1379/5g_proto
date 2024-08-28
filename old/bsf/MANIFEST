@@ -1,0 +1,7 @@
+f5b5b68a87c7f8bb0966852e7dc855b258e5a59fd8d08f789211fcf264ba839a	i	bsfmgr	armdocker.rnd.ericsson.se/proj-5g-bsf/bsfmgr:v1.0.3-1
+805aafc3f2492add3ca6eeafa36a83a69eaeb244d6ebf415aa06fc604bf0cc96	t	docker	Docker version 18.03.1-ce, build 9ee9f40
+29aeed94986f032700b6f201208f618979aaff7397526f7661a5e5e153313092	t	go	go version go1.10.3 linux/amd64
+9c3945725935058c1db07d3f1c0a153acbd9f8f013c38db2bcdccc95b14d2bfe	t	java	openjdk 10.0.2 2018-07-17
+9abd050d2ac75f3fba52de1a86261a7fd569977e44e4b610f00c105c79121b8b	t	gradle	Gradle 4.8
+6fc23a081aefe53431556a28743df3e66a020f40639f5501147ce62ec9b623c5	i	kubectl	armdocker.rnd.ericsson.se/proj-5g-bsf/kubectl:v0.1
+27ac990a31576da248e4cf0c024cca22de0d03e140e8b8383a2ad088bd4d56fc	i	helm	armdocker.rnd.ericsson.se/proj-5g-bsf/helm:v0.10

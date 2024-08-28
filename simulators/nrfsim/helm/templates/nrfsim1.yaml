@@ -1,0 +1,127 @@
+# Copyright 2018 The DSC Evo Team
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name:  {{ .Values.service.name }}-1
+  labels:
+{{- include "eric-nrfsim.labels" . | indent 4 }}
+  annotations:
+{{- include "eric-nrfsim.helm-annotations" . | indent 4 }}
+{{- include "eric-nrfsim.config-annotations" . | indent 4 }}
+spec:
+  {{- include "eric-nrfsim.ipfamilies" . | indent 2 }}
+  ipFamilyPolicy: PreferDualStack
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+    targetPort: rest-api
+  - name: https
+    protocol: TCP
+    port: 443
+    targetPort: rest-api-tls
+  selector:
+    app: {{ .Values.service.name }}-1
+  type: {{ .Values.service.type }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.service.name }}-1
+  labels:
+{{- include "eric-nrfsim.labels" . | indent 4 }}
+    app: {{ .Values.service.name }}-1
+  annotations:
+{{- include "eric-nrfsim.helm-annotations" . | indent 4 }}
+{{- include "eric-nrfsim.config-annotations" . | indent 4 }}
+spec:
+  replicas: {{ .Values.spec.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.service.name }}-1
+  template:
+    metadata:
+      labels:
+{{- include "eric-nrfsim.labels" . | indent 8 }}
+        app: {{ .Values.service.name }}-1
+        eric-scp-worker-access: "true"
+        eric-sepp-worker-access: "true"
+        eric-sc-monitor-access: "true"
+        eric-sc-nlf-access: "true"
+        eric-sc-slf-access: "true"
+      annotations:
+{{- include "eric-nrfsim.helm-annotations" . | indent 8 }}
+{{- include "eric-nrfsim.config-annotations" . | indent 8 }}
+    spec:
+      {{- if include "eric-nrfsim.pullSecrets" . }}
+      imagePullSecrets:
+      - name: {{ template "eric-nrfsim.pullSecrets" . }}
+      {{- end }}
+      containers:
+      - name: {{ .Values.service.name }}-1
+        image: {{ template "eric-nrfsim.nrfsim.registryUrl" . }}/{{ template "eric-nrfsim.nrfsim.repoPath" . }}/{{ template "eric-nrfsim.nrfsim.image" . }}:{{  template "eric-nrfsim.nrfsim.tag" . }}
+        imagePullPolicy: {{ .Values.imageCredentials.nrfsim.pullPolicy | quote }}
+        ports:
+        - name: rest-api
+          protocol: TCP
+          containerPort: 80
+        - name: rest-api-tls
+          containerPort: 443
+        {{   if  (eq .Values.certificates.enabled true) }}
+        volumeMounts:
+        - name: secrets
+          mountPath: /root/certificates
+          readOnly: true
+        {{  end }}
+        env:
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+         {{   if  (eq .Values.certificates.enabled true) }}
+        - name: CERTIFICATES_PATH
+          value: /root/certificates
+        {{  end }}
+        - name: JVM_PARAMS
+          value: {{ .Values.jvm.parameters.nrfsim | quote }}
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: SERVICE_NAME
+          value: {{ .Values.service.name }}-1
+        - name: POD_IPS
+          valueFrom:
+           fieldRef:
+             fieldPath: status.podIPs
+        {{ if .Values.spec.resources.requests.cpu }}
+        resources:
+          requests:
+            cpu: {{ .Values.spec.resources.requests.cpu | quote }}
+            memory: {{ .Values.spec.resources.requests.memory | quote }}
+          limits:
+            cpu: {{ .Values.spec.resources.limits.cpu | quote }}
+            memory: {{ .Values.spec.resources.limits.memory | quote }}
+        {{ end }}
+      {{ if .Values.usage }}
+      nodeSelector:
+        usage: {{ .Values.usage }}
+      tolerations:
+      - key: usage
+        operator: Equal
+        value: {{ .Values.usage }}
+        effect: "NoSchedule"
+      {{ end }}
+      {{   if  (eq .Values.certificates.enabled true) }}
+      volumes:
+        - name: secrets
+          secret:
+            secretName: {{ .Values.certificates.secret }}
+            items:
+              - key: {{ .Values.certificates.certificate }}
+                path: certificate.pem
+              - key: {{ .Values.certificates.key }}
+                path: key.pem
+              - key: {{ .Values.certificates.ca }}
+                path: ca.pem
+     {{  end }}
+

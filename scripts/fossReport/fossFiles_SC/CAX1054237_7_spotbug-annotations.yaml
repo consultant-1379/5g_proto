@@ -1,0 +1,43 @@
+# https://bazaar.internal.ericsson.com/component.php?componentid=906523
+Version: v2
+Decription: FOSS list
+LastUpdate: 2023-11-14 12:24
+FOSS:
+    # Available in Bazaar
+    FOSSName: SpotBugs
+    # Available in Bazaar
+    FOSSVersion: 3.1.12
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/spotbugs/spotbugs/archive/{{FOSSVersion}}.zip
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 7/CAX1054237
+    # Not Available in Bazaar
+    Primary: N
+    # Available in Bazaar
+    STAKOCode: Not for a new Design
+    # Available in Bazaar
+    STAKOReason: Product verison is older than 18 months. Newer versions exists
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: Java Foreign Function Interface
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses:  GNU Lesser General Public License 2.1 (LGPL2.1)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: GNU Lesser General Public License 2.1 (LGPL2.1)
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'com.github.spotbugs:spotbugs-annotations:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ZARISAR Aristeidis Sarras

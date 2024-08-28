@@ -1,0 +1,9 @@
+eric-probe-virtual-tap-broker:
+  enabled: true
+  egress:
+    VirtualTapBroker:
+      dscp: 34
+  imageCredentials:
+    VirtualTapBroker:
+      registry:
+        url: selndocker.mo.sw.ericsson.se

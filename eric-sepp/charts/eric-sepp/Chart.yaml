@@ -1,0 +1,5 @@
+apiVersion: v2
+appVersion: 1.0.0
+description: Security Edge Protection Proxy SEPP NF. (c) Ericsson AB 2020.
+name: eric-sepp
+version: 1.0.0-0

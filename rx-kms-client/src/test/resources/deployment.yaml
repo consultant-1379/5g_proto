@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sleep
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sleep
+  template:
+    metadata:
+      labels:
+        app: sleep
+    spec:
+      serviceAccountName: testing-account
+      containers:
+      - name: sleep
+        image: armdocker.rnd.ericsson.se/dockerhub-ericsson-remote/sverrirab/sleep
+        imagePullPolicy: IfNotPresent

@@ -1,0 +1,23 @@
+{
+  "target-port": 80,
+  "metrics": {
+    "export-metrics": [
+      "PROMETHEUS"
+    ]
+  },
+  "traffic-mix": [
+    {
+      "name": "set1",
+      "order": 1,
+      "tps": 4000,
+      "target-host": "192.168.1.1",
+      "type": "register",
+      "auth-access-token": "eyJjcml0IjpbImV4cCJdLCJraWQiOiJwcm9mNCIsInR5cCI6IkpXVCIsImFsZyI6IkVTMjU2In0.eyJwcm9kdWNlclBsbW5JZCI6eyJtY2MiOiIzMzMiLCJtbmMiOiIzMyJ9LCJpc3MiOiI4MjcyYThhOS01ZjlkLTQ0NzUtYWNmMi1kNDNmNmFiNTU2MjciLCJwcm9kdWNlck5zaUxpc3QiOlsiMTIzNCIsIjU2NzgiXSwicHJvZHVjZXJOZlNldElkIjoiTmZTZXRJZDEiLCJjb25zdW1lclBsbW5JZCI6eyJtY2MiOiIyMjIiLCJtbmMiOiIyMiJ9LCJhdWQiOiJbXCI0NDFhMWFmZC1lYjZlLTRlMWItODhiNC1kYzdmNTkxNTQ2NGVcIl0iLCJuYmYiOjE2OTk2MjQ1MzksInByb2R1Y2VyU25zc2FpTGlzdCI6W3sic3N0IjoxLCJzZCI6IkFCQ0RFMSJ9LHsic3N0IjozLCJzZCI6IkFCQ0RFMyJ9XSwic2NvcGUiOiJuYnNmLW1hbmFnZW1lbnQiLCJleHAiOjE3OTQzMTg5MzksImlhdCI6MTY5OTYyNDUzOSwianRpIjoiand0LXV1aWQifQ.OaWfAOIGFW5poycylk53LUyoy7JculKgLfOX81L15ZWezwKC4hS3ZZJl_9GEleJTlKlXyfMgOpE3Qr0VE8CRBg",
+      "num-requests": 2000000,
+      "ip-range": {
+        "start-ip": "10.0.0.1",
+        "range": 2000000
+      }
+    }
+  ]
+}

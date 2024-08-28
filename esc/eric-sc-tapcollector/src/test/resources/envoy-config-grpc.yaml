@@ -1,0 +1,162 @@
+---
+admin:
+  access_log_path: "/tmp/admin_access.log"
+  address:
+    socket_address:
+      address: "0.0.0.0"
+      port_value: 9901
+stats_sinks:
+- name: "envoy.stat_sinks.statsd"
+  typed_config:
+    '@type': "type.googleapis.com/envoy.config.metrics.v3.StatsdSink"
+    tcp_cluster_name: "statsd"
+static_resources:
+  listeners:
+  - name: "listener_0"
+    address:
+      socket_address:
+        address: "0.0.0.0"
+        port_value: 8090
+    connection_balance_config:
+      exact_balance: {}
+    filter_chains:
+    - transport_socket:
+        name: "envoy.transport_sockets.tap"
+        typed_config:
+          '@type': "type.googleapis.com/envoy.extensions.transport_sockets.tap.v3.Tap"
+          common_config:
+            static_config:
+              match_config:
+                any_match: true
+              output_config:
+                sinks:
+                - format: "PROTO_BINARY_LENGTH_DELIMITED"
+                  streaming_grpc:
+                    grpc_service:
+                      google_grpc:
+                        target_uri: "tapcol:9000"
+                        stat_prefix: "EricVTAP"
+                      timeout: "5s"
+                max_buffered_rx_bytes: 65536
+                max_buffered_tx_bytes: 65536
+                streaming: true
+          transport_socket:
+            name: "envoy.transport_sockets.raw_buffer"
+            typed_config:
+              "@type": "type.googleapis.com/envoy.extensions.transport_sockets.raw_buffer.v3.RawBuffer"
+      filters:
+      - name: "envoy.filters.network.http_connection_manager"
+        typed_config:
+          '@type': "type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager"
+          stat_prefix: "ingress_http"
+          codec_type: "AUTO"
+          route_config:
+            name: "local_route"
+            virtual_hosts:
+            - name: "local_service"
+              domains:
+              - "*"
+              routes:
+              - match:
+                  prefix: "/0"
+                route:
+                  cluster: "service0"
+              - match:
+                  prefix: "/1"
+                route:
+                  cluster: "service1"
+          http_filters:
+          - name: "envoy.filters.http.router"
+            typed_config:
+              "@type": "type.googleapis.com/envoy.extensions.filters.http.router.v3.Router"
+    socket_options:
+      description: "Set DSCP marker in ingres"
+      level: 0
+      name: 1
+      int_value: 184
+  clusters:
+  - name: "service0"
+    connect_timeout: "0.25s"
+    transport_socket:
+      name: "envoy.transport_sockets.tap"
+      typed_config:
+        '@type': "type.googleapis.com/envoy.extensions.transport_sockets.tap.v3.Tap"
+        common_config:
+          admin_config:
+            config_id: "test_config_id"
+        transport_socket:
+          name: "envoy.transport_sockets.raw_buffer"
+          typed_config:
+            "@type": "type.googleapis.com/envoy.extensions.transport_sockets.raw_buffer.v3.RawBuffer"
+    http2_protocol_options:
+      max_concurrent_streams: 100
+    type: "STRICT_DNS"
+    lb_policy: "ROUND_ROBIN"
+    load_assignment:
+      cluster_name: "service0"
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: "server0"
+                port_value: 8080
+    upstream_bind_config:
+      source_address:
+        address: "0.0.0.0"
+        port_value: 0
+      freebind: true
+      socket_options:
+        description: "Set DSCP marker in egress"
+        level: 0
+        name: 1
+        int_value: 40
+  - name: "service1"
+    connect_timeout: "0.25s"
+    transport_socket:
+      name: "envoy.transport_sockets.tap"
+      typed_config:
+        '@type': "type.googleapis.com/envoy.extensions.transport_sockets.tap.v3.Tap"
+        common_config:
+          admin_config:
+            config_id: "test_config_id"
+        transport_socket:
+          name: "envoy.transport_sockets.raw_buffer"
+          typed_config:
+            "@type": "type.googleapis.com/envoy.extensions.transport_sockets.raw_buffer.v3.RawBuffer"
+    http2_protocol_options:
+      max_concurrent_streams: 100
+    type: "STRICT_DNS"
+    lb_policy: "ROUND_ROBIN"
+    load_assignment:
+      cluster_name: "service1"
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: "server0"
+                port_value: 8080
+    upstream_bind_config:
+      source_address:
+        address: "0.0.0.0"
+        port_value: 0
+      freebind: true
+      socket_options:
+        description: "Set DSCP marker in egress"
+        level: 0
+        name: 1
+        int_value: 0
+  - name: "statsd"
+    connect_timeout: "0.25s"
+    type: "STRICT_DNS"
+    lb_policy: "ROUND_ROBIN"
+    load_assignment:
+      cluster_name: "statsd"
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: "host.docker.internal"
+                port_value: 8125

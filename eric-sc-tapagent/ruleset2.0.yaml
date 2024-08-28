@@ -1,0 +1,87 @@
+modelVersion: 2.0
+
+description: "Tapagent"
+
+import:
+  base: ../rulesets/ruleset2.0-eric-base.yaml
+  tapagent_base: ../rulesets/ruleset2.0-eric-tapagent.yaml
+
+properties:
+  - DOCKER_REPO_INTERNAL: "proj-sc-all-internal"
+  - DOCKER_REPO_DROP: "proj-sc-all-drop"
+  - BASE_IMAGE_NAME: ${tapagent_base.TAPAGENT_BASE_IMAGE_NAME}
+  - BASE_IMAGE_VERSION: ${tapagent_base.TAPAGENT_VERSION}
+  - IMAGE_NAME: "eric-sc-tapagent"
+
+env:
+  # the GERRIT username
+  - GERRIT_USERNAME
+  # the GERRIT password (Gerrit HTTP password)
+  - GERRIT_PASSWORD
+  # Run git related actions in dry-run
+  - DRY_RUN (default=true)
+
+var:
+  - tapagent-image-repo
+  - tapagent-image-version
+  - commithash
+  - branch
+
+rules:
+
+  all-local:
+    - rule: init
+    - rule: image
+
+  all-ci:
+    - rule: init
+    - rule: image
+    - rule: post-publish
+
+  init:
+    - task: image-repo
+      cmd: /bin/bash -c 'if [ \"${env.base.RELEASE}\" == \"false\" ];
+                         then
+                            echo ${DOCKER_REPO_INTERNAL} > ${base.OUTPUT_DIR}/var.tapagent-image-repo;
+                         else
+                            echo ${DOCKER_REPO_DROP} > ${base.OUTPUT_DIR}/var.tapagent-image-repo;
+                         fi;'
+    - task: image-version
+      docker-image: base.adp-release-auto
+      cmd: version-handler generate
+            --is-release ${env.base.RELEASE}
+            --user ${env.base.USER}
+            --output tapagent-image-version
+            --git-repo-path .
+            --version-prefix-file ${IMAGE_NAME}/VERSION_PREFIX
+
+  image:
+    - task: build
+      description: The task pulls and re-tags the image since it already exists in our repo
+      cmd:
+        - docker pull ${base.ARM_DOCKER_REGISTRY}/${BASE_IMAGE_NAME}:${BASE_IMAGE_VERSION}
+        - docker tag ${base.ARM_DOCKER_REGISTRY}/${BASE_IMAGE_NAME}:${BASE_IMAGE_VERSION} ${base.DOCKER_REGISTRY_URL}/${var.tapagent-image-repo}/${IMAGE_NAME}:${var.tapagent-image-version}
+    - task: push
+      cmd: docker push ${base.DOCKER_REGISTRY_URL}/${var.tapagent-image-repo}/${IMAGE_NAME}:${var.tapagent-image-version}
+
+  post-publish:
+    - task: get-commit
+      docker-image: base.adp-release-auto
+      cmd: git rev-parse --short HEAD > .bob/var.commithash
+    - task: get-branch
+      docker-image: base.adp-release-auto
+      cmd: git rev-parse --abbrev-ref HEAD > .bob/var.branch
+    - task: git-tag
+      docker-image: base.adp-release-auto
+      description: Create and push git tag. Example "eric-sc-tapagent/1.0.0-55"
+      docker-envs:
+        - GERRIT_USERNAME
+        - GERRIT_PASSWORD
+      cmd: version-handler create-git-tag
+           --git-repo-url ${base.GIT_REPO_URL}
+           --tag ${IMAGE_NAME}/${var.tapagent-image-version}
+           --message "Release ${var.tapagent-image-version}"
+           --commitid ${var.commithash}
+           --branch ${var.branch}
+           --dry-run ${env.DRY_RUN}
+           --debug

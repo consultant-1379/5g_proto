@@ -1,0 +1,4 @@
+apiVersion: v1
+description: Pod NRF Simulator. (c) Ericsson GmbH 2019
+name: eric-nrfsim
+version: 0.0.1

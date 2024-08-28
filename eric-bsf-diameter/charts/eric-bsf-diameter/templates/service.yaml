@@ -1,0 +1,138 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ template "eric-stm-diameter-proxy-grpc.name" . }}
+  labels:
+{{- if (include "eric-stm-diameter-proxy-grpc.labels" .) }}
+{{- include "eric-stm-diameter-proxy-grpc.labels" . | nindent 4 }}
+{{- end }}
+  annotations:
+{{- if (include "eric-stm-diameter-proxy-grpc.annotations" .) }}
+{{- include "eric-stm-diameter-proxy-grpc.annotations" . | nindent 4 }}
+{{- end }}
+spec:
+  type: ClusterIP
+{{- if hasKey .Values.service "clusterIP" -}}
+{{- if .Values.service.clusterIP }}
+# hack for DR-D1125-101 check, until upgrade hook will be imlemented for NBCs
+{{- if false }}
+  clusterIP: None
+{{- end }}
+  clusterIP: {{ .Values.service.clusterIP }}
+{{- end }}
+{{- end }}
+{{- if ((.Values.global).internalIPFamily) }}
+  ipFamilies: [{{ .Values.global.internalIPFamily | quote }}]
+  ipFamilyPolicy: SingleStack
+{{- else }}
+  ipFamilyPolicy: PreferDualStack
+{{- end }}
+  selector:
+    app: {{ template "eric-stm-diameter-proxy-grpc.name" . }}
+  ports:
+{{- if or (eq (include "eric-stm-diameter-proxy-grpc.tls" .) "false") (eq .Values.service.endpoints.grpc.tls.enforced "optional") }}
+    - protocol: TCP
+      port: {{ .Values.service.port }}
+      name: {{ .Values.service.portName | quote }}
+      targetPort: 20190
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+    - protocol: TCP
+      port: {{ .Values.service.tlsPort }}
+      name: {{ .Values.service.tlsPortName | quote }}
+      targetPort: 20191
+{{- end }}
+---
+# START. Addition of diameter service for tls metrics
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+kind: Service
+apiVersion: v1
+metadata:
+# START CNCS/NF-SPLIT
+  name: {{ template "eric-stm-diameter-proxy-grpc.name" . }}-metrics-tls
+# STOP CNCS/NF-SPLIT
+  labels:
+    app.kubernetes.io/name: {{ template "eric-stm-diameter-proxy-grpc.name" . }}
+    app.kubernetes.io/version: {{ template "eric-stm-diameter-proxy-grpc.version" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app: {{ template "eric-stm-diameter-proxy-grpc.name" . }}
+{{- include "eric-stm-diameter-proxy-grpc.config-labels" . | indent 4 }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/scheme: "https"
+{{- include "eric-stm-diameter-proxy-grpc.config-annotations" . | indent 4 }}
+{{- include "eric-stm-diameter-proxy-grpc.product-info" . | indent 4 }}
+spec:
+  ipFamilyPolicy: PreferDualStack
+  type: ClusterIP
+  {{- if .Values.service.diameter.internalIPFamily -}}
+  ipFamilies: [{{ .Values.service.diameter.internalIPFamily | quote }}]
+  {{- else -}}
+    {{- if .Values.global -}}
+        {{- if .Values.global.internalIPFamily }}
+  ipFamilies: [{{ .Values.global.internalIPFamily | quote }}]
+        {{- end }}
+    {{- end }}
+  {{- end }}
+  ports:
+  - name: https-metrics1
+    protocol: TCP
+    port: {{ int .Values.service.diameter.server.oam.port }}
+    targetPort: {{ int .Values.service.diameter.server.oam.targetPort }}
+  - name: https-metrics2
+    protocol: TCP
+    port: 20600
+    targetPort: 20600
+  selector:
+    app: {{ template "eric-stm-diameter-proxy-grpc.name" . }}
+{{- end }}
+# STOP. Addition of diameter service for tls metrics
+---
+# START. Addition of diameter service for non-tls metrics
+kind: Service
+apiVersion: v1
+metadata:
+# START CNCS/NF-SPLIT
+  name: {{ template "eric-stm-diameter-proxy-grpc.name" . }}-metrics-non-tls
+# STOP CNCS/NF-SPLIT
+  labels:
+    app.kubernetes.io/name: {{ template "eric-stm-diameter-proxy-grpc.name" . }}
+    app.kubernetes.io/version: {{ template "eric-stm-diameter-proxy-grpc.version" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app: {{ template "eric-stm-diameter-proxy-grpc.name" . }}
+{{- include "eric-stm-diameter-proxy-grpc.config-labels" . | indent 4 }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/scheme: "http"
+{{- include "eric-stm-diameter-proxy-grpc.config-annotations" . | indent 4 }}
+{{- include "eric-stm-diameter-proxy-grpc.product-info" . | indent 4 }}
+spec:
+  ipFamilyPolicy: PreferDualStack
+  type: ClusterIP
+  {{- if .Values.service.diameter.internalIPFamily -}}
+  ipFamilies: [{{ .Values.service.diameter.internalIPFamily | quote }}]
+  {{- else -}}
+    {{- if .Values.global -}}
+        {{- if .Values.global.internalIPFamily }}
+  ipFamilies: [{{ .Values.global.internalIPFamily | quote }}]
+        {{- end }}
+    {{- end }}
+  {{- end }}
+  ports:
+  - name: http-metrics1
+    protocol: TCP
+    port: {{ .Values.spec.cddjmxexporter.port }}
+    targetPort: {{ .Values.spec.cddjmxexporter.port }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "false" }}
+  - name: http-metrics2
+    protocol: TCP
+    port: {{ int .Values.service.diameter.server.oam.port }}
+    targetPort: {{ int .Values.service.diameter.server.oam.targetPort }}
+  - name: http-metrics3
+    protocol: TCP
+    port: 20600
+    targetPort: 20600
+{{- end }}
+  selector:
+    app: {{ template "eric-stm-diameter-proxy-grpc.name" . }}
+# STOP. Addition of diameter service for non-tls metrics

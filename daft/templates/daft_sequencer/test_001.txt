@@ -1,0 +1,30 @@
+# This is a comment
+
+# Another comment
+
+# Execute playlists
+execute_playlist.pl -j Test_Deploy -p 001_Deploy_SC -v SOFTWARE_DIR=/path/to/software/eric-sc-1.12.0+43.csar -h
+execute_playlist.pl -j Test_Deploy -p 001_Deploy_SC -n $NETWORK_CONFIG_FILE
+
+# Execute other commands
+ls -l ~
+ls -l /proj/DSC/rebels/
+false
+BACKGROUND_COMMAND: sleep 12
+sleep 2
+SHOW_COMMAND: date
+BACKGROUND_COMMAND: sleep 10
+true
+
+# Environment variables
+ENVIRONMENT_VARIABLE: Dummy_Var1='This is value 1'
+ENVIRONMENT_VARIABLE: Dummy_Var2='This is value 2'
+ENVIRONMENT_VARIABLE: Dummy_Var3='This is value 3'
+ENVIRONMENT_VARIABLE: Dummy_Var4='This is value 4'
+ENVIRONMENT_VARIABLE: NETWORK_CONFIG_FILE=network_config_files/Snorlax.xml
+
+# Playlist Variables
+PLAYLIST_VARIABLE: VAR1=VALUE1
+PLAYLIST_VARIABLE: VAR2=VALUE2
+PLAYLIST_VARIABLE: VAR3=VALUE3
+PLAYLIST_VARIABLE: VAR4=VALUE4

@@ -1,0 +1,14 @@
+{{- if eq (include "eric-influxdb.cr" .) "true" -}}
+{{- if eq (include "eric-influxdb.tls" .) "true" -}}
+apiVersion: certm.sec.ericsson.com/v1
+kind: ExternalCertificate
+metadata:
+  name: {{ template "eric-influxdb.name" . }}-asymmetric-key-cert
+  labels:
+    app: {{ template "eric-influxdb.name" . }}
+spec:
+  generated-secret-name: {{ template "eric-influxdb.name" . }}-asymmetric-key-cert-secret
+  generated-secret-type: tls
+  asymmetric-key-certificate-name: {{ .Values.service.tls.useCr.clientKey }}/{{ .Values.service.tls.useCr.clientCert }}
+{{- end -}}
+{{- end -}}

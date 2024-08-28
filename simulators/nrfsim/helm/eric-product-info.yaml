@@ -1,0 +1,11 @@
+productName: "NRFSIM traffic simulator"
+productNumber: product_number
+productRevision: product_revision
+images:
+  nrfsim:
+    productName: "NRFSIM traffic simulator"
+    productNumber: "-"
+    registry: docker_registry
+    repoPath: docker_repo_path
+    name: nrfsim_image_name
+    tag: nrfsim_image_tag

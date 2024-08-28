@@ -1,0 +1,151 @@
+[
+  {
+    "measurement-type": [
+      {
+        "measurement-name": "rlf_in_requests_nrlf_ratelimiting_total",
+        "description": "Number of incoming requests on the internal nrlf_ratelimiting interface",
+        "collection-method": "cc",
+        "internal-metric-name": "rlf_in_requests_nrlf_ratelimiting_total",
+        "multiplicity": 1,
+        "aggregation": "sum",
+        "measurement-status": "used",
+        "internal-metric-type": "Counter",
+        "reset-at-gran-period": true,
+        "id": "rlf_in_requests_nrlf_ratelimiting_total",
+        "internal-instrumentation-label": {
+          "namespace": "",
+          "operation": "",
+          "kubernetes_pod_name": ""
+        },
+        "internal-target-pattern": "namespace=[namespace],operation=[operation],pod=[kubernetes_pod_name]",
+        "condition": "Incremented: None Decremented: N/A",
+        "size": 8
+      },
+      {
+        "measurement-name": "rlf_out_answers_nrlf_ratelimiting_total",
+        "description": "Number of outgoing answers on the internal nrlf_ratelimiting interface",
+        "collection-method": "cc",
+        "internal-metric-name": "rlf_out_answers_nrlf_ratelimiting_total",
+        "multiplicity": 1,
+        "aggregation": "sum",
+        "measurement-status": "used",
+        "internal-metric-type": "Counter",
+        "reset-at-gran-period": true,
+        "id": "rlf_out_answers_nrlf_ratelimiting_total",
+        "internal-instrumentation-label": {
+          "namespace": "",
+          "operation": "",
+          "status": "",
+          "kubernetes_pod_name": ""
+        },
+        "internal-target-pattern": "namespace=[namespace],operation=[operation],status=[status],pod=[kubernetes_pod_name]",
+        "condition": "Incremented: None Decremented: N/A",
+        "size": 8
+      },
+      {
+        "measurement-name": "rlf_tb_pulls_total",
+        "description": "Number of pulls per token bucket",
+        "collection-method": "cc",
+        "internal-metric-name": "rlf_tb_pulls_total",
+        "multiplicity": 1,
+        "aggregation": "sum",
+        "measurement-status": "used",
+        "internal-metric-type": "Counter",
+        "reset-at-gran-period": true,
+        "id": "rlf_tb_pulls_total",
+        "internal-instrumentation-label": {
+          "namespace": "",
+          "bucket": "",
+          "watermark": "",
+          "kubernetes_pod_name": ""
+        },
+        "internal-target-pattern": "namespace=[namespace],bucket=[bucket],watermark=[watermark],pod=[kubernetes_pod_name]",
+        "condition": "Incremented: None Decremented: N/A",
+        "size": 8
+      }
+    ],
+    "version": "1.0.0",
+    "name": "rlf_service"
+  },
+  {
+    "measurement-type": [
+      {
+        "measurement-name": "rlf_cpu_usage",
+        "description": "CPU usage for rlf container",
+        "collection-method": "gauge",
+        "internal-metric-name": "rlf_cpu",
+        "multiplicity": 1,
+        "aggregation": "avg",
+        "measurement-status": "used",
+        "internal-metric-type": "Gauge",
+        "reset-at-gran-period": false,
+        "id": "rlf_cpu_usage",
+        "internal-instrumentation-label": {},
+        "internal-target-pattern": "service=eric-sc-rlf",
+        "condition": "CPU usage increased. CPU usage decreased.",
+        "size": 8
+      },
+      {
+        "measurement-name": "rlf_cpu_load",
+        "description": "RLF CPU load in percentage",
+        "collection-method": "gauge",
+        "internal-metric-name": "rlf_cpu_load",
+        "multiplicity": 1,
+        "aggregation": "sum",
+        "measurement-status": "used",
+        "internal-metric-type": "Gauge",
+        "reset-at-gran-period": false,
+        "id": "rlf_cpu_load",
+        "internal-instrumentation-label": {
+        },
+        "internal-target-pattern": "service=eric-sc-rlf",
+        "condition": "CPU load increased. CPU load decreased.",
+        "size": 8,
+        "fm-alarm-type": "/fme:fm/fme:alarm-model[fme:id='ericsson-sc']/fme:alarm-type[fme:id='ScRlfHighLoad']",
+        "fault-name": "ScRlfHighLoad",
+        "fault-description": "RLF load has passed a defined threshold",
+        "service-name": "ericsson-sc",
+        "threshold-direction": "increasing"
+      },
+      {
+        "measurement-name": "rlf_container_memory_working_set_bytes",
+        "description": "Memory usage per RLF container in bytes",
+        "collection-method": "gauge",
+        "internal-metric-name": "container_memory_working_set_bytes",
+        "multiplicity": 1,
+        "aggregation": "avg",
+        "measurement-status": "used",
+        "internal-metric-type": "Gauge",
+        "reset-at-gran-period": false,
+        "id": "rlf_container_memory_working_set_bytes",
+        "internal-instrumentation-label": {
+          "container": "eric-sc-rlf",
+          "pod": "",
+          "instance": ""
+        },
+        "internal-target-pattern": "container=[container],pod=[pod],k8snode=[instance]",
+        "condition": "Memory usage increased. Memory usage decreased.",
+        "size": 8
+      },
+      {
+        "measurement-name": "rlf_memory_usage",
+        "description": "RLF memory usage in percentage",
+        "collection-method": "gauge",
+        "internal-metric-name": "rlf_memory_usage",
+        "multiplicity": 1,
+        "aggregation": "sum",
+        "measurement-status": "used",
+        "internal-metric-type": "Gauge",
+        "reset-at-gran-period": false,
+        "id": "rlf_memory_usage",
+        "internal-instrumentation-label": {
+        },
+        "internal-target-pattern": "service=eric-sc-rlf",
+        "condition": "Memory usage increased. Memory usage decreased.",
+        "size": 8
+      }
+    ],
+    "version": "1.0.0",
+    "name": "rlf_system_metrics"
+  }
+]

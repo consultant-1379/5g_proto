@@ -1,0 +1,42 @@
+Version: v1
+Decription: FOSS list
+LastUpdate: 2024-04-02 15:15
+FOSS:
+    # Available in Bazaar
+    FOSSName: byte-buddy
+    # Available in Bazaar
+    FOSSVersion: 1.14.9
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/raphw/byte-buddy/archive/byte-buddy-{{FOSSVersion}}.tar.gz
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 87/CAX1059816
+    # Not Available in Bazaar
+    Primary: N
+    # Available in Bazaar
+    STAKOCode: General use
+    # Available in Bazaar
+    STAKOReason: ()
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: "Byte Buddy is a code generation and manipulation library for creating and modifying Java classes during the runtime of a Java application and without the help of a compiler."
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: Apache License 2.0
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency:
+    - 'net.bytebuddy:byte-buddy:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: XEIRPAP Eirini Papastefanaki

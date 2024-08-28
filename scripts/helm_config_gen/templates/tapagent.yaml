@@ -1,0 +1,28 @@
+eric-bsf:
+  tapagent:
+    worker:
+      enabled: true
+    manager:
+      enabled: true
+
+eric-scp:
+  tapagent:
+    worker:
+      enabled: true
+    manager:
+      enabled: true
+
+eric-sepp:
+  tapagent:
+    worker:
+      enabled: true
+    manager:
+      enabled: true
+
+eric-sc-nlf:
+  tapagent:
+    enabled: true
+
+eric-sc-slf:
+  tapagent:
+    enabled: true

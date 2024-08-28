@@ -1,0 +1,59 @@
+# Copyright 2021 Ericsson GmbH
+
+service:
+  name: "eric-dscload"
+
+imageCredentials:
+  registry:
+    url: "armdocker.rnd.ericsson.se"
+    pullSecret: "regcred"
+  repoPath: "proj-5g-bsf"
+  pullPolicy: Always
+
+spec:
+  replicas: "1"
+  image:
+  tag: "1.0"
+  port: "80"
+  resources:
+    requests:
+      cpu: 1
+      memory: 300Mi
+    limits:
+      cpu: 3
+      memory: 8Gi
+vm:
+  hello-slogan: "This is a HELM packaged Kubernetes POD saying hello to the world!"
+
+certificates:
+  certificatesSecret: dscload-certificates-secret
+  certificate: cert.pem
+  key: key.pem
+
+certificateAuthorities:
+  certificatesSecret: eric-stm-diameter-external-trustedcert-sc-trusted-default-cas-certificate-secret
+
+configuration:
+  # The diameter realm of the simulated AF. The diameter host of AF is generated
+  # using the name dscload Pod.
+  af-diameter-realm: #"af-diamrealm"
+  # The diameter host and realm of the simulated PCF.
+  pcf-diameter-host: #"pcf-diamhost.com"
+  pcf-diameter-realm: #"pcf-diamrealm.com"
+  # When service-ip and service-port are set, they are used as end-points for the
+  # diameter service and diameter-service-name parameter is ignored.
+  diameter-service-ip:
+  diameter-service-port:
+  diameter-service-tls-port:
+  # When service-ip and service-port are not set, the end-points of the diameter
+  # service are auto-discovered using the target service-name.
+  diameter-service-name: # DS: eric-stm-diameter-traffic-tcp-ipv4 -> set to eric-stm-diameter-traffic-tcp-ipv6 for ipv6, SingleStack: Without -ipvX prefix
+  # The number of requests sent from simulated AF to the target diameter service. The tps parameter configures the number of tps per peer.e.g.25x40peers=1000 tps
+  diameter-tps: 1000  
+  # Set IP-version. Possible values: ["4", "6", "DS"]. # In case of not DS, diameter-service-name parameter must be configured in order to reflect the service name. 
+  ip-version: "DS"
+  # Use single peer template for default dscload config. In DS, there will be 2 peers, one for IPv4 and one for IPv6.
+  singlePeer: false
+  # Enable/disable TLS communication. True is not currently supported.
+  tls:
+    enabled: true

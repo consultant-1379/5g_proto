@@ -1,0 +1,11 @@
+productName: "NRFSIM traffic simulator"
+productNumber: product_number
+productRevision: product_revision
+images:
+  loadgenagent:
+    productName: "NRFSIM traffic simulator"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf"
+    name: loadgen_agent_image_name
+    tag: loadgen_agent_image_tag

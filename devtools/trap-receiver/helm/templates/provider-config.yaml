@@ -1,0 +1,13 @@
+{{ if eq .Values.providerConfiguration.enabled true }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: snmp-alarm-provider-config
+type: Opaque
+data:
+  {{- if eq .Values.trapCredentials.version "2" }}
+  config.json: {{ template "eric-snmp-trap-receiver.snmpv2-config" . }}
+  {{- else if eq .Values.trapCredentials.version "3" }}
+  config.json: {{ template "eric-snmp-trap-receiver.snmpv3-config" . }}
+  {{- end }}
+{{ end }}

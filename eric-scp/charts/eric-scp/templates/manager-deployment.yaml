@@ -1,0 +1,662 @@
+#Copyright 2020 Ericsson GmbH
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "eric-scp.name" . }}-manager
+  labels:
+{{- include "eric-scp.labels" . | indent 4 }}
+  annotations:
+{{- include "eric-scp.helm-annotations" . | indent 4 }}
+{{- include "eric-scp.config-annotations" . | indent 4 }}
+spec:
+  replicas: {{ .Values.spec.manager.replicaCount }}
+  strategy:
+    type: {{ .Values.updateStrategy.manager.type | quote }}
+  selector:
+    matchLabels:
+      app: {{ template "eric-scp.name" . }}-manager
+  template:
+    metadata:
+      labels:
+        {{- include "eric-scp-manager.pod.labels" . | nindent 8 }}
+        app: {{ template "eric-scp.name" . }}-manager
+      annotations:
+{{- include "eric-scp.helm-annotations" . | indent 8 }}
+{{- include "eric-scp.config-annotations" . | indent 8 }}
+    spec:
+      {{- if include "eric-scp-manager.nodeSelector" . }}
+      nodeSelector:
+        {{ template "eric-scp-manager.nodeSelector" . }}
+      {{- end }}
+      {{- if eq .Values.spec.manager.affinity.podAntiAffinity "hard" }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - {{ template "eric-scp.name" . }}-manager
+              topologyKey: "kubernetes.io/hostname"
+      {{- else if eq .Values.spec.manager.affinity.podAntiAffinity  "soft" }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - {{ template "eric-scp.name" . }}-manager
+              topologyKey: "kubernetes.io/hostname"
+      {{- end }}
+      {{- if .Values.spec.manager.tolerations }}
+      tolerations:
+{{ toYaml .Values.spec.manager.tolerations | indent 8 }}
+      {{- end }}
+{{- if .Values.rbac.createServiceAccount }}
+      serviceAccountName: {{ template "eric-scp.name" . }}-manager
+{{- else }}
+      serviceAccountName: {{ .Values.rbac.serviceAccountName | quote }}
+{{- end }}
+      {{- if include "eric-scp.pullSecrets" . }}
+      imagePullSecrets:
+      - name: {{ template "eric-scp.pullSecrets" . }}
+      {{- end }}
+      initContainers:
+      - name: setup
+        image: {{ template "eric-scp.setupmanager.registryUrl" . }}/{{ template "eric-scp.setupmanager.repoPath" . }}/{{ template "eric-scp.setupmanager.image" . }}:{{ template "eric-scp.setupmanager.tag" . }}
+        imagePullPolicy: {{ template "eric-scp.setupmanager.imagePullPolicy" . }}
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 151802
+          allowPrivilegeEscalation: false
+          privileged: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - all
+        resources:
+          requests:
+            memory: {{ .Values.spec.setup.resources.requests.memory | quote }}
+            cpu: {{ .Values.spec.setup.resources.requests.cpu | quote }}
+            {{- if index .Values.spec.setup.resources.requests "ephemeral-storage" }}
+            ephemeral-storage: {{ index .Values.spec.setup.resources.requests "ephemeral-storage" | quote }}
+            {{- end }}
+          limits:
+            memory: {{ .Values.spec.setup.resources.limits.memory | quote }}
+            cpu: {{ .Values.spec.setup.resources.limits.cpu | quote }}
+            {{- if index .Values.spec.setup.resources.limits "ephemeral-storage" }}
+            ephemeral-storage: {{ index .Values.spec.setup.resources.limits "ephemeral-storage" | quote }}
+            {{- end }}
+        env:
+        - name: CM_MEDIATOR
+          value: {{ .Values.adp.cm.mediator.hostname | quote }}
+        - name: SUBSCRIBE_VALIDITY
+          value: {{ int .Values.adp.cm.mediator.subscription.validity | quote }}
+        - name: SUBSCRIBE_RENEWAL
+          value: {{ float64 .Values.adp.cm.mediator.subscription.renewal | quote }}
+        - name: SUBSCRIBE_HEARTBEAT
+          value: {{ int .Values.adp.cm.mediator.subscription.heartbeat | quote }}
+        - name: GLOBAL_TLS_ENABLED
+          value: {{ include "eric-scp.tls" . | quote }}
+        - name: CM_MEDIATOR_PORT
+          value: {{ .Values.adp.cm.mediator.port | quote }}
+        - name: JVM_PARAMS
+          value: {{ .Values.jvm.parameters.setup | quote }}
+{{- if eq (include "eric-scp.tls" .) "true" }}
+        - name: MANAGER_MEDIATOR_CLIENT_CERT_PATH
+          value: "/run/secrets/mediator/certificates"
+        - name: SIP_TLS_TRUSTED_ROOT_CA_PATH
+          value: "/run/secrets/siptls/ca"
+{{- end }}
+        - name: TZ
+          value: {{ include "eric-scp.manager.timezone" . }}
+        - name: SERVICE_ID
+          value: {{ template "eric-scp.name" . }}-manager
+        volumeMounts:
+{{- if eq (include "eric-scp.tls" .) "true" }}
+        - name: mediator-client-certificate
+          mountPath: "/run/secrets/mediator/certificates"
+          readOnly: true
+        - name: siptls-trusted-root-cacert
+          mountPath: "/run/secrets/siptls/ca"
+          readOnly: true
+{{- end }}
+        - name: scp-schema
+          mountPath: /java-exec/classes/com/ericsson/sc/scp/model
+          readOnly: true
+        - name: vertx
+          mountPath: "/vertx"
+        command: ["/bin/bash", "-c", "/java-exec/entrypoint.sh java -cp /java-exec/libs/*:/java-exec/classes ${JVM_PARAMS} com.ericsson.sc.scp.manager.upgrade.ConfigTransformer"]
+      containers:
+{{- if eq (include "eric-scp.tapagent.manager.enabled" .) "true" }}
+      - name: tapagent
+        image: {{ template "eric-scp.tapagent.registryUrl" . }}/{{ template "eric-scp.tapagent.repoPath" . }}/{{ template "eric-scp.tapagent.image" . }}:{{ template "eric-scp.tapagent.tag" . }}
+        imagePullPolicy: {{ template "eric-scp.tapagent.imagePullPolicy" . }}
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 188503
+          allowPrivilegeEscalation: true
+          readOnlyRootFilesystem: true
+          privileged: false
+          capabilities:
+            drop:
+              - ALL
+            add:
+              - NET_ADMIN
+              - NET_RAW
+        resources:
+          requests:
+            cpu: {{ .Values.spec.tapagent.resources.requests.cpu | quote }}
+            memory: {{ .Values.spec.tapagent.resources.requests.memory | quote }}
+            {{- if index .Values.spec.tapagent.resources.requests "ephemeral-storage" }}
+            ephemeral-storage: {{ index .Values.spec.tapagent.resources.requests "ephemeral-storage" | quote }}
+            {{- end }}
+          limits:
+            cpu: {{ .Values.spec.tapagent.resources.limits.cpu | quote }}
+            memory: {{ .Values.spec.tapagent.resources.limits.memory | quote }}
+            {{- if index .Values.spec.tapagent.resources.limits "ephemeral-storage" }}
+            ephemeral-storage: {{ index .Values.spec.tapagent.resources.limits "ephemeral-storage" | quote }}
+            {{- end }}
+        volumeMounts:
+          - name: tap-config
+            mountPath: /etc/cm-config/
+          - name: sftp-server-config
+            mountPath: /etc/ftpserver/
+        env:
+          - name: CM_CONFIG_FILE_PATH
+            value: "/etc/cm-config/"
+          - name: CM_CONFIG_FILE_NAME
+            value: "tap_config.json"
+          - name: SERVICE_NAME
+            value: {{ template "eric-scp.name" . }}-manager
+          - name: TZ
+            value: {{ include "eric-scp.manager.timezone" . }}
+          - name: SERVICE_ID
+            value: {{ template "eric-scp.name" . }}-manager
+      - name: tlskeylogagent
+        image: {{ template "eric-scp.tlskeylogagent.registryUrl" . }}/{{ template "eric-scp.tlskeylogagent.repoPath" . }}/{{ template "eric-scp.tlskeylogagent.image" . }}:{{ template "eric-scp.tlskeylogagent.tag" . }}
+        imagePullPolicy: {{ template "eric-scp.tlskeylogagent.imagePullPolicy" . }}
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          privileged: false
+          capabilities:
+            drop:
+              - ALL
+          runAsGroup: {{ .Values.spec.tlskeylogagent.mgid }}
+          runAsUser: {{ .Values.spec.tlskeylogagent.uid }}
+        resources:
+          requests:
+            cpu: {{ .Values.spec.tlskeylogagent.resources.requests.cpu | quote }}
+            memory: {{ .Values.spec.tlskeylogagent.resources.requests.memory | quote }}
+          limits:
+            cpu: {{ .Values.spec.tlskeylogagent.resources.limits.cpu | quote }}
+            memory: {{ .Values.spec.tlskeylogagent.resources.limits.memory | quote }}
+        volumeMounts:
+          - name: tap-config
+            mountPath: /etc/cm-config/
+          - name: sftp-server-config
+            mountPath: /etc/ftpserver/
+          - name: custom
+            mountPath: /mnt
+          - name: {{ .Values.log.volumeName | quote }}
+            mountPath: /logcontrol/config
+{{- if eq (include "eric-scp.logshipper-enabled" . ) "true" }}
+      {{- include "eric-log-shipper-sidecar.log-shipper-sidecar-mounts" . | indent 10 }}
+{{- end }}
+        env:
+          - name: VTAP_CONFIG_DIR
+            value: /etc/cm-config/
+          - name: VTAP_SFTP_CONFIG_DIR
+            value: /etc/ftpserver/
+          - name: TLS_KEYLOGGER_FIFO_PATH
+            value: /mnt/tlskeylogger.fifo
+          - name: JVM_PARAMS
+            value: {{ .Values.jvm.parameters.tlskeylogagent | quote }}
+          - name: SERVICE_NAME
+            value: {{ template "eric-scp.name" . }}-manager
+          - name: TZ
+            value: {{ include "eric-scp.manager.timezone" . }}
+          - name: FILE_SIZE_LIMIT
+            value: {{ .Values.tlskeylogagent.fileSizeLimit | quote }}
+          - name: SERVICE_ID
+            value: {{ template "eric-scp.name" . }}-manager
+          - name: CONTAINER_NAME
+            value: "tlskeylogagent"
+          - name: LOG_PATH
+            value: {{ .Values.logShipper.storage.path | quote }}
+          - name: LOGBACK_FILENAME
+            value: {{ include "eric-scp.logbackFileName" . | quote }}
+{{- end }}
+      - name: eric-scp-manager
+        image: {{ template "eric-scp.manager.registryUrl" . }}/{{ template "eric-scp.manager.repoPath" . }}/{{ template "eric-scp.manager.image" . }}:{{ template "eric-scp.manager.tag" . }}
+        imagePullPolicy: {{ template "eric-scp.manager.imagePullPolicy" . }}
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          privileged: false
+          capabilities:
+            drop:
+              - ALL
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: CM_MEDIATOR
+          value: {{ .Values.adp.cm.mediator.hostname | quote }}
+{{- if eq (include "eric-scp.tapagent.manager.enabled" .) "true" }}
+        - name: TLS_KEYLOGGER_FIFO_PATH
+          value: /mnt/tlskeylogger.fifo
+        - name: TLS_KEYLOGGER_FIFO_UID
+          value: {{ .Values.spec.tlskeylogagent.mgid | quote }}
+{{- end }}
+        - name: SUBSCRIBE_VALIDITY
+          value: {{ int .Values.adp.cm.mediator.subscription.validity | quote }}
+        - name: SUBSCRIBE_RENEWAL
+          value: {{ float64 .Values.adp.cm.mediator.subscription.renewal | quote }}
+        - name: SUBSCRIBE_HEARTBEAT
+          value: {{ int .Values.adp.cm.mediator.subscription.heartbeat | quote }}
+        - name: GLOBAL_TLS_ENABLED
+          value: {{ include "eric-scp.tls" . | quote }}
+        - name: CM_MEDIATOR_PORT
+          value: {{ .Values.adp.cm.mediator.port | quote }}
+        - name: EGRESS_NRF_DSCP
+{{- if lt (int .Values.egress.nrf.dscp) 0}}
+          value: 0
+{{- else if gt (int .Values.egress.nrf.dscp) 63}}
+          value: 63
+{{- else }}
+          value: {{ int .Values.egress.nrf.dscp | quote }}
+{{- end }}
+        - name: SERVICE_HOST
+          value: {{ template "eric-scp.name" . }}-manager
+        - name: SERVICE_OAM_TARGET_PORT
+          value: {{ .Values.service.manager.server.oam.targetPort | quote }}
+        - name: NLF_INTERFACE_CLIENT_CERTIFICATES_PATH
+          value: "/run/secrets/eric-manager-nlf"
+        - name: NLF_INTERFACE_ROOTCA_PATH
+          value: "/run/secrets/siptls/ca"
+        - name: NLF_CERT_NAME
+          value: "worker_nlf"
+        - name: RLF_INTERFACE_CLIENT_CERTIFICATES_PATH
+          value: "/run/secrets/eric-manager-rlf"
+        - name: RLF_INTERFACE_ROOTCA_PATH
+          value: "/run/secrets/siptls/ca"
+        - name: RLF_CERT_NAME
+          value: "worker_rlf"
+        - name: SLF_CERT_NAME
+          value: "worker_slf"
+        - name: SERVICE_NRF_TARGET_PORT
+          value: {{ .Values.service.manager.server.nrf.targetPort | quote }}
+{{- if eq (include "eric-scp.tls" .) "true" }}
+        - name: DCED_TLS_ENABLED
+          value: {{ include "eric-scp.dcedsc.tls" .  | quote }}
+        - name: MANAGER_SERVER_CERT_PATH
+          value: "/run/secrets/oam/certificates"
+        - name: MANAGER_GRPC_SERVER_CERT_PATH
+          value: "/run/secrets/grpc/certificates"
+        - name: MANAGER_GRPC_CLIENT_CA_PATH
+          value: "/run/secrets/grpc/worker/ca"
+        - name: YANG_SERVER_CA_PATH
+          value: "/run/secrets/yang/ca"
+        - name: MEDIATOR_SERVER_CA_PATH
+          value: "/run/secrets/mediator/ca"
+        - name: PM_SERVER_CA_PATH
+          value: "/run/secrets/pm/ca"
+        - name: MANAGER_MEDIATOR_CLIENT_CERT_PATH
+          value: "/run/secrets/mediator/certificates"
+        - name: MANAGER_TRAFFIC_CERTIFICATE_PATH
+          value: "/run/secrets/scp-manager/certificates"
+        - name: MANAGER_TRAFFIC_ROOT_CA_PATH
+          value: "/run/secrets/scp-manager/certificates/trustCA"
+        - name: SIP_TLS_TRUSTED_ROOT_CA_PATH
+          value: "/run/secrets/siptls/ca"
+{{- if eq (include "eric-scp.dcedsc.tls" .) "true" }}
+        - name: MANAGER_DCEDSC_CLIENT_CERT_PATH
+          value: "/run/secrets/dcedsc/certificates"
+{{- end }}
+        - name: ALARM_HANDLER_CLIENT_CERT_PATH
+          value: "/run/secrets/fhah/certificates"
+{{- end }}
+        - name: JVM_PARAMS
+          value: {{ .Values.jvm.parameters.manager | quote }}
+        - name: ETCD_ENDPOINT
+          value: {{ .Values.etcd.endpoint | quote }}
+{{- if eq (include "eric-scp.dcedsc.tls" .) "false" }}
+        - name: ETCD_USERNAME
+          value: {{ .Values.etcd.username | quote }}
+        - name: ETCD_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.etcd.secretName | quote }}
+              key: {{ .Values.etcd.passwordKey | quote }}
+{{- end }}
+        - name: APP_VERSION
+          value: {{ template "eric-scp.version" . }}
+        - name: MAX_REQUEST_BYTES
+          value: {{ min .Values.maxRequestBytes 16000000 | quote }}
+        - name: IP_FAMILY
+          value: {{ template "eric-scp.ipfamily" . }}
+{{- if (include "eric-scp-worker-service.enabled-IPv4" .) | empty | not }}
+        - name: EXTERNAL_IPV4
+          value: {{ include "eric-scp-worker-service.enabled-IPv4" . | quote }}
+{{- end }}
+{{- if (include "eric-scp-worker-service.enabled-IPv6" .) | empty | not }}
+        - name: EXTERNAL_IPV6
+          value: {{ include "eric-scp-worker-service.enabled-IPv6" . | quote }}
+{{- end }}
+{{- if .Values.service.worker.multiVpn.enabled }}
+        - name: WORKER_SVC_{{ (upper (regexReplaceAll "\\-+" .Values.service.worker.multiVpn.port2Name "_")) }}
+          value: {{ .Values.spec.worker.port2 | quote }}
+        - name: WORKER_SVC_{{ (upper (regexReplaceAll "\\-+" .Values.service.worker.multiVpn.tlsPort2Name "_")) }}
+          value: {{ .Values.spec.worker.tlsport2 | quote }}
+{{- if (include "eric-scp-worker-service.multiVpn.enabled-IPv4" .) | empty | not }}
+        - name: EXTERNAL_IPV4_MULTI_VPN
+          value: {{ include "eric-scp-worker-service.multiVpn.enabled-IPv4" . | quote }}
+{{- end }}
+{{- if (include "eric-scp-worker-service.multiVpn.enabled-IPv6" .) | empty | not }}
+        - name: EXTERNAL_IPV6_MULTI_VPN
+          value: {{ include "eric-scp-worker-service.multiVpn.enabled-IPv6" . | quote }}
+{{- end }}
+{{- end }}
+        - name: WORKER_SVC_{{ (upper (regexReplaceAll "\\-+" .Values.service.worker.portName "_")) }}
+          value: {{ .Values.spec.worker.port | quote }}
+        - name: WORKER_SVC_{{ (upper (regexReplaceAll "\\-+" .Values.service.worker.tlsPortName "_")) }}
+          value: {{ .Values.spec.worker.tlsport | quote }}
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: VALIDATOR_ENABLED
+          value: {{ .Values.validator.enabled | quote }}
+        - name: LEADER_ELECTION_ENABLED
+          value: {{ .Values.manager.leaderElection.enabled | quote }}
+        - name: MULTIVPN_ENABLED
+          value: {{ .Values.service.worker.multiVpn.enabled  | quote }}
+        - name: SERVICE_WORKER_ADDRESS
+          value: {{ .Values.service.worker.loadBalancerIP | quote }}
+        - name: SERVICE_WORKER_IPF4_ADDRESS
+          value: {{ .Values.service.worker.loadBalancerIP | quote }}
+        - name: SERVICE_WORKER_IPF6_ADDRESS
+          value: {{ .Values.service.worker.loadBalancerIP | quote }}
+        - name: SERVICE_WORKER_PORT
+          value: {{ .Values.service.worker.port | quote }}
+        - name: SERVICE_WORKER_PORT_TLS
+          value: {{ .Values.service.worker.tlsport | quote }}
+        - name: SERVICE_WORKER_MVPN_ADDRESS
+          value: {{ .Values.service.worker.multiVpn.loadBalancerIP | quote }}
+        - name: SERVICE_WORKER_MVPN_IPF4_ADDRESS
+          value: {{ .Values.service.worker.multiVpn.loadBalancerIP | quote }}
+        - name: SERVICE_WORKER_MVPN_IPF6_ADDRESS
+          value: {{ .Values.service.worker.multiVpn.loadBalancerIP | quote }}
+        - name: SERVICE_WORKER_MVPN_PORT
+          value: {{ .Values.service.worker.multiVpn.port | quote }}
+        - name: SERVICE_WORKER_MVPN_PORT_TLS
+          value: {{ .Values.service.worker.multiVpn.tlsport | quote }}
+        - name: TZ
+          value: {{ include "eric-scp.manager.timezone" . }}
+        - name: GLOBAL_RATE_LIMIT_ENABLED
+          value: {{ include "rlf.enabled" . | quote}}
+{{- if (.Values.rlf).enabled }}
+        - name: PRIORITY_PERCENTAGES
+          value: {{ .Values.rlf.priorities | toJson | quote }}
+        - name: GRL_RLF_SERVICE_ERROR
+          value: {{ .Values.rlf.rlfServiceError | toJson | quote }}
+{{- end }}
+        - name: SERVICE_ID
+          value: {{ template "eric-scp.name" . }}-manager
+        - name: ALARM_HANDLER_HOSTNAME
+          value: {{ .Values.adp.fh.alarmHandler.hostname | quote }}
+        - name: ALARM_HANDLER_PORT
+          value: {{ .Values.adp.fh.alarmHandler.port | quote }}
+        - name: VTAP_ENABLED
+          value: {{ include "eric-scp-worker.vtap.enabled" . | quote}}
+{{- if eq (include "eric-scp-worker.vtap.enabled" .) "true" }}
+        - name: VTAP_DOMAIN
+          value: {{ .Values.vtap.domain }}
+        - name: VTAP_PROTOCOL
+          value: {{ .Values.vtap.protocol }}
+        - name: PVTB_HOST
+          value: {{ .Values.adp.probe.virtualTapBroker.hostname | quote }}
+        - name: PVTB_API_PORT
+          value: {{ .Values.adp.probe.virtualTapBroker.apiPort | quote }}
+        - name: PVTB_POLLING_INTERVAL_SECONDS
+          value: {{ .Values.vtap.pvtbPollingIntervalSeconds | quote }}
+        - name: TAP_COLLECTOR_PORT
+          value: {{ .Values.tapcollector.worker.port | quote }}
+{{- end }}
+        - name: CONTAINER_NAME
+          value: "eric-scp-manager"
+        - name: LOG_PATH
+          value: {{ .Values.logShipper.storage.path | quote }}
+        - name: LOGBACK_FILENAME
+          value: {{ include "eric-scp.logbackFileName" . | quote }}
+        ports:
+        - containerPort: {{ .Values.service.manager.server.oam.targetPort }}
+{{- if eq (include "eric-scp.tls" .) "true" }}
+          name: "metrics-tls"
+{{- else }}
+          name: "metrics"
+{{- end }}
+        volumeMounts:
+        - name: leader-election
+          mountPath: /leaderElection
+        - name: nrf-client-certificate
+          mountPath: "/run/secrets/scp-manager/certificates"
+          readOnly: true
+        - name: nrf-ca-certificate
+          mountPath: "/run/secrets/scp-manager/certificates/trustCA"
+          readOnly: true
+        - name: custom
+          mountPath: /mnt
+        - name: nlf-client-certificate
+          mountPath: "/run/secrets/eric-manager-nlf"
+          readOnly: true
+        - name: rlf-client-certificate
+          mountPath: "/run/secrets/eric-manager-rlf"
+          readOnly: true
+{{- if eq (include "eric-scp.tls" .) "true" }}
+        - name: oam-server-certificate
+          mountPath: "/run/secrets/oam/certificates"
+          readOnly: true
+        - name: grpc-server-certificate
+          mountPath: "/run/secrets/grpc/certificates"
+          readOnly: true
+        - name: grpc-client-ca-certificate
+          mountPath: "/run/secrets/grpc/worker/ca"
+          readOnly: true
+        - name: yangprovider-ca-certificate
+          mountPath: "/run/secrets/yang/ca"
+          readOnly: true
+        - name: mediator-ca-certificate
+          mountPath: "/run/secrets/mediator/ca"
+          readOnly: true
+        - name: pms-ca-certificate
+          mountPath: "/run/secrets/pm/ca"
+          readOnly: true
+        - name: mediator-client-certificate
+          mountPath: "/run/secrets/mediator/certificates"
+          readOnly: true
+        - name: siptls-trusted-root-cacert
+          mountPath: "/run/secrets/siptls/ca"
+          readOnly: true
+        - name: alarmhandler-client-certificate
+          mountPath: "/run/secrets/fhah/certificates"
+          readOnly: true
+{{- if eq (include "eric-scp.dcedsc.tls" .) "true" }}
+        - name: dcedsc-client-cert
+          mountPath: "/run/secrets/dcedsc/certificates"
+          readOnly: true
+{{- end }}
+{{- end }}
+        - name: {{ .Values.log.volumeName | quote }}
+          mountPath: /scpmanager/config/logcontrol
+        - name: vertx
+          mountPath: "/vertx"
+{{- if eq (include "eric-scp.logshipper-enabled" . ) "true" }}
+      {{- include "eric-log-shipper-sidecar.log-shipper-sidecar-mounts" . | indent 8 }}
+{{- end }}
+        livenessProbe:
+          httpGet:
+            path: /probes/liveness
+            port: {{ .Values.probes.manager.livenessProbe.port }} # No quotes should be used!
+          initialDelaySeconds: {{ .Values.probes.manager.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.manager.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.probes.manager.livenessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.probes.manager.livenessProbe.successThreshold }}
+          failureThreshold: {{ .Values.probes.manager.livenessProbe.failureThreshold }}
+        readinessProbe:
+          httpGet:
+            path: /probes/readiness
+            port: {{ .Values.probes.manager.readinessProbe.port }} # No quotes should be used!
+          initialDelaySeconds: {{ .Values.probes.manager.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.manager.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.probes.manager.readinessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.probes.manager.readinessProbe.successThreshold }}
+          failureThreshold: {{ .Values.probes.manager.readinessProbe.failureThreshold }}
+{{- if .Values.spec.manager.resources }}
+        resources:
+          requests:
+            memory: {{ .Values.spec.manager.resources.requests.memory | quote }}
+            cpu: {{ .Values.spec.manager.resources.requests.cpu | quote }}
+            {{- if index .Values.spec.manager.resources.requests "ephemeral-storage" }}
+            ephemeral-storage: {{ index .Values.spec.manager.resources.requests "ephemeral-storage" | quote }}
+            {{- end }}
+          limits:
+            memory: {{ .Values.spec.manager.resources.limits.memory | quote }}
+            cpu: {{ .Values.spec.manager.resources.limits.cpu | quote }}
+            {{- if index .Values.spec.manager.resources.limits "ephemeral-storage" }}
+            ephemeral-storage: {{ index .Values.spec.manager.resources.limits "ephemeral-storage" | quote }}
+            {{- end }}
+{{ end }}
+{{- if eq (include "eric-scp.logshipper-enabled" . ) "true" }}
+      {{- $logshipperImageDict := dict "logshipperSidecarImage" ((((.Values).global).logShipper).config).image -}}
+      {{- include "eric-log-shipper-sidecar.log-shipper-sidecar-container" (mergeOverwrite . $logshipperImageDict ) | indent 6 }}
+{{- end }}
+{{- if eq (include "eric-scp.license-consumer.enabled" . ) "true" }}
+      {{- include "eric-sc-license-consumer.sidecar-container" . | nindent 6 }}
+{{- end }}
+      volumes:
+{{- if eq (include "eric-scp.tapagent.manager.enabled" .) "true" }}
+      - name: sftp-server-config
+        secret:
+          secretName: {{ .Values.spec.tapagent.secret.name }}
+      - name: tap-config
+        configMap:
+          name: {{ .Values.spec.tapagent.configmap.name }}
+{{- end }}
+      - name: nrf-client-certificate
+        secret:
+          secretName: {{ template "eric-scp.name" . }}-manager-nrf-client-certificate
+          items:
+            - key: tls.crt
+              path: certificate.pem
+            - key: tls.key
+              path: key.pem
+      - name: nrf-ca-certificate
+        secret:
+          secretName: {{ template "eric-scp.name" . }}-manager-nrf-ca-certificate
+      - name: custom
+        emptyDir: {}
+      - name: leader-election
+        emptyDir: {}
+      - name: nlf-client-certificate
+        secret:
+          secretName: {{ template "eric-scp.name" . }}-manager-nlf-client-certificate
+          items:
+          - key: tls.crt
+            path: cert.pem
+          - key: tls.key
+            path: key.pem
+          optional: true
+      - name: rlf-client-certificate
+        secret:
+          secretName: {{ template "eric-scp.name" . }}-manager-rlf-client-certificate
+          items:
+          - key: tls.crt
+            path: cert.pem
+          - key: tls.key
+            path: key.pem
+          optional: true
+{{- if eq (include "eric-scp.tls" .) "true" }}
+      - name: oam-server-certificate
+        secret:
+          secretName: {{ template "eric-scp.name" . }}-manager-oam-server-certificate
+          items:
+          - key: tls.crt
+            path: cert.pem
+          - key: tls.key
+            path: key.pem
+      - name: grpc-server-certificate
+        secret:
+          secretName: {{ template "eric-scp.name" . }}-manager-grpc-server-certificate
+          items:
+          - key: tls.crt
+            path: cert.pem
+          - key: tls.key
+            path: key.pem
+      - name: grpc-client-ca-certificate
+        secret:
+          secretName: {{ template "eric-scp.name" . }}-manager-ca-certificate
+          items:
+          - key: cacertbundle.pem
+            path: cacertbundle.pem
+      - name: yangprovider-ca-certificate
+        secret:
+          secretName: {{ .Values.adp.cm.yangProvider.hostname }}-ca-secret
+          items:
+          - key: client-cacert.pem
+            path: cacertbundle.pem
+      - name: mediator-ca-certificate
+        secret:
+          secretName: {{ .Values.adp.cm.mediator.hostname }}-tls-client-ca-secret
+          items:
+          - key: client-cacertbundle.pem
+            path: cacertbundle.pem
+      - name: pms-ca-certificate
+        secret:
+          secretName: {{ .Values.adp.pm.server.hostname }}-ca
+          items:
+          - key: client-cacertbundle.pem
+            path: cacertbundle.pem
+      - name: mediator-client-certificate
+        secret:
+          secretName: {{ template "eric-scp.name" . }}-manager-mediator-client-certificate
+          items:
+          - key: tls.crt
+            path: cert.pem
+          - key: tls.key
+            path: key.pem
+      - name: siptls-trusted-root-cacert
+        secret:
+          secretName: eric-sec-sip-tls-trusted-root-cert
+      - name: alarmhandler-client-certificate
+        secret:
+          secretName: {{ template "eric-scp.name" . }}-manager-alarmhandler-client-certificate
+{{- if eq (include "eric-scp.dcedsc.tls" .) "true" }}
+      - name: dcedsc-client-cert
+        secret:
+          secretName: {{ template "eric-scp.name" . }}-manager-dcedsc-client-certificate
+{{- end }}
+{{- if eq (include "eric-scp.license-consumer.enabled" . ) "true" }}
+      {{- include "eric-sc-license-consumer.sidecar.volumes" . | indent 6 }}
+{{- end }}
+{{- end }}
+      - name: scp-schema
+        configMap:
+          name: {{ template "eric-scp.name" . }}-manager-scp-schema-configmap
+      - name: {{ .Values.log.volumeName | quote }}
+        configMap:
+          name: {{ template "eric-scp.name" . }}-manager-loglevel-config
+{{- if eq (include "eric-scp.logshipper-enabled" . ) "true" }}
+     {{- include "eric-log-shipper-sidecar.log-shipper-sidecar-volumes" . | indent 6 }}
+{{- end }}
+      - name: vertx
+        emptyDir:
+          medium: Memory

@@ -1,0 +1,236 @@
+# SC-TOOLS
+
+global:
+  registry:
+    url: "armdocker.rnd.ericsson.se"
+  pullSecret: ""
+  k6:
+    enabled: true 
+  seppsim:
+    enabled: false 
+  nrfsim:
+    enabled: true 
+  sftp: 
+    enabled: true 
+  chfsim:
+    enabled: true
+  dscload:
+    enabled: true 
+
+eric-k6:
+  # imageCredentials:
+    # registry:
+      # url:
+      # imagePullPolicy:
+      # pullSecret:
+  # repoPath: 
+  spec:
+    replicas: "4"
+
+eric-syslog:
+  # imageCredentials:
+    # registry:
+      # url:
+      # pullSecret:
+  tls:
+    enabled: true
+    
+eric-seppsim:
+  # imageCredentials:
+    # registry:
+      # url:
+      # pullSecret:
+  certificates:
+    enabled: false 
+
+eric-nrfsim:
+  # imageCredentials:
+    # registry:
+      # url:
+      # pullSecret:
+  certificates:
+    enabled: false 
+  
+eric-chfsim:
+  # imageCredentials:
+    # registry:
+      # url:
+      # pullSecret:
+  certificates:
+    enabled: false
+  # chfsim: "chfsim" 
+  
+#  eric-chfsim-redis:
+  # imageCredentials:
+    # registry:
+      # url:
+      # pullSecret:
+  # certificates:
+    # enabled: false
+ 
+#  eric-atmoz-sftp:
+  # imageCredentials:
+    # registry:
+      # url:
+      # pullSecret:
+
+eric-dscload:
+  configuration:
+    # af-diameter-realm: "af-diamrealm"
+    # pcf-diameter-host: "pcf-diamhost.com"
+    # pcf-diameter-realm: "pcf-diamrealm.com"
+    # diameter-service-ip: 10.63.138.252
+    # diameter-service-port: 3868
+    # diameter-service-name 
+    diameter-tps: 500
+    #  ip-version: 4
+    tls:
+      enabled: false
+  # imageCredentials:
+    # registry:
+      # url:
+      # pullSecret:
+
+eric-grafana:
+  fullnameOverride: eric-grafana
+  rbac:
+    create: true
+    pspEnabled: false
+    pspUseAppArmor: false
+    namespaced: true
+  headlessService: false
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+  podDisruptionBudget:
+    minAvailable: 1
+  image:
+    repository: armdockerhub.rnd.ericsson.se/grafana/grafana
+  service:
+    type: LoadBalancer
+  testFramework:
+    enabled: true
+    image: "armdockerhub.rnd.ericsson.se/bats/bats"
+  downloadDashboardsImage:
+    repository: armdockerhub.rnd.ericsson.se/curlimages/curl
+  persistence:
+    enabled: true
+  adminUser: admin
+  adminPassword: rootroot
+  sidecar:
+    image:
+      repository: armdockerhub.rnd.ericsson.se/quay.io/kiwigrid/k8s-sidecar
+  imageRenderer:
+    enabled: false
+    image:
+      repository: armdockerhub.rnd.ericsson.se/grafana/grafana-image-renderer
+  extraConfigmapMounts:
+    - name: sc-dashboards
+      mountPath: /var/lib/grafana/dashboards
+      configMap: eric-grafana-sc-dashboards
+      readOnly: true
+      subPath: ""
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+      - name: 'default'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        editable: true
+        allowUiUpdates: true
+        options:
+          path: /var/lib/grafana/dashboards
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+      - name: Prometheus
+        type: prometheus
+        uid: prom123
+        editable: true
+        url: http://eric-pm-server:9090
+        access: proxy
+      - name: InfluxDb
+        type: influxdb
+        uid: influxdb123
+        access: proxy
+        url: http://eric-influxdb2:8086
+        editable: true
+        secureJsonData:
+          token: "rootroot"
+        jsonData:
+          version: Flux
+          organization: ericsson
+          defaultBucket: metrics
+
+eric-influxdb2:
+  fullnameOverride: eric-influxdb2
+  image:
+    repository: "armdockerhub.rnd.ericsson.se/influxdb"
+  adminUser:
+    organization: "ericsson"
+    bucket: "metrics"
+    user: "admin"
+    retention_policy: "0s"
+    password: "rootroot"
+    token: "rootroot"
+  service:
+    type: NodePort
+    port: 8086
+
+eric-telegraf:
+  fullnameOverride: eric-telegraf
+  image:
+    repo: "armdockerhub.rnd.ericsson.se/library/telegraf"
+  service:
+    type: NodePort
+    tls:
+      enabled: true
+      ## secret names:
+      ## eric-influxdb2-trusted-cert with ca-cert in data "ca-certs-SC.pem"
+      ## eric-influxdb2-asymmetric-key-cert-secret with
+      ##   certificate in data "tls.crt"
+      ##   private key in data "tls.key"
+      useCR: true
+      trustedCert: "sc-trusted-default-cas"
+      clientCert: "sc-telegraf-default-cert"
+      clientKey: "sc-telegraf-default-key"
+  config:
+    agent:
+      interval: "10s"
+      round_interval: true
+      metric_batch_size: 1000
+      metric_buffer_limit: 25000
+      collection_jitter: "0s"
+      flush_interval: "10s"
+      flush_jitter: "0s"
+    outputs:
+      - influxdb_v2:
+          urls:
+            - "http://eric-influxdb2:8086"
+          token: "rootroot"
+          organization: "ericsson"
+          bucket: "metrics"
+    inputs:
+      - http_listener_v2:
+          service_address: ":8080"
+          data_format: "prometheusremotewrite"
+          paths:
+            - "/metrics"
+          tls_cert: "/etc/telegraf/server/cert.pem"
+          tls_key: "/etc/telegraf/server/key.pem"
+          tls_allowed_cacerts:
+            - "/etc/telegraf/ca/ca-sc.pem"
+      - statsd:
+          service_address: ":8125"
+          percentiles:
+            - 50
+            - 95
+            - 99
+          metric_separator: "_"
+          allowed_pending_messages: 10000
+          percentile_limit: 1000

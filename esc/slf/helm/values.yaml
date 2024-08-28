@@ -1,0 +1,305 @@
+# SLF
+
+# global:
+  # pullSecret: ""
+  # registry:
+    # url: "armdocker.rnd.ericsson.se"
+    # imagePullPolicy: IfNotPresentpullSecret: ""
+
+egress:
+  nrf:
+    # default 0, the value range 0..63, 0 is the lowest priority, 63 is the highest priority.
+    # Any other value is invalid.
+    dscp: 0
+
+imageCredentials:
+  slf:
+    repoPath: "proj-5g-bsf" #"proj-ldc/common_base_os" # to be changed
+    registry:
+      url: # overrides global registry url
+      imagePullPolicy: # overrides global image pull policy
+  tapagent:
+    repoPath: "proj-5g-bsf"
+    registry:
+      url: # overrides global registry url
+      imagePullPolicy: # overrides global image pull policy
+  tlskeylogagent:
+    repoPath: "proj-5g-bsf"
+    registry:
+      url: # overrides global registry url
+      imagePullPolicy: # overrides global image pull policy
+
+networkPolicy:
+  enabled: true
+
+metrics:
+  enabled: "true"
+
+service:
+  slf:
+    name: "eric-sc-slf"
+    serviceName: "eric-sc-slf-v2"
+    portTls: "8443"
+    internalIPFamily: ""  ## empty, IPv4 or IPv6
+    certs: "/run/secrets/slf/certificates"
+    trustCA: "/run/secrets/slf/certificates/trustCA"
+    server:
+      k8sProbe:
+        port: 8085
+#             "8081"
+      oam:
+        port: "8082"
+        targetPort: "8082"
+        tls:
+          server:
+            certPath: "/run/secrets/oam/certificates"
+          mediator:
+            caPath: "/run/secrets/mediator/ca"
+          pm:
+            caPath: "/run/secrets/pm/ca"
+          worker:
+            caPath: "/run/secrets/worker/ca"
+    client:
+      interfaces:
+        dcedsc:
+          tls:
+            enabled: true ## overwrite global tls, enable/disable tls for dcedsc client
+            certPath: "/run/secrets/dcedsc/certificates"
+      fhah:
+        tls:
+          certPath: "/run/secrets/fhah/certificates"
+      mediator:
+        tls:
+          certPath: "/run/secrets/mediator/certificates"
+      siptls:
+        caPath: "/run/secrets/siptls/ca"
+    # annotations: {}
+
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 0
+
+spec:
+  slf:
+    replicaCount: "2"
+    affinity:
+      podAntiAffinity: "soft"
+    tolerations:
+    - key: node.kubernetes.io/not-ready
+      operator: Exists
+      effect: NoExecute
+      tolerationSeconds: 0
+    - key: node.kubernetes.io/unreachable
+      operator: Exists
+      effect: NoExecute
+      tolerationSeconds: 0
+    podDisruptionBudget:
+      minAvailable: 1
+    portTlsName: "https-port"
+    portTls: 8443
+    portInternal: 8085
+    concurrent_streams_max: 1000
+    nrf_wait_queue_size_max: 50
+    cache_size_max: 500000
+    cache_sweep_items_max: 2000
+    cache_sweep_period_ms: 20
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 100m
+        # ephemeral-storage: ""
+      limits:
+        memory: 4Gi
+        cpu: 1500m
+        # ephemeral-storage: ""
+  tapagent:
+    updateStrategy:
+      type: RollingUpdate
+    resources:
+      requests:
+        memory: 100Mi
+        cpu: 100m
+        # ephemeral-storage: ""
+      limits:
+        memory: 500Mi
+        cpu: 500m
+        # ephemeral-storage: ""
+    configmap:
+      name: tap-config
+      mountpath: /etc/cm-config/
+      fileName: tap_config.json
+    secret:
+      name: sftp-server-config
+      mountpath: /etc/ftpserver/
+  tlskeylogagent:
+    updateStrategy:
+      type: RollingUpdate
+    resources:
+      requests:
+        memory: 100Mi
+        cpu: 100m
+        # ephemeral-storage: ""
+      limits:
+        memory: 500Mi
+        cpu: 500m
+        # ephemeral-storage: ""
+    configmap:
+      name: tap-config
+      mountpath: /etc/cm-config/
+      fileName: tap_config.json
+    secret:
+      name: sftp-server-config
+      mountpath: /etc/ftpserver/
+    uid: 198596
+    wgid: 203342
+    mgid: 216816
+
+probes:
+  slf:
+    livenessProbe:
+      port: 8085
+#           8081
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+    readinessProbe:
+      port: 8085
+#           8081
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 1
+      successThreshold: 1
+      failureThreshold: 3
+  logshipper:
+    livenessProbe:
+      initialDelaySeconds: 180
+      timeoutSeconds: 10
+      periodSeconds: 10
+      failureThreshold: 3
+
+leaderElection:
+  enabled: true
+
+etcd:
+  endpoint: "https://eric-data-distributed-coordinator-ed-sc:2379"
+  username: "root"
+  secretName: "eric-data-distributed-coordinator-creds-sc"
+  passwordKey: "etcdpasswd"
+
+adp:
+  cm:
+    mediator:
+      hostname: "eric-cm-mediator"
+      port: "5004"
+      subscription:
+        validity: "14400"
+        renewal: "0.25"
+        heartbeat: "300"
+  pm:
+    server:
+      hostname: "eric-pm-server"
+  data:
+    kafka:
+      hostname: "eric-data-message-bus-kf-client"
+  fh:
+    alarmHandler:
+      hostname: "eric-fh-alarm-handler"
+      port: "6006"
+  log:
+    transformer:
+      hostname: "eric-log-transformer"
+
+sc:
+  common:
+    etcd:
+      hostname: "eric-data-distributed-coordinator-ed-sc"
+    monitor:
+      hostname: "eric-sc-monitor"
+  scp:
+    worker:
+      hostname: "eric-scp-worker"
+
+slf:
+  certificates:
+    certificate: tls.crt
+    key: tls.key
+
+certificates:
+  nrf:
+    caSecret: trusted-cas-secret
+    secret: slf-nrf-cert-secret
+    key: sc-nrf-default-key
+    certificate: sc-nrf-default-cert
+
+jvm:
+  parameters:
+    slf: "-server -XX:+ErrorFileToStderr -XX:MaxRAMPercentage=80 -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact -Dcom.sun.management.jmxremote.port=8090 -Dcom.sun.management.jmxremote.rmi.port=8090 -Djava.rmi.server.hostname=127.0.0.1 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.host=127.0.0.1 -Dvertx.cacheDirBase=/vertx/vertx-cache -Dio.netty.native.workdir=/vertx"
+    tlskeylogagent: "-server -XX:+ErrorFileToStderr -XX:+UseG1GC -XX:MaxRAMPercentage=80 -Dcom.sun.management.jmxremote.port=8099 -Dcom.sun.management.jmxremote.rmi.port=8099 -Djava.rmi.server.hostname=127.0.0.1 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.host=127.0.0.1"
+
+tapagent:
+  enabled: "false"
+  name: "tapagent"
+
+tlskeylogagent:
+  name: "tlskeylogagent"
+  fileSizeLimit: 1000 #MB
+
+# Logshipper configured for an average throughput of 100logs/sec (covering the case of debug logs)
+# Refer to the "Sidecar dimensioning recommendations" section of LogShipper
+resources:
+  logshipper:
+    requests:
+      memory: "20Mi"
+      cpu: "33m"
+      ephemeral-storage:
+    limits:
+      memory: "30Mi"
+      cpu: "40m"
+      ephemeral-storage:
+
+## Log Shipper (as a sidecar) configuration
+## Used only if global.log.streamingMethod is "direct" or "dual"
+## Log Shipper also requires Log Transformer
+logShipper:
+  logLevel: "info"
+  storage:
+    path: "/logs"
+    size: "800Mi"
+    medium: "Ephemeral"
+  input:
+    files:
+    - enabled: true
+      paths:
+      - "slf.log"
+      - "tlskeylogagent.log"
+      multilines:
+      - "java"
+  output:
+    logTransformer:
+      enabled: true
+      host: eric-log-transformer
+
+annotations: {}
+
+labels: {}
+
+log:
+  slf:
+    level: info
+  tlskeylogagent:
+    level: info
+
+rbac:
+  # createServiceAccount controls the creation of ServiceAccount, ClusterRole and ClusterRoleBinding.
+  # The ClusterRole allows bragent POD to read configmaps from kube-system namespace.
+  # If set to false, the cluster administrator is responsible for creating those entities.
+  # If set to false, the serviceAccountName field is Mandatory.
+  #
+  createServiceAccount: true
+  # serviceAccountName contains the service account name to use.
+  # Mandatory, if createServiceAccount is set to false
+  serviceAccountName:

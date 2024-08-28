@@ -1,0 +1,104 @@
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.2
+#  Date     : 2022-02-08 10:58:21
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2020-2022
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Send a command to the NETCONF shell.
+#
+# This subroutine expects that it is already connected to the NETCONF prompt.
+#
+# Input:
+#  - Command to send
+#
+# Output:
+#  -  0: Success
+#    >0: Command returned an error
+#    -1: Timeout
+#    -2: Connection lost
+#
+proc NETCONF_send_command {command} {
+    global command_output_list
+    global spawn_id
+    global timeout
+    # Fetch any previously detected prompt and update the local prompt variable
+    global detected_prompt
+
+    # Save currently set timeout value
+    set default_timeout $timeout
+    # Set a shorter timeout for NETCONF commands
+    # set timeout 10
+
+    set errorcnt 0
+    set okcnt 0
+
+    # Send the command
+    send -- "$command\r"
+
+    expect {
+        -re "^(\[^\r\n\]*\r*\n)" {
+            # New line received, check for special strings
+            set line $expect_out(1,string)
+            lappend command_output_list $line
+            if {[regexp "<rpc-error>" $line junk] == 1} {
+                # Something wrong with the message
+                incr errorcnt
+            } elseif {[regexp "<ok>" $line junk] == 1} {
+                # Something wrong with the message
+                incr okcnt
+            }
+            exp_continue
+        }
+        -re  "(.*)(\u005D\u005D\u003E\u005D\u005D\u003E)$" {
+            # NETCONF prompt "]]>]]>"
+            set timeout $default_timeout
+            set line $expect_out(1,string)
+            if {$line != ""} {
+                lappend command_output_list $expect_out(1,string)
+            }
+            set prompt $expect_out(2,string)
+            # Ready for next command
+        }
+        eof {
+            puts "\nWe lost the connection to the node\n"
+            set timeout $default_timeout
+            if {$errorcnt > 0} {
+                # We report it as an error instead of lost connection
+                return $errorcnt
+            } elseif {$okcnt > 0} {
+                # We report it as a success instead of lost connection
+                return 0
+            } else {
+                return -2
+            }
+        }
+        timeout {
+            puts "\nWe were unable to send the command due to a timeout\n"
+            set timeout $default_timeout
+            return -1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    # Restore default timeout value
+    set timeout $default_timeout
+
+    return $errorcnt
+}

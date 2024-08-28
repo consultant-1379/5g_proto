@@ -1,0 +1,14 @@
+# This file contains information about the different build slaves where the new kube config file
+# from a newly installed ECCD IaaS node should be copied to.
+# The following information should be provided:
+#
+# IP-address/Hostname of build slave                            Private ssh key file name stored in directory
+# of build slave                        User on build slave     ~/.ssh/ for the user running the playlist
+# ----------------------------------    -------------------     ---------------------------------------------
+  10.210.174.60                         eiffelesc               id_rsa_eiffelesc
+  10.210.174.61                         eiffelesc               id_rsa_eiffelesc
+  10.210.174.62                         eiffelesc               id_rsa_eiffelesc
+  10.210.155.84                         eiffelesc               id_rsa_eiffelesc
+  10.210.155.137                        eiffelesc               id_rsa_eiffelesc
+  10.210.174.209                        eiffelesc               id_rsa_eiffelesc
+# 10.128.96.132                         eiffelesc               id_rsa_eiffelesc_seroius06992

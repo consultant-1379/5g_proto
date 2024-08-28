@@ -1,0 +1,97 @@
+global:
+  registry:
+    imagePullPolicy: "Always"
+  pullSecret: regcred
+  ericsson:
+    licensing:
+      licenseDomains:
+        - productType: "SIGNALING_CONTROLLER"
+          customerId: "Eric123"
+          swltId: "Palaven"
+  licensing:
+    sites:
+    - hostname: eric-test-nels-simulator
+      priority: 10
+
+eric-lm-combined-server:
+  licenseServerClient:
+    timer:
+# Period with which license requests are aggregated (in seconds)
+# Acceptable value range is 3600 (1 hour) ⇐ n ⇐ 86400 (24 hours)
+      licenseRequestAggregationPeriod: 3600
+# Period with which cumulative license usage reports are aggregated (in seconds)
+# Acceptable value range is 5 ⇐ n ⇐ 86400 (24 hours)
+      cumulativeUsageReportAggregationPeriod: 20
+# Period with which peak license usage reports are aggregated (in seconds).
+# Acceptable value range is 5 ⇐ n ⇐ 86400 (24 hours)
+      peakUsageReportAggregationPeriod: 20
+# Period with which usage reports for persistent peak licenses are reported to Network License Server (NeLS) (in seconds).
+# Acceptable value range is 60 (1 minute) ⇐ n ⇐ 43200 (12 hours).
+# Any deviation from the default value shall be agreed with the licensing organization that will evaluate impacts on the E2E dimensioning
+      aggregatePersistentPeakReportInterval: 60
+# Period to delay the deletion of licenses (in seconds).
+# Important to note! this value shall not be changed in a production system.
+# The value range is 0 ⇐ n ⇐ 1209600 (14 days)
+      licenseRemovalGracePeriod: 0
+
+eric-si-application-sys-info-handler:
+  applicationInfoService:
+# Disable Application Info Reporting.
+# The application-report end-point is disabled and the report to NeLS is disabled
+    enabled: false
+# Disable sending reports to NeLS
+    sendAppReport: false
+
+eric-tm-ingress-controller-cr:
+  labels:
+# label used for httpproxy on SCP NF worker envoy admin interfaces
+# Needed for manual verification activities
+    eric-scp-worker-access: "true"
+# label used for httpproxy on SEPP NF worker envoy admin interfaces
+# Needed for manual verification activities
+    eric-sepp-worker-access: "true"
+# label used for httpproxy on Search Engine ADP service
+# Needed for logging testcases
+    eric-data-search-engine-access: "true"
+# label used for httpproxy on PM Server ADP service
+# Needed for counter verification actions in testcases
+    eric-pm-server-access: "true"
+# label used for httpproxy on Object Storage Minion browser
+# Needed for bucket verification actions in testcases
+    eric-data-object-storage-mn-access: "true"
+
+# docker images stored in selndocker repository
+# set snmp alarm provider to secret generated from SC local deployments
+eric-fh-snmp-alarm-provider:
+  service:
+    secretName: snmp-alarm-provider-config
+  imageCredentials:
+    snmpAP:
+      registry:
+        url: selndocker.mo.sw.ericsson.se
+    hooklauncher:
+      registry:
+        url: selndocker.mo.sw.ericsson.se
+
+# docker images stored in serodocker repository
+eric-odca-diagnostic-data-collector:
+  imageCredentials:
+    registry:
+      url: serodocker.sero.gic.ericsson.se
+    ddc:
+      registry:
+        url: serodocker.sero.gic.ericsson.se
+    hooklauncher:
+      registry:
+        url: serodocker.sero.gic.ericsson.se
+
+# disable tls used for exposure of Search Engine ADP service via httpproxy
+# Needed for logging testcases
+eric-data-search-engine:
+  service:
+    endpoints:
+      rest:
+        tls:
+          enforced: optional
+          verifyClientCertificate: optional
+          verifyClientHostname: false

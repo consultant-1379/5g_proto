@@ -1,0 +1,43 @@
+# Load Generator
+
+service:
+  name: "eric-loadgen"
+  type: "NodePort"
+#  internalIPFamily: ["IPv6","IPv4"]
+  
+imageCredentials:
+  registry:
+    url: "armdocker.rnd.ericsson.se"
+    pullSecret: "regcred"
+  repoPath: "proj-5g-bsf"
+  pullPolicy: Always
+
+spec:
+  replicas: "1"
+  image: 
+  tag: 
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 500m
+    limits:
+      memory: 4Gi
+      cpu: 1000m
+
+certificates:
+   enabled: false    
+
+jvm:
+  parameters:
+    loadgen: "-server -XX:+ErrorFileToStderr -XX:+UseG1GC -XX:MaxRAMPercentage=80"
+
+rbac:
+  # createServiceAccount controls the creation of ServiceAccount, ClusterRole and ClusterRoleBinding.
+  # The ClusterRole allows bragent POD to read configmaps from kube-system namespace.
+  # If set to false, the cluster administrator is responsible for creating those entities.
+  # If set to false, the serviceAccountName field is Mandatory.
+  # 
+  createServiceAccount: true
+  # serviceAccountName contains the service account name to use.
+  # Mandatory, if createServiceAccount is set to false
+  serviceAccountName:

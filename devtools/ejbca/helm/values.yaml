@@ -1,0 +1,28 @@
+container:
+  image:
+    repo: armdockerhub.rnd.ericsson.se
+    tag: latest
+    reference: primekey/ejbca-ce
+    dbtag: 10.2
+    dbreference: library/mariadb
+    pullPolicy: Always
+
+ejbcaservice:
+  port: 8082
+
+dbservice:
+  port: 3306
+
+ingress:
+  host:
+  path: /
+
+resources:
+  ejbca:
+    requests:
+      memory: "1Gi"
+      cpu: "0.5"
+    limits:
+      memory: "2Gi"
+      cpu: "1"
+

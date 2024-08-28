@@ -1,0 +1,2 @@
+config: 
+  filter: "  mutate {\n    add_field => { \"[test]\" => \"test\"}\n  }\n  if [type] == \"filebeat\" {\n    grok {\n      match => [\"message\" , \"\\{\\\"log\\\":\\\"%{MONTH:month} %{MONTHDAY:day} %{TIME:time} %{WORD:application}\\[%{NUMBER:pid}\\]:%{SPACE}%{LOGLEVEL}%{SPACE}\\|(?<thread>\\S+)%{SPACE}\\|%{SPACE}(?<class>\\S+):%{NUMBER:line}%{SPACE}\\|%{DATA:method}%{SPACE}\\|%{GREEDYDATA:message}\\\"\\}\"]\n      add_tag => [ \"gorkked-filebeat\" ]\n    }\n  }\n"

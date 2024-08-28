@@ -1,0 +1,8 @@
+
+
+
+
+DSC Evo Dev Environment TODO
+
+- Move devtools back to alias only (e.g. for helm). bash -i -c 'helm $@' bash ... also works for aliases!
+-

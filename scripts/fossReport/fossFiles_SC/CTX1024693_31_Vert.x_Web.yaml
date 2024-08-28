@@ -1,0 +1,45 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2024-05-29 14:28
+FOSS:
+    # Available in Bazaar
+    FOSSName: Vert.x Web
+    # Available in Bazaar
+    FOSSVersion: 4.5.5
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/vert-x3/vertx-web/archive/refs/tags/{{FOSSVersion}}.tar.gz
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 31/CTX1024693
+    # Not Available in Bazaar
+    Primary: Y
+    # Available in Bazaar
+    STAKOCode: General use
+    # Available in Bazaar
+    STAKOReason: ()
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: "HTTP web applications for Vert.x"
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: Apache License 2.0
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'io.vertx:vertx-web-api-contract:jar:{{FOSSVersion}}'
+    - 'io.vertx:vertx-web-client:jar:{{FOSSVersion}}'
+    - 'io.vertx:vertx-web-common:jar:{{FOSSVersion}}'
+    - 'io.vertx:vertx-web:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ZFILARI Aristippos Filippou

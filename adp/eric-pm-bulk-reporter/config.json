@@ -1,0 +1,55 @@
+[
+  {
+    "op": "add",
+    "path": "/ericsson-pm:pm/group",
+    "value": [
+      {
+        "name": "go_threads",
+        "version": "1.0.0",
+        "measurement-type": [
+          {
+            "id": "go_threads",
+            "aggregation": "sum",
+            "collection-method": "cc",
+            "condition": "Incremented: None Decremented: N/A",
+            "description": "Number of go Threads",
+            "internal-metric-name": "go_threads",
+            "internal-metric-type": "Counter",
+            "internal-target-pattern": "resource=[Resource],request-method=[Operation],response-code=[ResponseCode]",
+            "measurement-status": "used",
+            "multiplicity": 1,
+            "reset-at-gran-period": true,
+            "service-name": "service1",
+            "size": 8
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "op": "add",
+    "path": "/ericsson-pm:pm/job",
+    "value": [
+      {
+        "granularity-period": "one-min",
+        "type": "measurement-job",
+        "name": "sc-all",
+        "measurement-reader": [
+          {
+            "group-ref": "go_threads",
+            "name": "sc-reader1"
+          },
+          {
+            "group-ref": "go_threads",
+            "name": "sc-reader3",
+            "measurement-type-ref": "go_threads",
+            "target": [
+              "resource=EVENT_SUBSCRIPTIONS,endpoint=NUDM-SDM,response-code=200"
+            ]
+          }
+        ],
+        "requested-job-state": "active"
+      }
+    ]
+  }
+]

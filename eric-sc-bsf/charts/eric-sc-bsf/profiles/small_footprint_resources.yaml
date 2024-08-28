@@ -1,0 +1,59 @@
+##### ALPHA version not to be included in production ####
+# This values file contain configuration to deploy certain services
+# with minimum foot print.
+# The values are experimental and not to be used in production
+eric-bsf-wcdb-cd:
+  resources:
+    cassandra:
+      requests:
+        cpu: "0.3" #4
+        memory: "2Gi" #16Gi
+      limits:
+        cpu: "1" #4
+        memory: "3Gi" #16Gi
+    brsc:
+      requests:
+        cpu: "100m" #"1"
+        memory: "256Mi"
+      limits:
+        cpu: "300m" #"4"
+        memory: "512Mi" #256Mi"
+    ecchronos:
+      requests:
+        memory: "256Mi"
+        cpu: "100m" #"200m"
+      limits:
+        memory: "256Mi"
+        cpu: "500m" #"1"
+  cassandra:
+    jvmOptions:
+      set:
+        - "Dmv_enable_coordinator_batchlog=true"
+        - "Xms1G" #8G
+        - "Xmx1G" #8G
+        - "Xmn100M" #800M
+
+eric-stm-diameter:
+  replicaCount: 1
+  resources:
+    diameter:
+      requests:
+        memory: "64Mi" #"100Mi"
+        cpu: "30m" #"0.25"
+      limits:
+        memory: "256Mi" #"4Gi"
+        cpu: "0.2" #"4"
+    dsl:
+      requests:
+        memory: "64Mi" #"100Mi"
+        cpu: "30m" #"0.25"
+      limits:
+        memory: "256Mi" #"4Gi"
+        cpu: "0.2" #"4"
+    diametercm:
+      requests:
+        memory: "64Mi" #"100Mi"
+        cpu: "30m" #"0.25"
+      limits:
+        memory: "256Mi" #"4Gi"
+        cpu: "0.2" #"4"

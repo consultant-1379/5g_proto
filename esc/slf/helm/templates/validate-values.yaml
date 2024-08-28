@@ -1,0 +1,34 @@
+{{- if false -}}
+# Sanity checks for input values.
+# In a nutshell:
+# The Helm template function 'required' will throw an error if the parameter given to it cannot be found.
+# This essentially means it will always throw this error because 'nonExistent' never exists.
+# However, the whole check is only rendered when the 'if' condition is true, otherwise it is skipped.
+# I.e., the below lines can be read as: 'if <boolean expression> fails, throw error'
+
+# Similar safety guards are present in the code as well.
+{{- end -}}
+
+{{- if lt (int .Values.adp.cm.mediator.subscription.validity) 180 -}}
+{{- required "adp.cm.mediator.subscription.validity must be minimum 180" .Values.nonExistent -}}
+{{- end -}}
+
+{{- if gt (int .Values.adp.cm.mediator.subscription.validity) 544320 -}}
+{{- required "adp.cm.mediator.subscription.validity must be maximum 544320" .Values.nonExistent -}}
+{{- end -}}
+
+{{- if lt (float64 .Values.adp.cm.mediator.subscription.renewal) 0.1 -}}
+{{- required "adp.cm.mediator.subscription.renewal must be minimum 0.1" .Values.nonExistent -}}
+{{- end -}}
+
+{{- if gt (float64 .Values.adp.cm.mediator.subscription.renewal) 0.9 -}}
+{{- required "adp.cm.mediator.subscription.renewal must be maximum 0.9" .Values.nonExistent -}}
+{{- end -}}
+
+{{- if lt (int .Values.adp.cm.mediator.subscription.heartbeat) 45 -}}
+{{- required "adp.cm.mediator.subscription.heartbeat must be minimum 45" .Values.nonExistent -}}
+{{- end -}}
+
+{{- if gt (int .Values.adp.cm.mediator.subscription.heartbeat) 136000 -}}
+{{- required "adp.cm.mediator.subscription.heartbeat must be maximum 136000" .Values.nonExistent -}}
+{{- end -}}

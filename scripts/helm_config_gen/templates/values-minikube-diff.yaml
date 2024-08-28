@@ -1,0 +1,1538 @@
+#These resources are severely reduced and adapted to a Minikube/kind/k3d deployment
+
+global:
+  profile: "normal"
+  ericsson:
+    licensing:
+      licenseDomains:
+        - productType: "SIGNALING_CONTROLLER" ## DO NOT CHANGE THIS VALUE
+          customerId: "Eric123"
+          swltId: "Palaven"
+
+# eric-cloud-native-base
+eric-cm-mediator:
+  metrics:
+    enabled: false
+  replicaCount: 1
+  dbbr:
+    #enabled: false
+    backupType: "DEFAULT"
+  resources:
+    eric-cm-mediator:
+      requests:
+        cpu: 50m
+        memory: 218Mi
+      limits:
+        cpu: 200m
+        memory: 384Mi
+    eric-cm-mediator-notifier:
+      requests:
+        memory: 218Mi
+        cpu: 40m
+      limits:
+        memory: 384Mi
+        cpu: 200m
+    eric-cm-key-init:
+      requests:
+        memory: 24Mi
+        cpu: 50m
+      limits:
+        memory: 64Mi
+        cpu: 200m
+
+eric-ctrl-bro:
+  metrics:
+    enabled: false
+  bro:
+    replicas: 1
+  resources:
+    backupAndRestore:
+      requests:
+        cpu: 50m
+        memory: 512Mi
+      limits:
+        cpu: 250m
+        memory: 1Gi
+  persistence:
+    persistentVolumeClaim:
+      size: 1Gi
+      storageClassName: local-path
+      enabled: true
+
+#Main container goes to crashloop if metrics are enabled
+eric-data-coordinator-zk:
+  metrics:
+    enabled: false
+  metricsexporter:            
+    enabled: false
+  brAgent:
+    enabled: false
+  persistence:
+    persistentVolumeClaim:
+     size: 1Gi
+     storageClassName: local-path
+  resources:
+    datacoordinatorzk:
+      requests:
+        cpu: 40m
+        memory: 256Mi
+      limits:
+        cpu: 200m
+        memory: 512Mi
+    metricsexporter:
+      requests:
+        cpu: 20m
+        memory: 16Mi
+      limits:
+        cpu: 200m
+        memory: 32Mi
+    logshipper:
+      requests:
+        memory: 20Mi
+        cpu: 15m
+      limits:
+        memory: 60Mi
+        cpu: 60m
+    brAgent:
+      requests:
+        cpu: 15m
+        memory: 192Mi
+      limits:
+        cpu: 100m
+        memory: 256Mi
+  replicaCount: 1
+  podDisruptionBudget:
+    minAvailable: 50%
+  heap: 192M #1G #Heap should be half of memory resources
+
+eric-data-distributed-coordinator-ed:
+  metricsexporter:
+    enabled: false
+  pods:
+    dced:
+      replicaCount: 1
+  brAgent:
+    enabled: true
+  persistence:
+    persistentVolumeClaim:    
+      enabled: true    
+      size: 250Mi
+      storageClassName: "local-path"
+  resources:
+    init:
+      requests:
+        cpu: 50m
+        memory: 200Mi
+      limits:
+        cpu: 500m
+        memory: 500Mi
+    dced:
+      requests:
+        cpu: 40m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 100Mi
+    metricsexporter:
+      requests:
+        cpu: 10m
+        memory: 8Mi
+      limits:
+        cpu: 100m
+        memory: 32Mi
+    logshipper:
+      requests:
+        cpu: 15m
+        memory: 24Mi
+      limits:
+        cpu: 100m
+        memory: 100Mi
+    brAgent:
+      requests:
+        cpu: 25m
+        memory: 192Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+eric-data-document-database-pg:
+  metrics:
+    enabled: false
+  brAgent:
+    enabled: true
+  highAvailability:
+    synchronousModeEnabled: false
+    replicaCount: 1
+  persistentVolumeClaim:
+    enabled: true
+    storageClassName: local-path
+    size: 500Mi
+  resources:
+    postgres:
+      requests:
+        memory: 144Mi
+        cpu: 40m
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    metrics:
+      requests:
+        memory: 20Mi
+        cpu: 20m
+      limits:
+        cpu: 50m
+        memory: 64Mi
+    kube_client:
+      requests:
+        memory: 64Mi
+        cpu: 20m
+      limits:
+        cpu: 200m
+        memory: 512Mi
+    brm:
+      requests:
+        memory: 32Mi
+        cpu: 50m
+      limits:
+        cpu: 100m
+        memory: 256Mi
+    logshipper:
+      requests:
+        cpu: 15m
+        memory: 24Mi
+      limits:
+        cpu: 100m
+        memory: 100Mi
+    bra:
+      requests:
+        memory: 64Mi
+        cpu: 50m
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+eric-data-message-bus-kf:
+  replicaCount: 1
+  configurationOverrides:
+    "default.replication.factor": 1
+    "offsets.topic.replication.factor": 1
+    "min.insync.replicas": 1
+    "transaction.state.log.replication.factor": 1
+    "transaction.state.log.min.isr": 1
+  resources:
+    messagebuskf:
+      requests:
+        cpu: 50m
+        memory: 600Mi
+      limits:  
+        cpu: 400m
+        memory: 1536Mi
+    checkzkready:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        cpu: 600m
+        memory: 2Gi
+  persistence:
+    persistentVolumeClaim:
+      enabled: true
+      size: 250Mi
+      storageClassName: local-path
+
+eric-data-search-engine:
+  metrics:
+    enabled: false
+  replicaCount:
+    master: 1
+    data: 1
+    ingest: 1
+  resources:
+    master:
+      requests:
+        cpu: 50m
+        memory: 768Mi
+      limits:
+        cpu: 300m
+        memory: 1Gi
+    ingest:
+      requests:
+        cpu: 50m
+        memory: 768Mi
+      limits:
+        cpu: 300m
+        memory: 1Gi 
+    data:
+      requests:
+        cpu: 200m
+        memory: 1256Mi
+      limits:
+        cpu: 350m
+        memory: 2Gi
+    metrics:
+      requests:
+        cpu: 10m
+        memory: 16Mi
+      limits:
+        cpu: 100m
+        memory: 64Mi
+    tlsproxy:
+      requests:
+        cpu: 25m
+        memory: 24Mi
+      limits:
+        cpu: 100m
+        memory: 70Mi
+  jvmHeap:
+    ingest: "512m"
+    master: "512m"
+    data: "628m" #"1024m"
+  persistence:
+    data:
+      persistentVolumeClaim:
+        size: "1Gi"
+        storageClassName: local-path
+    backup:
+      persistentVolumeClaim:
+        size: "1Gi"
+        storageClassName: local-path
+    master:
+      persistentVolumeClaim:
+        size: "64Mi"
+        storageClassName: local-path
+
+eric-fh-alarm-handler:
+  alarmhandler:
+    fi:
+      topic:
+        partitions: 1
+        replicationFactor: 1
+    asi:
+      topic:
+        replicationFactor: 1
+  affinity:
+    podAntiAffinity: "soft"
+  replicaCount: 1
+  resources:
+    alarmhandler:
+      requests:
+        cpu: 50m
+        memory: 32Mi
+      limits:
+        memory: 100Mi
+        cpu: 200m
+    topiccreator:
+      requests:
+        cpu: 100m
+        memory: 384Mi
+      limits:
+        memory: 512Mi
+        cpu: 500m
+    logshipper:
+      requests:
+        cpu: 15m
+        memory: 24Mi
+      limits:
+        cpu: 100m
+        memory: 100Mi
+
+eric-fh-snmp-alarm-provider:
+  metrics:
+    enabled: false
+  alarmprovider:
+    requests:
+      cpu: 15m
+      memory: 512Mi
+    limits:
+      cpu: 100m
+      memory: 768Mi
+    logshipper:
+      requests:
+        cpu: 15m
+        memory: 24Mi
+      limits:
+        cpu: 100m
+        memory: 100Mi
+  ingress:
+    enabled: true
+  service:
+    secretName: snmp-alarm-provider-config
+
+eric-log-shipper:
+  resources:
+    logshipper:
+      requests:
+        memory: 160Mi
+        cpu: 50m
+      limits:
+        memory: 272Mi
+        cpu: 100m
+
+eric-log-transformer:
+  metrics:
+    enabled: false
+  replicaCount: 1
+  resources:
+    logtransformer:    
+      requests:
+        cpu: 200m
+        memory: 1600Mi
+      limits:
+        cpu: 400m
+        memory: 2400Mi
+    metrics:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+    tlsproxy:
+      requests:
+        cpu: 15m
+        memory: 32Mi
+      limits:
+        cpu: 50m
+        memory: 64Mi
+
+eric-odca-diagnostic-data-collector:
+  resources:
+    diagnostic-data-collector:
+      requests:
+        memory: 32Mi
+        cpu: 50m
+      limits:
+        memory: 128Mi
+        cpu: 200m
+    diagnostic-data-collector-manual:
+      requests:
+        memory: 32Mi
+        cpu: 50m
+      limits:
+        memory: 128Mi
+        cpu: 200m
+  service:
+    replicas: 1
+  manualService:
+    replicas: 1
+
+eric-pm-server:
+  resources:
+    eric-pm-initcontainer:
+      requests:
+        cpu: 50m
+        memory: 50Mi
+      limits:
+        cpu: 300m
+        memory: 200Mi
+    eric-pm-server:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        cpu: 250m
+        memory: 1Gi
+    eric-pm-configmap-reload:
+      requests:
+        cpu: 20m
+        memory: 16Mi
+      limits:
+        cpu: 100m
+        memory: 32Mi
+    eric-pm-exporter:
+      requests:
+        cpu: 30m
+        memory: 8Mi
+      limits:
+        cpu: 100m
+        memory: 32Mi
+    eric-pm-reverseproxy:
+      requests:
+        cpu: 30m
+        memory: 16Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+    logshipper:
+      requests:
+        memory: 24Mi
+        cpu: 15m
+      limits:
+        memory: 100Mi
+        cpu: 100m
+    promxy:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        cpu: 200m
+        memory: 1024Mi
+  server:               
+    persistentVolume:
+      size: 1Gi
+      storageClass: local-path
+
+eric-sec-certm:
+  metrics:
+    enabled: false
+  bandwidth: []
+  resources:
+    certm:
+      requests:
+        memory: 384Mi
+        cpu: 40m
+      limits:
+        memory: 1Gi
+        cpu: 500m
+
+eric-sec-access-mgmt:
+  ingress:
+    enabled: true
+    path: /um
+
+eric-sec-key-management:
+  metrics:
+    enabled: false
+  replicas: 1
+  podDisruptionBudget:
+    minAvailable: 1
+  resources:
+    vault:
+      requests:
+        memory: 128Mi
+        cpu: 50m
+      limits:
+        memory: 256Mi
+        cpu: 300m
+    shelter:
+      requests:
+        memory: 128Mi
+        cpu: 50m
+      limits:
+        memory: 1200Mi
+        cpu: 300m
+    metrics:
+      requests:
+        memory: 10Mi
+        cpu: 10m
+      limits:
+        memory: 50Mi
+        cpu: 50m
+    logshipper:
+      requests:
+        memory: 24Mi
+        cpu: 15m
+      limits:
+        memory: 100Mi
+        cpu: 100m
+
+eric-sec-sip-tls:
+  metrics:
+    enabled: false
+  bandwidth: []
+  replicaCount: 1
+  podDisruptionBudget:
+    minAvailable: 1
+  resources:
+    sip-tls:
+      requests:
+        cpu: 60m
+        memory: 72Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+    sip-tls-supervisor:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+    logshipper:
+      requests:
+        memory: 24Mi
+        cpu: 15m
+      limits:
+        memory: 100Mi
+        cpu: 100m
+
+eric-si-application-sys-info-handler:
+  replicaCount: 1
+  revisionHistoryLimit: 5
+  resources:
+    eric-si-application-sys-info-handler:
+      requests:
+        cpu: 10m
+        memory: 16Mi
+      limits:
+        cpu: 100m
+        memory: 100Mi
+
+eric-lm-combined-server:
+  metrics:
+    enabled: false
+  affinity:
+    podAntiAffinity: "soft"
+  resources:
+    eric-lm-license-consumer-handler:
+      requests:
+        cpu: 30m
+        memory: 512Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+    eric-lm-license-server-client:
+      requests:
+        cpu: 40m
+        memory: 392Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+    eric-lm-database-migration:
+      requests:
+        cpu: 250m
+        memory: 128Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+  licenseConsumerHandler:
+    replicaCount: 0 #1
+  licenseServerClient:
+    licenseServer:
+      thrift:
+        host: eric-test-nels-simulator  
+    replicaCount: 0 #1
+
+eric-data-object-storage-mn:
+  persistentVolumeClaim:
+    storageClassName: local-path
+    size: 1Gi
+  mode: standalone #distributed
+  replicas: 1
+  resources:
+    server:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 512Mi
+    mgt:
+      requests:
+        cpu: 50m #100m #250m
+        memory: 32Mi #64Mi #128Mi #256Mi
+      limits:
+        cpu: 200m #500m
+        memory: 256Mi #512Mi
+    kes:
+      requests:
+        cpu: 25m
+        memory: 32Mi
+      limits:
+        memory: 100Mi
+        cpu: 100m
+    logshipper:
+      requests:
+        memory: 24Mi
+        cpu: 15m
+      limits:
+        memory: 128Mi
+        cpu: 100m
+
+eric-tm-ingress-controller-cr:
+#  networkPolicy:
+#    enabled: false
+  bandwidth:
+#    envoy: []
+#      maxEgressRate: null
+    contour: 
+      maxEgressRate: ''
+  replicaCount:
+    contour: 1
+    envoy: 1
+  resources:
+    contour:
+      requests:
+        cpu: 10m
+        memory: 20Mi
+      limits:
+        cpu: 50m
+        memory: 64Mi
+    envoy:    
+      requests:
+        cpu: 10m
+        memory: 20Mi
+      limits:
+        cpu: 50m
+        memory: 64Mi
+    initconfig:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+    logshipper:
+      requests:
+        memory: 24Mi
+        cpu: 15m
+      limits:
+        memory: 100Mi
+        cpu: 100m
+
+
+#eric-cloud-native-nf-additions
+
+eric-cm-yang-provider:
+  pmMetrics:
+    enabled: false
+  AUM:
+    host: "eric-sec-admin-user-management"
+    authFailureDelayDefault: 10 # in seconds #3
+  resources:
+    initContainer:
+      limits:
+        cpu: 500m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+    yangEngine:
+      requests:
+        memory: 128Mi
+        cpu: 200m
+      limits:
+        memory: 384Mi
+        cpu: 300m
+    yangDbAdapter:
+      requests:
+        memory: 38Mi
+        cpu: 20m
+      limits:
+        memory: 100Mi
+        cpu: 100m
+    sshd:
+      requests:
+        memory: 50Mi
+        cpu: 20m
+      limits:
+        memory: 100Mi
+        cpu: 250m
+    schemaSynchronizer:
+      requests:
+        memory: 32Mi
+        cpu: 50m
+      limits:
+        memory: 100Mi
+        cpu: 200m
+    externalNotifSender:
+      requests:
+        memory: 28Mi
+        cpu: 15m
+      limits:
+        memory: 100Mi
+        cpu: 100m
+    yangLibExt:
+      requests:
+        memory: 16Mi
+        cpu: 15m
+      limits:
+        memory: 128Mi
+        cpu: 250m
+    notificationController:
+      requests:
+        cpu: 20m
+        memory: 28Mi
+      limits:
+        cpu: 100m
+        memory: 100Mi
+    objectStorageAdapter:
+      requests:
+        cpu: 50m
+        memory: 50Mi        
+      limits:
+        cpu: 500m
+        memory: 250Mi
+    pmMetrics:
+      requests:
+        cpu: 10m
+        memory: 16Mi
+      limits:
+        cpu: 200m
+        memory: 100Mi
+    cliExtensionCmds:
+      requests:
+        cpu: 15m
+        memory: 18Mi
+      limits:
+        cpu: 250m
+        memory: 64Mi
+    logshipper:
+      requests:
+        cpu: 50m
+        memory: 50Mi
+      limits:
+        cpu: 100m
+        memory: 100Mi
+    hooklauncher:
+      requests:
+        cpu: 50m
+        memory: 20Mi
+      limits:
+        cpu: 100m
+        memory: 50Mi
+
+eric-pm-bulk-reporter:
+  resources:
+    initcontainer:
+      requests:
+        cpu: 50m
+        memory: 50Mi
+      limits:
+        cpu: 200m
+        memory: 200Mi
+    bulkreporter:
+      requests:
+        cpu: 20m
+        memory: 24Mi
+      limits:
+        cpu: 50m
+        memory: 64Mi
+    alarmreporter:
+      requests:
+        cpu: 20m
+        memory: 16Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+    pmsftp:
+      requests:
+        cpu: 25m
+        memory: 50Mi
+      limits:
+        cpu: 50m
+#        memory: 144Mi
+    logshipper:
+      requests:
+        memory: 24Mi
+        cpu: 15m
+      limits:
+        memory: 100Mi
+        cpu: 100m
+  persistentVolumeClaim:
+    enabled: true
+    size: 500Mi
+    storageClassName: local-path
+
+eric-sec-admin-user-management:
+  resources:
+    aum:
+      requests:
+        cpu: 40m
+        memory: 32Mi
+      limits:
+        cpu: 250m
+        memory: 128Mi
+
+eric-sec-ldap-server:
+  brAgent:
+    enabled: true
+  metrics:
+    enabled: false
+  bandwidth:
+    maxEgressRate: ''
+  replicaCount: 1
+  resources:
+    ldap:
+      requests:
+        cpu: 30m
+        memory: 128Mi
+      limits:
+        cpu: 100m
+        memory: 512Mi
+    ldapagent:
+      requests:
+        memory: 128Mi
+        cpu: 25m
+      limits:
+        memory: 256Mi
+        cpu: 100m
+    ldapproxy:
+      requests:
+        cpu: 40m
+        memory: 40Mi
+      limits:
+        cpu: 400m
+        memory: 1Gi
+    metricsExporter:
+      requests:
+        cpu: 10m
+        memory: 50Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+    logshipper:
+      requests:
+        memory: 24Mi
+        cpu: 15m
+      limits:
+        memory: 100Mi
+        cpu: 100m
+    brAgent:
+      requests:
+        cpu: 15m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+  persistentVolumeClaim:
+    storageClassName: local-path
+    size: 500Mi
+
+eric-cnom-server:
+  replicaCount: 1
+  resources:
+    server:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+    logshipper:
+      requests:
+        memory: 24Mi
+        cpu: 15m
+      limits:
+        memory: 45Mi
+        cpu: 30m
+
+
+# eric-sc-bsf
+
+eric-bsf:
+#  cassandra:
+#    contact_point_replicas: 1
+  spec:
+    manager:
+      resources:
+        requests:
+          memory: 384Mi #512Mi
+          cpu: 100m #250m #0.5
+        limits:
+          memory: 512Mi #768Mi #1024Mi
+          cpu: 200m #400m #500m #1
+    worker:
+      replicaCount: "1"
+      resources:
+        requests:
+          memory: 384Mi #512Mi
+          cpu: 100m #150m #300m #1
+        limits:
+          memory: 512Mi #768Mi #1024Mi
+          cpu: 400m #500m #1.5
+    cddjmxexporter:
+      resources:
+        requests:
+          memory: 64Mi #128Mi
+          cpu: 20m #25m #50m
+        limits:
+          memory: 256Mi
+          cpu: 50m #100m #200m
+    certnotifier:
+      resources:
+        requests:
+          memory: 128Mi
+          cpu: 20m #30m #80m
+        limits:
+          memory: 256Mi
+          cpu: 100m #160m
+    tapagent:
+      resources:
+        requests:
+          memory: 32Mi #50Mi #100Mi
+          cpu: 50m #100m
+        limits:
+          memory: 128Mi #500Mi
+          cpu: 100m #500m
+    tlskeylogagent:
+      resources:
+        requests:
+          memory: 100Mi
+          cpu: 40m #50m #100m
+        limits:
+          memory: 256Mi #500Mi
+          cpu: 200m #500m
+    tapcollector:
+      resources:
+        requests:
+          memory: 256Mi
+          cpu: 50m #100m
+        limits:
+          memory: 512Mi #2560Mi
+          cpu: 250m #1
+  resources:
+    logshipper:
+      requests:
+        cpu: "20m"
+        memory: "20Mi"
+      limits:
+        memory: "36Mi"
+        cpu: "40m"
+    licenseConsumer:
+      requests:
+        cpu: "20m"
+        memory: "100Mi"
+      limits:
+        cpu: "150m"
+        memory: "500Mi"
+
+eric-bsf-diameter:
+#  cassandra:
+#    contact_point_replicas: 1
+  replicaCount: 1
+  resources:
+    diameterproxygrpc:
+      requests:
+        cpu: "20m" #"50m" #"100m"
+        memory: "64Mi" #"128Mi"
+      limits:
+        cpu: "200m" #"250m" #"500m"
+        memory: "128Mi" #"250Mi" #"512Mi"
+    dsl:
+      requests:
+        cpu: "20m" #"50m"
+        memory: "64Mi"
+      limits:
+        cpu: "200m" #"500m"
+        memory: "256Mi" #"512Mi"
+    bsfdiameter:
+      requests:
+        cpu: "25m" #"50m"
+        memory: "256Mi" #"320Mi"
+      limits:
+        cpu: "200m" #"400m"
+        memory: "384Mi" #"512Mi" #"1Gi"
+    logshipper:
+      requests:
+        cpu: 20m
+        memory: 32Mi
+      limits:
+        cpu: 150m
+        memory: 256Mi
+
+eric-data-wide-column-database-cd:
+#  cassandra:
+#    yaml:
+#      allocate_tokens_for_local_replication_factor: 1 #3
+#  metrics:
+#    cassandra:
+#      enabled: false
+  replicaCount: 2
+  affinity:
+    podAntiAffinity: "soft"
+  resources:
+    cassandra:
+      requests:
+        cpu: "300m" #"150m" #4
+        memory: "1536Mi" #16Gi
+      limits:
+        cpu: "500m" #"300m" #4
+        memory: "2Gi" #16Gi
+    brsc:
+      requests:
+        cpu: "20m" #1
+        memory: "200Mi" #"265Mi" #2048
+      # limits:
+        # cpu: "4" #4
+        # memory: "8Gi" #2Gi
+    ecchronos:
+      requests:
+        cpu: "10m" #1
+        memory: "256Mi" #"283Mi" #2048
+      # limits:
+        # cpu: "4" #4
+        # memory: "8Gi" #2Gi
+    ecchronosTlsRefresher:
+      requests:
+        cpu: "10m" #1
+        memory: "14Mi" #2048
+      # limits:
+        # cpu: "4" #4
+        # memory: "8Gi" #2Gi
+  cassandra:
+    jvmOptions:
+      set:
+        - "Dmv_enable_coordinator_batchlog=true"
+        - "Xms768M"
+        - "Xmx768M"
+        - "Xmn77M"
+      unset:
+        - "Xms1G"
+        - "Xmx1G"
+        - "Xmn100M"
+        - "Xms4G"
+        - "Xmx4G"
+        - "Xmn400M"
+        - "Xms8G"
+        - "Xmx8G"
+        - "Xmn800M"        
+  persistence:
+    dataVolume:
+       persistentVolumeClaim:
+         size: 500Mi #40Gi
+         storageClassName: local-path
+#  service:
+#    endpoints:
+#      cql:
+#        tls:
+#          enforced: "optional"
+
+eric-stm-diameter:
+  replicaCount: 1
+  resources:
+    diameter:
+      requests:
+        memory: "80Mi" #"100Mi"
+        cpu: "20m" #"0.25"
+      limits:
+        memory: "128Mi" #"4Gi"
+        cpu: "0.2" #"4"
+    dsl:
+      requests:
+        memory: "80Mi" #"100Mi"
+        cpu: "20m" #"0.25"
+      limits:
+        memory: "128Mi" #"4Gi"
+        cpu: "0.2" #"4"
+    dsl-pvtb-client:
+      limits:
+        cpu: 300m #"4"
+        memory: 256Mi #"4Gi"
+      requests:
+        cpu: 20m #"0.25"
+        memory: 64Mi #"100Mi"
+    logshipper:
+      requests:
+        cpu: 20m
+        memory: 32Mi
+      limits:
+        cpu: 250m
+        memory: 500Mi
+
+# eric-sc-scp
+
+eric-scp:
+  spec:
+    certnotifier:
+      resources:
+        requests:
+          memory: 128Mi
+          cpu: 40m
+        limits:
+          memory: 256Mi
+          cpu: 100m
+    logfwdr:
+      resources:
+        requests:
+          memory: 16Mi
+          cpu: 10m
+        limits:
+          memory: 32Mi
+          cpu: 50m
+    manager:
+      replicaCount: 1
+      resources:
+        requests:
+          memory: 384Mi
+          cpu: 50m
+        limits:
+          memory: 768Mi
+          cpu: 0.5
+    sds:
+      resources:
+        requests:
+          cpu: 20m
+          memory: 256Mi
+        limits:
+          cpu: 0.2
+          memory: 512Mi
+    worker:
+      replicaCount: 1
+      resources:
+        requests:
+          memory: 64Mi
+          cpu: 0.1
+        limits:
+          memory: 192Mi
+          cpu: 0.2
+    tapagent:
+      resources:
+        requests:
+          memory: 16Mi
+          cpu: 10m
+        limits:
+          memory: 128Mi
+          cpu: 100m
+    tlskeylogagent:
+      resources:
+        requests:
+          memory: 100Mi
+          cpu: 10m
+        limits:
+          memory: 192Mi
+          cpu: 100m
+    tapcollector:
+      resources:
+        requests:
+          memory: 256Mi
+          cpu: 10m
+        limits:
+          memory: 384Mi
+          cpu: 100m
+  resources:
+    logshipper:
+      requests:
+        memory: 24Mi
+        cpu: 15m
+      limits:
+        memory: 100Mi
+        cpu: 100m
+    licenseConsumer:
+      requests:
+        cpu: 15m
+        memory: 100Mi
+      limits:
+        cpu: 150m
+        memory: 256Mi
+
+eric-sc-slf:
+  spec:
+    slf:
+      replicaCount: 1
+      resources:
+        requests:
+          cpu: 50m
+          memory: 256Mi
+        limits:
+          cpu: 200m
+          memory: 512Mi
+    tapagent:
+      resources:
+        requests:
+          memory: 16Mi
+          cpu: 10m
+        limits:
+          memory: 256Mi
+          cpu: 100m
+    tlskeylogagent:
+      resources:
+        requests:
+          memory: 100Mi
+          cpu: 10m
+        limits:
+          memory: 256Mi
+          cpu: 100m
+  resources:
+    logshipper:
+      requests:
+        memory: 24Mi
+        cpu: 15m
+      limits:
+        memory: 100Mi
+        cpu: 100m
+
+
+# eric-sc-sepp
+
+eric-sepp:
+  spec:
+    certnotifier:
+      resources:
+        requests:
+          memory: 128Mi
+          cpu: 30m
+        limits:
+          memory: 256Mi
+          cpu: 100m
+    logfwdr:
+      resources:
+        requests:
+          memory: 8Mi
+          cpu: 10m
+        limits:
+          memory: 64Mi
+          cpu: 50m
+    manager:
+      replicaCount: 1
+      resources:
+        requests:
+          memory: 384Mi
+          cpu: 50m
+        limits:
+          memory: 768Mi
+          cpu: 0.5
+    sds:
+      resources:
+        requests:
+          cpu: 20m
+          memory: 256Mi
+        limits:
+          cpu: 0.2
+          memory: 512Mi
+    worker:
+      replicaCount: 1
+      resources:
+        requests:
+          memory: 64Mi
+          cpu: 0.1
+        limits:
+          memory: 128Mi
+          cpu: 0.2
+    tapagent:
+      resources:
+        requests:
+          memory: 16Mi
+          cpu: 10m
+        limits:
+          memory: 128Mi
+          cpu: 100m
+    tlskeylogagent:
+      resources:
+        requests:
+          memory: 100Mi
+          cpu: 10m
+        limits:
+          memory: 192Mi
+          cpu: 100m
+    tapcollector:
+      resources:
+        requests:
+          memory: 192Mi
+          cpu: 10m
+        limits:
+          memory: 384Mi
+          cpu: 100m
+  resources:
+    logshipper:
+      requests:
+        memory: 24Mi
+        cpu: 15m
+      limits:
+        memory: 100Mi
+        cpu: 100m
+    licenseConsumer:
+      requests:
+        cpu: 15m
+        memory: 128Mi
+      limits:
+        cpu: 150m
+        memory: 256Mi
+
+
+# eric-sc-cs
+eric-sc-rlf:
+  spec:
+    rlf:
+      replicaCount: 1
+      resources:
+        requests:
+          cpu: 50m
+          memory: 256Mi
+        limits:
+          cpu: 200m
+          memory: 512Mi
+  resources:
+    logshipper:
+      requests:
+        memory: 24Mi
+        cpu: 15m
+      limits:
+        memory: 100Mi
+        cpu: 100m
+
+eric-sc-nlf:
+  replicaCount: 1
+  resources:
+    nlf:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        memory: 512Mi
+        cpu: 200m
+    tapagent:
+      requests:
+        memory: 16Mi
+        cpu: 10m
+      limits:
+        memory: 128Mi
+        cpu: 100m
+    tlskeylogagent:
+       requests:
+         memory: 100Mi
+         cpu: 10m
+       limits:
+         memory: 256Mi
+         cpu: 100m
+    logshipper:
+      requests:
+        memory: 24Mi
+        cpu: 15m
+      limits:
+        memory: 100Mi
+        cpu: 100m
+
+eric-sc-monitor:
+  spec:
+    resources:
+      requests:
+        cpu: 20m
+        memory: 160Mi
+      limits:
+        cpu: 100m
+        memory: 256Mi
+    logshipper:
+      requests:
+        memory: 24Mi
+        cpu: 15m
+      limits:
+        memory: 100Mi
+        cpu: 100m
+
+eric-sc-hcagent:
+  resources:
+    hcagent:
+      requests:
+        cpu: 30m
+        memory: 128Mi
+      limits:
+        cpu: 100m
+        memory: 400Mi
+    logshipper:
+      requests:
+        memory: 24Mi
+        cpu: 15m
+      limits:
+        memory: 100Mi
+        cpu: 100m
+
+eric-sc-manager:
+  spec:
+    scmanager:
+      resources:
+        requests:
+          memory: 192Mi
+          cpu: 20m
+        limits:
+          memory: 256Mi
+          cpu: 100m
+    lmconsumer:
+      resources:
+        requests:
+          cpu: 20m
+          memory: 100Mi
+        limits:
+          cpu: 100m
+          memory: 256Mi
+    logshipper:
+      requests:
+        memory: 24Mi
+        cpu: 15m
+      limits:
+        memory: 100Mi
+        cpu: 100m
+
+eric-data-distributed-coordinator-ed-sc:
+  metricsexporter:
+    enabled: false
+  pods:
+    dced:
+      replicaCount: 1
+  brAgent:
+    enabled: false
+  persistence:
+    persistentVolumeClaim:
+      enabled: true
+      size: 250Mi
+      storageClassName: local-path
+  resources:
+    init:
+      requests:
+        cpu: 50m
+        memory: 200Mi
+      limits:
+        cpu: 500m
+        memory: 500Mi
+    dced:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 100Mi
+    metricsexporter:
+      requests:
+        cpu: 10m
+        memory: 8Mi
+      limits:
+        cpu: 100m
+        memory: 32Mi
+    logshipper:
+      requests:
+        cpu: 15m
+        memory: 24Mi
+      limits:
+        cpu: 100m
+        memory: 100Mi
+    brAgent:
+      requests:
+        cpu: 25m
+        memory: 192Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+  env:
+    dced:
+      ETCD_QUOTA_BACKEND_BYTES: "128000000"
+
+eric-probe-virtual-tap-broker:
+  resources:
+    VirtualTapBroker:
+      requests:
+        cpu: 30m #50m #100m #4000m
+        memory: 64Mi #128Mi #512Mi
+      limits:
+        cpu: 200m #500m #4000m
+        memory: 128Mi #256Mi #512Mi
+
+
+###############################################
+
+eric-data-wide-column-database-cd-operator:
+  resources:
+    requests:
+      cpu: 10m #100m
+      memory: 32Mi #512Mi
+      limits:
+#        cpu: 100m
+        memory: 256Mi #512Mi
+
+
+
+eric-stm-diameter-proxy-grpc:
+  resources:
+    diameterproxygrpc:
+      requests:
+        memory: "32Mi" #"100Mi"
+        cpu: "15m" #"0.25"
+      limits:
+        memory: "128Mi" #"4Gi"
+        cpu: "0.1" #"4"
+    dsl:
+      requests:
+        memory: "64Mi" #"100Mi"
+        cpu: "20m" #"0.25"
+      limits:
+        memory: "128Mi" #"4Gi"
+        cpu: "0.2" #"4"  

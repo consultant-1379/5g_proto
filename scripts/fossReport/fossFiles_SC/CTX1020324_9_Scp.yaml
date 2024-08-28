@@ -1,0 +1,41 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2023-06-19T00:00:00Z
+FOSS:
+    # Available in Bazaar
+    FOSSName: scp.py
+    # Available in Bazaar
+    FOSSVersion: 0.14.5
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/jbardin/scp.py/archive/v0.14.5.tar.gz
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 9/CTX1020324
+    # Not Available in Bazaar
+    Primary: Y
+    # Available in Bazaar
+    STAKOCode: Not for a new Design 
+    # Available in Bazaar
+    STAKOReason: Product verison is older than 18 months. Newer versions exists
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: The scp.py module uses a paramiko transport to send and recieve files via the scp1 protocol.
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: GNU Lesser General Public License v2.1 only (LGPL-2.1-only)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense:  GNU Lesser General Public License v2.1 only (LGPL-2.1-only)
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: NO
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ZDOIKON Konstantinos Doios

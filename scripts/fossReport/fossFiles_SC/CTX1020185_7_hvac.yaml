@@ -1,0 +1,41 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2023-11-23T09:54:54Z
+FOSS:
+    # Available in Bazaar
+    FOSSName: hvac
+    # Available in Bazaar
+    FOSSVersion: V1.2.1
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/hvac/hvac/archive/{{FOSSVersion}}.tar.gz
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 7/CTX1020185
+    # Not Available in Bazaar
+    Primary: N
+    # Available in Bazaar
+    STAKOCode: General use
+    # Available in Bazaar
+    STAKOReason: ()
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: ":lock: Python 2.7/3.X client for HashiCorp Vault "
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: (Apache License 2.0 (Apache-2.0))
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: NO
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ZDOIKON Doios Konstantinos

@@ -1,0 +1,308 @@
+<hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <capabilities>
+        <capability>urn:ietf:params:netconf:base:1.0</capability>
+    </capabilities>
+</hello>]]>]]>
+
+<?xml version="1.0"?>
+<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:ns2="urn:com:ericsson:ecim:1.0" xmlns:ns3="http://tail-f.com/ns/netconf/actions/1.0" xmlns:ns4="urn:ietf:params:xml:ns:yang:ietf-netconf-monitoring" xmlns:ns5="urn:ietf:params:xml:ns:netconf:notification:1.0" message-id="0">
+  <edit-config>
+    <target>
+      <running/>
+    </target>
+      <config>
+        <scp-function operation="replace" xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+          <nf-instance xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+            <name>RegionA</name>
+
+            <service-address xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+              <name>RegionA</name>
+              <fqdn>scp.ericsson.se</fqdn>
+              <port>30000</port>
+              <tls-port>30002</tls-port>
+            </service-address>
+
+            <producer-pool xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+              <name>RegionA1</name>
+              <priority>1</priority>
+              <producer xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                <name>CHFa1</name>
+                <label>chfa1</label>
+                <capacity>100</capacity>
+                <address xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                  <name>chfa1</name>
+                  <fqdn>eric-chfsim-1</fqdn>
+                  <port>80</port>
+                  <tls>off</tls>
+                </address>
+              </producer>
+            </producer-pool>
+
+            <producer-pool xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+              <name>RegionA2</name>
+              <priority>2</priority>
+              <producer xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                <name>CHFa2</name>
+                <label>chfa2</label>
+                <capacity>100</capacity>
+                <address xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                  <name>chfa2</name>
+                  <fqdn>eric-chfsim-2</fqdn>
+                  <port>80</port>
+                  <tls>off</tls>
+                </address>
+              </producer>
+            </producer-pool>
+
+            <producer-pool xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+              <name>RegionA3</name>
+              <priority>1</priority>
+              <producer xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                <name>CGa1</name>
+                <label>cga1</label>
+                <capacity>100</capacity>
+                <address xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                  <name>cga1</name>
+                  <fqdn>eric-chfsim-7</fqdn>
+                  <port>80</port>
+                  <tls>off</tls>
+                </address>
+              </producer>
+              <producer xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                <name>CGa2</name>
+                <label>cga2</label>
+                <capacity>100</capacity>
+                <address xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                  <name>cga2</name>
+                  <fqdn>eric-chfsim-8</fqdn>
+                  <port>80</port>
+                  <tls>off</tls>
+                </address>
+              </producer>
+            </producer-pool>
+
+            <producer-pool xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+              <name>RegionB1</name>
+              <priority>1</priority>
+              <producer xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                <name>SCPb1</name>
+                <label>scpb1</label>
+                <capacity>100</capacity>
+                <address xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                  <name>scpb1</name>
+                  <fqdn>eric-chfsim-3</fqdn>
+                  <port>80</port>
+                  <tls>off</tls>
+                </address>
+              </producer>
+            </producer-pool>
+
+            <producer-pool xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+              <name>RegionB2</name>
+              <priority>2</priority>
+              <producer xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                <name>SCPb2</name>
+                <label>scpb2</label>
+                <capacity>100</capacity>
+                <address xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                  <name>scpb2</name>
+                  <fqdn>eric-chfsim-4</fqdn>
+                  <port>80</port>
+                  <tls>off</tls>
+                </address>
+              </producer>
+            </producer-pool>
+
+
+            <producer-pool xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+              <name>RegionC1</name>
+              <priority>1</priority>
+              <producer xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                <name>SCPc1</name>
+                <label>scpc1</label>
+                <capacity>100</capacity>
+                <address xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                  <name>scpc1</name>
+                  <fqdn>eric-chfsim-5</fqdn>
+                  <port>80</port>
+                  <tls>off</tls>
+                </address>
+              </producer>
+            </producer-pool>
+
+            <producer-pool xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+              <name>RegionC2</name>
+              <priority>2</priority>
+              <producer xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                <name>SCPc2</name>
+                <label>scpc2</label>
+                <capacity>100</capacity>
+                <address xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                  <name>scpc2</name>
+                  <fqdn>eric-chfsim-6</fqdn>
+                  <port>80</port>
+                  <tls>off</tls>
+                </address>
+              </producer>
+            </producer-pool>
+
+
+            <scp-service xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+              <name>RegionalConvergedChargingService</name>
+
+              <selector xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                <name>rccSelector</name>
+                <handler-ref>rccHandler</handler-ref>
+                <simple-selector xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                  <service-address-ref>RegionA</service-address-ref>
+                  <api-prefix/>
+                  <api-name>nchf-convergedcharging</api-name>
+                </simple-selector>
+              </selector>
+
+              <handler xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                <name>rccHandler</name>
+                <handler-type>regional-converged-charging</handler-type>
+                <regional-converged-charging-handler xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+                  <routing-criterion>SUPI</routing-criterion>
+                  <failover-profile-ref>highlevelFOP</failover-profile-ref>
+                  <own-region>
+                    <name>RegionA</name>
+                    <label>RegionA</label>
+                    <producer-pool-ref>RegionA1</producer-pool-ref>
+                    <producer-pool-ref>RegionA2</producer-pool-ref>
+                    <consumer-pool-ref>RegionA3</consumer-pool-ref>
+                  </own-region>
+                  <other-region>
+                    <name>RegionB</name>
+                    <label>RegionB</label>
+                    <scp-pool-ref>RegionB1</scp-pool-ref>
+                    <consumer-pool-ref>RegionB2</consumer-pool-ref>
+                  </other-region>
+                  <other-region>
+                    <name>RegionC</name>
+                    <label>RegionC</label>
+                    <scp-pool-ref>RegionC1</scp-pool-ref>
+                    <consumer-pool-ref>RegionC2</consumer-pool-ref>
+                  </other-region>
+                </regional-converged-charging-handler>
+              </handler>
+            </scp-service>
+
+            <failover-profile>
+              <name>highlevelFOP</name>
+              <request-timeout>2000</request-timeout>
+              <producer-reselects-max>3</producer-reselects-max>
+              <producer-timeout>250</producer-timeout>
+              <notification-retries-max>1</notification-retries-max>
+              <notification-timeout>3000</notification-timeout>
+              <temporary-blocking>
+                <blocking-time>3</blocking-time> <!-- seconds -->
+                <consecutive-failures>3</consecutive-failures>
+              </temporary-blocking>
+            </failover-profile>
+
+            <nf-profile>
+              <name>scp_profile1</name>
+              <service-address-ref>RegionA</service-address-ref>
+              <nf-type>chf</nf-type>
+              <requested-heartbeat-timer>20</requested-heartbeat-timer>
+              <locality>ericsson.se</locality>
+              <allowed-nf-domain>ericsson.se</allowed-nf-domain>
+              <allowed-nf-type>nrf</allowed-nf-type>
+              <allowed-nf-type>udm</allowed-nf-type>
+              <allowed-nf-type>sepp</allowed-nf-type>
+              <snssai>
+                <sst>150</sst>
+                <sd>AbB109</sd>
+              </snssai>
+              <allowed-plmn>
+                <mcc>262</mcc>
+                <mnc>72</mnc>
+              </allowed-plmn>
+              <plmn>
+                <mcc>262</mcc>
+                <mnc>72</mnc>
+              </plmn>
+              <nf-specific-info>
+                <chf-info>
+                  <plmn-range>
+                    <id>50</id>
+                    <plmn-start>10015</plmn-start>
+                    <plmn-end>600999</plmn-end>
+                  </plmn-range>
+                  <supi-range>
+                    <id>100</id>
+                    <supi-start>262720000000000</supi-start>
+                    <supi-end>262729999999999</supi-end>
+                  </supi-range>
+                  <gpsi-range>
+                    <id>11445</id>
+                    <identity-start>20</identity-start>
+                    <identity-end>10000</identity-end>
+                  </gpsi-range>
+                </chf-info>
+              </nf-specific-info>
+              
+              <nf-service>
+                <service-instance-id>nchf-convergedcharging-no-tls</service-instance-id>
+                <service-name>nchf-convergedcharging</service-name>
+                <scheme>http</scheme>
+                <allowed-plmn>
+                  <mcc>262</mcc>
+                  <mnc>200</mnc>
+                </allowed-plmn>
+                <api-prefix>chf-</api-prefix>
+                <service-priority>1</service-priority>
+                <service-address-ref>RegionA</service-address-ref>
+              </nf-service>
+
+              <nf-service>
+                <service-instance-id>nchf-spendinglimitcontrol-no-tls</service-instance-id>
+                <service-name>nchf-spendinglimitcontrol</service-name>
+                <scheme>http</scheme>
+                <allowed-plmn>
+                  <mcc>262</mcc>
+                  <mnc>200</mnc>
+                </allowed-plmn>
+                <api-prefix>chf-</api-prefix>
+                <service-priority>1</service-priority>
+                <service-address-ref>RegionA</service-address-ref>
+              </nf-service>
+              
+              <service-priority>1</service-priority>
+              <capacity>100</capacity>
+            </nf-profile>
+
+            <nrf-group xmlns="urn:rdns:com:ericsson:oammodel:ericsson-csa">
+              <name>RegionA</name>
+              <nf-profile-ref>scp_profile1</nf-profile-ref>
+              <nrf>
+                <name>nrf_regionA</name>
+                <priority>1</priority>
+                <nf-profile-ref>scp_profile1</nf-profile-ref>
+                <fqdn>eric-nrfsim</fqdn>
+                <scheme>http</scheme>
+                <ip-endpoint>
+                  <name>nrf_regionA_ep</name>
+                  <!-- Update the address to match your nrfsim address -->
+                  <ipv6-address>2001:1b70:6220:ad60:ffff:fffe:0:1b08</ipv6-address>
+                  <port>80</port>
+                </ip-endpoint>
+              </nrf>
+            </nrf-group>
+            <nrf-service>
+              <nf-discovery>
+                <nrf-group-ref>RegionA</nrf-group-ref>
+              </nf-discovery>
+              <nf-management>
+                <nrf-group-ref>RegionA</nrf-group-ref>
+              </nf-management>
+            </nrf-service>
+
+          </nf-instance>
+        </scp-function>
+      </config>
+  </edit-config>
+</rpc>
+]]>]]>

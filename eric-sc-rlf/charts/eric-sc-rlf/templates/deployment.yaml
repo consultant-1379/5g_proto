@@ -1,0 +1,331 @@
+# Copyright 2022 Ericsson GmbH
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "eric-sc-rlf.name" . }}
+  labels:
+{{- include "eric-sc-rlf.labels" . | indent 4 }}
+    app: {{ template "eric-sc-rlf.name" . }}
+  annotations:
+{{- include "eric-sc-rlf.helm-annotations" . | indent 4 }}
+{{- include "eric-sc-rlf.config-annotations" . | indent 4 }}
+spec:
+  replicas: {{ .Values.spec.rlf.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "eric-sc-rlf.name" . }}
+  strategy:
+    type: {{ .Values.updateStrategy.type | quote }}
+    {{- if eq .Values.updateStrategy.type "RollingUpdate" }}
+    {{- if or .Values.updateStrategy.rollingUpdate.maxUnavailable .Values.updateStrategy.rollingUpdate.maxSurge }}
+    rollingUpdate:
+    {{- end }}
+      {{- if .Values.updateStrategy.rollingUpdate.maxUnavailable }}
+      maxUnavailable: {{ .Values.updateStrategy.rollingUpdate.maxUnavailable }}
+      {{- end }}
+      {{- if .Values.updateStrategy.rollingUpdate.maxSurge }}
+      maxSurge: {{ .Values.updateStrategy.rollingUpdate.maxSurge }}
+      {{- end }}
+    {{- end }}
+  template:
+    metadata:
+      labels:
+        {{- include "eric-sc-rlf.pod.labels" . | nindent 8 }}
+        app: {{ template "eric-sc-rlf.name" . }}
+      annotations:
+{{- include "eric-sc-rlf.helm-annotations" . | indent 8 }}
+{{- include "eric-sc-rlf.config-annotations" . | indent 8 }}
+        evnfm.eo.ericsson.com/post-instantiate-status: "[]"
+    spec:
+      {{- if eq .Values.spec.rlf.affinity.podAntiAffinity "hard" }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - eric-sc-rlf
+              topologyKey: "kubernetes.io/hostname"
+      {{- else if eq .Values.spec.rlf.affinity.podAntiAffinity  "soft" }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - eric-sc-rlf
+              topologyKey: "kubernetes.io/hostname"
+      {{- end }}
+      {{- if include "eric-sc-rlf.nodeSelector" . }}
+      nodeSelector:
+        {{ template "eric-sc-rlf.nodeSelector" . }}
+      {{- end }}
+      {{- if .Values.spec.rlf.tolerations }}
+      tolerations:
+{{ toYaml .Values.spec.rlf.tolerations | indent 8 }}
+      {{- end }}
+      {{- if include "eric-sc-rlf.pullSecrets" . }}
+      imagePullSecrets:
+      - name: {{ template "eric-sc-rlf.pullSecrets" . }}
+      {{- end }}
+{{- if .Values.rbac.createServiceAccount }}
+      serviceAccountName: {{ template "eric-sc-rlf.name" . }}
+{{- else }}
+      serviceAccountName: {{ .Values.rbac.serviceAccountName | quote }}
+{{- end }}
+      containers:
+      - name: eric-sc-rlf
+        image: {{ template "eric-sc-rlf.rlf.registryUrl" . }}/{{ template "eric-sc-rlf.rlf.repoPath" . }}/{{ template "eric-sc-rlf.rlf.image" . }}:{{ template "eric-sc-rlf.rlf.tag" . }}
+        imagePullPolicy: {{ template "eric-sc-rlf.rlf.imagePullPolicy" . }}
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          privileged: false
+          capabilities:
+            drop:
+              - ALL
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: CM_MEDIATOR
+          value: {{ .Values.adp.cm.mediator.hostname | quote }}
+        - name: CM_MEDIATOR_PORT
+          value: {{ .Values.adp.cm.mediator.port | quote }}
+        - name: CONCURRENT_STREAMS_MAX
+          value: {{ .Values.spec.rlf.concurrent_streams_max | quote }}
+        - name: GLOBAL_TLS_ENABLED
+          value: {{ .Values.service.rlf.server.oam.tls.enabled | quote }}
+{{- if .Values.global }}
+{{- if .Values.global.internalIPFamily }}
+        - name: IP_FAMILY
+          value: {{ .Values.global.internalIPFamily | quote }}
+{{- end }}
+{{- end }}
+        - name: JVM_PARAMS
+          value: {{ .Values.jvm.parameters.rlf | quote }}
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: SERVICE_HOST
+          value: {{ template "eric-sc-rlf.name" . }}
+        - name: SERVICE_ID
+          value: {{ template "eric-sc-rlf.name" . }}
+        - name: SERVICE_TARGET_PORT_INTERNAL
+          value: {{ .Values.spec.rlf.portInternal | quote }}
+        - name: SERVICE_TARGET_PORT_REST
+          value: {{ .Values.spec.rlf.portRest | quote }}
+        - name: SERVICE_TARGET_PORT_REST_OAM
+          value: {{ .Values.spec.rlf.portRestOam | quote }}
+        - name: TZ
+          value: {{ include "eric-sc-rlf.timezone" . }}
+        - name: SERVICE_OAM_PORT
+          value: {{ .Values.service.rlf.server.oam.port | quote }}
+        - name: SERVICE_OAM_TARGET_PORT
+          value: {{ .Values.service.rlf.server.oam.targetPort | quote }}
+{{- if eq (include "eric-sc-rlf.tls" .) "true" }}
+        - name: DCED_TLS_ENABLED
+          value: {{ include "eric-sc-rlf.dcedsc.tls" .  | quote }}
+        - name: OAM_SERVER_CERT_PATH
+          value: "/interfaces/server/oam/certificates"
+        - name: OAM_SERVER_MEDIATOR_CA_PATH
+          value: "/interfaces/server/oam/certificates/mediator"
+        - name: MEDIATOR_INTERFACE_CLIENT_CERTIFICATES_PATH
+          value: "/interfaces/mediator/client/certificates"
+        - name: MEDIATOR_INTERFACE_CLIENT_CA_PATH
+          value: "/interfaces/mediator/client/certificates/trustCA"
+        - name: MANAGERS_INTERFACE_CLIENT_CA_PATH
+          value: "/run/secrets/client-ca"
+        - name: MANAGERS_INTERFACE_SERVER_CERT_PATH
+          value: "/run/secrets/rlf-manager-server-cert"
+        - name: PM_SERVER_CA_PATH
+          value: "/run/secrets/pm/ca"
+{{- if eq (include "eric-sc-rlf.dcedsc.tls" .) "true" }}
+        - name: RLF_DCEDSC_CLIENT_CERT_PATH
+          value: "/run/secrets/dcedsc/certificates"
+{{- end }}
+{{- end }}
+        - name: ETCD_ENDPOINT
+          value: {{ .Values.etcd.endpoint | quote }}
+{{- if eq (include "eric-sc-rlf.dcedsc.tls" .) "false" }}
+        - name: ETCD_USERNAME
+          value: {{ .Values.etcd.username | quote }}
+        - name: ETCD_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.etcd.secretName | quote }}
+              key: {{ .Values.etcd.passwordKey | quote }}
+{{- end }}
+        - name: LEADER_ELECTION_ENABLED
+          value: {{ .Values.leaderElection.enabled | quote }}
+        - name: CONTAINER_NAME
+          value: {{ include "eric-sc-rlf.name" . | quote }}
+        - name: LOG_PATH
+          value: {{ .Values.logShipper.storage.path | quote }}
+        - name: LOGBACK_FILENAME
+          value: {{ include "eric-rlf.logbackFileName" . | quote }}
+        ports:
+{{- if eq (include "eric-sc-rlf.tls" .) "true" }}
+        - name: "metrics-tls"
+{{- else }}
+        - name: "metrics"
+{{- end }}
+          protocol: TCP
+          containerPort: {{ .Values.service.rlf.server.oam.targetPort }}
+        - name: {{ .Values.spec.rlf.portNameRestOam }}
+          containerPort: {{ .Values.spec.rlf.portRestOam }}
+          protocol: TCP
+        - name: {{ .Values.spec.rlf.portNameRest }}
+          containerPort: {{ .Values.spec.rlf.portRest }}
+          protocol: TCP
+        volumeMounts:
+        - name: {{ .Values.log.volumeName | quote }}
+          mountPath: /rlf/config/logcontrol
+{{- if eq (include "eric-rlf.logshipper-enabled" . ) "true" }}
+      {{- include "eric-log-shipper-sidecar.log-shipper-sidecar-mounts" . | indent 8 }}
+{{- end }}
+        - name: custom
+          mountPath: /mnt
+        - name: oam-server-certificate
+          mountPath: "/interfaces/server/oam/certificates"
+          readOnly: true
+        - name: mediator-ca-certificate
+          mountPath: "/interfaces/server/oam/certificates/mediator"
+          readOnly: true
+        - name: mediator-client-certificate
+          mountPath: "/interfaces/mediator/client/certificates"
+          readOnly: true
+        - name: mediator-client-ca-certificate
+          mountPath: "/interfaces/mediator/client/certificates/trustCA"
+        - name: pm-ca-certificate
+          mountPath: "/run/secrets/pm/ca"
+          readOnly: true
+        - name: client-ca-certificate
+          mountPath: "/run/secrets/client-ca"
+        - name: server-certificate
+          mountPath: "/run/secrets/rlf-manager-server-cert"
+        - name: siptls-trusted-root-cacert
+          mountPath: "/run/secrets/siptls/ca"
+          readOnly: true
+        - name: vertx
+          mountPath: "/vertx"
+{{- if eq (include "eric-sc-rlf.dcedsc.tls" .) "true" }}
+        - name: dcedsc-client-certificate
+          mountPath: "/run/secrets/dcedsc/certificates"
+          readOnly: true
+{{- end }}
+        livenessProbe:
+          httpGet:
+            path: /probes/liveness
+            port: {{ .Values.probes.rlf.livenessProbe.port }} # No quotes should be used!
+          initialDelaySeconds: {{ .Values.probes.rlf.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.rlf.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.probes.rlf.livenessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.probes.rlf.livenessProbe.successThreshold }}
+          failureThreshold: {{ .Values.probes.rlf.livenessProbe.failureThreshold }}
+        readinessProbe:
+          httpGet:
+            path: /probes/readiness
+            port: {{ .Values.probes.rlf.readinessProbe.port }} # No quotes should be used!
+          initialDelaySeconds: {{ .Values.probes.rlf.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.rlf.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.probes.rlf.readinessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.probes.rlf.readinessProbe.successThreshold }}
+          failureThreshold: {{ .Values.probes.rlf.readinessProbe.failureThreshold }}
+        {{- if .Values.spec.rlf.resources }}
+        resources:
+          requests:
+            memory: {{ .Values.spec.rlf.resources.requests.memory | quote }}
+            cpu: {{ .Values.spec.rlf.resources.requests.cpu | quote }}
+            {{- if index .Values.spec.rlf.resources.requests "ephemeral-storage" }}
+            ephemeral-storage: {{ index .Values.spec.rlf.resources.requests "ephemeral-storage" | quote }}
+            {{- end }}
+          limits:
+            memory: {{ .Values.spec.rlf.resources.limits.memory | quote }}
+            cpu: {{ .Values.spec.rlf.resources.limits.cpu | quote }}
+            {{- if index .Values.spec.rlf.resources.limits "ephemeral-storage" }}
+            ephemeral-storage: {{ index .Values.spec.rlf.resources.limits "ephemeral-storage" | quote }}
+            {{- end }}
+        {{ end }}
+{{- if eq (include "eric-rlf.logshipper-enabled" . ) "true" }}
+      {{- $logshipperImageDict := dict "logshipperSidecarImage" ((((.Values).global).logShipper).config).image -}}
+      {{- include "eric-log-shipper-sidecar.log-shipper-sidecar-container" (mergeOverwrite . $logshipperImageDict ) | indent 6 }}
+{{- end }}
+      volumes:
+      - name: {{ .Values.log.volumeName | quote }}
+        configMap:
+          name: {{ template "eric-sc-rlf.name" . }}-loglevel-config
+      - name: custom
+        emptyDir: {}
+      - name: vertx
+        emptyDir:
+          medium: Memory
+      - name: oam-server-certificate
+        secret:
+          secretName: {{ template "eric-sc-rlf.name" . }}-oam-server-certificate
+          items:
+          - key: tls.crt
+            path: cert.pem
+          - key: tls.key
+            path: key.pem
+      - name: mediator-ca-certificate
+        secret:
+          secretName: {{ .Values.adp.cm.mediator.hostname }}-tls-client-ca-secret
+          items:
+          - key: client-cacertbundle.pem
+            path: cacertbundle.pem
+      - name: mediator-client-certificate
+        secret:
+          secretName: {{ template "eric-sc-rlf.name" . }}-mediator-client-certificate
+          items:
+          - key: tls.crt
+            path: cert.pem
+          - key: tls.key
+            path: key.pem
+      - name: mediator-client-ca-certificate # TODO: replace with siptls-trusted-root-cacert
+        secret:
+          secretName: eric-sec-sip-tls-trusted-root-cert
+          items:
+          - key: ca.crt
+            path: ca.crt
+          - key: cacertbundle.pem
+            path: cacertbundle.pem
+      - name: pm-ca-certificate
+        secret:
+          secretName: {{ .Values.adp.pm.server.hostname }}-ca
+          items:
+          - key: client-cacertbundle.pem
+            path: cacertbundle.pem
+      - name: client-ca-certificate
+        secret:
+          secretName: {{ template "eric-sc-rlf.name" . }}-client-ca-certificate
+          items:
+          - key: cacertbundle.pem
+            path: cacertbundle.pem
+      - name: server-certificate
+        secret:
+          secretName: {{ template "eric-sc-rlf.name" . }}-server-certificate
+          items:
+          - key: cert.pem
+            path: cert.pem
+          - key: privkey.pem
+            path: key.pem
+      - name: siptls-trusted-root-cacert
+        secret:
+          secretName: eric-sec-sip-tls-trusted-root-cert
+{{- if eq (include "eric-sc-rlf.dcedsc.tls" .) "true" }}
+      - name: dcedsc-client-certificate
+        secret:
+          secretName: {{ template "eric-sc-rlf.name" . }}-dcedsc-client-certificate
+{{- end }}
+{{- if eq (include "eric-rlf.logshipper-enabled" . ) "true" }}
+     {{- include "eric-log-shipper-sidecar.log-shipper-sidecar-volumes" . | indent 6 }}
+{{- end }}

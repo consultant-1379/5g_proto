@@ -1,0 +1,201 @@
+<?xml version="1.0" ?>
+<!-- ericsson-sepp-fm-instances 0.1.1 -->
+<!-- modified: 2021-09-22 -->
+<!-- Copyright (c) 2021 Ericsson AB. All rights reserved.     -->
+<config xmlns="http://tail-f.com/ns/config/1.0">
+    <fm xmlns="urn:rdns:com:ericsson:oammodel:ericsson-fm">
+		<alarm-model>
+            <id>eric-sepp-fm</id>
+			<alarm-type>
+                <id>MissingCertificate</id>
+                <major-type>193</major-type>
+                <minor-type>12124161</minor-type>
+                <specific-problem>SEPP, Certificate Missing</specific-problem>
+                <event-type>other</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>An asymmetric key or/and a certificate authority are unavailable which can result in the failure of the secure connection that uses them.</additional-text>
+                <configured-severity/>
+                <default-severity>critical</default-severity>
+            </alarm-type>
+			<alarm-type>
+                <id>SeppNfServiceInstanceNotReachable</id>
+                <major-type>193</major-type>
+                <minor-type>12124162</minor-type>
+                <specific-problem>SEPP, NF Service Instance Not Reachable</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>The NF Service Instance is not reachable for service requests</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+			<alarm-type>
+                <id>SeppHighLoad</id>
+                <major-type>193</major-type>
+                <minor-type>12124163</minor-type>
+                <specific-problem>SEPP, High Load</specific-problem>
+                <event-type>other</event-type>
+                <probable-cause>207</probable-cause>
+                <is-stateful>true</is-stateful>
+                <additional-text>SEPP load has passed a defined threshold</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>SeppNrfGroupUnavailable</id>
+                <major-type>193</major-type>
+                <minor-type>12124164</minor-type>
+                <specific-problem>SEPP, NRF Group Unavailable</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>The NRF-group is unavailable</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>SeppBadConfiguration</id>
+                <major-type>193</major-type>
+                <minor-type>12124165</minor-type>
+                <specific-problem>SEPP, Bad Configuration</specific-problem>
+                <event-type>processing-error-alarm</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>The configuration provided is faulty</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>SeppUnresolvableHosts</id>
+                <major-type>193</major-type>
+                <minor-type>12124166</minor-type>
+                <specific-problem>SEPP, Unresolvable Hosts</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>One or more hostnames cannot be resolved</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>SeppHighNumberOfIngressTcpConnections</id>
+                <major-type>193</major-type>
+                <minor-type>12124167</minor-type>
+                <specific-problem>SEPP, High number of open incoming TCP connections</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>The open incoming TCP connections have passed a defined threshold</additional-text>
+                <configured-severity/>
+                <default-severity>minor</default-severity>
+            </alarm-type>            
+            <alarm-type>
+                <id>SeppMessagesDroppedByGlobalRateLimiting</id>
+                <major-type>193</major-type>
+                <minor-type>12124168</minor-type>
+                <specific-problem>SEPP, Messages Dropped by Global Rate Limiting</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <is-stateful>true</is-stateful>
+                <additional-text>The percentage of dropped messages forwarded from SEPP to RLF has exceeded the predefined limit</additional-text>
+                <configured-severity/>
+                <default-severity>warning</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>SeppMessagesRejectedByGlobalRateLimiting</id>
+                <major-type>193</major-type>
+                <minor-type>12124169</minor-type>
+                <specific-problem>SEPP, Messages Rejected by Global Rate Limiting</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <is-stateful>true</is-stateful>
+                <additional-text>The percentage of rejected messages forwarded from SEPP to RLF has exceeded the predefined limit</additional-text>
+                <configured-severity/>
+                <default-severity>warning</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>SeppEnvoySegmentsDroppedRatio</id>
+                <major-type>193</major-type>
+                <minor-type>12124170</minor-type>
+                <specific-problem>SEPP, Envoy segments dropped ratio</specific-problem>
+                <event-type>other</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>Envoy segments dropped ratio</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>SeppInvalidDiscoveredNfInstance</id>
+                <major-type>193</major-type>
+                <minor-type>12124171</minor-type>
+                <specific-problem>SEPP, Invalid discovered NF instance</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause/>
+                <is-stateful>false</is-stateful>
+                <additional-text>Invalid discovered NF instance not updated in database</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>SeppNfDiscoveryDataUpdateError</id>
+                <major-type>193</major-type>
+                <minor-type>12124172</minor-type>
+                <specific-problem>SEPP, NF discovery data update error</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause/>
+                <is-stateful>false</is-stateful>
+                <additional-text>Unable to update discovered data in database</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>SeppNfInstanceUnavailable</id>
+                <major-type>193</major-type>
+                <minor-type>12124173</minor-type>
+                <specific-problem>SEPP, NF Instance Unavailable</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>The NF Failures have exceeded the configured threshold</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>SeppSecurityCapabilityNegotiationFailure</id>
+                <major-type>193</major-type>
+                <minor-type>12124174</minor-type>
+                <specific-problem>SEPP, Security Capability Negotiation Failure</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>The Security Capability Negotiation for the SEPP Instance failed</additional-text>
+                <configured-severity/>
+                <default-severity>critical</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>SeppNfServiceInstanceActiveHealthCheckFailed</id>
+                <major-type>193</major-type>
+                <minor-type>12124175</minor-type>
+                <specific-problem>SEPP, NF Service Instance active health check failed</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>The active health check for the NF Service Instance failed</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>MissingExternalCertificate</id>
+                <major-type>193</major-type>
+                <minor-type>12124176</minor-type>
+                <specific-problem>SEPP, External Certificate Missing</specific-problem>
+                <event-type>other</event-type>
+                <probable-cause />
+                <is-stateful>true</is-stateful>
+                <additional-text>An asymmetric key or/and a certificate authority used by a SEPP external connection are unavailable which can result in the failure of the secure connection that uses them.</additional-text>
+                <configured-severity />
+                <default-severity>critical</default-severity>
+            </alarm-type>
+        </alarm-model>
+    </fm>
+</config>

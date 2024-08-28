@@ -1,0 +1,2116 @@
+SCP demo
+===================================
+	
+TODO:		
+- Change SEPPsim to include more realistic answer to AMF-UDM registration
+- Indirect routing, SEPPSIM needs to be more flexible with DNS lookups
+
+ADD:
+Temporary blocking
+
+
+sepp-testcases/src/main/java/com/ericsson/jcat/esc/sepp/tests/N32_sepp.java
+
+
+General Prerequisites
+========================
+
+Set Environment Variables and enable monitor
+--------------------------------------------
+#export NAMESPACE=5g-bsf-eedcsi
+#alias k="kubectl -n $NAMESPACE"
+
+export NODE_IP=$(kubectl get nodes --namespace $NAMESPACE -o jsonpath="{.items[3].status.addresses[0].address}")
+
+kubectl --namespace $NAMESPACE scale deploy eric-sc-monitor --replicas=1
+
+export MONITOR_USER=$(k get secret eric-sc-monitor-secret -o jsonpath='{.data.username}' | base64 -d)
+export MONITOR_PWD=$(k get secret eric-sc-monitor-secret -o jsonpath='{.data.password}' | base64 -d)
+export MONITOR_PORT=$(k get services eric-tm-ingress-controller-cr -o jsonpath="{.spec.ports[1].nodePort}")
+export MONITOR_URL=$(k get httpproxy sc-httpproxy -o jsonpath="{.spec.virtualhost.fqdn}")
+
+curl -u ${MONITOR_USER}:${MONITOR_PWD} -k -X GET "https://${MONITOR_URL}:${MONITOR_PORT}/monitor/api/v0/commands?command=list" |jq
+
+
+Set Own Domain for SEPPsim
+---------------------------
+curl -u ${MONITOR_USER}:${MONITOR_PWD} -k -X PUT "https://${MONITOR_URL}:${MONITOR_PORT}/monitor/api/v0/commands?target=eric-seppsim-p&command=config" -d '{"ownDomain": "region1.udm.5gc.mnc073.mcc262.3gppnetwork.org"}' | jq
+
+#export SCP2_SVC_IP=$(kubectl get svc --namespace $NAMESPACE eric-seppsim-p6-mcc-262-mnc-73 -o jsonpath="{.spec.clusterIP}")
+curl -u ${MONITOR_USER}:${MONITOR_PWD} -k -X PUT "https://${MONITOR_URL}:${MONITOR_PORT}/monitor/api/v0/commands?target=eric-seppsim-p6&command=config" -d '{"ownAddress": "10.106.180.78"}' | jq
+
+
+
+Scale to one SCP worker
+---------------------------
+kubectl --namespace $NAMESPACE scale deploy eric-scp-worker --replicas=1
+
+
+Open CNOM
+----------
+kgsg eric-tm-ingress-controller-cr # take mapped port of 443
+https://cnom.5g-bsf-eedcsi.hahn121.rnd.gic.ericsson.se:31711/em
+
+
+
+Load bash functions for the demo:
+---------------------------------
+source ~/.bash_functions
+
+
+function scpResetSeppsims ()
+{
+        echo "Resetting 5 SEPPsim PODs"
+        k delete pods -l app=eric-seppsim-p1 &
+        k delete pods -l app=eric-seppsim-p2 &
+        k delete pods -l app=eric-seppsim-p3 &
+        k delete pods -l app=eric-seppsim-p4 &
+        k delete pods -l app=eric-seppsim-p5 &
+        k delete pods -l app=eric-seppsim-p6 &
+        k delete pods -l app=eric-seppsim-p7 &
+}
+
+function scpRemoveSeppsimDisturbances ()
+{
+    echo "Removing all disturbances on SEPPsim PODs"
+    export MONITOR_USER=$(k get secret eric-sc-monitor-secret -o jsonpath='{.data.username}' | base64 -d)
+    export MONITOR_PWD=$(k get secret eric-sc-monitor-secret -o jsonpath='{.data.password}' | base64 -d)
+    export MONITOR_PORT=$(k get services eric-tm-ingress-controller-cr -o jsonpath="{.spec.ports[1].nodePort}")
+    export MONITOR_URL=$(k get httpproxy sc-httpproxy -o jsonpath="{.spec.virtualhost.fqdn}")
+    
+    curl  -u ${MONITOR_USER}:${MONITOR_PWD} -k -X PUT "https://${MONITOR_URL}:${MONITOR_PORT}/monitor/api/v0/commands?target=eric-seppsim-p&command=config" -d '{"ownDomain":"region1.amf.5gc.mnc073.mcc262.3gppnetwork.org"}' | jq .results[].config.api.nudmUeContextManagement
+}
+
+##function scpAddSeppsimDisturbance ()
+##{
+##        echo "Adding disturbances ($2) on SEPPsim POD eric-seppsim-p$1"
+##        export MONITOR_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-sc-monitor)
+##        curl -X PUT "http://$NODE_IP:$MONITOR_PORT/monitor/api/v0/commands?target=eric-seppsim-p$1&command=config" -d '{"ownDomain":"region1.udm.5gc.mnc073.mcc262.3gppnetwork.org","api":{"nudmUeContextManagement":{"disturbances":[{"status":$2}]}}}'  | jq .results[0].config.api.nudmUeContextManagement
+##
+##}
+
+function scpAddSeppsimDisturbance ()
+{
+    echo "Adding disturbances (503) on SEPPsim POD eric-seppsim-p$1"
+    export MONITOR_USER=$(k get secret eric-sc-monitor-secret -o jsonpath='{.data.username}' | base64 -d)
+    export MONITOR_PWD=$(k get secret eric-sc-monitor-secret -o jsonpath='{.data.password}' | base64 -d)
+    export MONITOR_PORT=$(k get services eric-tm-ingress-controller-cr -o jsonpath="{.spec.ports[1].nodePort}")
+    export MONITOR_URL=$(k get httpproxy sc-httpproxy -o jsonpath="{.spec.virtualhost.fqdn}")
+    
+    curl  -u ${MONITOR_USER}:${MONITOR_PWD} -k -X PUT "https://${MONITOR_URL}:${MONITOR_PORT}/monitor/api/v0/commands?target=eric-seppsim-p$1&command=config" -d '{"ownDomain":"region1.udm.5gc.mnc073.mcc262.3gppnetwork.org","api":{"nudmUeContextManagement":{"disturbances":[{"status":500}]}}}'  | jq .results[0].config.api.nudmUeContextManagement
+    
+    #export MONITOR_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-sc-monitor)
+    #curl -X PUT "http://$NODE_IP:$MONITOR_PORT/monitor/api/v0/commands?target=eric-seppsim-p$1&command=config" -d '{"ownDomain":"region1.udm.5gc.mnc073.mcc262.3gppnetwork.org","api":{"nudmUeContextManagement":{"disturbances":[{"status":503}]}}}'  | jq .results[0].config.api.nudmUeContextManagement
+}
+
+
+function scpSetTLS ()
+{
+        echo "Setting TLS port in VPN config for SCP"
+        export SCP_TLS_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[1].nodePort}" services eric-scp-worker)
+        sed -i -E "s/(<port operation=\"merge\">).*(<\/port>)/\1$SCP_TLS_PORT\2/" ~/demo/scp_demo/scp_set_vpn_to_tls.xml
+        cat  ~/demo/scp_demo/scp_set_vpn_to_tls.xml | sshpass -p scpscp ssh -t -p $YP_PORT scp-admin@$NODE_IP -s netconf | grep rpc-reply
+}
+
+function scpUnsetTLS ()
+{
+        echo "Removing TLS port in VPN config for SCP"
+        export SCP_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-scp-worker)
+        sed -i -E "s/(<port operation=\"merge\">).*(<\/port>)/\1$SCP_PORT\2/" ~/demo/scp_demo/scp_set_vpn_to_non_tls.xml
+        cat ~/demo/scp_demo/scp_set_vpn_to_non_tls.xml | sshpass -p scpscp ssh -t -p $YP_PORT scp-admin@$NODE_IP -s netconf | grep rpc-reply
+}
+
+function scpShowEnvoyUDMClusters ()
+{
+    export SCP_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-scp-worker" -o jsonpath="{.items[0].metadata.name}")
+    k exec -it $SCP_POD  -c eric-scp-worker --  curl -X POST "http://localhost:9901/clusters"  | grep -i udm_
+}
+
+
+
+Load SCP config
+---------------------
+#access CLI once before so that sshpass can work later:
+ssh -p $CLI_PORT scp-admin@$NODE_IP
+
+~/bin/update_scp_new_config2.pl  ~/demo/scp_demo/config_new_scp_demo_2022-06_amf-udm_sc1.8.xml "" 5g-bsf-eedcsi
+
+cat ~/scp_sample_config.xml | ssh -t -p $YP_PORT scp-admin@$NODE_IP -s netconf
+
+#print config in envoy
+export SCP_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-scp-worker" -o jsonpath="{.items[0].metadata.name}")
+k exec -it $SCP_POD  -c eric-scp-worker --  curl -X POST "http://localhost:9901/config_dump?include_eds"  | grep cluster_type -A 2
+k exec -it $SCP_POD  -c eric-scp-worker --  curl -X POST "http://localhost:9901/clusters"  | grep -i udm_ | grep host
+k exec -it $SCP_POD  -c eric-scp-worker --  curl -X POST "http://localhost:9901/listeners"
+scpShowEnvoyUDMClusters
+
+
+#If wanted, load tcpdumper for SCP worker 
+#-----------------------------------------
+#k patch deployment eric-scp-worker  --patch "$(cat ~/tcpdump.yaml)"
+#
+#export SCP_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-scp-worker" -o jsonpath="{.items[0].metadata.name}")
+#
+#k exec -it -c tcpdumper $SCP_POD -- sh
+#
+#tcpdump -s 0 -vv -n -w /tmp/capture.pcap
+#
+#k cp -c tcpdumper $SCP_POD:/tmp/capture.pcap ~/capture_scp.pcap
+
+
+Set DNS entires for all needed PODs in /etc/hosts
+-------------------------------------------------
+export NAMESPACE2=5g-scp-eedcsi
+export NAMESPACETOOLS=5g-bsf-eedcsi
+export SCP_MANAGER_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-scp-manager" -o jsonpath="{.items[0].metadata.name}")
+#export SCP_MANAGER_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-scp-manager" -l "leader=eric-scp-manager-leader" -o jsonpath="{.items[0].metadata.name}")
+
+export UDM1_SVC_IP=$(kubectl get svc --namespace $NAMESPACETOOLS eric-seppsim-p1-mcc-206-mnc-33 -o jsonpath="{.spec.clusterIP}")
+export UDM2_SVC_IP=$(kubectl get svc --namespace $NAMESPACETOOLS eric-seppsim-p2-mcc-206-mnc-33 -o jsonpath="{.spec.clusterIP}")
+
+export SCP2_SVC_IP=$(kubectl get svc --namespace $NAMESPACE2 eric-scp-worker -o jsonpath="{.spec.clusterIP}")
+
+kubectl --namespace $NAMESPACE exec -it $SCP_MANAGER_POD -c eric-scp-manager -- sh -c "echo ${UDM1_SVC_IP} nfUdm1.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org  >> /etc/hosts"
+kubectl --namespace $NAMESPACE exec -it $SCP_MANAGER_POD -c eric-scp-manager -- sh -c "echo ${UDM2_SVC_IP} nfUdm2.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org  >> /etc/hosts"
+kubectl --namespace $NAMESPACE exec -it $SCP_MANAGER_POD -c eric-scp-manager -- sh -c "echo ${SCP2_SVC_IP} scp2.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org  >> /etc/hosts"
+ 
+#Verify
+kubectl --namespace $NAMESPACE exec -it $SCP_MANAGER_POD  -c eric-scp-manager -- cat /etc/hosts
+
+#--  for SCP02 ---
+
+export SCP2_MANAGER_POD=$(kubectl get pods --namespace $NAMESPACE2 -l "app=eric-scp-manager" -o jsonpath="{.items[0].metadata.name}")
+#export SCP_MANAGER_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-scp-manager" -l "leader=eric-scp-manager-leader" -o jsonpath="{.items[0].metadata.name}")
+
+export SCP1_SVC_IP=$(kubectl get svc --namespace $NAMESPACE eric-scp-worker -o jsonpath="{.spec.clusterIP}")
+export UDM7_SVC_IP=$(kubectl get svc --namespace $NAMESPACE eric-seppsim-p7-mcc-262-mnc-73 -o jsonpath="{.spec.clusterIP}")
+
+kubectl --namespace $NAMESPACE2 exec -it $SCP2_MANAGER_POD  -- sh -c "echo ${SCP1_SVC_IP} scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org  >> /etc/hosts"
+kubectl --namespace $NAMESPACE2 exec -it $SCP2_MANAGER_POD  -- sh -c "echo ${UDM7_SVC_IP} nfUdm7.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org  >> /etc/hosts"
+
+#Verify
+kubectl --namespace $NAMESPACE2 exec -it $SCP2_MANAGER_POD -- cat /etc/hosts
+
+
+# export SEPPSIM_SCP2_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-seppsim-p6" -o jsonpath="{.items[0].metadata.name}")
+# export UDM7_SVC_IP=$(kubectl get svc --namespace $NAMESPACE eric-seppsim-p7-mcc-262-mnc-73 -o jsonpath="{.spec.clusterIP}")
+# kubectl --namespace $NAMESPACE exec -it $SEPPSIM_SCP2_POD  -- sh -c "echo ${UDM7_SVC_IP} nfUdm7.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org  >> /etc/hosts"
+# 
+# #Verify
+# kubectl --namespace $NAMESPACE exec -it $SEPPSIM_SCP2_POD -- cat /etc/hosts
+
+
+If wanted, set SCP-worker debugging level to TRACE
+---------------------------------------------------
+Envoy trace logging:
+export SCP_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-scp-worker" -o jsonpath="{.items[0].metadata.name}")
+
+kubectl -n $NAMESPACE exec -it $SCP_POD  -c eric-scp-worker --  curl -X POST "http://localhost:9901/logging?level=trace"  
+k exec -it $SCP_POD  -c eric-scp-worker --  curl -X POST "http://localhost:9901/logging?level=info"  
+
+reset; k logs -f $SCP_POD -c eric-scp-worker --tail=0  | jl2
+
+
+If wanted, set SCP-manger debugging level to TRACE
+---------------------------------------------------
+SCP-manager trace logging:
+
+export SCP_MANAGER_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-scp-manager" -o jsonpath="{.items[0].metadata.name}")
+#export SCP_MANAGER_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-scp-manager" -l "leader=eric-scp-manager-leader" -o jsonpath="{.items[0].metadata.name}")
+export MONITOR_USER=$(k get secret eric-sc-monitor-secret -o jsonpath='{.data.username}' | base64 -d)
+export MONITOR_PWD=$(k get secret eric-sc-monitor-secret -o jsonpath='{.data.password}' | base64 -d)
+export MONITOR_PORT=$(k get services eric-tm-ingress-controller-cr -o jsonpath="{.spec.ports[1].nodePort}")
+export MONITOR_URL=$(k get httpproxy sc-httpproxy -o jsonpath="{.spec.virtualhost.fqdn}")
+
+curl  -u ${MONITOR_USER}:${MONITOR_PWD} -k -X PUT "http://$NODE_IP:$MONITOR_PORT/monitor/api/v0/commands?target=eric-scp-m&command=log&logger=com.ericsson.sc.scp&level=TRACE" | jq
+
+reset; k logs -f $SCP_MANAGER_POD --tail=0  | jl
+
+
+Restart SEPPsims to have all HTTP/2 messages decoded correctly in Wireshark
+---------------------------------------------------------------------------
+k delete pods -l app=eric-seppsim-p1 &
+k delete pods -l app=eric-seppsim-p2 &
+k delete pods -l app=eric-seppsim-p3 &
+k delete pods -l app=eric-seppsim-p4 &
+k delete pods -l app=eric-seppsim-p5 &   
+k delete pods -l app=eric-seppsim-p6 & 
+k delete pods -l app=eric-seppsim-p7 &
+
+scpResetSeppsims
+
+Wait about 1 min before SEPPSims are able to receive traffic, otherwise they reject with 503
+
+export MONITOR_PORT=$(kubectl get --namespace $NAMESPACETOOLS -o jsonpath="{.spec.ports[0].nodePort}" services eric-sc-monitor)
+curl -X PUT "https://${MONITOR_URL}:${MONITOR_PORT}/monitor/api/v0/commands?target=eric-seppsim-p6&command=config" -d '{"ownDomain": "region1.udm.5gc.mnc073.mcc262.3gppnetwork.org"}' | jq
+
+
+
+Set Seppsim logging to ERROR
+---------------------------------
+export SCP_MANAGER_POD=$(kubectl get pods -n $NAMESPACETOOLS -l "app=eric-scp-manager" -o jsonpath="{.items[0].metadata.name}")
+#export SCP_MANAGER_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-scp-manager" -l "leader=eric-scp-manager-leader" -o jsonpath="{.items[0].metadata.name}")
+
+export MONITOR_USER=$(kubectl -n $NAMESPACETOOLS get secret eric-sc-monitor-secret -o jsonpath='{.data.username}' | base64 -d)
+export MONITOR_PWD=$(kubectl -n $NAMESPACETOOLS get secret eric-sc-monitor-secret -o jsonpath='{.data.password}' | base64 -d)
+export MONITOR_PORT=$(kubectl -n $NAMESPACETOOLS get services eric-tm-ingress-controller-cr -o jsonpath="{.spec.ports[1].nodePort}")
+export MONITOR_URL=$(kubectl -n $NAMESPACETOOLS get httpproxy sc-httpproxy -o jsonpath="{.spec.virtualhost.fqdn}")
+
+curl  -u ${MONITOR_USER}:${MONITOR_PWD} -k -X PUT "https://${MONITOR_URL}:${MONITOR_PORT}/monitor/api/v0/commands?target=eric-seppsim&command=log&logger=ROOT&level=ERROR" | jq
+
+reset; k logs -f $SCP_MANAGER_POD --tail=0  | jl
+
+
+
+
+Prepare Wireshark on UBUNTU
+----------------------------
+check that Wireshark starts correctly (Xlaunch started?):
+export DISPLAY=":0.0"
+wireshark
+
+echo "#PODs" > ~/.config/wireshark/hosts
+kubectl get pods -A -o=custom-columns=:.status.podIP,:.metadata.name >> ~/.config/wireshark/hosts
+echo "#SVCs" >> ~/.config/wireshark/hosts
+kubectl get svc -A  -o=custom-columns=:.spec.clusterIP,:.metadata.name | grep -v None >> ~/.config/wireshark/hosts
+echo "#NODESs" >> ~/.config/wireshark/hosts
+kubectl get nodes   -o=custom-columns=:.status.addresses[0].address,:.metadata.name >> ~/.config/wireshark/hosts
+echo "#VDI" >> ~/.config/wireshark/hosts
+echo "137.58.207.197    AMF" >> ~/.config/wireshark/hosts
+echo "192.168.130.0     AMF" >> ~/.config/wireshark/hosts
+
+sed -i -E 's/eric-seppsim-p1\S+/UDM1/' ~/.config/wireshark/hosts
+sed -i -E 's/eric-seppsim-p2\S+/UDM2/' ~/.config/wireshark/hosts
+sed -i -E 's/eric-seppsim-p3\S+/UDM3/' ~/.config/wireshark/hosts
+sed -i -E 's/eric-seppsim-p4\S+/UDM4/' ~/.config/wireshark/hosts
+sed -i -E 's/eric-seppsim-p5\S+/UDM5/' ~/.config/wireshark/hosts
+sed -i -E 's/eric-seppsim-p6\S+/SCP2/' ~/.config/wireshark/hosts
+sed -i -E 's/eric-seppsim-p7\S+/UDM7/' ~/.config/wireshark/hosts
+
+#add the SEPPsim service IP addresses as color filters in Wireshark:
+sudo ~/seppsim2color.pl
+
+
+
+Set log level to ERROR in SEPPsims, if load is needed
+------------------------------------------------------
+SEPPsim trace logging:
+
+export MONITOR_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-sc-monitor)
+curl -X PUT "http://$NODE_IP:$MONITOR_PORT/monitor/api/v0/commands?target=eric-seppsim-p&command=log&logger=ROOT&level=ERROR" | jq
+
+New??
+#{"loadTestMode":{"isEnabled":"true"},}
+
+
+Register UDM1 without EP, DNS lookup is done in SCP-Manager
+------------------------------------------------------------------------------------------------------
+export NAMESPACETOOLS=5g-bsf-eedcsi
+export NRFSIM_PORT=$(kubectl get --namespace $NAMESPACETOOLS -o jsonpath="{.spec.ports[0].nodePort}" services eric-nrfsim)
+
+
+
+
+#cat << EOF > ~/demo/scp_demo/regUDM1_set1_no_EP_100
+#curl -X PUT "http://$NODE_IP:$NRFSIM_PORT/nnrf-nfm/v1/nf-instances/2ec8ac0b-265e-4165-86e9-e0735e6ce100" -H "Content-Type: application/json" -d '{"nfInstanceId":"2ec8ac0b-265e-4165-86e9-e0735e6ce100","nfType": "UDM","nfStatus": "REGISTERED","fqdn":"nfUdm1.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org","priority": 1,"capacity": 100,"locality": "North","nfSetIdList": ["set1.udmset.5gc.mnc073.mcc262"],"nfServicePersistence": false,"nfServices": [{"serviceInstanceId": "1-1","serviceName": "nudm-uecm","versions": [{"apiVersionInUri": "v1","apiFullVersion": "1.0"}],"scheme": "http","nfServiceStatus": "REGISTERED"}]}'
+#EOF
+
+cat << EOF > ~/demo/scp_demo/regUDM1_set1_no_EP_100_body.json
+{"nfInstanceId":"2ec8ac0b-265e-4165-86e9-e0735e6ce100","nfType": "UDM","nfStatus": "REGISTERED","fqdn":"nfUdm1.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org","priority": 1,"capacity": 100,"locality": "North","nfSetIdList": ["set1.udmset.5gc.mnc073.mcc262"],"nfServicePersistence": false,"nfServices": [{"serviceInstanceId": "1-1","serviceName": "nudm-uecm","versions": [{"apiVersionInUri": "v1","apiFullVersion": "1.0"}],"scheme": "http","nfServiceStatus": "REGISTERED"}]}
+EOF
+
+
+cat << EOF > ~/demo/scp_demo/regUDM1_set1_no_EP_100_json
+curl -X PUT "http://$NODE_IP:$NRFSIM_PORT/nnrf-nfm/v1/nf-instances/2ec8ac0b-265e-4165-86e9-e0735e6ce100" -H "Content-Type: application/json" -d '@/home/eedcsi/demo/scp_demo/regUDM1_set1_no_EP_100_body.json'
+EOF
+
+
+#while true; do sh ~/demo/scp_demo/regUDM1_set1_no_EP_100_json;  sleep 50; done
+
+
+
+Register UDM2 with EP (IP+Port)  -> SEPPSIM2_POD
+---------------------------------------------------
+
+export UDM2_SVC_IP=$(kubectl get svc --namespace $NAMESPACE eric-seppsim-p2-mcc-206-mnc-33 -o jsonpath="{.spec.clusterIP}")
+
+cat << EOF > ~/demo/scp_demo/regUDM2_set1_100
+curl -X PUT "http://$NODE_IP:$NRFSIM_PORT/nnrf-nfm/v1/nf-instances/2ec8ac0b-265e-4165-86e9-e0735e6ce200" -H "Content-Type: application/json" -d '
+{"nfInstanceId":"2ec8ac0b-265e-4165-86e9-e0735e6ce200","nfType": "UDM","nfStatus": "REGISTERED","fqdn":"nfUdm2.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org","priority": 1,"capacity": 100,"locality": "North","nfSetIdList": ["set1.udmset.5gc.mnc073.mcc262"],"nfServicePersistence": false,"nfServices": [{"serviceInstanceId": "1-2","serviceName": "nudm-uecm","versions": [{"apiVersionInUri": "v1","apiFullVersion": "1.0"}],"ipEndPoints": [{"ipv4Address": "${UDM2_SVC_IP}","port": 80,"transport": "TCP"}],"scheme": "http","nfServiceStatus": "REGISTERED"}]}
+'
+EOF
+
+#while true; do sh ~/demo/scp_demo/regUDM2_set1_100;  sleep 50; done
+
+
+Register UDM3 with EP (IP+Port), prio2  -> SEPPSIM3_POD
+-------------------------------------------------------
+
+export UDM3_SVC_IP=$(kubectl get svc --namespace $NAMESPACE eric-seppsim-p3-mcc-262-mnc-73 -o jsonpath="{.spec.clusterIP}")
+
+cat << EOF > ~/demo/scp_demo/regUDM3_set1
+curl -X PUT "http://$NODE_IP:$NRFSIM_PORT/nnrf-nfm/v1/nf-instances/2ec8ac0b-265e-4165-86e9-e0735e6ce300" -H "Content-Type: application/json" -d '
+{"nfInstanceId":"2ec8ac0b-265e-4165-86e9-e0735e6ce300","nfType": "UDM","nfStatus": "REGISTERED","fqdn":"nfUdm3.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org","priority": 2,"capacity": 50,"locality": "South","nfSetIdList": ["set1.udmset.5gc.mnc073.mcc262"],"nfServicePersistence": false,"nfServices": [{"serviceInstanceId": "1-3","serviceName": "nudm-uecm","versions": [{"apiVersionInUri": "v1","apiFullVersion": "1.0"}],"ipEndPoints": [{"ipv4Address": "${UDM3_SVC_IP}","port": 80,"transport": "TCP"}],"scheme": "http","nfServiceStatus": "REGISTERED"}]}
+'
+EOF
+
+# 
+# cat << EOF > ~/demo/scp_demo/regUDM3_set1
+# curl -X PUT "http://$NODE_IP:$NRFSIM_PORT/nnrf-nfm/v1/nf-instances/2ec8ac0b-265e-4165-86e9-e0735e6ce300" -H "Content-Type: application/json" -d '
+# {"nfInstanceId":"2ec8ac0b-265e-4165-86e9-e0735e6ce300","nfType": "UDM","nfStatus": "REGISTERED","fqdn":"nfUdm3.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org","capacity": 50,"locality": "South","nfSetIdList": ["set1.udmset.5gc.mnc073.mcc262"],"nfServicePersistence": false,"nfServices": [{"serviceInstanceId": "1-3","serviceName": "nudm-uecm","versions": [{"apiVersionInUri": "v1","apiFullVersion": "1.0"}],"ipEndPoints": [{"ipv4Address": "${UDM3_SVC_IP}","port": 80,"transport": "TCP"}],"scheme": "http","nfServiceStatus": "REGISTERED"}]}
+# '
+# EOF
+
+
+#while true; do sh ~/demo/scp_demo/regUDM3_set1;  sleep 50; done
+
+
+Register UDM4 with EP (IP+Port)  -> SEPPSIM4_POD
+---------------------------------------------------
+
+export UDM4_SVC_IP=$(kubectl get svc --namespace $NAMESPACE eric-seppsim-p4-mcc-262-mnc-73 -o jsonpath="{.spec.clusterIP}")
+
+cat << EOF > ~/demo/scp_demo/regUDM4_set2
+curl -X PUT "http://$NODE_IP:$NRFSIM_PORT/nnrf-nfm/v1/nf-instances/2ec8ac0b-265e-4165-86e9-e0735e6ce400" -H "Content-Type: application/json" -d '{"nfInstanceId":"2ec8ac0b-265e-4165-86e9-e0735e6ce400","nfType": "UDM","nfStatus": "REGISTERED","fqdn":"nfUdm4.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org","priority": 1,"nfSetIdList": ["set2.udmset.5gc.mnc073.mcc262"],"nfServicePersistence": false,"nfServices": [{"serviceInstanceId": "1","serviceName": "nudm-uecm","versions": [{"apiVersionInUri": "v1","apiFullVersion": "1.0"}],"ipEndPoints": [{"ipv4Address": "${UDM4_SVC_IP}","port": 80,"transport": "TCP"}],"scheme": "http","nfServiceStatus": "REGISTERED"}]}'
+EOF
+
+while true; do sh ~/demo/scp_demo/regUDM4_set2;  sleep 50; done
+ 
+
+Register UDM5 with EP (IP+Port)  -> SEPPSIM5_POD
+---------------------------------------------------
+
+export UDM5_SVC_IP=$(kubectl get svc --namespace $NAMESPACE eric-seppsim-p5-mcc-262-mnc-73 -o jsonpath="{.spec.clusterIP}")
+
+cat << EOF > ~/demo/scp_demo/regUDM5_set2
+curl -X PUT "http://$NODE_IP:$NRFSIM_PORT/nnrf-nfm/v1/nf-instances/2ec8ac0b-265e-4165-86e9-e0735e6ce500" -H "Content-Type: application/json" -d '{"nfInstanceId":"2ec8ac0b-265e-4165-86e9-e0735e6ce500","nfType": "UDM","nfStatus": "REGISTERED","fqdn":"nfUdm5.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org","priority": 1,"nfSetIdList": ["set2.udmset.5gc.mnc073.mcc262"],"nfServicePersistence": false,"nfServices": [{"serviceInstanceId": "1","serviceName": "nudm-uecm","versions": [{"apiVersionInUri": "v1","apiFullVersion": "1.0"}],"ipEndPoints": [{"ipv4Address": "${UDM5_SVC_IP}","port": 80,"transport": "TCP"}],"scheme": "http","nfServiceStatus": "REGISTERED"}]}'
+EOF
+
+while true; do sh ~/demo/scp_demo/regUDM5_set2;  sleep 50; done
+
+
+
+Or register UDM3, UDM4 and UDM5 in one go
+---------------------------------------------------
+while true; do sh ~/demo/scp_demo/regUDM3_set1; sh ~/demo/scp_demo/regUDM4_set2; sh ~/demo/scp_demo/regUDM5_set2; sleep 50; done
+
+
+Register UDM7 with EP (IP+Port)  -> SEPPSIM7_POD
+---------------------------------------------------
+
+export UDM7_SVC_IP=$(kubectl get svc --namespace $NAMESPACE eric-seppsim-p7-mcc-262-mnc-73 -o jsonpath="{.spec.clusterIP}")
+
+cat << EOF > ~/demo/scp_demo/regUDM7_set3
+curl -X PUT "http://$NODE_IP:$NRFSIM_PORT/nnrf-nfm/v1/nf-instances/2ec8ac0b-265e-4165-86e9-e0735e6ce700" -H "Content-Type: application/json" -d '{"nfInstanceId":"2ec8ac0b-265e-4165-86e9-e0735e6ce700","nfType": "UDM","nfStatus": "REGISTERED","fqdn":"nfUdm7.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org","priority": 1,"nfSetIdList": ["set3.udmset.5gc.mnc073.mcc262"],"nfServicePersistence": false,"nfServices": [{"serviceInstanceId": "1","serviceName": "nudm-uecm","versions": [{"apiVersionInUri": "v1","apiFullVersion": "1.0"}],"ipEndPoints": [{"ipv4Address": "${UDM7_SVC_IP}","port": 80,"transport": "TCP"}],"scheme": "http","nfServiceStatus": "REGISTERED"}]}'
+EOF
+
+while true; do sh ~/demo/scp_demo/regUDM7_set3;  sleep 50; done
+
+
+
+
+Remove disturbance on all SEPPsims
+----------------------------------
+scpRemoveSeppsimDisturbances
+
+
+set CLI options
+-----------------
+autowizard false
+complete-on-space false
+ignore-leading-space true
+paginate false
+show-defaults true
+timestamp disable 
+
+
+remove Priority Group (subpool) for UDM1
+----------------------------------------
+cat ~/demo/scp_demo/remove_priogroup_rr | sshpass -p scpscp ssh -t -p $CLI_PORT scp-admin@$NODE_IP 
+
+#config
+#no scp-function nf-instance scp_instance_1 nf-pool NfUdm_rr_pool priority-group NfUdm_rr_pg_prio1
+#no scp-function nf-instance scp_instance_1 nf-pool NfUdm_rr_pool priority-group NfUdm_rr_pg_prio2
+#commit
+#exit
+#exit
+
+
+Start XLauch for Wireshark from Ubuntu
+--------------------------------------
+
+
+# Start loadmeter in VDI:
+# -----------------------
+# 
+#    export MONITOR_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-sc-monitor)
+# 
+#    check in shell that there are counters for CHFSIM1...: 
+#    curl -s -X GET "http://$NODE_IP:$MONITOR_PORT/monitor/api/v0/commands?command=counter&target=eric-seppsim-p"  | jq
+#       curl -s -X GET "http://$NODE_IP:32461/monitor/api/v0/commands?command=counter&target=eric-seppsim-p"  | jq
+# 
+#    pkill loadmeter
+# 
+#    cd ~/bin/
+#    ./loadmeter_get_seppsim_counters_udm 5 2
+# 
+# 
+# d) Start Loadmeter with 01_scp_chfsim_3.ini
+#    Load ...
+#    Apply
+#    "Connected" should be visible in shell where loadmeter script is running
+# 
+
+===============================
+       USE CASES
+===============================
+
+
+########################################
+# UC1:    NRF Discovery, UDM1 and UDM2 #
+########################################
+
+5 Min
+
+# SCP target-nf-set-id used as a filter
+
+
+----
+Preparation
+UBUNTU:
+export NAMESPACE=5g-bsf-eedcsi
+export NAMESPACE2=5g-scp-eedcsi
+
+export SCP_MANAGER_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-scp-manager" -o jsonpath="{.items[0].metadata.name}")
+#export SCP_MANAGER_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-scp-manager" -l "leader=eric-scp-manager-leader" -o jsonpath="{.items[0].metadata.name}")
+
+#cd ~/ksniff
+/proj/sc-tools/share/ksniff
+#export DISPLAY=":0.0"
+
+#sudo ./kubectl-sniff -n $NAMESPACE $SCP_MANAGER_POD &
+./kubectl-sniff -n $NAMESPACE $SCP_MANAGER_POD &
+
+#VDI:
+#Configure a wrong port for NRF and then the correct one to trigger a MAGIC packet
+cat ~/demo/scp_demo/scp_demo_wrong_nrf_port.xml | sshpass -p scpscp ssh -t -p $YP_PORT scp-admin@$NODE_IP -s netconf | grep "<rpc-reply"
+cat ~/demo/scp_demo/scp_demo_correct_nrf_port.xml | sshpass -p scpscp ssh -t -p $YP_PORT scp-admin@$NODE_IP -s netconf | grep "<rpc-reply"
+
+----
+
+
+		
+#in CLI as user scp-admin, no NFs in the pools, show configuration
+sshpass -p scpscp ssh -t -p $CLI_PORT scp-admin@$NODE_IP 
+paginate false
+
+
+#config -> nf-set-id and nf-type:
+show running-config scp-function nf-instance scp_instance_1 nf-pool NfUdm_rr_pool
+show running-config scp-function nf-instance scp_instance_1 nf-pool NfUdm_pr_pool
+#
+show scp-function nf-instance scp_instance_1 nf-pool NfUdm_rr_pool
+show scp-function nf-instance scp_instance_1 nf-pool NfUdm_pr_pool
+
+
+!!show also routing case and message data
+
+
+#Show NF data in coming registration message:
+cat /home/eedcsi/demo/scp_demo/regUDM1_set1_no_EP_100_body.json |jq
+
+#Register 2 UDMs: UDM1 and UDM2
+while true; do sh ~/demo/scp_demo/regUDM1_set1_no_EP_100_json; sh ~/demo/scp_demo/regUDM2_set1_100; sleep 50; done
+
+# SHOW in wireshark DATA received from NRF
+# point out difference between UDM1 (no EP) and UDM2
+
+#in CLI as user scp-admin - NFs show in the dynamic pool
+sshpass -p scpscp ssh -t -p $CLI_PORT scp-admin@$NODE_IP 
+
+paginate false
+
+show scp-function nf-instance scp_instance_1 nf-pool NfUdm_rr_pool
+
+# point out difference between UDM1 (no EP) and UDM2
+# for UDM1, DNS query is done in the SCP-MANAGER at NF discovery time
+
+
+########################################
+# UC1.1:    NRF Discovery, UDM3        #
+########################################
+
+2 Min
+
+# every 5 seconds pulled
+# Dynamically update pool when NFs are added in NRF
+
+while true; do sh ~/demo/scp_demo/regUDM3_set1;  sleep 50; done
+
+# SHOW in wireshark DATA received from NRF has increased by about 500 bytes
+# and contains UDM3
+
+#in CLI as user scp-admin
+show scp-function nf-instance scp_instance_1 nf-pool NfUdm_rr_pool
+
+
+
+++++++++++++++++++++++++++
+Stop and save Wireshark
+Export Specified Package
+UC1_NRF_Discovery
+Exit Wireshark
+++++++++++++++++++++++++++
+
+
+
+############################################
+# UC11: SCP as Transparent Proxy           #
+############################################
+
+# :authority header specifies the target NF (UDM1, 2 or 3)
+# -> NfUDM_rr_pool
+
+Used also for Callbacks/Notifys send by the service producer back to the consumer.
+The producer learned the callback-uri from the initial messages of the consumer.
+
+
+----
+UBUNTU:
+export SCP_WORKER_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-scp-worker" -o jsonpath="{.items[0].metadata.name}")
+
+sudo ./kubectl-sniff -n $NAMESPACE -c eric-scp-worker $SCP_WORKER_POD
+----
+
+ssh -t -p $CLI_PORT scp-admin@$NODE_IP
+config
+autowizard false 
+
+show running-config scp-function nf-instance scp_instance_1 routing-case default_routing routing-rule Send_as_transparent_proxy_to_Udm2   
+   
+scp-function nf-instance scp_instance_1
+ routing-case default_routing
+  routing-rule Send_as_transparent_proxy_to_Udm2
+   condition "req.header[':authority'] exists and not req.header['3gpp-sbi-target-apiRoot'] exists"
+   routing-action route_to_udm2
+    action-route-preferred keep-authority-header
+    action-route-preferred preserve-if-indirect-routing absolute-uri-path
+    action-route-preferred from-authority-header
+    action-route-preferred failover-profile-ref fop1
+    action-route-preferred target-nf-pool nf-pool-ref NfUdm_rr_pool
+   !
+  !
+ !
+!
+
+#alternative:
+   condition "req.header[':authority'] == 'nfUdm2.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org'"
+
+
+# sent to Pool "Pool_UDM", UDM2 selected (round robin)
+
+curl -v -s --http2-prior-knowledge -X PUT  "http://$NODE_IP:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access" \
+-H "Host: nfudm2.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org" \
+-H "Content-Type: application/json" \
+-d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org","guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"},"ratType":"NR"}' 
+
+# sent to Pool "Pool_UDM", UDM1 selected (round robin)
+
+curl -v -s --http2-prior-knowledge -X PUT  "http://$NODE_IP:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access" \
+-H "Host: nfUdm1.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org" \
+-H "Content-Type: application/json" \
+-d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org","guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"},"ratType":"NR"}' 
+
+# sent to Pool "Pool_UDM", UDM3 selected (round robin)
+
+curl -v -s --http2-prior-knowledge -X PUT  "http://$NODE_IP:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access" \
+-H "Host: nfUdm3.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org" \
+-H "Content-Type: application/json" \
+-d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org","guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"},"ratType":"NR"}' 
+
+
+########################################
+# UC2:   SCP - Nonfunctional Selection # 
+########################################
+
+5min
+
+# 3gpp-Sbi-Discovery-nf-set-id: set1.udmset.5gc.mnc073.mcc262
+# -> NfUDM_rr_pool (round robin between UDM1 and UDM2)
+
+----
+UBUNTU:
+export SCP_WORKER_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-scp-worker" -o jsonpath="{.items[0].metadata.name}")
+
+sudo ./kubectl-sniff -n $NAMESPACE $SCP_WORKER_POD -c eric-scp-worker
+----
+----
+MobaXterm VDI session:
+export SCP_WORKER_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-scp-worker" -o jsonpath="{.items[0].metadata.name}")
+
+/proj/sc-tools/share/ksniff/kubectl-sniff -n $NAMESPACE $SCP_WORKER_POD -c eric-scp-worker
+----
+
+
+#stern seppsim
+
+export SCP_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-scp-worker)
+
+# sent to Pool "Pool_UDM_fw", UDM1 or UDM2 selected (round robin)
+curl -v --http2-prior-knowledge  -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT:$NODE_IP" \
+"http://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access" \
+-H "3gpp-Sbi-Discovery-nf-set-id:set1.udmset.5gc.mnc073.mcc262" \
+-H "Content-Type: application/json" \
+-d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org", "guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"}, "ratType":"NR"}' | jq
+
+#send 100 messages, show 50%/50% distribution
+curl -v --http2-prior-knowledge  -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT:$NODE_IP" "http://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access?a=[1-100]" -H "3gpp-Sbi-Discovery-nf-set-id:set1.udmset.5gc.mnc073.mcc262" -H "Content-Type: application/json" -d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org", "guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"}, "ratType":"NR"}' |& grep x-origin | sort | uniq -c | prettify
+
+#generate some traffic if wanted and show CNOM!!
+
+curl -s --http2-prior-knowledge  -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT:$NODE_IP" "http://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access?a=[1-100000]" -H "3gpp-Sbi-Discovery-nf-set-id:set1.udmset.5gc.mnc073.mcc262" -H "Content-Type: application/json" -d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org", "guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"}, "ratType":"NR"}' > /dev/null
+
+
+++++++++++++++++++++++++++
+Stop Wireshark
+
+scpResetSeppsims
+
+Save Wireshark
+	Export Specified Package
+	UC2_Nonfunctional_Selection
+
+Exit Wireshark
+++++++++++++++++++++++++++
+
+curl --http2-prior-knowledge  -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:30379:10.63.143.71" "https://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:30379/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access" -H "accept: application/json" -H "3gpp-Sbi-Discovery-nf-set-id:set1.udmset.5gc.mnc073.mcc262" -H "Content-Type: application/json" -d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org", "guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"}, "ratType":"NR"}' -k --cert /certs/K6.crt --key /certs/K6.key
+
+
+
+## #start some K6 load:
+## ./loadmeter_get_seppsim_counters_udm 5 2
+## 
+## #switch to TLS for k6
+## scpSetTLS
+##
+export SCP_TLS_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[1].nodePort}" services eric-scp-worker)
+export K61_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-k6" -o jsonpath="{.items[0].metadata.name}")
+echo $SCP_TLS_PORT; echo $NODE_IP
+k cp ~/demo/scp_demo/scp_stability_test_set1.js $K61_POD:/tests/scp_stability_test_set1.js
+
+k exec -it $K61_POD -- sh
+
+pkill k6; k6 run -e SCP_HOST=scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org -e SCP_IP=10.63.143.71 -e SCP_PORT=30347 -e SET=set1.udmset.5gc.mnc073.mcc262 -e RPS=1500 -e HOLDDURATION=600s -e RAMPDURATION=1s scp_stability_test_set1.js --insecure-skip-tls-verify  --no-usage-report
+
+#pkill k6; k6 run -e FACTOR=6 -e SCP_IP=10.63.143.71 -e SCP_PORT=32703 -e RPS=100 -e SET=set1.udmset.5gc.mnc073.mcc262 -e RAMPDURATION=1s -e HOLDDURATION=1h scp_stability_test_set1.js --insecure-skip-tls-verify  --no-usage-report 
+
+#pkill k6; k6 run -v -e SCP_HOST=scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org -e SCP_IP=10.63.143.71 -e SCP_PORT=32389 -e RPS=100  -e RR=10000 scp_stability_test_set1.js --insecure-skip-tls-verify  --no-usage-report 
+
+## 
+## #pkill k6; k6 run  -e SCP_IP=10.63.142.199 -e SCP_PORT=32703 -e RPS=100 -e SET=set1.udmset.5gc.mnc073.mcc262 -e RAMPDURATION=1s -e HOLDDURATION=1h -e TYPE=FW scp_stability_demo_set_apiroot.js --insecure-skip-tls-verify  --no-usage-report 
+## 
+## 
+## #pkill k6; k6 run  -e SCP_IP=10.63.142.199 -e SCP_PORT=32703 -e RPS=100 -e SET=set1.udmset.5gc.mnc073.mcc262 -e RAMPDURATION=1s -e HOLDDURATION=1h  scp_stability_demo_set.js --insecure-skip-tls-verify  --no-usage-report 
+## 
+## 
+## #pkill k6; k6 run  -e SCP_IP=10.63.142.199 -e SCP_PORT=32703 -e FW=100 --max 10 --vus 10 --duration 1h scp_stability_test_3_forward_http_scp1.js --insecure-skip-tls-verify --rps 100 --no-usage-report 
+## 
+## 
+## from 192.168.215.64
+## 
+## #curl -v -X POST --http2-prior-knowledge --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:32703:10.63.142.199" "http://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:31267//nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access"  -H "3gpp-Sbi-Discovery-nf-set-id:set1.udmset.5gc.mnc073.mcc262"  -H "Content-Type: application/json" -d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org","guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"},"ratType":"NR"}' -k --cert /certs/K6.crt --key /certs/K6.key
+## 
+## ## Restore
+## #switch to NON-TLS for curl
+## scpUnsetTLS
+
+
+
+########################################
+# UC3: SCP - Re-selection within a Set #
+########################################
+
+5min
+
+----
+UBUNTU:
+sudo ./kubectl-sniff -n $NAMESPACE $SCP_WORKER_POD
+----
+
+
+----
+MobaXterm VDI session:
+export SCP_WORKER_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-scp-worker" -o jsonpath="{.items[0].metadata.name}")
+
+/proj/sc-tools/share/ksniff/kubectl-sniff -n $NAMESPACE $SCP_WORKER_POD -c eric-scp-worker
+----
+
+
+# 3gpp-Sbi-target-apiRoot: http://nfUdm4.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org
+# +
+# 3gpp-Sbi-Discovery-nf-set-id: set2.udmset.5gc.mnc073.mcc262
+
+Preparation:
+while true; do sh ~/demo/scp_demo/regUDM4_set2; sh ~/demo/scp_demo/regUDM5_set2; sleep 50; done
+
+k exec -it $SCP_WORKER_POD  -c eric-scp-worker --  curl -X POST "http://localhost:9901/clusters"  | grep -i udm_ | grep host																													
+export SCP_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-scp-worker)
+
+
+# sent to Pool "Pool_NfUdm_targetapi" -> UDM4 selected 
+curl -v -s --http2-prior-knowledge -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT:$NODE_IP" \
+"http://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access" \
+-H "3gpp-Sbi-Discovery-nf-set-id:set2.udmset.5gc.mnc073.mcc262" \
+-H "3gpp-Sbi-target-apiRoot:http://nfUdm4.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org" \
+-H "Content-Type: application/json" \
+-d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org","guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"},"ratType":"NR"}' | jq
+
+
+# sent to Pool "Pool_NfUdm_targetapi" -> UDM5 selected 
+curl -v -s --http2-prior-knowledge -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT:$NODE_IP" \
+"http://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access" \
+-H "3gpp-Sbi-Discovery-nf-set-id:set2.udmset.5gc.mnc073.mcc262" \
+-H "3gpp-Sbi-target-apiRoot:http://nfUdm5.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org" \
+-H "Content-Type: application/json" \
+-d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org","guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"},"ratType":"NR"}' | jq
+
+
+Add disturbance on UDM4, SEPPsim-p4
+- - - - - - - - - - - - - - - - - - 
+scpAddSeppsimDisturbance 4
+
+## export MONITOR_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-sc-monitor)
+## 
+## #curl -X GET "http://$NODE_IP:$MONITOR_PORT/monitor/api/v0/commands?target=eric-seppsim-p4&command=config" | jq
+## 
+## curl -X PUT "http://$NODE_IP:$MONITOR_PORT/monitor/api/v0/commands?target=eric-seppsim-p4&command=config" -d '{"ownDomain":"region1.udm.5gc.mnc073.mcc262.3gppnetwork.org","api":{"nudmUeContextManagement":{"disturbances":[{"status":503}]}}}' | jq
+## 
+
+Send messages again from above, now with disturbance
+- - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# sent to Pool "Pool_NfUdm_targetapi", UDM4 selected based on scp-worker DNS lookup, 503 reply -> UDM5 selected
+
+
+# sent to Pool "Pool_NfUdm_targetapi", UDM4 selected based on scp-worker DNS lookup
+curl -v -s --http2-prior-knowledge  -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT:$NODE_IP" "http://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access"  -H "3gpp-Sbi-Discovery-nf-set-id:set2.udmset.5gc.mnc073.mcc262" -H "3gpp-Sbi-target-apiRoot:http://nfUdm4.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org" -H "Content-Type: application/json" -d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org","guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"},"ratType":"NR"}' | jq
+
+#Or 100 messages:
+#curl  -v -s --http2-prior-knowledge  -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT:$NODE_IP" "http://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access?a=[1-100]"  -H "3gpp-Sbi-Discovery-nf-set-id:set2.udmset.5gc.mnc073.mcc262" -H "3gpp-Sbi-target-apiRoot:http://nfUdm4.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org" -H "Content-Type: application/json" -d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org","guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"},"ratType":"NR"}'  |& grep x-origin | sort | uniq -c | prettify
+
+
+#scpRemoveSeppsimDisturbances # UC4 also needs disturbance on SEPPsim-4
+
+## #start some K6 load:
+## ./loadmeter_get_seppsim_counters_udm 5 2
+## 
+## 
+## #switch to TLS for k6
+## scpSetTLS
+## 
+## export SCP_TLS_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[1].nodePort}" services eric-scp-worker)
+## export K61_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-k6" -o jsonpath="{.items[0].metadata.name}")
+## echo $SCP_TLS_PORT; echo $NODE_IP
+## 
+## k exec -it $K61_POD -- sh
+## pkill k6; k6 run  -e SCP_IP=10.63.142.199 -e SCP_PORT=31267 -e RPS=100 -e TYPE=API -e SET=set2.udmset.5gc.mnc073.mcc262 -e APIROOT=http://nfUdm4.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org -e RAMPDURATION=1s -e HOLDDURATION=1h scp_stability_demo_set_apiroot.js --insecure-skip-tls-verify  --no-usage-report 
+## 
+## ## Restore
+## #switch to NON-TLS for curl
+## scpUnsetTLS
+
+
+########################################
+# UC4:   SCP - Routing Binding         #    <-------------- SKIPP
+########################################
+
+# 3gpp-Sbi-target-apiRoot:http://nfUdm1.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org
+# + 
+# 3gpp-Sbi-Routing-Binding: bl=nf-set; nfset=set2.udmset.5gc.mnc073.mcc262
+
+#export SCP_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-scp-worker)
+
+
+# sent to Pool "Pool_NfUdm_targetapi", UDM4 selected due to target-api, 503 reply -> UDM5 selected
+
+curl -v -s --http2-prior-knowledge -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT:$NODE_IP" \
+"http://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access" \
+-H "3gpp-Sbi-Routing-Binding: bl=nf-set; nfset=set2.udmset.5gc.mnc073.mcc262" \
+-H "3gpp-Sbi-target-apiRoot:http://nfUdm4.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org" \
+-H "Content-Type: application/json" \
+-d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org","guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"},"ratType":"NR"}' | jq
+
+#Or 100 messages:
+curl -v -s --http2-prior-knowledge -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT:$NODE_IP" "http://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access?a=[1-100]" -H "3gpp-Sbi-Routing-Binding: bl=nf-set; nfset=set2.udmset.5gc.mnc073.mcc262" -H "3gpp-Sbi-target-apiRoot:http://nfUdm4.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org" -H "Content-Type: application/json" -d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org","guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"},"ratType":"NR"}'  |& grep x-origin | sort | uniq -c | prettify
+
+
+++++++++++++++++++++++++++
+Stop Wireshark
+
+scpResetSeppsims
+
+Save Wireshark
+	Export Specified Package
+	UC3_Re-selection_within_a_Set_UC4_Routing_Binding
+
+Exit Wireshark
+++++++++++++++++++++++++++
+
+
+
+############################################
+# UC5: SCP - Weight based routing (static) #
+############################################
+
+5min (10min with traffic and CNOM)
+
+
+!! stop UDM1/2 registration and wait 1 min before sending new registration!! 
+
+
+----
+UBUNTU:
+sudo ./kubectl-sniff -n $NAMESPACE $SCP_WORKER_POD
+----
+
+scpRemoveSeppsimDisturbances
+
+#export SCP_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-scp-worker)
+
+
+Register UDM1 without EP and capacity=30, DNS lookup is done in SCP-Manager
+------------------------------------------------------------------------------------------------------
+
+cat << EOF > ~/demo/scp_demo/regUDM1_set1_no_EP_30
+curl -X PUT "http://$NODE_IP:$NRFSIM_PORT/nnrf-nfm/v1/nf-instances/2ec8ac0b-265e-4165-86e9-e0735e6ce100" -H "Content-Type: application/json" -d '{"nfInstanceId":"2ec8ac0b-265e-4165-86e9-e0735e6ce100","nfType": "UDM","nfStatus": "REGISTERED","fqdn":"nfUdm1.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org","priority": 1,"capacity": 30,"locality": "North","nfSetIdList": ["set1.udmset.5gc.mnc073.mcc262"],"nfServicePersistence": false,"nfServices": [{"serviceInstanceId": "1","serviceName": "nudm-uecm","versions": [{"apiVersionInUri": "v1","apiFullVersion": "1.0"}],"scheme": "http","nfServiceStatus": "REGISTERED"}]}'
+EOF
+
+
+#while true; do sh ~/demo/scp_demo/regUDM1_set1_no_EP_30;  sleep 50; done
+
+
+Register UDM2 with EP (IP+Port) and capacity=60  -> SEPPSIM2_POD 
+---------------------------------------------------
+
+export UDM2_SVC_IP=$(kubectl get svc --namespace $NAMESPACE eric-seppsim-p2-mcc-206-mnc-33 -o jsonpath="{.spec.clusterIP}")
+
+cat << EOF > ~/demo/scp_demo/regUDM2_set1_60
+curl -X PUT "http://$NODE_IP:$NRFSIM_PORT/nnrf-nfm/v1/nf-instances/2ec8ac0b-265e-4165-86e9-e0735e6ce200" -H "Content-Type: application/json" -d '
+{"nfInstanceId":"2ec8ac0b-265e-4165-86e9-e0735e6ce200","nfType": "UDM","nfStatus": "REGISTERED","fqdn":"nfUdm2.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org","priority": 1,"capacity": 60,"locality": "North","nfSetIdList": ["set1.udmset.5gc.mnc073.mcc262"],"nfServicePersistence": false,"nfServices": [{"serviceInstanceId": "1","serviceName": "nudm-uecm","versions": [{"apiVersionInUri": "v1","apiFullVersion": "1.0"}],"ipEndPoints": [{"ipv4Address": "${UDM2_SVC_IP}","port": 80,"transport": "TCP"}],"scheme": "http","nfServiceStatus": "REGISTERED"}]}
+'
+EOF
+
+#while true; do sh ~/demo/scp_demo/regUDM2_set1_60;  sleep 50; done
+
+<<<<<<<<<<<<<<<<<
+while true; do sh ~/demo/scp_demo/regUDM1_set1_no_EP_30; sh ~/demo/scp_demo/regUDM2_set1_60;  sleep 50; done
+<<<<<<<<<<<<<<<<<
+
+#in CLI as user scp-admin, no NFs in the pools, show configuration
+sshpass -p scpscp ssh -t -p $CLI_PORT scp-admin@$NODE_IP 
+paginate false
+
+show scp-function nf-instance scp_instance_1 nf-pool NfUdm_rr_pool
+
+
+#send 90 messages, show 30/60 distribution
+curl -v --http2-prior-knowledge  -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT:$NODE_IP" "http://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access?a=[1-90]"  -H "3gpp-Sbi-Discovery-nf-set-id:set1.udmset.5gc.mnc073.mcc262"  -H "Content-Type: application/json" -d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org","guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"},"ratType":"NR"}' |& grep x-origin | sort | uniq -c | prettify
+
+# NF      | Number of Messages
+# -----------------------------
+# UDM1    | 30
+# UDM2    | 60
+
+
+Add disturbance on UDM1, SEPPsim-p1, traffic goes to UDM2
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+scpAddSeppsimDisturbance 1
+
+!! does NOT work anymore like this !!
+
+## #send 90 messages, show 30/60 distribution
+## curl -v --http2-prior-knowledge  -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT:$NODE_IP" "http://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access?a=[1-90]"  -H "3gpp-Sbi-Discovery-nf-set-id:set1.udmset.5gc.mnc073.mcc262"  -H "Content-Type: application/json" -d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org","guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"},"ratType":"NR"}' |& grep x-origin | sort | uniq -c | prettify
+## 
+## # NF      | Number of Messages
+## # -----------------------------
+## # UDM2    | 60
+## # UDM3    | 30
+## 
+## 
+## change FOB profile
+## - - - - - - - - - 
+## cat ~/demo/scp_demo/modify_FOP_2| sshpass -p scpscp ssh -t -p $CLI_PORT scp-admin@$NODE_IP 
+## 
+#send 90 messages, show 30/60 distribution
+curl -v --http2-prior-knowledge  -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT:$NODE_IP" "http://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access?a=[1-90]"  -H "3gpp-Sbi-Discovery-nf-set-id:set1.udmset.5gc.mnc073.mcc262"  -H "Content-Type: application/json" -d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org","guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"},"ratType":"NR"}' |& grep x-origin | sort | uniq -c | prettify
+
+# NF      | Number of Messages
+# -----------------------------
+# UDM2    | 90
+
+
+
+Add disturbance on UDM2, SEPPsim-p2, traffic goes to UDM3
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+scpAddSeppsimDisturbance 2
+
+#send 90 messages, show 30/60 distribution
+curl -v --http2-prior-knowledge  -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT:$NODE_IP" "http://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access?a=[1-90]"  -H "3gpp-Sbi-Discovery-nf-set-id:set1.udmset.5gc.mnc073.mcc262"  -H "Content-Type: application/json" -d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org","guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"},"ratType":"NR"}' |& grep x-origin | sort | uniq -c | prettify
+
+# NF      | Number of Messages
+# -----------------------------
+# UDM3    | 90
+
+
+
+# If time allows
+#generate some traffic if wanted and show CNOM!!
+
+curl -s --http2-prior-knowledge  -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT:$NODE_IP" "http://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access?a=[1-100000]"  -H "3gpp-Sbi-Discovery-nf-set-id:set1.udmset.5gc.mnc073.mcc262"  -H "Content-Type: application/json" -d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org","guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"},"ratType":"NR"}' > /dev/null 
+
+
+
+Remove disturbance on UDM
+- - - - - - - - - -
+scpRemoveSeppsimDisturbances
+
+#cat ~/demo/scp_demo/modify_FOP_1| sshpass -p scpscp ssh -t -p $CLI_PORT scp-admin@$NODE_IP 
+
+
+++++++++++++++++++++++++++
+Stop Wireshark
+
+scpResetSeppsims
+
+Save Wireshark
+	Export Specified Package
+	UC5_Weight_based_routing
+	
+Exit Wireshark	
+++++++++++++++++++++++++++
+
+
+
+########################################
+# UC6:   SCP - Sub-pool routing        # 
+#              example "locality"      #
+########################################
+
+----
+UBUNTU:
+sudo ./kubectl-sniff -n $NAMESPACE $SCP_WORKER_POD
+----
+
+
+Add configuration for locality in sub-pools:
+
+cat ~/demo/scp_demo/add_priogroup_rr | sshpass -p scpscp ssh -t -p $CLI_PORT scp-admin@$NODE_IP 
+
+# scp-function nf-instance scp_instance_1
+#  nf-pool NfUdm_rr_pool
+#   priority-group NfUdm_rr_pg_prio1
+#    priority           1
+#    nf-match-condition "nfdata.locality == 'South'"
+#   !
+#   priority-group NfUdm_rr_pg_prio2
+#    priority           2
+#    nf-match-condition "nfdata.locality == 'North'"
+#   !
+#  !
+# !
+# Commit complete.
+
+#sshpass -p scpscp ssh -t -p $CLI_PORT scp-admin@$NODE_IP 
+#	
+#config	
+#scp-function nf-instance scp_instance_1 nf-pool NfUdm_rr_pool priority-group NfUdm_rr_pg_prio1 nf-match-condition "nfdata.locality == 'South'"
+#scp-function nf-instance scp_instance_1 nf-pool NfUdm_rr_pool priority-group NfUdm_rr_pg_prio1 priority 1
+#scp-function nf-instance scp_instance_1 nf-pool NfUdm_rr_pool priority-group NfUdm_rr_pg_prio2 nf-match-condition "nfdata.locality == 'North'"
+#scp-function nf-instance scp_instance_1 nf-pool NfUdm_rr_pool priority-group NfUdm_rr_pg_prio2 priority 2
+#show configuration
+#commit
+#exit
+#exit
+
+
+#show CLI configuration
+sshpass -p scpscp ssh -t -p $CLI_PORT scp-admin@$NODE_IP 
+paginate false
+
+show scp-function nf-instance scp_instance_1 nf-pool NfUdm_rr_pool
+show running-config  scp-function nf-instance scp_instance_1 nf-pool NfUdm_rr_pool
+
+
+export SCP_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-scp-worker)
+
+# sent to Pool "Pool_UDM_fw", UDM3 selected since locality == 'South'
+curl -v -s --http2-prior-knowledge  -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT:$NODE_IP" "http://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access"  -H "3gpp-Sbi-Discovery-nf-set-id:set1.udmset.5gc.mnc073.mcc262"  -H "Content-Type: application/json" -d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org","guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"},"ratType":"NR"}' | jq
+
+#send 90 messages, show 100% distribution to UDM3 since locality == 'South'
+curl -v --http2-prior-knowledge  -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT:$NODE_IP" "http://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access?a=[1-90]"  -H "3gpp-Sbi-Discovery-nf-set-id:set1.udmset.5gc.mnc073.mcc262"  -H "Content-Type: application/json" -d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org","guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"},"ratType":"NR"}' |& grep x-origin | sort | uniq -c | prettify
+
+NF	| Number of Messages
+-----------------------------
+UDM3	| 90
+
+
+Add disturbance on UDM3, SEPPsim-p3
+- - - - - - - - - - - - - - - - - - 
+scpAddSeppsimDisturbance 3
+
+
+#send 90 messages, show 30%/70% distribution to UDM3 since locality == 'South' is sending 503 and all traffic is sent "North"
+curl -v --http2-prior-knowledge  -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT:$NODE_IP" "http://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access?a=[1-90]"  -H "3gpp-Sbi-Discovery-nf-set-id:set1.udmset.5gc.mnc073.mcc262"  -H "Content-Type: application/json" -d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org","guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"},"ratType":"NR"}' |& grep x-origin | sort | uniq -c | prettify
+
+NF	    | Number of Messages
+-----------------------------
+UDM1	| 30
+UDM2	| 60
+
+
+
+++++++++++++++++++++++++++
+Stop Wireshark
+
+scpResetSeppsims
+
+Save Wireshark
+	Export Specified Package
+	UC6_Sub-pool_routing
+	
+Exit Wireshark	
+++++++++++++++++++++++++++
+
+
+++++++++++++++++++++++
+
+SAVE LOG from Terminal
+
+++++++++++++++++++++++
+
+Remove disturbance on SEPPsim-p3 (UDM3)
+---------------------------------------------------
+scpRemoveSeppsimDisturbances
+
+# === K6 ===
+# 
+# 
+# #start some K6 load:
+# ./loadmeter_get_seppsim_counters_udm 5 2
+# 
+# 
+# #switch to TLS for k6
+# scpSetTLS
+# 
+# export SCP_TLS_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[1].nodePort}" services eric-scp-worker)
+# export K61_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-k6" -o jsonpath="{.items[0].metadata.name}")
+# echo $SCP_TLS_PORT; echo $NODE_IP
+# 
+# k exec -it $K61_POD -- sh
+# pkill k6; k6 run  -e SCP_IP=10.63.142.199 -e SCP_PORT=31267 -e RPS=100 -e SET=set1.udmset.5gc.mnc073.mcc262 -e RAMPDURATION=1s -e HOLDDURATION=1h -e TYPE=FW scp_stability_demo_set_apiroot.js --insecure-skip-tls-verify  --no-usage-report 
+
+
+
+# Add disturbance on UDM3, SEPPsim-p3
+# - - - - - - - - - - - - - - - - - - 
+# export MONITOR_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-sc-monitor)
+# 
+# curl -X PUT "http://$NODE_IP:$MONITOR_PORT/monitor/api/v0/commands?target=eric-seppsim-p3&command=config" -d '{"ownDomain":"region1.udm.5gc.mnc073.mcc262.3gppnetwork.org","api":{"nudmUeContextManagement":{"disturbances":[{"status":503}]}}}' | jq
+# 
+# TODO: 20% only successful -> reason "Circuit Breaker" active, only 3 retries in parallel
+
+
+
+RESTORE
+
+export MONITOR_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-sc-monitor)
+curl -X PUT "http://$NODE_IP:$MONITOR_PORT/monitor/api/v0/commands?target=eric-seppsim-p&command=config" -d '{"ownDomain":"region1.udm.5gc.mnc073.mcc262.3gppnetwork.org"}' | jq
+
+cat ~/demo/scp_demo/remove_priogroup_rr | sshpass -p scpscp ssh -t -p $CLI_PORT scp-admin@$NODE_IP 
+
+
+
+#################################################
+# UC7: Indirect routing (Multi-Hop-SCP routing) #
+#################################################
+
+Faults:
+SEPPsim gets message with target-apiroot header and set header -> workaround, add attribute 
+preserve-if-indirect-routing target-api-root-header
+
+----
+UBUNTU:
+export SCP_WORKER_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-scp-worker" -o jsonpath="{.items[0].metadata.name}")
+export SCP2_WORKER_POD=$(kubectl get pods --namespace $NAMESPACE2 -l "app=eric-scp-worker" -o jsonpath="{.items[0].metadata.name}")
+
+sudo ./kubectl-sniff -n $NAMESPACE $SCP2_WORKER_POD &
+sudo ./kubectl-sniff -n $NAMESPACE $SCP_WORKER_POD &
+
+----
+
+
+
+cat resolv.conf
+nameserver 192.168.154.141
+
+#load DT on SCP02
+cat ~/demo/scp_demo/config_addon_for_scp02_udm7.txt | sshpass -p scpscp ssh -t -p 31023 scp-admin@$NODE_IP -s netconf
+
+
+# show configuration to add, or better later in the CLI
+#cat ~/demo/scp_demo/config_addon_scp02.txt  
+cat ~/demo/scp_demo/config_addon_scp02.txt | sshpass -p scpscp ssh -t -p $YP_PORT scp-admin@$NODE_IP -s netconf
+
+sshpass -p scpscp ssh -t -p $CLI_PORT scp-admin@$NODE_IP
+show running-config scp-function nf-instance scp_instance_1 routing-case default_routing routing-rule Send_to_ownPLMN_NfUdm_set3_pr
+show running-config scp-function nf-instance scp_instance_1 nf-pool NfUdm_pr_pool_set3
+show running-config scp-function nf-instance scp_instance_1 nf-pool peer_scp
+show running-config scp-function nf-instance scp_instance_1 static-scp-instance-data
+
+#no NFs discovered in this pool:
+show scp-function nf-instance scp_instance_1 nf-pool NfUdm_pr_pool_set3
+
+
+export SCP_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-scp-worker)
+
+# sent to Pool "NfUdm_pr_pool_set3", UDM7 or SCP2 selected (strict routing)
+curl -v --http2-prior-knowledge  -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT:$NODE_IP" \
+"http://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access" \
+-H "3gpp-Sbi-Discovery-nf-set-id:set3.udmset.5gc.mnc073.mcc262" \
+-H "3gpp-Sbi-target-apiRoot:http://nfUdm7.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org" \
+-H "Content-Type: application/json" \
+-d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org", "guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"}, "ratType":"NR"}' | jq
+
+
+#DNS lookup error leads to 500 error being returned, problem on Simulator side
+
+
+#Now with UDM7
+while true; do sh ~/demo/scp_demo/regUDM7_set3;  sleep 50; done
+
+
+Cleanup:
+cat ~/demo/scp_demo/remove_scp02 | sshpass -p scpscp ssh -t -p $CLI_PORT scp-admin@$NODE_IP 
+
+
+############################################
+# UC8a: SCP - Ingress Message Screening    #
+############################################
+
+Examples from TMO US:
+1.
+"subscriberIdentifier": "imsi-1234"
+subscriberIdentifier {
+ imsi="1234"
+}
+TS15.5.0 vs TS15.3.0 differences
+2. Ip address copy from nf profile level to iPEndpoint
+3. remove suppFeat:0 in SmPolicyContextData   (TS 29.512)
+4. Nokia PCF rejecting sm-policy request without servingNetwork IE -> added
+5. PCC rules like crn#rule1  SMF CLI didn't allow # -> remove # from PCC rule name
+6. pduIPv6AddresswithPrefix    different definition with /64 and without  -> remove 
+7. uetimeZone "+0" for daylight-saving, CHF rejected TS 29.571 Table 5.2.2-1, remove "+0" 
+	YYYY-MM-DD "T" hh:mm:ss+02:00+0   from SMF to CHF in SmPolicyContextData
+8. chargingId 31bit signed vs 32bit unsigned -> divide by 2
+9. 0-usage MUU updates , CHF would reject (N40) 
+10. nnrf-disc, top prio PCF not reachable from SMF, -> modify the NRF response
+
+
+# sent to Pool "NfUdm_rr_pool", UDM1 or UDM2 selected (round robin) -> NO MODIFICATION OF THE MESSAGE YET, 3gpp-sbi-priority still present
+
+curl -v --http2-prior-knowledge  -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT:$NODE_IP" \
+"http://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access" \
+-H "3gpp-Sbi-Discovery-nf-set-id:set1.udmset.5gc.mnc073.mcc262" \
+-H "3gpp-sbi-priority:top-priority" \
+-H "Content-Type: application/json" \
+-d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org", "guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"}, "ratType":"NR"}' | jq
+
+
+
+    <request-screening-case>
+        <name>ingress_req</name>
+        <screening-rule>
+            <name>ignore_priority</name>
+            <screening-action>
+              <name>udm_remove_priority_header</name>
+              <action-remove-header>
+                 <name>
+                    3gpp-sbi-priority
+                 </name>
+              </action-remove-header>
+            </screening-action>
+        </screening-rule>
+    </request-screening-case>
+	
+	
+	
+
+cat ~/demo/scp_demo/config_addon_ingress_ms.txt | sshpass -p scpscp ssh -t -p $YP_PORT scp-admin@$NODE_IP -s netconf
+
+sshpass -p scpscp ssh -t -p $CLI_PORT scp-admin@$NODE_IP
+show running-config scp-function nf-instance scp_instance_1 request-screening-case
+show running-config scp-function nf-instance own-network
+
+
+# sent to Pool "NfUdm_rr_pool", UDM1 or UDM2 selected (round robin)
+curl -v --http2-prior-knowledge  -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT:$NODE_IP" \
+"http://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access" \
+-H "3gpp-Sbi-Discovery-nf-set-id:set1.udmset.5gc.mnc073.mcc262" \
+-H "3gpp-sbi-priority:top-priority" \
+-H "Content-Type: application/json" \
+-d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org", "guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"}, "ratType":"NR"}' | jq
+
+cat ~/demo/scp_demo/remove_ms | sshpass -p scpscp ssh -t -p $CLI_PORT scp-admin@$NODE_IP 
+
+  action-add-header       Add a header to the request
+  action-go-to            Jump to another request screening case
+  action-log              Define log level for troubleshooting
+  action-modify-header    Modify the value of a header in the request
+  action-reject-message   Reject the request message with a reply message
+  action-remove-header    Remove header from the request
+  ---
+  action-drop-message  
+  action-exit-screening-case
+
+	
+
+action-log
+-----------
+scp-function nf-instance scp_instance_1 request-screening-case ingress_req
+  screening-action log
+    action-log text "ACTION-LOG: Performed removal of header 3gpp-sbi-prio"
+    action-log log-level info
+
+commit	
+	
+CNOM:	
+message:ACTION-LOG*
+
+
+## Remove Header (reply) - "x-lua"
+## - - - - - - - - - - - - - - -
+## 
+## scp-function nf-instance scp_instance_1
+##  response-screening-case screen_response
+##   screening-rule remove_x_lua
+##    predicate-expression var.setid='set1.udmset.5gc.mnc073.mcc262'
+##    screening-action remove_x_lua_action
+##     action-remove-header name x-lua
+##    !
+##   !
+##  !
+## !
+## 
+## scp-function nf-instance scp_instance_1 out-response-screening-case-ref screen_response 
+## 
+## 
+## 
+## 
+## Remove Header (request) - "user-agent"
+## - - - - - - - - - - - - - - -
+## 
+## scp-function nf-instance scp_instance_1
+##  request-screening-case screen_request
+##   screening-rule remove_user_agent
+##    predicate-expression var.setid=='set1.udmset.5gc.mnc073.mcc262'
+##    screening-action remove_user_agent_action
+##     action-remove-header name user-agent
+##    !
+##   !
+##  !
+## !
+## 
+## scp-function nf-instance scp_instance_1 in-request-screening-case-ref screen_request
+
+
+############################################
+# UC8b: SCP - Egress Message Screening     #
+############################################
+
+On nf-pool level:
+in-response-screening-case-ref
+out-request-screening-case-ref
+
+
+
+uetimeZone "+0" for daylight-saving, CHF rejected TS 29.571 Table 5.2.2-1, remove "+0" 
+	YYYY-MM-DD "T" hh:mm:ss+02:00+0   from SMF to CHF in SmPolicyContextData
+	
+# sent to Pool "NfUdm_rr_pool", UDM1 or UDM2 selected (round robin) -> NO MODIFICATION OF THE MESSAGE YET, 3gpp-sbi-priority still present
+
+curl -v --http2-prior-knowledge  -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT:$NODE_IP" \
+"http://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT/nudm-sdm/v2/imsi-2089300007487/am-data/sor-ack" \
+-H "3gpp-Sbi-Discovery-nf-set-id:set1.udmset.5gc.mnc073.mcc262" \
+-H "Content-Type: application/json" \
+-d '{"provisioningTime": "2022-06-21T14:25:46.703+02:00+1"}' 
+
+
+< HTTP/2 400
+< content-length: 11
+< content-type: application/problem+json
+< x-envoy-upstream-service-time: 6
+< date: Tue, 21 Jun 2022 19:47:38 GMT
+< server: SCP-scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org
+<
+* Connection #0 to host scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org left intact
+Bad Request
+
+
+scp-function nf-instance scp_instance_1
+ message-data provisioningTime
+  body-json-pointer /provisioningTime
+  extractor-regex   "(?P<ptime>\d\d\d\d\-\d\d\-\d\d[Tt]\d\d:\d\d:\d\d\.?\d*[+-]\d\d:\d\d)(?P<dst>\+\d)"
+ !
+!
+
+scp-function nf-instance scp_instance_1
+ request-screening-case egress_req
+  message-data-ref [ provisioningTime ]
+  screening-rule remove_dst_from_time
+   condition "var.dst exists"
+   screening-action remove_dst_from_time
+    action-modify-json-body json-pointer /provisioningTime
+    action-modify-json-body replace-from-var-name variable ptime
+   !
+  !
+ !
+!
+
+scp-function nf-instance scp_instance_1
+ nf-pool NfUdm_rr_pool
+  out-request-screening-case-ref egress_req
+  nf-pool-discovery NfUdm_rr_dyn_pool
+   update-interval 5s
+   nrf-query NF_UDM
+    requester-nf-type SCP
+    nf-type           udm
+    nf-set-id         set1.udmset.5gc.mnc073.mcc262
+   !
+  !
+ !
+!
+
+  extractor-regex   "(?P<ptime>\d\d\d\d\-\d\d\-\d\d[Tt]\d\d:\d\d:\d\d\.?\d*[+\-]\d\d:\d\d)(?P<dst>+\d)"  <---- ERROR
+
+
+
+############################################
+# UC9: vTAP                                #
+############################################
+
+Preparation:
+export SFTP_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-atmoz-sftp )
+export SCP_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-sepp-worker" -o jsonpath="{.items[0].metadata.name}")
+
+sshpass -p admin sftp -P $SFTP_PORT admin@$NODE_IP
+cd data
+rm *
+exit
+
+k get cm | grep tap
+k get cm eric-sc-tap-config -o yaml
+
+k edit configmap eric-sc-tap-config
+# 
+wait 1 min
+
+k logs -f $SCP_POD -c tapagent --tail=0 | jl
+
+
+k patch cm/eric-scp-worker-tap-config --type merge -p '{"data":{"tap_config.json":"[\n       {\n            \"TAP_ENABLED\": true\n       }\n]\n"}}'
+k patch cm/eric-scp-worker-tap-config --type merge -p '{"data":{"tap_config.json":"[\n       {\n            \"ServiceName\": \"eric-scp-worker\",\n            \"TAP_ENABLED\": true,\n            \"TracingMode\": \"sftp\",\n            \"TAP_INT\": \"eth0\",\n            \"NF_TYPE\": \"scp\",\n            \"TAP_FILTER\": \"port 80\"\n       }\n]\n"}}'
+k patch cm/eric-scp-worker-tap-config --type merge -p '{"data":{"tap_config.json":"[\n       {\n            \"ServiceName\": \"eric-scp-worker\",\n            \"TAP_ENABLED\": false,\n            \"TracingMode\": \"sftp\",\n            \"TAP_INT\": \"eth0\",\n            \"NF_TYPE\": \"scp\",\n            \"TAP_FILTER\": \"port 80\"\n       }\n]\n"}}'
+
+k get cm eric-sc-tap-config -o yaml | sed 's/true/false/g' | k replace -f -
+k get cm eric-sc-tap-config -o yaml | sed 's/false/true/g' | k replace -f -
+
+k get cm eric-sc-tap-config -o yaml | sed 's/true/false/g' | k replace -f -
+k get cm eric-sc-tap-config -o yaml | sed 's/false/true/g' | k replace -f -
+
+
+k get cm eric-sc-tap-config -o yaml | sed -zE 's/(eric-scp-manager\",\n\s+\"TAP_ENABLED\": )false/\1true/' | k replace -f -
+
+
+k get cm eric-sc-tap-config -o yaml | sed -zE 's/(eric-scp-worker\",\n\s+\"TAP_ENABLED\": )false/\1true/' | k replace -f -
+#wait 1min
+k logs -f $SCP_POD -c tapagent --tail=0 | jl
+
+
+# sent to Pool "Pool_UDM_fw", UDM1 or UDM2 selected (round robin)
+curl -v --http2-prior-knowledge  -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT:$NODE_IP" \
+"http://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access" \
+-H "3gpp-Sbi-Discovery-nf-set-id:set1.udmset.5gc.mnc073.mcc262" \
+-H "Content-Type: application/json" \
+-d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org", "guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"}, "ratType":"NR"}' | jq
+
+
+k get cm eric-sc-tap-config -o yaml | sed -zE 's/(eric-scp-worker\",\n\s+\"TAP_ENABLED\": )true/\1false/' | k replace -f -
+#wait 1min
+
+
+# sent 1000 messages to Pool "Pool_UDM_fw", UDM1 or UDM2 selected (round robin)
+curl -v --http2-prior-knowledge  -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT:$NODE_IP" \
+"http://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access?a=[1-1000]" \
+-H "3gpp-Sbi-Discovery-nf-set-id:set1.udmset.5gc.mnc073.mcc262" \
+-H "Content-Type: application/json" \
+-d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org", "guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"}, "ratType":"NR"}' 
+
+
+
+
+sshpass -p admin sftp -P $SFTP_PORT admin@$NODE_IP
+cd data
+ls -ltra
+get *
+exit
+
+open in Wireshark
+
+
+############################################
+# UC9a: vTAP - HTTP capture (single shot)  #
+############################################
+
+Preparation:
+export SFTP_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-atmoz-sftp )
+export SCP_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-scp-worker" -o jsonpath="{.items[0].metadata.name}")
+export SCP_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-scp-worker)
+
+
+k edit configmap eric-sc-tap-config
+{
+     "ServiceName": "eric-scp-worker",
+     "TAP_ENABLED": true,
+     "TracingMode": "sftp",
+     "TAP_INT": "eth0",
+     "NF_TYPE": "scp",
+     "TAP_FILTER": "port 80"
+},
+
+# set to "true" scp-worker trace
+wait 1 min
+
+k logs -f $SCP_POD -c tapagent --tail=0 | jl
+
+# sent to Pool "Pool_UDM_fw", UDM1 or UDM2 selected (round robin)
+curl -v --http2-prior-knowledge  -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT:$NODE_IP" \
+"http://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access" \
+-H "3gpp-Sbi-Discovery-nf-set-id:set1.udmset.5gc.mnc073.mcc262" \
+-H "Content-Type: application/json" \
+-d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org", "guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"}, "ratType":"NR"}' | jq
+
+
+k get cm eric-sc-tap-config -o yaml | sed -zE 's/(eric-scp-worker\",\n\s+\"TAP_ENABLED\": )true/\1false/' | k replace -f -
+#wait 1min
+
+
+
+
+############################################
+# UC9b: vTAP - HTTPs capture (single shot) #
+############################################
+
+export SCP_TLS_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[1].nodePort}" services eric-scp-worker)
+
+{
+     "ServiceName": "eric-scp-worker",
+     "TAP_ENABLED": true,
+     "TracingMode": "sftp",
+     "TAP_INT": "eth0",
+     "NF_TYPE": "scp",
+     "TAP_FILTER": "port 80 or port 443"
+},
+#k get cm eric-sc-tap-config -o yaml | sed -zE 's/(eric-scp-worker\",\n\s+\"TAP_ENABLED\": )false/\1true/' | k replace -f -
+
+
+# sent to Pool "Pool_UDM_fw", UDM1 or UDM2 selected (round robin)
+curl -v --http2-prior-knowledge  -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_TLS_PORT:$NODE_IP" \
+"https://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_TLS_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access" \
+-H "3gpp-Sbi-Discovery-nf-set-id:set1.udmset.5gc.mnc073.mcc262" \
+-H "Content-Type: application/json" \
+-k --cert $GIT_PATH/5g_proto/.certificates/scpwrk/cert.pem --key $GIT_PATH/5g_proto/.certificates/scpwrk/key.pem \
+-d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org", "guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"}, "ratType":"NR"}' | jq
+
+
+k get cm eric-sc-tap-config -o yaml | sed -zE 's/(eric-scp-worker\",\n\s+\"TAP_ENABLED\": )true/\1false/' | k replace -f -
+#wait 1min
+
+
+
+
+############################################
+# UC9c: vTAP - HTTP, with capt.filter (NRF)#
+############################################
+#VDI:
+#Configure a wrong port for NRF and then the correct one to trigger a MAGIC packet
+cat ~/demo/scp_demo/scp_demo_wrong_nrf_port.xml | sshpass -p scpscp ssh -t -p $YP_PORT scp-admin@$NODE_IP -s netconf | grep "<rpc-reply"
+cat ~/demo/scp_demo/scp_demo_correct_nrf_port.xml | sshpass -p scpscp ssh -t -p $YP_PORT scp-admin@$NODE_IP -s netconf | grep "<rpc-reply"
+
+export SCPM_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-scp-manager" -o jsonpath="{.items[0].metadata.name}")
+#export SCP_MANAGER_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-scp-manager" -l "leader=eric-scp-manager-leader" -o jsonpath="{.items[0].metadata.name}")
+
+k logs -f $SCPM_POD -c tapagent --tail=0 | jl
+
+
+export NRF_IP=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-nrfsim" -o jsonpath="{.items[0].status.podIP}")
+
+{
+     "ServiceName": "eric-scp-manager",
+     "TAP_ENABLED": true,
+     "TracingMode": "sftp",
+     "TAP_INT": "eth0",
+     "NF_TYPE": "scp",
+     "TAP_FILTER": "port 80 and ip host 192.168.161.148 -c 20"
+}
+
+
+k get cm eric-sc-tap-config -o yaml | sed -zE 's/(eric-scp-manager\",\n\s+\"TAP_ENABLED\": )true/\1false/' | k replace -f -
+
+can use for any tcpdump options, e.g. also -c 100
+
+
+############################################
+# UC 9d: traffic                           #
+############################################
+
+
+a) copy files to K6 if not already done:
+export K61_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-k6" -o jsonpath="{.items[0].metadata.name}")
+k cp ~/demo/scp_demo/scp_stability_test_set1_b.js ${K61_POD}:/tests/scp_stability_test_set1.js
+k cp $GIT_PATH/5g_proto/.certificates/scpwrk/cert.pem ${K61_POD}:/certs/K6.crt
+k cp $GIT_PATH/5g_proto/.certificates/scpwrk/key.pem ${K61_POD}:/certs/K6.key
+
+
+
+export SCP_TLS_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[1].nodePort}" services eric-scp-worker)
+echo $SCP_TLS_PORT; echo $NODE_IP
+
+k exec -it $K61_POD -- sh
+
+# start 1000 TPS on RR traffic, about 20% load on SCP
+k exec -it $K61_POD -- k6 run -e SCP_HOST=scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org -e SCP_IP=$NODE_IP -e SCP_PORT=$SCP_TLS_PORT -e SET=set1.udmset.5gc.mnc073.mcc262 -e RPS=1000 -e HOLDDURATION=600s -e RAMPDURATION=1s scp_stability_test_set1.js --insecure-skip-tls-verify  --no-usage-report
+
+# start 4000 TPS on RR traffic, about 80% load on SCP  -> 2 scp-workers, no space for 3
+k exec -it $K61_POD -- k6 run -e SCP_HOST=scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org -e SCP_IP=$NODE_IP -e SCP_PORT=$SCP_TLS_PORT -e SET=set1.udmset.5gc.mnc073.mcc262 -e RPS=4000 -e HOLDDURATION=600s -e RAMPDURATION=1s scp_stability_test_set1.js --insecure-skip-tls-verify  --no-usage-report
+
+
+
+
+############################################
+# UC 10: Troubleshooting options (CNOM)    #
+############################################
+
+
+
+Counter: 
+metrics-query | include scp
+metrics-query | include envoy
+
+
+Alarms:
+show alarm
+show alarm-history 
+
+
+
+
+
+
+############################################
+# UC 11: SLF                               #
+############################################
+
+
+scp-function nf-instance scp_instance_1
+ slf-lookup-profile slfprofile1
+  request-timeout                  1000
+  identity-type                    gpsi
+  requester-nf-type                AMF
+  target-nf-type                   UDM
+  message-data-ref                 gpsi
+  result-variable-name             slfresult
+  routing-case-identity-not-found  slf_error_identity-not-found
+  routing-case-destination-unknown slf_error_destination-unknown
+  routing-case-identity-missing    slf_error_identity-missing
+  routing-case-lookup-failure      slf_error_lookup-failure
+ !
+ message-data gpsi
+  body-json-pointer /gpsi
+  variable-name     gpsi
+ !
+ routing-case slf_error_identity-not-found
+  ! first
+  routing-rule reject
+   condition true
+   ! first
+   routing-action 1
+    action-reject-message status 500
+    action-reject-message title "SLF ERROR identity-not-found\n"
+    action-reject-message format text
+   !
+  !
+ !
+ routing-case slf_error_destination-unknown
+  ! first
+  routing-rule reject
+   condition true
+   ! first
+   routing-action 1
+    action-reject-message status 500
+    action-reject-message title "SLF ERROR destination-unknown\n"
+    action-reject-message format text
+   !
+  !
+ ! 
+ routing-case slf_error_lookup-failure
+  ! first
+  routing-rule reject
+   condition true
+   ! first
+   routing-action 1
+    action-reject-message status 500
+    action-reject-message title "SLF ERROR lookup-failure\n"
+    action-reject-message format text
+   !
+  !
+ ! 
+ routing-case slf_error_identity-missing
+  ! first
+  routing-rule reject
+   condition true
+   ! first
+   routing-action 1
+    action-reject-message status 500
+    action-reject-message title "SLF ERROR identity-missing\n"
+    action-reject-message format text
+   !
+  !
+ !  
+!
+
+scp-function nf-instance scp_instance_1
+ routing-case default_routing
+  routing-rule query_slf
+   condition var.setid=='set3.udmset.5gc.mnc073.mcc262'
+   routing-action slfquery
+    action-slf-lookup slf-lookup-profile-ref slfprofile1
+   !
+   routing-action forward_message
+    action-route-round-robin failover-profile-ref fop1
+    action-route-round-robin target-nf-pool nf-pool-ref NfUdm_rr_pool
+   !
+  !
+ !
+!
+
+
+# sent to Pool "Pool_UDM_fw", UDM1 or UDM2 selected (round robin)
+curl -v --http2-prior-knowledge  -X PUT --resolve "scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT:$NODE_IP" \
+"http://scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org:$SCP_PORT/nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access" \
+-H "3gpp-Sbi-Discovery-nf-set-id:set3.udmset.5gc.mnc073.mcc262" \
+-H "Content-Type: application/json" \
+-d '{"amfInstanceId": "fde21b56-2e47-49dd-9a1f-2769e5a8f45d", "deregCallbackUri": "http://nfAmf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org", "guami":{"plmnId":{"mcc":"262","mnc":"073"},"amfId":"Fc4E30"}, "ratType":"NR", "gpsi":"msisdn-491721357924600"}'
+
+
+#register GPSI range
+curl -X PUT "http://$NODE_IP:$NRFSIM_PORT/nnrf-nfm/v1/nf-instances/2ec8ac0b-265e-4165-86e9-e0735e6ce100" -H "Content-Type: application/json" -d '{"nfInstanceId":"2ec8ac0b-265e-4165-86e9-e0735e6ce100","nfType":"UDM","nfStatus":"REGISTERED","fqdn":"NfUdm_rr_pool","priority":1,"udmInfo":{"gpsiRanges":[{"start":"491721357924600","end":"491721357924609"}]},"nfServicePersistence":false,"nfProfileChangesInd":false,"lcHSupportInd":false,"olcHSupportInd":false}' | jq
+
+
+############################################
+# UC20: Scaling                            #
+############################################
+
+        1. From Kubernetes dashboard, show the ease with which we can scale -> allows for super simple user experience
+        2. Point out the PODs coming up on the terminal
+        3. Start traffic
+        4. Scale to 4 worker PODs
+
+        VISUAL:
+        CNOM:		See pods, traffic 
+        Terminal 1: watch "kubectl -n $NAMESPACE get hpa"
+        Terminal 2: watch "kubectl -n $NAMESPACE get pods | grep scp-worker"
+
+
+0. Prepare
+
+a) Stop Wireshark, stop traffic
+b) filter in CNOM on "worker"
+
+c) copy files to K6 if not already done:
+export K61_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-k6" -o jsonpath="{.items[0].metadata.name}")
+k cp ~/demo/scp_demo/scp_stability_test_set1_b.js ${K61_POD}:/tests/scp_stability_test_set1.js
+k cp $GIT_PATH/5g_proto/.certificates/scpwrk/cert.pem ${K61_POD}:/certs/K6.crt
+k cp $GIT_PATH/5g_proto/.certificates/scpwrk/key.pem ${K61_POD}:/certs/K6.key
+
+e)
+kubectl -n $NAMESPACE delete hpa eric-scp-worker
+kubectl -n $NAMESPACE scale deploy eric-scp-worker --replicas=1
+
+
+SHOW:
+kubectl -n $NAMESPACE autoscale deployment eric-scp-worker --cpu-percent=50 --min=1 --max=4
+
+kubectl -n $NAMESPACE get hpa
+
+f)
+watch "kubectl -n $NAMESPACE get hpa"
+watch "kubectl -n $NAMESPACE get pods | grep scp-worker"
+watch "kubectl -n $NAMESPACE top pods | grep scp-worker"
+
+
+
+1. K6 POD traffic
+
+export SCP_TLS_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[1].nodePort}" services eric-scp-worker)
+echo $SCP_TLS_PORT; echo $NODE_IP
+
+k exec -it $K61_POD -- sh
+
+# start 1000 TPS on RR traffic, about 20% load on SCP
+k exec -it $K61_POD -- k6 run -e SCP_HOST=scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org -e SCP_IP=$NODE_IP -e SCP_PORT=$SCP_TLS_PORT -e SET=set1.udmset.5gc.mnc073.mcc262 -e RPS=1000 -e HOLDDURATION=600s -e RAMPDURATION=1s scp_stability_test_set1.js --insecure-skip-tls-verify  --no-usage-report --no-connection-reuse  
+
+# start 4000 TPS on RR traffic, about 80% load on SCP  -> 2 scp-workers, no space for 3
+k exec -it $K61_POD -- k6 run -e SCP_HOST=scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org -e SCP_IP=$NODE_IP -e SCP_PORT=$SCP_TLS_PORT -e SET=set1.udmset.5gc.mnc073.mcc262 -e RPS=5000 -e HOLDDURATION=600s -e RAMPDURATION=1s scp_stability_test_set1.js --insecure-skip-tls-verify  --no-usage-report
+
+
+#pkill k6; k6 run -e SCP_HOST=scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org -e SCP_IP=10.63.143.68 -e SCP_PORT=31167 -e SET=set1.udmset.5gc.mnc073.mcc262 -e RPS=4000 -e HOLDDURATION=600s -e RAMPDURATION=1s scp_stability_test_set1.js --insecure-skip-tls-verify  --no-usage-report
+
+
+In case of manual scale:
+k scale deployment eric-scp-worker --replicas=3
+
+restore
+k delete hpa eric-scp-worker
+
+
+
+############################################
+# UC21: Resilience                         #
+############################################
+
+Prerequisite:
+k scale deployment eric-scp-worker --replicas=3
+
+export SCP_TLS_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[1].nodePort}" services eric-scp-worker)
+echo $SCP_TLS_PORT; echo $NODE_IP
+
+
+# UDM 1-3, note UDM1 will need DNS entries in scp-manager after restart
+# pkill k6; k6 run -e SCP_HOST=scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org -e SCP_IP=10.63.143.68 -e SCP_PORT=31167 -e SET=set1.udmset.5gc.mnc073.mcc262 -e RPS=4000 -e HOLDDURATION=600s -e RAMPDURATION=1s  scp_stability_test_set1.js --insecure-skip-tls-verify  --no-usage-report
+# 
+# export SCP_MANAGER_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-scp-manager" -o jsonpath="{.items[0].metadata.name}")
+# export UDM1_SVC_IP=$(kubectl get svc --namespace $NAMESPACE eric-seppsim-p1-mcc-206-mnc-33 -o jsonpath="{.spec.clusterIP}")
+# 
+# kubectl --namespace $NAMESPACE exec -it $SCP_MANAGER_POD  -- sh -c "echo ${UDM1_SVC_IP} nfUdm1.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org  >> /etc/hosts"
+
+
+
+UDM4/5
+k exec -it $K61_POD -- k6 run -e SCP_HOST=scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org -e SCP_IP=$NODE_IP -e SCP_PORT=$SCP_TLS_PORT -e TAPI=http://nfUdm4.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org -e SET=set2.udmset.5gc.mnc073.mcc262 -e RPS=1000 -e HOLDDURATION=1200s -e RAMPDURATION=1s  scp_stability_test_set1.js --insecure-skip-tls-verify  --no-usage-report
+
+
+pkill k6; k6 run -e SCP_HOST=scp1.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org -e SCP_IP=10.63.143.68 -e SCP_PORT=31167 -e TAPI=http://nfUdm4.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org -e SET=set2.udmset.5gc.mnc073.mcc262 -e RPS=1000 -e HOLDDURATION=1200s -e RAMPDURATION=1s  scp_stability_test_set1.js --insecure-skip-tls-verify  --no-usage-report
+
+
+
+scp-worker restart
+-----------------
+
+        1. Mention Kubernetes feature of resilience -> we have specified that we want to always have 3 worker
+                pods running -> when we kill one, another will be brought up somewhere else
+        2. We are now showing a manual kill of the POD, but the same principal applies if the POD were to terminate for any other reason
+        3. Show new POD up and running in seconds
+
+        VISUAL
+        CNOM:		See pods, traffic 
+        Terminal 1: Showing current pods, watch "kubectl -n $NAMESPACE get pods | grep scp-worker"
+        Terminal 2: kubectl --namespace $NAMESPACE delete pod eric-scp-worker-deployment-859c7fd79-29m95          <- Get id from the above printout
+
+k get pods |grep scp-worker
+k delete pod <scp-worker>   #  --grace-period=0 --force
+
+
+scp-manager restart
+-------------------
+
+        1. Mention Kubernetes feature of resilience -> we have specified that we want to always have four worker
+                pods running -> when we kill one, another will be brought up somewhere else
+        2. We are now showing a manual kill of the POD, but the same principal applies if the POD were to terminate for any other reason
+        3. Show new POD up and running in seconds
+
+        VISUAL
+        CNOM:		See pods, traffic 
+        Terminal 1: Showing current pods, watch "kubectl -n $NAMESPACE get pods | grep scp-manager"
+        Terminal 2: kubectl --namespace $NAMESPACE delete pod eric-scp-manager-7744fd6f78-nqxk4         <- Get id from the above printout
+
+k get pods |grep scp-manager
+k delete pod <scp-manager>   #  --grace-period=0 --force
+
+scp-manager + scp-worker restart
+--------------------------------
+
+k delete pod <scp-manager>   <scp-worker>   #  --grace-period=0 --force
+
+-> New scp-worker restarts 1x since no connection to manager
+
+
+
+
+
+============
+Appendix A:
+============
+
+N32 (SEPP-SEPP): 
+  
+N8 (AMF-UDM) 
+    TS 29.518
+    UDM->AMF    Namf_Communication  
+        AMFStatusChangeSubscribe, AMFStatusChangeUnSubscribe, AMFStatusChangeNotify 
+        /namf-comm/v1
+            /ue-contexts/{ueContextId}
+            /ue-contexts/{ueContextId}/release
+            /ue-contexts/{ueContextId}/assign-ebi
+            /ue-contexts/{ueContextId}/transfer
+    UDM->AMF    Namf_EventExposure  
+        Subscribe, UnSubscribe, Notify
+        /namf-evts/v1
+            /subscriptions
+    UDM->AMF    Namf_Location   
+        ProvideLocationInfo
+        /namf-loc/v1
+            /{ueContextId}/provide-pos-info  
+    UDM->AMF    Namf_MT 
+        ProvideDomainSelectionInfo
+        /namf-mt/v1
+            /ue-contexts/{ueContextId}
+
+    TS 29.503
+    AMF-> UDM   Nudm_SubscriberDataManagement
+        Get, Subscribe, ModifySubscription, Unsubscribe, Notification
+    AMF-> UDM   Nudm_SubscriberDataManagement   
+        Info
+--> AMF-> UDM   Nudm_UEContextManagement
+        Registration, Deregistration, DeregistrationNotification, Get, Update
+    AMF-> UDM   Nudm_UEContextManagement
+        PCscfRestorationNotification        
+        
+N12 (AMF-AUSF)
+    TS 29.509
+    AMF->AUSF   Nausf_UEAuthentication  
+        Authenticate
+
+N27 (vNRF-hNRF)
+    TS 29.510
+    vNRF<->hNRF Nnrf_AccessToken    
+        Get     
+    vNRF<->hNRF Nnrf_NFDiscovery
+        NFDiscover
+    vNRF<->hNRF Nnrf_NFManagement
+        NFRegister, NFUpdate, NFDeregister
+    vNRF<->hNRF Nnrf_NFManagement
+        NFStatusSubscribe, NFStatusNotify, NFStatusUnSubscribe, NFListRetrieval, NFProfileRetrieval
+    vNRF<->hNRF NnrfBootstrapping
+        Get
+
+N21 (SMSF-UDM) 
+    TS 29.503
+    SMSF->UDM   Nudm_SubscriberDataManagement   
+        Get, Subscribe, ModifySubscription, Unsubscribe, Notification
+    SMSF->UDM   Nudm_UEContextManagement
+        Registration/Deregistration
+    SMSF->UDM   Nudm_UEContextManagement
+        Get
+        
+N16 (vSMF-hSMF)
+    TS 29.502
+    H-SMF<->V-SMF   Nsmf_PDUSession
+        Create, Update, Release, StatusNotify   
+
+
+--> AMF-> UDM   Nudm_UEContextManagement
+nudm-uecm/v1
+        Registration (Retrieve UE’s registration data sets)
+		The Nudm_UECM_Registration service operation is used by NFs (AMF, SMF, SMSF)
+		to register at the UDM as the NF serving the UE (AMF and SMSF) 
+		
+PUT   nudm-uecm/v1/{ueId}/registrations/amf-3gpp-access
+
+example:
+PUT /nudm-uecm/v1/imsi-2089300007487/registrations/amf-3gpp-access
+
+		registrationData := models.Amf3GppAccessRegistration{
+			AmfInstanceId:          amfSelf.NfId,
+			InitialRegistrationInd: initialRegistrationInd,
+			Guami:                  &amfSelf.ServedGuamiList[0],
+			RatType:                ue.RatType,
+			// TODO: not support Homogenous Support of IMS Voice over PS Sessions this stage
+			ImsVoPs: models.ImsVoPs_HOMOGENEOUS_NON_SUPPORT,
+
+ueId:		
+SUPI (i.e. imsi or nai) or GPSI (i.e. msisdn or extid) is used with the GET method.		
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Amf3GppAccessRegistration'
+
+
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Amf3GppAccessRegistration'
+          headers:
+            Location:
+              description: 'Contains the URI of the newly created resource, according to the structure: {apiRoot}/nudm-uecm/v1/{ueId}/registrations/amf-3gpp-access'
+              required: true
+              schema:
+                type: string
+
+
+		Deregistration, DeregistrationNotification, Get, Update
+		
+FROM 3GPP TS 29.503:
+--------------------
+5.3.2.2.2 	AMF registration for 3GPP access 
+Figure 5.3.2.2.2-1 shows a scenario where the AMF sends a request to the UDM to update the AMF registration
+information for 3GPP access (see also 3GPP TS 23.502 [3] figure 4.2.2.2.2-1 step 14). The request contains the UE's
+identity (/{ueId}) which shall be a SUPI and the AMF Registration Information for 3GPP access.
+
+AMF UDM
+1. PUT …/{ueId}/registrations/amf-3gpp-access
+(Amf3GppAccessRegistration)
+2a. 204 No Content
+2b. 201 Created
+2c. 403 Forbidden
+
+Figure 5.3.2.2.2-1: AMF registering for 3GPP access
+
+1. The AMF sends a PUT request to the resource representing the UE's AMF registration for 3GPP access to update or create AMF registration information.
+
+2a. On success, and if another AMF is registered for 3GPP access, the UDM updates the Amf3GppAccessRegistration resource by replacing it with the received resource information, and responds with "204 No Content".
+ UDM shall invoke the Deregistration Notification service operation towards the old AMF using the callback URI provided by the old AMF.
+ 
+2b. If the resource does not exist (there is no previous AMF information stored in UDM for that user), UDM stores the received AMF registration data for 3GPP access and responds with HTTP Status Code "201 created". A response body may be included to convey additional information to the NF consumer (e.g., features supported by UDM).
+
+2c. If the operation cannot be authorized due to e.g UE does not have required subscription data, access barring or roaming restrictions, HTTP status code "403 Forbidden" should be returned including additional error information in the response body (in "ProblemDetails" element). 
+		
+Amf3GppAccessRegistration 6.2.6.2.2 The complete set of information relevant to the AMF where the UE has registered via 3GPP access. 		
+
+6.2.6.2.2 Type: Amf3GppAccessRegistration
+Table 6.2.6.2.2-1: Definition of type Amf3GppAccessRegistration
+Attribute name 			Data type 			P Cardinality 	Description
+amfId 					NfInstanceId 		M 1 			Identifier of the serving AMF. It shall be formatted as
+															a Globally Unique AMF ID, as defined in
+															3GPP TS 23.003 [8]. fde21b56-2e47-49dd-9a1f-2769e5a8f45d
+supportedFeatures 		SupportedFeatures	O 0..1 			See subclause 6.2.8
+purgeFlag 				PurgeFlag 			O 0..1 			This flag indicates whether or not the AMF has
+															deregistered. It shall not be included in the		
+															Registration service operation.
+pei 					Pei 				O 0..1 			Permanent Equipment Identifier.
+imsVoPS 				ImsVoPS 			O 0..1 			Indicates per UE if "IMS Voice over PS Sessions" is
+															homogeneously supported in all TAs in the serving
+															AMF, or homogeneously not supported, or if support
+															is non-homogeneous/unknown. Absence of this
+															attribute shall be interpreted as "non homogenous or unknown" support.
+deregCallbackUri 		Uri 				M 1 			A URI provided by the AMF to receive (implicitly
+															subscribed) notifications on deregistration.
+pcscfRestorationCallbackUri Uri 			O 0..1 			A URI provided by the AMF to receive (implicitly
+															subscribed) notifications on the need for P-CSCF Restoration.
+
+Optional attributes of this type that are also attributes of the derived type Amf3GppAccessRegistrationModification
+(see clause 6.2.6.2.7) shall not be marked with "nullable : true" in the OpenAPI file. 
+
+
+
+============
+Appendix B:
+============
+
+28.12 NF Set Identifier (NF Set ID)
+A NF Set Identifier is a globally unique identifier of a set of equivalent and interchangeable CP NFs from a given network that provide distribution, redundancy and scalability (see clause 5.21.3 of 3GPP TS 23.501 [119]).
+
+An NF Set Identifier shall be constructed from the MCC, MNC, NID (for SNPN), NF type and a Set ID.
+
+A NF Set Identifier shall be formatted as the following string:
+
+set<Set ID>.<nftype>set.5gc.mnc<MNC>.mcc<MCC> for a NF Set in a PLMN, or
+
+set<Set ID>.<nftype>set.5gc.nid<NID>.mnc<MNC>.mcc<MCC> for a NF Set in a SNPN.
+
+where:
+
+– the <MCC> and <MNC> shall identify the PLMN of the NF Set and shall be encoded as follows:
+
+– <MCC> = 3 digits
+
+– <MNC> = 3 digits
+
+If there are only 2 significant digits in the MNC, one "0" digit shall be inserted at the left side to fill the 3 digits coding of MNC.
+
+– the Network Identifier (NID) shall be encoded as hexadecimal digits as specified in clause 12.7.
+
+– the <NFType> shall identify the NF type of the NFs within the NF set and shall be encoded as a value of Table 6.1.6.3.3-1 of 3GPP TS 29.510 [130] but with lower case characters;
+
+– the Set ID shall be a NF type specific Set ID within the PLMN, chosen by the operator, that shall consist of alphabetic characters (A-Z and a-z), digits (0-9) and/or the hyphen (-) and that shall end with either an alphabetic character or a digit;
+
+– the case of alphabetic characters is not significant (i.e. two NF Set IDs with the same characters but using different lower and upper cases identify the same NF Set).
+
+For an AMF set, the Set ID shall be set to "<AMF Set ID>.region<AMF Region ID>", with the AMF Region ID and AMF Set ID encoded as defined in 3GPP TS 29.571 [129].
+
+EXAMPLE 1: setxyz.smfset.5gc.mnc012.mcc345
+
+EXAMPLE 2: set12.pcfset.5gc.mnc012.mcc345
+
+EXAMPLE 3: set1.region48.amfset.5gc.mnc012.mcc345 (for AMF Region 48 (hexadecimal) and AMF Set 1)
+
+EXAMPLE 4: setxyz.smfset.5gc.nid000007ed9d5.mnc012.mcc345 for a SNPN with the NID 000007ed9d5 (hexadecimal).
+
+NOTE: If needed, an FQDN can be derived from a given NF Set ID by appending the ".3gppnetwork.org" domain to the NF Set ID, see e.g. SMF Set FQDN in clause 28.3.2.9. For NFs whose NF type contains an underscore and for which an FQDN needs to be derived, the underscore is replaced by an hyphen in the corresponding label of the FQDN.
+
+NF Instances of an NF Set are equivalent and share the same MCC, MNC, NID (for SNPN), NF type and NF Set ID.
+
+28.13 NF Service Set Identifier (NF Service Set ID)
+A NF Service Set Identifier is a globally unique identifier of a set of equivalent and interchangeable CP NF service instances within a NF instance from a given network that provide distribution, redundancy and scalability (see clause 5.21.3 of 3GPP TS 23.501 [119]).
+
+An NF Service Set Identifier shall be constructed from the MCC, MNC, NID (for SNPN), NF instance Identifier, service name and a Set ID.
+
+A NF Service Set Identifier shall be formatted as the following string:
+
+set<Set ID>.sn<Service Name>.nfi<NF Instance ID>.5gc.mnc<MNC>.mcc<MCC> for a NF Service Set in a PLMN, or
+
+set<Set ID>.sn<Service Name>.nfi<NF Instance ID>.5gc.nid<NID>.mnc<MNC>.mcc<MCC> for a NF Service Set in a SNPN.
+
+where:
+
+– the <MCC> and <MNC> shall identify the PLMN of the NF Service Set and shall be encoded as follows:
+
+– <MCC> = 3 digits
+
+– <MNC> = 3 digits
+
+If there are only 2 significant digits in the MNC, one "0" digit shall be inserted at the left side to fill the 3 digits coding of MNC.
+
+– the Network Identifier (NID) shall be encoded as hexadecimal digits as specified in clause 12.7.
+
+– the NFInstanceID shall identify the NF instance of the NF Service set, as defined by 3GPP TS 23.501 [119] and 3GPP TS 29.510 [130];
+
+– the ServiceName shall identify the NF service of the NF Service set, as defined by 3GPP TS 29.510 [130];
+
+– the Set ID shall be a service specific Set ID within the NF instance, chosen by the operator that shall consist of alphabetic characters (A-Z and a-z), digits (0-9) and/or the hyphen (-) and that shall end with either an alphabetic character or a digit;
+
+– the case of alphabetic characters is not significant (i.e. two NF Service Set IDs with the same characters but using different lower and upper cases identify the same NF Service Set).
+
+EXAMPLE 1: setxyz.snnsmf-pdusession.nfifde21b56-2e47-49dd-9a1f-2769e5a8f45d.5gc.mnc012.mcc345
+
+EXAMPLE 2: set2.snnpcf-smpolicycontrol.nfifde21b56-2e47-49dd-9a1f-2769e5a8f45d.5gc.mnc012.mcc345
+
+EXAMPLE 3: setxyz.snnsmf-pdusession.nfifde21b56-2e47-49dd-9a1f-2769e5a8f45d.5gc.nid000007ed9d5.mnc012.mcc345 for a SNPN with the NID 000007ed9d5 (hexadecimal).
+
+NF service instances from different NF instances are equivalent NF service instances if they share the same MCC, MNC, NID (for SNPN), ServiceName and Set ID.
+
+NF Service Sets belonging to different NF Instances are said to be equivalent, if they share the same MCC, MNC, NID (for SNPN), ServiceName and Set ID.
+

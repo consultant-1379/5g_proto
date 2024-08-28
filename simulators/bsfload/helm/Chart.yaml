@@ -1,0 +1,5 @@
+apiVersion: v2
+name: eric-bsf-load
+description: Bsf http load tool. (c) Ericsson GmbH 2021
+type: application
+version: 1.0.0-0

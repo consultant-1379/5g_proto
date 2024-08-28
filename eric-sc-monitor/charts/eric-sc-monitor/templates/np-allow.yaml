@@ -1,0 +1,29 @@
+{{- if .Values.global -}}
+{{- if and .Values.global.networkPolicy .Values.networkPolicy -}}
+{{- if and .Values.global.networkPolicy.enabled .Values.networkPolicy.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ template "eric-sc-monitor.name" . }}-allow
+  annotations:
+{{- include "eric-sc-monitor.helm-annotations" . | indent 4 }}
+{{- include "eric-sc-monitor.config-annotations" . | indent 4 }}
+  labels:
+{{- include "eric-sc-monitor.labels" . | indent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "eric-sc-monitor.name" . }}
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: {{ .Values.adp.tm.iccr.hostname }}
+    ports:
+    - port: {{ .Values.monitor.external.port }}
+      protocol: TCP
+{{- end }}
+{{- end }}
+{{- end }}

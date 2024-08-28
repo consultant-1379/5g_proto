@@ -1,0 +1,25 @@
+serverFiles:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      scrape_timeout: 10s
+      evaluation_interval: 1m
+    scrape_configs:
+      - job_name: prometheus
+        static_configs:
+          - targets:
+            - localhost:9090
+
+      - job_name: 'kubernetes-nodes'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - ###NAMESPACE###
+      - job_name: 'cAdvisor'
+        metrics_path: "/metrics/cadvisor"
+        static_configs:
+        - targets:
+            ###TARGETS###
+        
+                

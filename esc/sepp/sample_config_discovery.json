@@ -1,0 +1,217 @@
+{
+    "title": "",
+    "data": {
+        "ericsson-sepp:sepp-function": {
+            "nf-instance": [
+                {
+                    "name": "instance_1",
+                    "service-address": [
+                        {
+                            "name": "west1SA",
+                            "port": 32386,
+                            "fqdn": "csa.ericsson.se"
+                        }
+                    ],
+                    "nf-profile": [
+                        {
+                            "name": "scp_1",
+                            "service-address-ref": "west1SA",
+                            "nf-type": "chf",
+                            "nf-service": [
+                                {
+                                    "service-instance-id": "1",
+                                    "service-name": "nchf-spendinglimitcontrol",
+                                    "scheme": "http",
+                                    "service-address-ref": [
+                                        "west1SA"
+                                    ]
+                                }
+                            ]
+                        }
+                    ],
+                    "nrf-service": {
+                        "nf-discovery": {
+                            "nrf-group-ref": "group_2"
+                        },
+                        "nf-management": {
+                            "nrf-group-ref": []
+                        }
+                    },
+                    "nrf-group": [
+                        {
+                            "name": "group_2",
+                            "nf-profile-ref": "scp_1",
+                            "nrf": [
+                                {
+                                    "name": "nrf_1",
+                                    "fqdn": "eric-nrfsim.5g-bsf-eedstl",
+                                    "scheme": "http",
+                                    "ip-endpoint": [
+                                        {
+                                            "name": "nrf_west1_ep",
+                                            "ipv4-address": "10.106.36.101",
+                                            "port": 80
+                                        }
+                                    ],
+                                    "max-retries": 0,
+                                    "retry-timeout": 2000,
+                                    "priority": 1
+                                }
+                            ]
+                        }
+                    ],
+                    "vpn": [
+                        {
+                            "name": "vpn_own",
+                            "port": 32386,
+                            "ipv4-address": "10.107.83.190"
+                        }
+                    ],
+                    "pool": [
+                        {
+                            "name": "pool-1",
+                            "failover-behavior-ref": "fob1",
+                            "pool-discovery": [
+                                {
+                                    "name": "chfs",
+                                    "nrf-query": [
+                                        {
+                                            "name": "query-1",
+                                            "nf-type": "chf"
+                                        }
+                                    ],
+                                    "static-nf-instance-data-ref": [],
+                                    "discovered-nf-instance": []
+                                }
+                            ],
+                            "routing-method": "target-api-root",
+                            "subpool": []
+                        },
+                        {
+                            "name": "pool-2",
+                            "failover-behavior-ref": "fob1",
+                            "pool-discovery": [
+                                {
+                                    "name": "nrfs",
+                                    "nrf-query": [
+                                        {
+                                            "name": "query-1",
+                                            "nf-type": "nrf"
+                                        }
+                                    ],
+                                    "static-nf-instance-data-ref": [],
+                                    "discovered-nf-instance": []
+                                }
+                            ],
+                            "routing-method": "target-api-root",
+                            "subpool": []
+                        },
+                        {
+                            "name": "pool-3",
+                            "failover-behavior-ref": "fob1",
+                            "pool-discovery": [
+                                {
+                                    "name": "nrfs",
+                                    "nrf-query": [
+                                        {
+                                            "name": "query-1",
+                                            "nf-type": "nrf"
+                                        }
+                                    ],
+                                    "static-nf-instance-data-ref": [],
+                                    "discovered-nf-instance": []
+                                },
+                                {
+                                    "name": "sepps",
+                                    "nrf-query": [
+                                        {
+                                            "name": "query-1",
+                                            "nf-type": "sepp"
+                                        }
+                                    ],
+                                    "static-nf-instance-data-ref": [],
+                                    "discovered-nf-instance": []
+                                }
+                            ],
+                            "routing-method": "target-api-root",   
+                            "subpool": []
+                        }
+                    ],
+                    "own-fqdn": "sepp.ericsson.se",
+                    "own-vpn-ref": "vpn_own",
+                    "static-nf-instance-data":[
+                        {
+                            "name": "static_occ",
+                            "static-nf-instance": [{
+                                "name": "occ-chfsim-1",
+                                "static-nf-service": [{
+                                     "name": "nchf-convergedcharging",
+                                     "address": {
+                                         "scheme": "http",
+                                         "fqdn": "eric-chfsim.5g-bsf-eodnouk"
+                                     }
+                                }]
+                            }]
+                        }
+                    ],
+                    "routing-case": [
+                        {
+                            "name": "default_routing",
+                            "routing-rule": [
+                                {
+                                    "name": "csepp_to_rp_A",
+                                    "predicate-expression": "var.mnc==\"456\" and var.mcc==\"123\"",
+                                    "action-roaming-partner": "rp_A"
+                                },
+                                {
+                                    "name": "psepp_to_dfw",
+                                    "action-pool": "universal_pool",
+                                    "predicate-expression": "var.mnc==\"456\" and var.mcc==\"456\""
+                                },
+                                {
+                                    "name": "psepp_to_pref",
+                                    "action-pool": "occ",
+                                    "predicate-expression": "var.mnc==\"456\" and var.mcc==\"456\""
+                                }
+                            ],
+                            "message-data-ref": [
+                                "apiRoot_data",
+                                "chfsim_data"
+                            ]
+                        }
+                    ],
+                    "message-data": [
+                        {
+                            "name": "apiRoot_data",
+                            "header": "3gpp-Sbi-target-apiRoot",
+                            "extractor-regex": "eric-chfsim-\\d+-mnc-(?<mnc>\\d+)-mcc-(?<mcc>\\d+)"
+                        },
+                        {
+                            "name": "chfsim_data",
+                            "header": "3gpp-Sbi-target-apiRoot",
+                            "extractor-regex": "eric-(?<chfsim>chfsim-\\d+?)-.+"
+                        }
+                    ],
+                    "roaming-partner": [
+                        {
+                            "name": "rp_A",
+                            "comment": "Trusted roaming partner in PLMN A",
+                            "vpn-ref": "vpn_own",
+                            "sepp-pool-ref": "sepp_rp_A"
+                        }
+                    ],
+                    "failover-behavior": [
+                        {
+                            "name": "fob1",
+                            "peer-timeout": 2345,
+                            "request-timeout": 3456,
+                            "total-retries-max": 3,
+                            "per-priority-retries-max": 1
+                        }
+                    ],
+                    "default-routing-case-ref": "default_routing"
+                }
+            ]
+        }
+    }
+}

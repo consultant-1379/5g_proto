@@ -1,0 +1,73 @@
+#!/bin/bash -x
+
+
+export HELP_MSG="Use following synopsis for this script:\n setNamespace i-u \$USER -n \$NAMESPACE -h \$KUBE_HOST\n e.g setNamespace -u eiffelesc -n 5g-bsf-eiffeldsc -h hahn135"
+
+if [[ $# = 0 ]];
+then
+
+	echo -e "$HELP_MSG";
+	exit 1 ;
+
+fi;
+
+
+while (( "$#" ));
+do
+        echo -e "Now processing argument: $1 ";
+        case "$1" in
+                -u|--user)
+                case "$2" in
+                        -n|--namespace|-h|--kubehost|"") echo -e "The parameter succeeding the -u|--user parameter is not set properly. Aborting."; exit 1; ;;
+                        *) export USER="$2"; shift; shift; ;;
+                esac
+                ;;
+                -n|--namespace)
+                case "$2" in
+                        -u|--user|-h|--kubehost|"") echo -e "The parameter succeeding the -n|--namespace parameter is empty. NAMESPACE will be set to the default value \"\""; shift; ;;
+                        *) export NAMESPACE="$2"; shift; shift; ;;
+                esac
+                ;;
+                -h|--kubehost)
+                case "$2" in
+                        -u|--user|-n|--namespace|"") echo -e "The parameter succeeding the -h|--kubehost parameter is not set properly. Aborting."; exit 1; ;;
+                        *) export KUBE_HOST="$2"; shift; shift; ;;
+                esac
+                ;;
+                *) echo -e "'$1' is an invalid parameter."; echo -e "$HELP_MSG"; exit 1 ;;
+        esac
+
+done;
+
+
+export OUTPUT_DIR=".bob"
+
+if [[ -z ${NAMESPACE} ]];
+then
+	export NAMESPACE="";
+fi;
+
+
+echo -e "Following parameters will be used:\n USER: ${USER}\n NAMESPACE: ${NAMESPACE}\n KUBE_HOST: ${KUBE_HOST}"
+
+
+
+echo ${USER} > ${OUTPUT_DIR}/var.username;
+if [[ ${NAMESPACE} = "" ]] || [[ ${NAMESPACE} = "5g-bsf-eiffelesc" ]];
+then
+	if [[ ${USER} != "eiffelesc" ]];
+	then
+		echo '5g-bsf-'${USER} > ${OUTPUT_DIR}/var.namespace;
+	else
+               
+		./scripts/bash/allocateDynNamespace -n ${NAMESPACE} -h ${KUBE_HOST};
+	fi;
+
+else
+	echo ${NAMESPACE} > ${OUTPUT_DIR}/var.namespace;
+	if [[ ${USER} = "eiffelesc" ]] && [[ $(sed s/5g-bsf-//g .bob/var.namespace) != $(cat ${OUTPUT_DIR}/var.username) ]] ;
+	then
+		sed s/5g-bsf-//g ${OUTPUT_DIR}/var.namespace > ${OUTPUT_DIR}/var.username;
+	fi;
+
+fi;

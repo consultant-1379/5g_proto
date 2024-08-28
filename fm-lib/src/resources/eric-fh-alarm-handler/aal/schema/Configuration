@@ -1,0 +1,126 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "file://schema/Configuration#",
+  "title": "Alarm Handler Configuration",
+  "description": "The configuration for the alarm handler",
+  "type": "object",
+  "eric-adp-version" : "1.0.0",
+  "properties": {
+    "global": {
+      "description": "Global configuration, not specific for a process",
+      "type": "object",
+      "properties": {
+        "faultMapperReloadTimer": {
+          "description": "Defines how often in seconds the fault to alarm mapping configuration should be checked for changes.",
+          "type": "number",
+          "minimum": 10,
+          "default": 60
+        },
+        "configReloadTimer": {
+          "description": "Defines how often in seconds the configuration should be checked for changes.",
+          "type": "number",
+          "minimum": 10,
+          "default": 60
+        }
+      },
+      "additionalProperties": false
+    },
+    "adpahfi": {
+      "description": "Fault indication consumer (adpahfi) process configuration.",
+      "type": "object",
+      "properties": {
+        "logLevel": {
+          "description": "Defines the server log level",
+          "enum": [ "Debug", "Info", "Warning", "Error" ],
+          "default": "Info"
+        },
+        "kafkaLogLevel": {
+          "description": "Defines the Kafka API log level",
+          "enum": [ "Debug", "Info", "Warning", "Error" ],
+          "default": "Info"
+        },
+        "asiMaxRetryPeriod": {
+          "description": "Defines the Alarm State Indication (ASI) max retry period in seconds. If the ASI cannot be sent within this time period it will be discarded.",
+          "type": "number",
+          "minimum": 0.1,
+          "default": 180
+        },
+        "asiAckTimeout": {
+          "description": "Defines the Alarm State Indication send acknowledge timeout in seconds",
+          "type": "number",
+          "minimum": 0.1,
+          "default": 10
+        },
+        "alarmExpirationTimer": {
+          "description": "Defines the alarm expiration timer in seconds.",
+          "type": "number",
+          "minimum": 5,
+          "default": 30,
+          "maximum": 600
+        },
+        "enableTimeRecording": {
+          "description": "Enable time recording logging.",
+          "type": "boolean",
+          "default": false
+        },
+        "timeRecordingConfig": {
+          "description": "Time recording configuration.",
+          "type": "object",
+          "properties": {
+            "debugLevel": {
+              "description": "Defines the debug level. 0 = log only periodic summaries, 1 = log time overview per fi, 2 = log time details per fi in order to check how long each step takes",
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "maximum": 2
+            },
+            "printInterval": {
+              "description": "Defines the summary print interval in seconds.",
+              "type": "number",
+              "minimum": 5,
+              "default": 60
+            },
+            "maxPt": {
+              "description": "Force print time records with a max process time exceeding this value (in seconds).",
+              "type": "number",
+              "minimum": 0.001,
+              "default": 1.0
+            },
+            "maxWt": {
+              "description": "Force print time records with a wait time exceeding this value (in seconds).",
+              "type": "number",
+              "minimum": 0.001,
+              "default": 5.0
+            },
+            "idlePrint": {
+              "description": "Force print idle summaries after specified idle count. A value of 0 disables the function.",
+              "type": "integer",
+              "minimum": 0,
+              "default": 30
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "adpahweb": {
+      "description": "REST API web server (adpahweb) process configuration",
+      "type": "object",
+      "properties": {
+        "logLevel": {
+          "description": "Defines the server log level",
+          "enum": [ "Debug", "Info", "Warning", "Error" ],
+          "default": "Info"
+        },
+        "kafkaLogLevel": {
+          "description": "Defines the Kafka API log level",
+          "enum": [ "Debug", "Info", "Warning", "Error" ],
+          "default": "Info"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

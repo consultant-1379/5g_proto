@@ -1,0 +1,1093 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "eric-stm-diameter-proxy-grpc.name" . }}
+  labels:
+{{- if (include "eric-stm-diameter-proxy-grpc.deployment.merged-labels" .) }}
+{{- include "eric-stm-diameter-proxy-grpc.deployment.merged-labels" . | nindent 4 }}
+{{- end }}
+  annotations:
+{{- if (include "eric-stm-diameter-proxy-grpc.annotations" .) }}
+{{- include "eric-stm-diameter-proxy-grpc.annotations" . | nindent 4 }}
+{{- end }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: {{ .Values.updateStrategy.type }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.updateStrategy.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.updateStrategy.rollingUpdate.maxSurge }}
+  selector:
+    matchLabels:
+      app: {{ template "eric-stm-diameter-proxy-grpc.name" . }}
+  template:
+    metadata:
+      name: {{ template "eric-stm-diameter-proxy-grpc.name" . }}-template
+      labels:
+{{- if (include "eric-stm-diameter-proxy-grpc.pod.merged-labels" .) }}
+{{- include "eric-stm-diameter-proxy-grpc.pod.merged-labels" . | nindent 8 }}
+{{- end }}
+# START. Additions/Changes Network Policies
+{{- include "eric-bsf-diameter.peer.labels" . | nindent 8 }}
+# STOP. Additions/Changes Network Policies
+      annotations:
+{{- if (include "eric-stm-diameter-proxy-grpc.pod.merged-annotations" .) }}
+{{- include "eric-stm-diameter-proxy-grpc.pod.merged-annotations" . | nindent 8 }}
+{{- end }}
+      # START. Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC
+        evnfm.eo.ericsson.com/post-instantiate-status: "[{'containerName': 'diameterproxygrpc', 'state': 'Running', 'ready': 'true'}, {'containerName': 'dsl', 'state': 'Running', 'ready': 'true'}, {'containerName': '{{ .Values.service.cddjmxexporter.name }}', 'state': 'Running', 'ready': 'true'}]"
+      # STOP. Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC
+    spec:
+      serviceAccountName: {{ template "eric-stm-diameter-proxy-grpc.name" . }}-service-account
+      securityContext:
+        fsGroup: {{ template "eric-stm-diameter-proxy-grpc.fsGroup.coordinated" . }}
+{{- if include "eric-stm-diameter-proxy-grpc.supplementalGroups" . }}
+        supplementalGroups:
+{{- if (include "eric-stm-diameter-proxy-grpc.supplementalGroups" .) }}
+{{- include "eric-stm-diameter-proxy-grpc.supplementalGroups" . | nindent 8 }}
+{{- end }}
+{{- end }}
+{{- if eq .Values.affinity.podAntiAffinity "hard" }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - {{ template "eric-stm-diameter-proxy-grpc.name" . }}
+              topologyKey: {{ .Values.affinity.topologyKey }}
+{{- else if eq .Values.affinity.podAntiAffinity  "soft" }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - {{ template "eric-stm-diameter-proxy-grpc.name" . }}
+                topologyKey: {{ .Values.affinity.topologyKey }}
+{{- end }}
+{{- if include "eric-stm-diameter-proxy-grpc.pullSecret" . }}
+      imagePullSecrets:
+        - name: {{ template "eric-stm-diameter-proxy-grpc.pullSecret" . }}
+{{- end }}
+{{- if include "eric-stm-diameter-proxy-grpc.nodeSelector.eric-stm-diameter-proxy-grpc" . }}
+      nodeSelector: {{- include "eric-stm-diameter-proxy-grpc.nodeSelector.eric-stm-diameter-proxy-grpc" . | nindent 8 }}
+{{- end }}
+        # START. Addition of volume
+      volumes:
+# START. Changes due to DND-31959
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+        - name: diameter-oam-server-cert
+          secret:
+#START. Modify generated secret name by oam server internal certificate DND-34991
+            secretName: {{ template "eric-stm-diameter-proxy-grpc.name" . }}-oam-server-certificate
+# STOP. Modify generated secret name by oam server internal certificate DND-34991
+        - name: mediator-cacert
+          secret:
+            secretName: eric-cm-mediator-tls-client-ca-secret
+            items:
+            - key: client-cacertbundle.pem
+              path: cacertbundle.pem
+        - name: pm-cacert
+          secret:
+            secretName: eric-pm-server-ca
+            items:
+            - key: client-cacertbundle.pem
+              path: cacertbundle.pem
+        - name: mediator-client-cert
+          secret:
+            secretName: bsf-diameter-mediator-client-if-certificate-secret
+        - name: wcdbcd-client-cert
+          secret:
+            secretName: eric-bsf-diameter-wcdb-client-cert
+{{- if eq (include "eric-stm-diameter-proxy-grpc.dcedsc.tls" .) "true" }}
+        - name: dcedsc-client-cert
+          secret:
+            secretName: eric-bsf-diameter-dced-client-cert
+{{- end }}
+{{- end }}
+# STOP. Changes due to DND-31959
+        # STOP. Addition of volume
+        # START. Addition of volume for coredump storage
+{{- if eq (include "eric-bsf.fileCollector.enabled" .) "true" }}
+        - name: coredump-storage
+          persistentVolumeClaim:
+            claimName: eric-sc-core-dumps
+{{- end }}
+        # STOP. Addition of volume for coredump storage
+        # START. Addition of cddjmxexpoter container
+        - name: {{ .Values.spec.cddjmxexporter.volumeMount.name | quote }}
+          configMap:
+            name: {{ .Values.spec.cddjmxexporter.volumeMount.cmname | quote }}
+        # STOP. Addition of cddjmxexpoter container
+
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+{{- if not .Values.service.endpoints.grpc.tls.generateClientCertificateWithOwnCA }}
+        - name: grpc-client-cert
+          secret:
+            optional: {{ template "eric-stm-diameter-proxy-grpc.optionalSecretMount" . }}
+            secretName: {{ template "eric-stm-diameter-proxy-grpc.name" . }}-grpc-client-certificate-secret
+{{- end }}
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+{{- if .Values.service.endpoints.grpc.tls.generateClientCertificateWithOwnCA }}
+        - name: grpc-withca-client-cert
+          secret:
+            optional: {{ template "eric-stm-diameter-proxy-grpc.optionalSecretMount" . }}
+            secretName: {{ template "eric-stm-diameter-proxy-grpc.name" . }}-grpc-withca-client-certificate-secret
+{{- end }}
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+        - name: grpc-server-cert
+          secret:
+            optional: {{ template "eric-stm-diameter-proxy-grpc.optionalSecretMount" . }}
+            secretName: {{ template "eric-stm-diameter-proxy-grpc.name" . }}-grpc-server-certificate-secret
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+        - name: grpc-ca
+          secret:
+            optional: {{ template "eric-stm-diameter-proxy-grpc.optionalSecretMount" . }}
+            secretName: {{ template "eric-stm-diameter-proxy-grpc.name" . }}-grpc-userca-secret
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+        - name: siptls-trusted-root-ca
+          secret:
+            optional: {{ template "eric-stm-diameter-proxy-grpc.optionalSecretMount" . }}
+            secretName: {{ template "eric-stm-diameter-proxy-grpc.siptlsTrustedRootCert" . }}
+{{- end }}
+        - name: logctrl-volume
+          configMap:
+            name: {{ template "eric-stm-diameter-proxy-grpc.name" . }}-log-ctrl
+{{- if (not (empty .Values.dslStatisticsStreamerConfig)) }}
+        - name: streamerctrl-volume
+          configMap:
+            name: {{ .Values.dslStatisticsStreamerConfig }}
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+        - name: dsl-siptls-cert-volume
+          secret:
+            optional: {{ template "eric-stm-diameter-proxy-grpc.optionalSecretMount" . }}
+            secretName: {{ template "eric-stm-diameter-proxy-grpc.name" . }}-internal-certificate-secret
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+        - name: dsl-pm-server-target-cert
+          secret:
+            optional: {{ template "eric-stm-diameter-proxy-grpc.optionalSecretMount" . }}
+            secretName: {{ template "eric-stm-diameter-proxy-grpc.name" . }}-pm-server-target-certificate-secret
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+{{- if .Values.pmserver.hostname }}
+        - name: pms-client-ca
+          secret:
+            optional: {{ template "eric-stm-diameter-proxy-grpc.optionalSecretMount" . }}
+            secretName: {{ .Values.pmserver.hostname }}-ca
+{{- end }}
+{{- end }}
+        - name: dshm
+          emptyDir:
+            medium: Memory
+        - name: dsl-tmp
+          emptyDir:
+            medium: Memory
+        - name: diameterproxygrpc-tmp
+          emptyDir:
+            medium: Memory
+        # START. Addition of volume for vertx-cache for DND-60138
+        - name: vertx
+          emptyDir:
+            medium: Memory
+        # STOP. Addition of volume for vertx-cache for DND-60138
+{{- if (include "eric-stm-diameter-proxy-grpc.logshipper.volumes" .) }}
+{{- include "eric-stm-diameter-proxy-grpc.logshipper.volumes" . | indent 8 }}
+{{- end }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      containers:
+        # START. Addition of own containers
+        - name: {{ .Values.service.cddjmxexporter.name | quote }}
+          image: {{ template "eric-stm-diameter-proxy-grpc.cddjmxexporter.registryUrl" . }}/{{ template "eric-stm-diameter-proxy-grpc.cddjmxexporter.repoPath" . }}/{{ template "eric-stm-diameter-proxy-grpc.cddjmxexporter.image" . }}:{{ template "eric-stm-diameter-proxy-grpc.cddjmxexporter.tag" . }}
+          imagePullPolicy: {{ template "eric-stm-diameter-proxy-grpc.cddjmxexporter.imagePullPolicy" . }}
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            privileged: false
+            capabilities:
+              drop:
+                - all
+          {{ if .Values.spec.cddjmxexporter.resources }}
+          resources:
+            requests:
+              memory: {{ .Values.spec.cddjmxexporter.resources.requests.memory | quote }}
+              cpu: {{ .Values.spec.cddjmxexporter.resources.requests.cpu | quote }}
+            limits:
+              memory: {{ .Values.spec.cddjmxexporter.resources.limits.memory | quote }}
+              cpu: {{ .Values.spec.cddjmxexporter.resources.limits.cpu | quote }}
+          {{- end }}
+          env:
+# START. Addition of timezone env. parameter using existing grpc param from _helpers.tpl
+{{ include "eric-stm-diameter-proxy-grpc.timezone" . | indent 10 }}
+# STOP. Addition of timezone env. parameter
+          - name: CONFIG_YML
+            value: {{ .Values.spec.cddjmxexporter.volumeMount.mountpath }}/{{ .Values.spec.cddjmxexporter.volumeMount.configfile }}
+          - name: SERVICE_ID
+            value: {{ include "eric-stm-diameter-proxy-grpc.name" . }}
+          volumeMounts:
+          # Addition of volumeMount for coredump storage - START
+{{- if eq (include "eric-bsf.fileCollector.enabled" .) "true" }}
+          - name: coredump-storage
+            mountPath: /var/lib/systemd/coredump
+            subPath: coredump/bsfDiameter/{{ .Values.service.cddjmxexporter.name}}
+{{- end }}
+          # Addition of volumeMount for coredump storage - END
+          - name: {{ .Values.spec.cddjmxexporter.volumeMount.name | quote }}
+            mountPath: {{ .Values.spec.cddjmxexporter.volumeMount.mountpath | quote }}
+          ports:
+          - containerPort: {{ .Values.spec.cddjmxexporter.port }}
+            name: metrics
+        - name: bsfdiameter
+          image: {{ template "eric-stm-diameter-proxy-grpc.bsfdiameter.registryUrl" . }}/{{ template "eric-stm-diameter-proxy-grpc.bsfdiameter.repoPath" . }}/{{ template "eric-stm-diameter-proxy-grpc.bsfdiameter.image" . }}:{{ template "eric-stm-diameter-proxy-grpc.bsfdiameter.tag" . }}
+          imagePullPolicy: {{ template "eric-stm-diameter-proxy-grpc.bsfdiameter.imagePullPolicy" . }}
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            privileged: false
+            capabilities:
+              drop:
+                - all
+          ports:
+# START. Changes due to DND-31959
+          - containerPort: {{ .Values.service.diameter.server.oam.targetPort }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+            name: "metrics-tls"
+{{- else }}
+            name: "metrics"
+{{- end }}
+# STOP. Changes due to DND-31959
+          livenessProbe:
+            httpGet:
+              path: /probes/liveness
+              port: {{ .Values.probes.bsfdiameter.port }} # No quotes should be used!
+            initialDelaySeconds: {{ .Values.probes.bsfdiameter.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.bsfdiameter.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.bsfdiameter.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.probes.bsfdiameter.livenessProbe.successThreshold }}
+            failureThreshold: {{ .Values.probes.bsfdiameter.livenessProbe.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: /probes/readiness
+              port: {{ .Values.probes.bsfdiameter.port }} # No quotes should be used!
+            initialDelaySeconds: {{ .Values.probes.bsfdiameter.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.bsfdiameter.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.bsfdiameter.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.probes.bsfdiameter.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.probes.bsfdiameter.readinessProbe.failureThreshold }}
+          resources:
+{{ include "eric-stm-diameter-proxy-grpc.bsfdiameter.resources" . | indent 12 }}
+          # Addition of volumeMount for coredump storage -START
+# START. Changes due to DND-31959
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+          volumeMounts:
+            - name: diameter-oam-server-cert
+              mountPath: {{ .Values.service.diameter.server.oam.tls.server.certPath | quote }}
+              readOnly: true
+            - name: mediator-cacert
+              mountPath: {{ .Values.service.diameter.server.oam.tls.mediator.caPath | quote }}
+              readOnly: true
+            - name: pm-cacert
+              mountPath: {{ .Values.service.diameter.server.oam.tls.pm.caPath | quote }}
+              readOnly: true
+            - name: mediator-client-cert
+              mountPath: {{ .Values.service.diameter.client.mediator.tls.certPath | quote }}
+              readOnly: true
+            - name: siptls-trusted-root-ca
+              mountPath: {{ .Values.service.diameter.client.siptls.caPath | quote }}
+              readOnly: true
+            - name: wcdbcd-client-cert
+              mountPath: {{ .Values.service.diameter.client.wcdbcd.tls.certPath | quote }}
+              readOnly: true
+{{- if eq (include "eric-stm-diameter-proxy-grpc.dcedsc.tls" .) "true" }}
+            - name: dcedsc-client-cert
+              mountPath: {{ .Values.service.diameter.client.dcedsc.tls.certPath | quote }}
+              readOnly: true
+{{- end }}
+{{- end }}
+# STOP. Changes due to DND-31959
+{{- if eq (include "eric-bsf.fileCollector.enabled" .) "true" }}
+            - name: coredump-storage
+              mountPath: /var/lib/systemd/coredump
+              subPath: coredump/bsfDiameter/bsfdiameter
+{{- end }}
+          # Addition of volumeMount for coredump storage - END
+# START. Addition of volumeMount for DND34555
+            - mountPath: "/etc/adp"
+              name: logctrl-volume
+# STOP. Addition of volumeMount for DND34555
+{{- if (include "eric-stm-diameter-proxy-grpc.logshipper.mounts" .) }}
+{{- include "eric-stm-diameter-proxy-grpc.logshipper.mounts" . | indent 12 }}
+{{- end }}
+#START. Addition of volumeMount for vertx-cache for DND-60138
+            - name: vertx
+              mountPath: "/vertx"
+#STOP. Addition of volumeMount for vertx-cache for DND-60138
+          env:
+# START. Addition of env var for DND34555
+            - name: BSFDIAMETER_CONTAINER_NAME
+              value: "bsfdiameter"
+# STOP. Addition of env var for DND34555
+# START. Addition of timezone env. parameter using existing grpc param from _helpers.tpl
+{{ include "eric-stm-diameter-proxy-grpc.timezone" . | indent 12 }}
+# STOP. Addition of timezone env. parameter
+            - name: CM_MEDIATOR
+              value: {{ .Values.adp.cm.mediator.hostname | quote }}
+            - name: GLOBAL_TLS_ENABLED
+# START. Changes due to DND-31959
+              value: {{ include "eric-stm-diameter-proxy-grpc.tls" . | quote }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+            - name: DCED_TLS_ENABLED
+              value: {{ include "eric-stm-diameter-proxy-grpc.dcedsc.tls" . | quote }}
+{{- end }}
+# STOP. Changes due to DND-31959
+            - name: CM_MEDIATOR_PORT
+              value: {{ .Values.adp.cm.mediator.port | quote }}
+# START. DND-28528 CMM API subscription/renewal enhancements
+            - name: SUBSCRIBE_VALIDITY
+              value: {{ int .Values.adp.cm.mediator.subscription.validity | quote }}
+            - name: SUBSCRIBE_RENEWAL
+              value: {{ float64 .Values.adp.cm.mediator.subscription.renewal | quote }}
+            - name: SUBSCRIBE_HEARTBEAT
+              value: {{ int .Values.adp.cm.mediator.subscription.heartbeat | quote }}
+# STOP. DND-28528 CMM API subscription/renewal enhancements
+            - name: SERVICE_HOST
+              value: {{ .Values.service.diameter.name | quote }}
+            - name: SERVICE_OAM_TARGET_PORT
+              value: {{ .Values.service.diameter.server.oam.targetPort | quote }}
+            - name: SERVICE_PROBE_PORT
+              value: {{ .Values.probes.bsfdiameter.port | quote }}
+            - name: PCFRT_TTL_SEC
+              value: {{ .Values.spec.pcfRecoveryTimeTTL  | quote }}
+            - name: CHECK_RECOVERY_TIME
+              value: {{ .Values.spec.checkRecoveryTime  | quote }}
+{{- if .Values.global }}
+{{- if .Values.global.internalIPFamily }}
+            - name: IP_FAMILY
+              value: {{ .Values.global.internalIPFamily | quote }}
+{{- end }}
+{{- end }}
+# START. Changes due to DND-31959
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+            - name: DIAMETER_SERVER_CERT_PATH
+              value: {{ .Values.service.diameter.server.oam.tls.server.certPath | quote }}
+            - name: MEDIATOR_SERVER_CA_PATH
+              value: {{ .Values.service.diameter.server.oam.tls.mediator.caPath | quote }}
+            - name: PM_SERVER_CA_PATH
+              value: {{ .Values.service.diameter.server.oam.tls.pm.caPath | quote }}
+            - name: DIAMETER_MEDIATOR_CLIENT_CERT_PATH
+              value: {{ .Values.service.diameter.client.mediator.tls.certPath | quote }}
+            - name: DIAMETER_WCDBCD_CLIENT_CERT_PATH
+              value: {{ .Values.service.diameter.client.wcdbcd.tls.certPath | quote }}
+            - name: SIP_TLS_TRUSTED_ROOT_CA_PATH
+              value: {{ .Values.service.diameter.client.siptls.caPath | quote }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.dcedsc.tls" .) "true" }}
+            - name: DIAMETER_DCEDSC_CLIENT_CERT_PATH
+              value: {{ .Values.service.diameter.client.dcedsc.tls.certPath | quote }}
+{{- end }}
+{{- end }}
+# STOP. Changes due to DND-31959
+            - name: CASSANDRA_THROTTLER_CLASS
+              value: {{ template "eric-bsf.cassandra.throttler.class" . }}
+            - name: CASSANDRA_THROTTLER_MAX_QUEUE_SIZE
+              value: {{ template "eric-bsf.cassandra.throttler.max_queue_size" . }}
+            - name: CASSANDRA_THROTTLER_MAX_CONCURRENT_REQUESTS
+              value: {{ template "eric-bsf.cassandra.throttler.max_concurrent_requests" . }}
+            - name: JVM_PARAMS
+              value: {{ .Values.jvm.parameters.bsfdiameter | quote }}
+            - name: CASSANDRA_TLS_ENABLED
+              value: {{ .Values.cassandra.tls.enabled | quote }}
+            - name: CASSANDRA_TLS_HOSTNAME_VERIFICATION
+              value: {{ .Values.cassandra.tls.hostnameVerification | quote }}
+            - name: CASSANDRA_CONTACT_POINT
+              value: {{ template "eric-bsf.cassandra.contact_point" . }}
+            - name: CASSANDRA_CONTACT_POINT_REPLICAS
+              value: {{ .Values.cassandra.contact_point_replicas | quote }}
+            - name: CASSANDRA_KEYSPACE
+              value: {{ template "eric-bsf.cassandra.keyspace" . }}
+            - name:  CASSANDRA_LOCAL_DATACENTER
+              value: {{ template "eric-bsf.cassandra.datacenter" . }}
+            - name: CASSANDRA_CONSISTENCY
+{{- if .Values.cassandra.consistency }}
+              value: {{ template "eric-bsf.cassandra.consistency" . }}
+{{ else }}
+              value: "ONE"
+{{- end }}
+            - name: CASSANDRA_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "eric-bsf.cassandra.auth.userSecret" . }}
+                  key: "bsf_user"
+            - name: CASSANDRA_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "eric-bsf.cassandra.auth.userSecret" . }}
+                  key: "bsf_password"
+            - name: METRICS_JMX_EXPORTER_SESSION
+              value: {{ .Values.cassandra.metrics.sessionName  | quote }}
+            - name: METRICS_JMX_EXPORTER_DOMAIN
+              value: {{ .Values.cassandra.metrics.domainName  | quote }}
+            - name: METRICS_SESSION_CQL_REQUESTS_HIGHEST
+              value: {{ template "eric-bsf.cassandra.metrics.cqlRequests.highestLatency" . }}
+            - name: METRICS_SESSION_CQL_REQUESTS_DIGITS
+              value: {{ template "eric-bsf.cassandra.metrics.cqlRequests.significantDigits" . }}
+            - name: METRICS_SESSION_CQL_REQUESTS_INTERVAL
+              value: {{ template "eric-bsf.cassandra.metrics.cqlRequests.refreshInterval" . }}
+            - name: METRICS_SESSION_THROTTLING_HIGHEST
+              value: {{ template "eric-bsf.cassandra.metrics.throttling.highestLatency" . }}
+            - name: METRICS_SESSION_THROTTLING_DIGITS
+              value: {{ template "eric-bsf.cassandra.metrics.throttling.significantDigits" . }}
+            - name: METRICS_SESSION_THROTTLING_INTERVAL
+              value: {{ template "eric-bsf.cassandra.metrics.throttling.refreshInterval" . }}
+            - name: METRICS_NODE_CQL_MESSAGES_HIGHEST
+              value: {{ template "eric-bsf.cassandra.metrics.cqlMessages.highestLatency" . }}
+            - name: METRICS_NODE_CQL_MESSAGES_DIGITS
+              value: {{ template "eric-bsf.cassandra.metrics.cqlMessages.significantDigits" . }}
+            - name: METRICS_NODE_CQL_MESSAGES_INTERVAL
+              value: {{ template "eric-bsf.cassandra.metrics.cqlMessages.refreshInterval" . }}
+            - name: USE_WRITE_TIME
+              value: {{ .Values.useWriteTime | quote }}
+            - name: ETCD_ENDPOINT
+              value: {{ .Values.etcd.endpoint | quote }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.dcedsc.tls" .) "false" }}
+            - name: ETCD_USERNAME
+              value: {{ .Values.etcd.username | quote }}
+            - name: ETCD_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.etcd.secretName | quote }}
+                  key: {{ .Values.etcd.passwordKey | quote }}
+{{- end }}
+            - name: SERVICE_ID
+              value: {{ include "eric-stm-diameter-proxy-grpc.name" . }}
+            # START - logshipper sidecar
+            - name: LOG_PATH
+              value: {{ .Values.logShipper.storage.path | quote }}
+            - name: LOGBACK_FILENAME
+              value: {{ include "eric-bsf-diameter.logbackFileName" . | quote }}
+            # STOP - logshipper sidecar
+         # STOP. Addition of own containers
+        - name: dsl
+          image: {{ template "eric-stm-diameter-proxy-grpc.dsl.registryUrl" . }}/{{ template "eric-stm-diameter-proxy-grpc.dsl.repoPath" . }}/{{ template "eric-stm-diameter-proxy-grpc.dsl.imageName" . }}:{{ template "eric-stm-diameter-proxy-grpc.dsl.imageTag" . }}
+          imagePullPolicy: {{ template "eric-stm-diameter-proxy-grpc.dsl.imagePullPolicy" . }}
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            privileged: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+{{- if (include "eric-stm-diameter-proxy-grpc.seccompProfile.dsl" .) }}
+{{- include "eric-stm-diameter-proxy-grpc.seccompProfile.dsl" . | indent 12 }}
+{{- end }}
+          env:
+{{- if (include "eric-stm-diameter-proxy-grpc.dsl.env" .) }}
+{{ include "eric-stm-diameter-proxy-grpc.dsl.env" . | indent 12 }}
+{{- end }}
+{{- if (include "eric-stm-diameter-proxy-grpc.timezone" .) }}
+{{ include "eric-stm-diameter-proxy-grpc.timezone" . | indent 12 }}
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+            - name: DSD_SSL_CA_PATH
+              value: "/run/secrets/{{ template "eric-stm-diameter-proxy-grpc.siptlsTrustedRootCert" . }}/ca.crt"
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+            - name: DSD_SSL_CERT_PATH
+              value: "/run/secrets/{{ template "eric-stm-diameter-proxy-grpc.name" . }}-internal-certificate-secret/cert.pem"
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+            - name: DSD_SSL_PRIVKEY_PATH
+              value: "/run/secrets/{{ template "eric-stm-diameter-proxy-grpc.name" . }}-internal-certificate-secret/key.pem"
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+            - name: DSD_PROMCLNT_CERT_PATH
+              value: "/run/secrets/{{ template "eric-stm-diameter-proxy-grpc.name" . }}-pm-server-target-certificate-secret/cert.pem"
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+            - name: DSD_PROMCLNT_PRIVKEY_PATH
+              value: "/run/secrets/{{ template "eric-stm-diameter-proxy-grpc.name" . }}-pm-server-target-certificate-secret/key.pem"
+{{- end }}
+            - name: DSL_CONTAINER_NAME
+              value: "dsl"
+{{- if (not (empty .Values.dslStatisticsStreamerConfig)) }}
+            - name: DSD_STREAMER_CONFIG_FILE
+              value: "/streamerconfig/streamer.json"
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+            - name: DSD_PROMCLNT_SECURE
+              value: "true"
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+{{- if .Values.pmserver.hostname }}
+            - name: DSD_PROMCLNT_CA_PATH
+              value: "/run/secrets/{{ .Values.pmserver.hostname }}-ca/client-cacertbundle.pem"
+{{- end }}
+{{- end }}
+{{- if .Values.initialConfig.dsl.serviceName }}
+            - name: DSL_SERVICE_NAME
+              value: "{{ .Values.initialConfig.dsl.serviceName }}"
+{{- end }}
+{{- if not .Values.initialConfig.dsl.promclnt.provideLDN }}
+            - name: DSD_PROMCLNT_PROVIDE_LDN
+              value: "false"
+{{- end }}
+            - name: DSD_COLLECTOR_PORT
+              value: "28888"
+            - name: DSD_COLLECTOR_MEAS_TYPE_PREFIX
+              value: "DiameterProxy"
+{{- if .Values.initialConfig.dsl.linkTimeout }}
+            - name: DSD_LINK_TIMEOUT
+              value: "{{ .Values.initialConfig.dsl.linkTimeout }}"
+{{- end }}
+{{- if .Values.initialConfig.dsl.linkConnectTimeout }}
+            - name: DSD_LINK_CONNECT_TIMEOUT
+              value: "{{ .Values.initialConfig.dsl.linkConnectTimeout }}"
+{{- end }}
+{{- if .Values.initialConfig.dsl.linkReconnectTimeout }}
+            - name: DSD_LINK_RECONNECT_TIMEOUT
+              value: "{{ .Values.initialConfig.dsl.linkReconnectTimeout }}"
+{{- end }}
+{{- if .Values.initialConfig.dsl.linkReconnectDeadline }}
+            - name: DSD_LINK_RECONNECT_DEADLINE
+              value: "{{ .Values.initialConfig.dsl.linkReconnectDeadline }}"
+{{- end }}
+{{- if .Values.initialConfig.dsl.tcpKeepAliveEnabled }}
+            - name: DSD_NETWORK_TCP_KEEP_ALIVE_ENABLED
+              value: "true"
+{{- end }}
+{{- if not .Values.initialConfig.dsl.tcpKeepAliveEnabled }}
+            - name: DSD_NETWORK_TCP_KEEP_ALIVE_ENABLED
+              value: "false"
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.dslIPv6" .) "false" }}
+{{- if or (eq .Values.initialConfig.dsl.transportType "tcp") (eq .Values.initialConfig.dsl.transportType "tcprouter") }}
+            - name: DSD_NETWORK_TYPE
+              value: "ip"
+{{- end }}
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.dslIPv6" .) "true" }}
+{{- if or (eq .Values.initialConfig.dsl.transportType "tcp") (eq .Values.initialConfig.dsl.transportType "tcprouter") }}
+            - name: DSD_NETWORK_TYPE
+              value: "ipv6"
+{{- end }}
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.dslIPv6" .) "false" }}
+{{- if eq .Values.initialConfig.dsl.transportType "quic" }}
+            - name: DSD_NETWORK_TYPE
+              value: "quic"
+{{- end }}
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.dslIPv6" .) "true" }}
+{{- if eq .Values.initialConfig.dsl.transportType "quic" }}
+            - name: DSD_NETWORK_TYPE
+              value: "quic_ipv6"
+{{- end }}
+{{- end }}
+{{- if eq .Values.initialConfig.dsl.transportType "tcprouter" }}
+            - name: DSD_ROUTER_ENABLED
+              value: "true"
+{{- end }}
+{{- if eq .Values.initialConfig.dsl.transportType "tcprouter" }}
+            - name: DSD_ROUTER_LOCAL_ENABLED
+              value: "true"
+{{- end }}
+{{- if not (eq .Values.initialConfig.dsl.transportType "tcprouter") }}
+            - name: DSD_ROUTER_ENABLED
+              value: "false"
+{{- end }}
+{{- if not (eq .Values.initialConfig.dsl.transportType "tcprouter") }}
+            - name: DSD_ROUTER_LOCAL_ENABLED
+              value: "false"
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+            - name: DSD_NETWORK_SECURE
+              value: "true"
+{{- end }}
+{{- if .Values.initialConfig.dsl.quic.clientInitialRTT }}
+            - name: DSD_NETWORK_QUIC_CLIENT_INITIAL_RTT
+              value: "{{ .Values.initialConfig.dsl.quic.clientInitialRTT }}"
+{{- end }}
+{{- if .Values.initialConfig.dsl.quic.serverInitialRTT }}
+            - name: DSD_NETWORK_QUIC_SERVER_INITIAL_RTT
+              value: "{{ .Values.initialConfig.dsl.quic.serverInitialRTT }}"
+{{- end }}
+{{- if .Values.initialConfig.dsl.quic.receiveBufferSize }}
+            - name: DSD_NETWORK_QUIC_RECEIVE_BUFFER_SIZE
+              value: "{{ .Values.initialConfig.dsl.quic.receiveBufferSize }}"
+{{- end }}
+{{- if .Values.initialConfig.dsl.quic.receiveBufferSizeMax }}
+            - name: DSD_NETWORK_QUIC_RECEIVE_BUFFER_SIZE_MAX
+              value: "{{ .Values.initialConfig.dsl.quic.receiveBufferSizeMax }}"
+{{- end }}
+{{- if .Values.initialConfig.dsl.quic.sendBufferSize }}
+            - name: DSD_NETWORK_QUIC_SEND_BUFFER_SIZE
+              value: "{{ .Values.initialConfig.dsl.quic.sendBufferSize }}"
+{{- end }}
+{{- if .Values.initialConfig.dsl.quic.sendBufferSizeMax }}
+            - name: DSD_NETWORK_QUIC_SEND_BUFFER_SIZE_MAX
+              value: "{{ .Values.initialConfig.dsl.quic.sendBufferSizeMax }}"
+{{- end }}
+{{- if .Values.initialConfig.dsl.tcp }}
+            - name: DSD_NETWORK_TCP_NODELAY_ENABLED
+              value: "{{ .Values.initialConfig.dsl.tcp.noDelay }}"
+{{- end }}
+            - name: DSD_LOG_MAXFILESIZE
+              value: "{{ .Values.initialConfig.dsl.logFileSize }}"
+            - name: DSD_LOG_MAXNUMFILES
+              value: "{{ .Values.initialConfig.dsl.logFileCount }}"
+{{- if eq (include "eric-stm-diameter-proxy-grpc.log-streaming-activated" .) "true" }}
+            - name: DSD_LOG_DIR
+              value: "/logs/dsl"
+{{- end }}
+{{- if not (eq (include "eric-stm-diameter-proxy-grpc.log-stdout-activated" .) "true" ) }}
+            - name: DSD_LOG_STDOUT_PRINT_FORMAT
+              value: "none"
+{{- end }}
+            - name: DSD_LOG_METADATA_FUNCTION
+              value: "DSL"
+            - name: DSL_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DSD_NODE_IDENTIFIER
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: DSD_LOG_SERVICE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['app.kubernetes.io/name']
+            - name: DSD_CONTAINER_MEMORY_REQUEST
+              valueFrom:
+                resourceFieldRef:
+                  containerName: dsl
+                  resource: requests.memory
+                  divisor: 1
+            - name: DSD_SUPERVISOR_PORT
+              value: {{ include "eric-stm-diameter-proxy-grpc.dsl.supervisorPort" . | quote }}
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: {{ template "eric-stm-diameter-proxy-grpc.dsl.supervisorPort" . }}
+            initialDelaySeconds: {{ .Values.probes.dsl.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.dsl.livenessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.probes.dsl.livenessProbe.failureThreshold }}
+            timeoutSeconds: {{ .Values.probes.dsl.livenessProbe.timeoutSeconds }}
+          startupProbe:
+            httpGet:
+              path: /readiness
+              port: {{ template "eric-stm-diameter-proxy-grpc.dsl.supervisorPort" . }}
+            initialDelaySeconds: {{ .Values.probes.dsl.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.dsl.startupProbe.periodSeconds }}
+            failureThreshold: {{ .Values.probes.dsl.startupProbe.failureThreshold }}
+            timeoutSeconds: {{ .Values.probes.dsl.startupProbe.timeoutSeconds }}
+          resources:
+            requests:
+{{- if .Values.resources.dsl.requests.cpu }}
+              cpu: {{ .Values.resources.dsl.requests.cpu | quote }}
+{{- end }}
+{{- if .Values.resources.dsl.requests.memory }}
+              memory: {{ .Values.resources.dsl.requests.memory | quote }}
+{{- end }}
+{{- if (index .Values "resources" "dsl" "requests" "ephemeral-storage") }}
+              ephemeral-storage: {{ (index .Values "resources" "dsl" "requests" "ephemeral-storage") | quote }}
+{{- end }}
+            limits:
+{{- if .Values.resources.dsl.limits.cpu }}
+              cpu: {{ .Values.resources.dsl.limits.cpu | quote }}
+{{- end }}
+{{- if .Values.resources.dsl.limits.memory }}
+              memory: {{ .Values.resources.dsl.limits.memory | quote }}
+{{- end }}
+{{- if (index .Values "resources" "dsl" "limits" "ephemeral-storage") }}
+              ephemeral-storage: {{ (index .Values "resources" "dsl" "limits" "ephemeral-storage") | quote }}
+{{- end }}
+          volumeMounts:
+{{- if (include "eric-stm-diameter-proxy-grpc.logshipper.mounts" .) }}
+{{- include "eric-stm-diameter-proxy-grpc.logshipper.mounts" . | indent 12 }}
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+            - mountPath: /run/secrets/{{ template "eric-stm-diameter-proxy-grpc.siptlsTrustedRootCert" . }}
+              name: siptls-trusted-root-ca
+{{- end }}
+            - mountPath: "/etc/adp"
+              name: logctrl-volume
+{{- if (not (empty .Values.dslStatisticsStreamerConfig)) }}
+            - mountPath: /streamerconfig
+              name: streamerctrl-volume
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+            - mountPath: /run/secrets/{{ template "eric-stm-diameter-proxy-grpc.name" . }}-internal-certificate-secret
+              name: dsl-siptls-cert-volume
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+            - mountPath: /run/secrets/{{ template "eric-stm-diameter-proxy-grpc.name" . }}-pm-server-target-certificate-secret
+              name: dsl-pm-server-target-cert
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+{{- if .Values.pmserver.hostname }}
+            - mountPath: /run/secrets/{{ .Values.pmserver.hostname }}-ca
+              name: pms-client-ca
+{{- end }}
+{{- end }}
+            - mountPath: /dev/shm
+              name: dshm
+            - mountPath: /tmp
+              name: dsl-tmp
+          ports:
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+{{- if .Values.enableNewScrapePattern }}
+            - name: https-metrics1
+              containerPort: 20600
+{{- end }}
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "false" }}
+{{- if .Values.enableNewScrapePattern }}
+            - name: http-metrics1
+              containerPort: 20600
+{{- end }}
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+{{- if not .Values.enableNewScrapePattern }}
+            - name: metrics-tls
+              containerPort: 20600
+{{- end }}
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "false" }}
+{{- if not .Values.enableNewScrapePattern }}
+            - name: metrics
+              containerPort: 20600
+{{- end }}
+{{- end }}
+        - name: diameterproxygrpc
+          image: {{ template "eric-stm-diameter-proxy-grpc.diameterproxygrpc.registryUrl" . }}/{{ template "eric-stm-diameter-proxy-grpc.diameterproxygrpc.repoPath" . }}/{{ template "eric-stm-diameter-proxy-grpc.diameterproxygrpc.imageName" . }}:{{ template "eric-stm-diameter-proxy-grpc.diameterproxygrpc.imageTag" . }}
+          imagePullPolicy: {{ template "eric-stm-diameter-proxy-grpc.diameterproxygrpc.imagePullPolicy" . }}
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            privileged: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+{{- if (include "eric-stm-diameter-proxy-grpc.seccompProfile.diameterproxygrpc" .) }}
+{{- include "eric-stm-diameter-proxy-grpc.seccompProfile.diameterproxygrpc" . | indent 12 }}
+{{- end }}
+          env:
+{{- if (include "eric-stm-diameter-proxy-grpc.diameterproxygrpc.env" .) }}
+{{ include "eric-stm-diameter-proxy-grpc.diameterproxygrpc.env" . | indent 12 }}
+{{- end }}
+{{- if (include "eric-stm-diameter-proxy-grpc.timezone" .) }}
+{{ include "eric-stm-diameter-proxy-grpc.timezone" . | indent 12 }}
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+            - name: DSD_SSL_CA_PATH
+              value: "/run/secrets/{{ template "eric-stm-diameter-proxy-grpc.siptlsTrustedRootCert" . }}/ca.crt"
+{{- end }}
+            - name: DIAMETERPROXYGRPC_CONTAINER_NAME
+              value: "diameterproxygrpc"
+            # START. !!! The following two lines need to be commented out for bsf-diameter
+            #- name: DIACC_GRPCPROXY_CONTROL_MODE
+            #  value: "cluster"
+            # STOP.
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+            - name: DIACC_GRPCPROXY_SERVER_CA
+              value: "/run/secrets/{{ template "eric-stm-diameter-proxy-grpc.siptlsTrustedRootCert" . }}/ca.crt"
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+{{- if not .Values.service.endpoints.grpc.tls.generateClientCertificateWithOwnCA }}
+            - name: DIACC_GRPCPROXY_CLIENT_CERT
+              value: /run/secrets/{{ template "eric-stm-diameter-proxy-grpc.name" . }}-grpc-client-certificate-secret/cert.pem
+{{- end }}
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+{{- if not .Values.service.endpoints.grpc.tls.generateClientCertificateWithOwnCA }}
+            - name: DIACC_GRPCPROXY_CLIENT_KEY
+              value: /run/secrets/{{ template "eric-stm-diameter-proxy-grpc.name" . }}-grpc-client-certificate-secret/privkey.pem
+{{- end }}
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+{{- if .Values.service.endpoints.grpc.tls.generateClientCertificateWithOwnCA }}
+            - name: DIACC_GRPCPROXY_CLIENT_CERT
+              value: /run/secrets/{{ template "eric-stm-diameter-proxy-grpc.name" . }}-grpc-withca-client-certificate-secret/cert.pem
+{{- end }}
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+{{- if .Values.service.endpoints.grpc.tls.generateClientCertificateWithOwnCA }}
+            - name: DIACC_GRPCPROXY_CLIENT_KEY
+              value: /run/secrets/{{ template "eric-stm-diameter-proxy-grpc.name" . }}-grpc-withca-client-certificate-secret/privkey.pem
+{{- end }}
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+            - name: DIACC_GRPCPROXY_SERVER_CERT
+              value: /run/secrets/{{ template "eric-stm-diameter-proxy-grpc.name" . }}-grpc-server-certificate-secret/cert.pem
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+            - name: DIACC_GRPCPROXY_SERVER_KEY
+              value: /run/secrets/{{ template "eric-stm-diameter-proxy-grpc.name" . }}-grpc-server-certificate-secret/privkey.pem
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+            - name: DIACC_GRPCPROXY_CLIENT_CA
+              value: "/run/secrets/{{ template "eric-stm-diameter-proxy-grpc.name" . }}-grpc-userca-secret/client-cacertbundle.pem"
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+            - name: DSD_SSL_CERT_PATH
+              value: "/run/secrets/{{ template "eric-stm-diameter-proxy-grpc.name" . }}-internal-certificate-secret/cert.pem"
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+            - name: DSD_SSL_PRIVKEY_PATH
+              value: "/run/secrets/{{ template "eric-stm-diameter-proxy-grpc.name" . }}-internal-certificate-secret/key.pem"
+{{- end }}
+            - name: DSD_COLLECTOR_PORT
+              value: "28890"
+            - name: DSD_COLLECTOR_MEAS_TYPE_PREFIX
+              value: "DiameterProxy"
+{{- if .Values.initialConfig.dsl.linkTimeout }}
+            - name: DSD_LINK_TIMEOUT
+              value: "{{ .Values.initialConfig.dsl.linkTimeout }}"
+{{- end }}
+{{- if .Values.initialConfig.dsl.linkConnectTimeout }}
+            - name: DSD_LINK_CONNECT_TIMEOUT
+              value: "{{ .Values.initialConfig.dsl.linkConnectTimeout }}"
+{{- end }}
+{{- if .Values.initialConfig.dsl.linkReconnectTimeout }}
+            - name: DSD_LINK_RECONNECT_TIMEOUT
+              value: "{{ .Values.initialConfig.dsl.linkReconnectTimeout }}"
+{{- end }}
+{{- if .Values.initialConfig.dsl.linkReconnectDeadline }}
+            - name: DSD_LINK_RECONNECT_DEADLINE
+              value: "{{ .Values.initialConfig.dsl.linkReconnectDeadline }}"
+{{- end }}
+{{- if .Values.initialConfig.dsl.tcpKeepAliveEnabled }}
+            - name: DSD_NETWORK_TCP_KEEP_ALIVE_ENABLED
+              value: "true"
+{{- end }}
+{{- if not .Values.initialConfig.dsl.tcpKeepAliveEnabled }}
+            - name: DSD_NETWORK_TCP_KEEP_ALIVE_ENABLED
+              value: "false"
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.dslIPv6" .) "false" }}
+{{- if or (eq .Values.initialConfig.dsl.transportType "tcp") (eq .Values.initialConfig.dsl.transportType "tcprouter") }}
+            - name: DSD_NETWORK_TYPE
+              value: "ip"
+{{- end }}
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.dslIPv6" .) "true" }}
+{{- if or (eq .Values.initialConfig.dsl.transportType "tcp") (eq .Values.initialConfig.dsl.transportType "tcprouter") }}
+            - name: DSD_NETWORK_TYPE
+              value: "ipv6"
+{{- end }}
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.dslIPv6" .) "false" }}
+{{- if eq .Values.initialConfig.dsl.transportType "quic" }}
+            - name: DSD_NETWORK_TYPE
+              value: "quic"
+{{- end }}
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.dslIPv6" .) "true" }}
+{{- if eq .Values.initialConfig.dsl.transportType "quic" }}
+            - name: DSD_NETWORK_TYPE
+              value: "quic_ipv6"
+{{- end }}
+{{- end }}
+{{- if eq .Values.initialConfig.dsl.transportType "tcprouter" }}
+            - name: DSD_ROUTER_ENABLED
+              value: "true"
+{{- end }}
+{{- if eq .Values.initialConfig.dsl.transportType "tcprouter" }}
+            - name: DSD_ROUTER_LOCAL_ENABLED
+              value: "true"
+{{- end }}
+{{- if not (eq .Values.initialConfig.dsl.transportType "tcprouter") }}
+            - name: DSD_ROUTER_ENABLED
+              value: "false"
+{{- end }}
+{{- if not (eq .Values.initialConfig.dsl.transportType "tcprouter") }}
+            - name: DSD_ROUTER_LOCAL_ENABLED
+              value: "false"
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+            - name: DSD_NETWORK_SECURE
+              value: "true"
+{{- end }}
+{{- if .Values.initialConfig.dsl.quic.clientInitialRTT }}
+            - name: DSD_NETWORK_QUIC_CLIENT_INITIAL_RTT
+              value: "{{ .Values.initialConfig.dsl.quic.clientInitialRTT }}"
+{{- end }}
+{{- if .Values.initialConfig.dsl.quic.serverInitialRTT }}
+            - name: DSD_NETWORK_QUIC_SERVER_INITIAL_RTT
+              value: "{{ .Values.initialConfig.dsl.quic.serverInitialRTT }}"
+{{- end }}
+{{- if .Values.initialConfig.dsl.quic.receiveBufferSize }}
+            - name: DSD_NETWORK_QUIC_RECEIVE_BUFFER_SIZE
+              value: "{{ .Values.initialConfig.dsl.quic.receiveBufferSize }}"
+{{- end }}
+{{- if .Values.initialConfig.dsl.quic.receiveBufferSizeMax }}
+            - name: DSD_NETWORK_QUIC_RECEIVE_BUFFER_SIZE_MAX
+              value: "{{ .Values.initialConfig.dsl.quic.receiveBufferSizeMax }}"
+{{- end }}
+{{- if .Values.initialConfig.dsl.quic.sendBufferSize }}
+            - name: DSD_NETWORK_QUIC_SEND_BUFFER_SIZE
+              value: "{{ .Values.initialConfig.dsl.quic.sendBufferSize }}"
+{{- end }}
+{{- if .Values.initialConfig.dsl.quic.sendBufferSizeMax }}
+            - name: DSD_NETWORK_QUIC_SEND_BUFFER_SIZE_MAX
+              value: "{{ .Values.initialConfig.dsl.quic.sendBufferSizeMax }}"
+{{- end }}
+{{- if .Values.initialConfig.dsl.tcp }}
+            - name: DSD_NETWORK_TCP_NODELAY_ENABLED
+              value: "{{ .Values.initialConfig.dsl.tcp.noDelay }}"
+{{- end }}
+            - name: DSD_LOG_MAXFILESIZE
+              value: "{{ .Values.initialConfig.diameterproxygrpc.logFileSize }}"
+            - name: DSD_LOG_MAXNUMFILES
+              value: "{{ .Values.initialConfig.diameterproxygrpc.logFileCount }}"
+{{- if eq (include "eric-stm-diameter-proxy-grpc.log-streaming-activated" .) "true" }}
+            - name: DSD_LOG_DIR
+              value: "/logs/diameterproxygrpc"
+{{- end }}
+{{- if not (eq (include "eric-stm-diameter-proxy-grpc.log-stdout-activated" .) "true" ) }}
+            - name: DSD_LOG_STDOUT_PRINT_FORMAT
+              value: "none"
+{{- end }}
+            - name: DSD_LOG_METADATA_FUNCTION
+              value: "Diameter"
+            - name: DSL_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DSD_NODE_IDENTIFIER
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: DSD_LOG_SERVICE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['app.kubernetes.io/name']
+            - name: DSD_CONTAINER_MEMORY_REQUEST
+              valueFrom:
+                resourceFieldRef:
+                  containerName: diameterproxygrpc
+                  resource: requests.memory
+                  divisor: 1
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+{{- if (eq .Values.service.endpoints.grpc.tls.enforced "required") }}
+            - name: TLS_ENFORCED
+              value: "tls_enforced"
+{{- else }}
+            - name: TLS_ENFORCED
+              value: "no_tls_enforced"
+{{- end }}
+{{- if (eq .Values.service.endpoints.grpc.tls.verifyClientCertificate "required") }}
+            - name: TLS_CLIENT_VERIFICATION
+              value: "tls_client_verification"
+{{- else }}
+            - name: TLS_CLIENT_VERIFICATION
+              value: "no_tls_client_verification"
+{{- end }}
+{{- end }}
+            - name: DSD_SUPERVISOR_PORT
+              value: {{ include "eric-stm-diameter-proxy-grpc.diameterproxygrpc.supervisorPort" . | quote }}
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: {{ template "eric-stm-diameter-proxy-grpc.diameterproxygrpc.supervisorPort" . }}
+            initialDelaySeconds: {{ .Values.probes.diameterproxygrpc.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.diameterproxygrpc.livenessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.probes.diameterproxygrpc.livenessProbe.failureThreshold }}
+            timeoutSeconds: {{ .Values.probes.diameterproxygrpc.livenessProbe.timeoutSeconds }}
+          startupProbe:
+            httpGet:
+              path: /readiness
+              port: {{ template "eric-stm-diameter-proxy-grpc.diameterproxygrpc.supervisorPort" . }}
+            initialDelaySeconds: {{ .Values.probes.diameterproxygrpc.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.diameterproxygrpc.startupProbe.periodSeconds }}
+            failureThreshold: {{ .Values.probes.diameterproxygrpc.startupProbe.failureThreshold }}
+            timeoutSeconds: {{ .Values.probes.diameterproxygrpc.startupProbe.timeoutSeconds }}
+          resources:
+            requests:
+{{- if .Values.resources.diameterproxygrpc.requests.cpu }}
+              cpu: {{ .Values.resources.diameterproxygrpc.requests.cpu | quote }}
+{{- end }}
+{{- if .Values.resources.diameterproxygrpc.requests.memory }}
+              memory: {{ .Values.resources.diameterproxygrpc.requests.memory | quote }}
+{{- end }}
+{{- if (index .Values "resources" "diameterproxygrpc" "requests" "ephemeral-storage") }}
+              ephemeral-storage: {{ (index .Values "resources" "diameterproxygrpc" "requests" "ephemeral-storage") | quote }}
+{{- end }}
+            limits:
+{{- if .Values.resources.diameterproxygrpc.limits.cpu }}
+              cpu: {{ .Values.resources.diameterproxygrpc.limits.cpu | quote }}
+{{- end }}
+{{- if .Values.resources.diameterproxygrpc.limits.memory }}
+              memory: {{ .Values.resources.diameterproxygrpc.limits.memory | quote }}
+{{- end }}
+{{- if (index .Values "resources" "diameterproxygrpc" "limits" "ephemeral-storage") }}
+              ephemeral-storage: {{ (index .Values "resources" "diameterproxygrpc" "limits" "ephemeral-storage") | quote }}
+{{- end }}
+          volumeMounts:
+{{- if (include "eric-stm-diameter-proxy-grpc.logshipper.mounts" .) }}
+{{- include "eric-stm-diameter-proxy-grpc.logshipper.mounts" . | indent 12 }}
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+{{- if not .Values.service.endpoints.grpc.tls.generateClientCertificateWithOwnCA }}
+            - mountPath: /run/secrets/{{ template "eric-stm-diameter-proxy-grpc.name" . }}-grpc-client-certificate-secret
+              name: grpc-client-cert
+{{- end }}
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+{{- if .Values.service.endpoints.grpc.tls.generateClientCertificateWithOwnCA }}
+            - mountPath: /run/secrets/{{ template "eric-stm-diameter-proxy-grpc.name" . }}-grpc-withca-client-certificate-secret
+              name: grpc-withca-client-cert
+{{- end }}
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+            - mountPath: /run/secrets/{{ template "eric-stm-diameter-proxy-grpc.name" . }}-grpc-server-certificate-secret
+              name: grpc-server-cert
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+            - mountPath: /run/secrets/{{ template "eric-stm-diameter-proxy-grpc.name" . }}-grpc-userca-secret
+              name: grpc-ca
+{{- end }}
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+            - mountPath: /run/secrets/{{ template "eric-stm-diameter-proxy-grpc.siptlsTrustedRootCert" . }}
+              name: siptls-trusted-root-ca
+{{- end }}
+            - mountPath: "/etc/adp"
+              name: logctrl-volume
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+            - mountPath: /run/secrets/{{ template "eric-stm-diameter-proxy-grpc.name" . }}-internal-certificate-secret
+              name: dsl-siptls-cert-volume
+{{- end }}
+            - mountPath: /dev/shm
+              name: dshm
+            - mountPath: /tmp
+              name: diameterproxygrpc-tmp
+{{- if (include "eric-stm-diameter-proxy-grpc.logshipper.container" .) }}
+{{- include "eric-stm-diameter-proxy-grpc.logshipper.container" . | indent 8 }}
+{{- end }}
+      initContainers: []
+{{- if include "eric-stm-diameter-proxy-grpc.merge-tolerations" (dict "root" . "podbasename" "eric-stm-diameter-proxy-grpc") }}
+      tolerations: {{ include "eric-stm-diameter-proxy-grpc.merge-tolerations" (dict "root" . "podbasename" "eric-stm-diameter-proxy-grpc") | nindent 8 }}
+{{- end }}
+{{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- if (index .Values "podPriority" "diameter-proxy-grpc" "priorityClassName") }}
+      priorityClassName: {{ (index .Values "podPriority" "diameter-proxy-grpc" "priorityClassName") | quote }}
+{{- end }}

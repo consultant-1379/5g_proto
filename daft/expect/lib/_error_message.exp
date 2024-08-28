@@ -1,0 +1,35 @@
+################################################################################
+# $Revision: 1.3 $                                                             #
+#   $Author: eustone $                                                         #
+#     $Date: 2014/10/31 15:06:15 $                                             #
+################################################################################
+#                                                                              #
+# (C) COPYRIGHT ERICSSON GMBH 2014                                             #
+#                                                                              #
+# The copyright to the computer program(s) herein is the property of           #
+# Ericsson GmbH, Germany.                                                      #
+#                                                                              #
+# The program(s) may be used and/or copied only with the written permission    #
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in   #
+# the agreement/contract under which the program(s) have been supplied.        #
+#                                                                              #
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Print an error message.
+# Input:
+#  - Error message (text that can contain multiple lines)
+#
+# Output:
+#  -
+#
+proc error_message { message } {
+    global spawn_id
+
+    puts ""
+    puts "***************************"
+    puts "** An error has occurred **"
+    puts "***************************"
+    puts "$message"
+    return 0
+}

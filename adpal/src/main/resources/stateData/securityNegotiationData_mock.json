@@ -1,0 +1,19 @@
+{
+    "security-negotiation-data": [
+        {
+            "static-nf-instance-ref": "example",
+            "last-update": "example",
+            "operation-state": {
+                "value": "active"
+            },
+            "received-plm-id": [
+                {
+                    "mcc": 123,
+                    "mnc": 123
+                }
+            ],
+            "security-capability": "TLS",
+            "supports-target-apiroot": false
+        }
+    ]
+}

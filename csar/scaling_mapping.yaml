@@ -1,0 +1,39 @@
+eric-scp-worker:
+  Scaling-Parameter-Name: "eric-scp.spec.worker.replicaCount"
+  Mciop-Name: "helm_package5"
+
+eric-sepp-worker:
+  Scaling-Parameter-Name: "eric-sepp.spec.worker.replicaCount"
+  Mciop-Name: "helm_package6"
+
+eric-sc-slf:
+  Scaling-Parameter-Name: "eric-sc-slf.spec.slf.replicaCount"
+  Mciop-Name: "helm_package5"
+
+eric-sc-rlf:
+  Scaling-Parameter-Name: "eric-sc-rlf.spec.rlf.replicaCount"
+  Mciop-Name: "helm_package3"
+
+eric-sc-nlf:
+  Scaling-Parameter-Name: "eric-sc-nlf.replicaCount"
+  Mciop-Name: "helm_package3"
+
+eric-stm-diameter:
+  Scaling-Parameter-Name: "eric-stm-diameter.replicaCount"
+  Mciop-Name: "helm_package4"
+
+eric-bsf-diameter:
+  Scaling-Parameter-Name: "eric-bsf-diameter.replicaCount"
+  Mciop-Name: "helm_package4"
+
+eric-bsf-worker:
+  Scaling-Parameter-Name: "eric-bsf.spec.worker.replicaCount"
+  Mciop-Name: "helm_package4"
+
+eric-dsc-agent:
+  Scaling-Parameter-Name: "eric-dsc-agent.replicaCount"
+  Mciop-Name: "helm_package7"
+
+eric-dsc-fdr:
+  Scaling-Parameter-Name: "eric-dsc-fdr.replicaCount"
+  Mciop-Name: "helm_package7"

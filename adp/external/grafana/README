@@ -1,0 +1,21 @@
+How to install and configure Grafana
+------------------------------------
+
+It is assumed that the PM Server is running in your namespace.
+
+Run
+make deploy
+to deploy Grafana.
+
+Forward port 3000 from the Grafana POD to your localhost.
+
+export POD_NAME=$(kubectl get pods --namespace 5g-bsf-eedxxxx -l "app=grafana,release=grafana-5g-bsf-eedxxxx" -o jsonpath="{.items[0].metadata.name}")
+kubectl --namespace 5g-bsf-eedxxxx port-forward $POD_NAME 3000
+
+To configure Prometheus as Data Source and Load the BSF basic dashboard, run
+make configure
+This will only work if the port forwarding is active.
+
+Connect to Grafana through http://localhost:3000
+Username: admin
+Password: Fetch through "make get_password"

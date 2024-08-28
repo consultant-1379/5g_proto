@@ -1,0 +1,168 @@
+global:
+  ericsson:
+    objectStorage:
+      enabled: true
+    sftp:
+      enabled: true
+    pvtb:
+      enabled: true
+#   log:
+#     streamingMethod: "indirect"
+#   logShipper:
+#     deployment:
+#       type: ""
+
+eric-dsc-log-shipper:
+  enabled: true
+
+eric-cnom-server:
+  enabled: true
+  imageCredentials:
+    registry:
+      url: serodocker.sero.gic.ericsson.se
+    hooklauncher:
+      registry:
+        url: serodocker.sero.gic.ericsson.se
+
+eric-data-wide-column-database-cd:
+  enabled: true
+
+eric-pm-bulk-reporter:
+  objectStorage:
+    enabled: false
+  thresholdReporter:
+    enabled: true
+
+eric-cm-yang-provider:
+  cliExtensionCmds:
+    showAlarmsHistory:
+      enabled: true
+    showAlarms:
+      enabled: true
+  pmMetrics:
+    enabled: true
+    enableQueryMetricsCommands: true
+
+eric-fh-snmp-alarm-provider:
+  imageCredentials:
+    registry:
+      url: selndocker.mo.sw.ericsson.se
+  enabled: true
+
+eric-odca-diagnostic-data-collector:
+  imageCredentials:
+    registry:
+      url: serodocker.sero.gic.ericsson.se
+    ddc:
+      registry:
+        url: serodocker.sero.gic.ericsson.se
+    hooklauncher:
+      registry:
+        url: serodocker.sero.gic.ericsson.se
+
+eric-data-distributed-coordinator-ed:
+  brAgent:
+    enabled: true
+
+eric-dsc-fdr:
+  enabled: true
+  senp:
+    nvip:
+      trenches:
+      - name: trench-tst
+        ipFamily: ipv4
+      conduits:
+      - name: lb-fe-a-tst
+        intoTrench: trench-tst
+        type: stateless-lb
+      streams:
+      - name: stream-1-tst
+        intoTrench: trench-tst
+        intoConduit: lb-fe-a-tst
+      vips:
+      - name: vip1-tst
+        intoTrench: trench-tst
+        address: "214.14.133.97/32"
+        intoAttractor: attr1-tst
+      gateways:
+      - name: gateway1-tst
+        intoTrench: trench-tst
+        address: 214.14.132.130
+        static:
+          bfdSwitch: true
+          minRx: 300ms
+          minTx: 300ms
+          multiplier: 3
+      flows:
+      - name: flow-1-tst
+        intoTrench: trench-tst
+        partOfStream: stream-1-tst
+        priority: 1
+        vips:
+        - vip1-tst
+        protocols:
+        - tcp
+        byteMatches:
+        - sctp[4:4] = 0
+      attractors:
+      - name: attr1-tst
+        intoTrench: trench-tst
+        gateways:
+        - gateway1-tst
+        vips:
+        - vip1-tst
+        replicas: 1
+        useConduits:
+        - lb-fe-a-tst
+        interface:
+          name: eth2.354
+          ipv4Prefix: 214.14.132.128/27
+          ipv6Prefix: 2001:1b74:8f:f6c0::/64
+          nsmVlan:
+            vlanId: 354
+            baseInterface: eth2
+
+eric-tm-senp-nvip:
+  enabled: true
+
+eric-data-object-storage-mn:
+  imageCredentials:
+    init:
+      registry:
+        url: serodocker.sero.gic.ericsson.se
+    osmn:
+      registry:
+        url: serodocker.sero.gic.ericsson.se
+    kes:
+      registry:
+        url: serodocker.sero.gic.ericsson.se
+
+eric-data-sftp-server:
+  imageCredentials:
+    sftp:
+      registry:
+        url: serodocker.sero.gic.ericsson.se
+
+eric-probe-virtual-tap-broker:
+  imageCredentials:
+    VirtualTapBroker:
+      registry:
+        url: selndocker.mo.sw.ericsson.se
+
+eric-bsf:
+  tapagent:
+    manager:
+      enabled: true
+  tapcollector:
+    worker:
+      enabled: true
+
+eric-scp:
+  tapcollector:
+    worker:
+      enabled: true
+
+eric-sepp:
+  tapcollector:
+    worker:
+      enabled: true

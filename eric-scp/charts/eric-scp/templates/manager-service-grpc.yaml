@@ -1,0 +1,30 @@
+#Copyright 2022 Ericsson GmbH
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ template "eric-scp.name" . }}-manager-grpc
+  labels:
+{{- include "eric-scp.labels" . | indent 4 }}
+    app: {{ template "eric-scp.name" . }}-manager
+  annotations:
+{{- include "eric-scp.helm-annotations" . | indent 4 }}
+{{- include "eric-scp.config-annotations" . | indent 4 }}
+spec:
+  ports:
+  - protocol: TCP
+    port: 9900
+    targetPort: 9900
+    name: workerconfig
+  - protocol: TCP
+    port: 9899
+    targetPort: 9899
+    name: outlierevents
+  selector:
+  {{- if .Values.manager.leaderElection.enabled }}
+    leader: {{ template "eric-scp.name" . }}-manager-leader
+  {{- else }}
+    app: {{ template "eric-scp.name" . }}-manager
+  {{- end }}
+  ipFamilyPolicy: PreferDualStack
+  type: ClusterIP
+{{- include "eric-scp.ipfamilies" . | indent 2 }}

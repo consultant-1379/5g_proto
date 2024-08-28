@@ -1,0 +1,42 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2020-07-21 10:18
+FOSS:
+    # Available in Bazaar
+    FOSSName: Reactive Streams
+    # Available in Bazaar
+    FOSSVersion: 1.0.3
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/reactive-streams/reactive-streams-jvm/archive/v{{FOSSVersion}}.zip
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 4/CTX1020853
+    # Not Available in Bazaar
+    Primary: N
+    # Available in Bazaar
+    STAKOCode: Restricted use
+    # Available in Bazaar
+    STAKOReason: Product version is older than 18 months
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: 'Reactive Streams Specification for the JVM'
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: Creative Commons Zero v1.0 Universal (CC0-1.0)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Creative Commons Zero v1.0 Universal (CC0-1.0)
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'org.reactivestreams:reactive-streams:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: EAVAPSR Vasiliki Parousidou

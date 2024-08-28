@@ -1,0 +1,4 @@
+apiVersion: v1
+description: ###CHART_DESCR###
+name: ###CHART_NAME###
+version: ###CHART_VER###

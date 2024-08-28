@@ -1,0 +1,48 @@
+{
+  "allowedNfTypes": [
+    "SMF",
+    "CHF"
+  ],
+  "capacity": 9,
+  "chfInfo": {
+    "supiRangeList": [
+      {
+        "end": "460113159999999",
+        "start": "460113100000000"
+      },
+      {
+        "end": "460113199999009",
+        "start": "460113199999000"
+      },
+      {
+        "end": "460113199999999",
+        "start": "460113199999000"
+      },
+      {
+        "end": "460113419999999",
+        "start": "460113400000000"
+      },
+      {
+        "end": "460113499999009",
+        "start": "460113499999000"
+      },
+      {
+        "end": "460113499999999",
+        "start": "460113499999000"
+      }
+    ]
+  },
+  "fqdn": "scpguangdongwlw",
+  "interPlmnFqdn": "scpguangdongwlw",
+  "load": 22,
+  "nfInstanceId": "56933674-3613-4ca5-8efb-8933398ed0db",
+  "nfServicePersistence": false,
+  "nfStatus": "REGISTERED",
+  "nfType": "CHF",
+  "plmnList": [
+    {
+      "mcc": "460",
+      "mnc": "11"
+    }
+  ]
+}

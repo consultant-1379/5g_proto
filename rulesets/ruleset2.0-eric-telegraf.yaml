@@ -1,0 +1,127 @@
+modelVersion: 2.0
+
+import:
+  base: ruleset2.0-eric-base.yaml
+
+description: "Telegraf chart taken from influxdata"
+
+properties:
+  - TELEGRAF_REPO_URL: https://helm.influxdata.com/
+  - TELEGRAF_REPO_NAME: influxdata
+  - TELEGRAF_DIR: devtools/telegraf
+  - TELEGRAF_CHART_NAME: telegraf
+  - TELEGRAF_CHART_VERSION: 1.8.18
+  
+  - EXPORT_DIR: ${base.OUTPUT_DIR}/export-telegraf
+  - TELEGTRAF_SERVICE_NAME: eric-${TELEGRAF_CHART_NAME}
+
+env:
+  - RELEASE (default=false)
+  - USER (default=anonymous)
+       
+var:
+  - build-proxy
+  - telegraf-chart-version
+  - namespace
+
+rules:
+  download:
+    - task: move-old-telegraf-folder
+      cmd: /bin/bash -c "if [[ -d ${TELEGRAF_DIR}/helm ]];
+                         then
+                            mkdir -p ${TELEGRAF_DIR}/helm_old;
+                            cp -Rp ${TELEGRAF_DIR}/helm/. ${TELEGRAF_DIR}/helm_old;
+                         fi;"
+    - task: create-telegraf-folder
+      cmd: /bin/bash -c "if [[ ! -d ${TELEGRAF_DIR}/helm ]];
+                         then
+                            mkdir -p ${TELEGRAF_DIR}/helm;
+                         fi;"
+    - task: repo-add
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: /bin/bash -c "helm repo add ${TELEGRAF_REPO_NAME} ${TELEGRAF_REPO_URL};
+                         helm pull ${TELEGRAF_REPO_NAME}/${TELEGRAF_CHART_NAME} --version ${TELEGRAF_CHART_VERSION} --destination ${TELEGRAF_DIR}"
+    - task: extract-chart
+      cmd: "tar zxvf ${TELEGRAF_DIR}/${TELEGRAF_CHART_NAME}-${TELEGRAF_CHART_VERSION}.tgz --directory ${TELEGRAF_DIR}/helm --strip-components=1"
+    - task: remove-tgz
+      cmd: /bin/bash -c "rm -fr ${TELEGRAF_DIR}/*.tgz"
+    - task: check-downloaded-version
+      cmd: "if [[ -d ${TELEGRAF_DIR}/helm_old ]]; then
+               diff -qr ${TELEGRAF_DIR}/helm/ ${TELEGRAF_DIR}/helm_old/;
+               if [ $? -eq 0 ]; then
+                  echo 'No changes identified';
+                  rm -fr ${TELEGRAF_DIR}/helm_old;
+               else
+                  echo 'Changes identified in the new telegraf chart, please check changes';
+                  exit 1;
+               fi;
+            fi;"
+  
+  init:
+    - task: create-output-dir
+      cmd: /bin/bash -c "if [[ ! -d ${base.OUTPUT_DIR} ]];
+                         then
+                            mkdir -p ${base.OUTPUT_DIR};
+                         fi;"
+    - task: set-namespace
+      cmd: /bin/bash -c "./scripts/bash/setNamespace -u ${env.base.USER} -n ${env.base.NAMESPACE} -h ${env.base.KUBE_HOST}"
+    - task: telegraf-chart-version
+      cmd: /bin/bash -c "echo ${TELEGRAF_CHART_VERSION} > ${base.OUTPUT_DIR}/var.telegraf-chart-version"
+    - task: set-kube-config
+      cmd: /bin/bash -c "cp -r /home/${env.base.USER}/.kube/${env.base.KUBE_HOST}.config ${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf;"
+
+  package:
+    - task: copy-values
+      cmd: /bin/bash -c "cp ${TELEGRAF_DIR}/mods/values.yaml ${base.OUTPUT_DIR}/telegraf-values.yaml"
+    - task: copy-telegraf-chart
+      cmd: /bin/bash -c "if [[ ! -d ${base.OUTPUT_DIR}/${TELEGRAF_CHART_NAME}/helm ]];
+                         then
+                            mkdir -p ${base.OUTPUT_DIR}/${TELEGRAF_CHART_NAME}/helm;
+                         fi;
+                         cp -Rp ${TELEGRAF_DIR}/helm/. ${base.OUTPUT_DIR}/${TELEGRAF_CHART_NAME}/helm;"
+    - task: copy-ext-cert-key-cr
+      cmd: /bin/bash -c "\cp ${TELEGRAF_DIR}/mods/asymmetric-key-cert-cr.yaml ${base.OUTPUT_DIR}/${TELEGRAF_CHART_NAME}/helm/templates/"
+    - task: copy-ext-trust-cert-cr
+      cmd: /bin/bash -c "\cp ${TELEGRAF_DIR}/mods/trusted_cert_cr.yaml ${base.OUTPUT_DIR}/${TELEGRAF_CHART_NAME}/helm/templates/"
+    - task: copy-mod-deployment
+      cmd: /bin/bash -c "\cp ${TELEGRAF_DIR}/mods/deployment.yaml ${base.OUTPUT_DIR}/${TELEGRAF_CHART_NAME}/helm/templates/"
+    - task: telegraf-chart
+      docker-image: base.adp-release-auto
+      cmd: /bin/bash -c "helm-package --folder ${base.OUTPUT_DIR}/telegraf/helm
+                                      --output ${base.OUTPUT_DIR}
+                                      --version ${TELEGRAF_CHART_VERSION}"
+     
+  deploy:
+    - task: telegraf
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env HELM_USER=${env.USER}"
+      cmd: sh -c 'helm install ${TELEGTRAF_SERVICE_NAME}-${env.USER}
+                               ${base.OUTPUT_DIR}/${TELEGRAF_CHART_NAME}-${TELEGRAF_CHART_VERSION}.tgz
+                               -f ${base.OUTPUT_DIR}/telegraf-values.yaml
+                               -n ${var.namespace}'
+
+  undeploy:
+    - task: telegraf
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env HELM_USER=${env.USER}"
+      cmd: sh -c 'helm uninstall ${TELEGTRAF_SERVICE_NAME}-${env.USER} -n ${var.namespace}' 
+    - task: remove-all-resources
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: kubectl api-resources --verbs=list -o name | xargs -n 1 --verbose kubectl delete --ignore-not-found -l app.kubernetes.io/instance=${TELEGTRAF_SERVICE_NAME}-${env.USER}
+
+  clean:
+    - task: generated-files
+      cmd: /bin/bash -c "rm -rf ${base.OUTPUT_DIR}/*telegraf*;
+                         rm -rf ${base.OUTPUT_DIR}/*tmp*"
+
+

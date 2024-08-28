@@ -1,0 +1,42 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2019-06-21 12:24
+FOSS:
+    # Available in Bazaar
+    FOSSName: jnr-x86asm
+    # Available in Bazaar
+    FOSSVersion: 1.0.2
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/jnr/jnr-x86asm/archive/1.0.2.tar.gz
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 1/CAX1059982
+    # Not Available in Bazaar
+    Primary: N
+    # Available in Bazaar
+    STAKOCode: Not for a New Design
+    # Available in Bazaar
+    STAKOReason: Product version is older than 54 months
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: Pure java x86 and x86_64 assembler.
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: MIT License (MIT)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: MIT License (MIT)
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'com.github.jnr:jnr-x86asm:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ENTNGRG Georgios Antoniou

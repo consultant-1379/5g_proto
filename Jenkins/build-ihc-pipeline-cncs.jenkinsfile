@@ -1,0 +1,254 @@
+String findCommitters() {
+	catchError(buildResult: currentBuild.result, message: 'Error in subroutine findCommitters', stageResult: 'UNSTABLE') {
+		// get the changes for the actual build from URL and store it in a json file
+		sh "curl --netrc  ${env.BUILD_URL}api/json -o culprits.json"
+		// get the authors' full name or eMail from the json file, and remove ][ brackets from the string
+		sh 'cat culprits.json | jq -c \'[.changeSets[].items[].author.fullName]\' | tr -d "][" > culprits_tmp.txt';
+		sh 'cat culprits.json | jq -c \'[.changeSets[].items[].authorEmail]\' | tr -d "][" > culprits_email_tmp.txt';
+		sh 'echo "Temporary Culprits: "; cat culprits_tmp.txt; echo " Emails: "; cat culprits_email_tmp.txt';
+		// remove (eE)iffel commit
+		//	awk: print each committer if string doesn't contain (eE)iffel, also remove double-squotes; this introduces line breaks
+		//	sort -u: remove double entries
+		sh 'cat culprits_tmp.txt | awk -F"," \'{for (i=1; i<=NF; i++) {if($i !~ ".iffel"){gsub("\\"",""); print $i}}}\' | sort -u > culprits.txt; rm -f culprits_tmp.txt'
+		sh 'cat culprits_email_tmp.txt | awk -F"," \'{for (i=1; i<=NF; i++) {if($i !~ ".iffel"){gsub("\\"",""); print $i}}}\' | sort -u > culprits_email.txt; rm -f culprits_email_tmp.txt'
+		sh 'echo "Culprits: "; cat culprits.txt; echo " Emails: "; cat culprits_email.txt';
+	} //catchError
+}
+if (env.AGENT_LABEL != null && env.AGENT_LABEL != '') {
+	AGENT_LABEL = "${env.AGENT_LABEL}"
+} else {
+	AGENT_LABEL = '5G-SC'
+}
+pipeline {
+	agent {
+		node {
+			label "${AGENT_LABEL}"
+		}
+	}
+	options {
+		timeout(time: 90, unit: 'MINUTES')
+		timestamps()
+	}
+	environment {
+		// Variables needed for the ruleset
+		PRODUCTION = true
+		// Variables only used in Build-job
+		KUBE_HOST = "${env.KUBE_HOST}"
+		TEAMNAME = "${env.TEAMNAME}"
+		PROJECT = "${env.PROJECT}" // only used in Smoke-build, not in TeamCI-build
+		ARTIFACTORY_TOKEN = "${env.ARTIFACTORY_TOKEN}"
+	}
+	stages {
+		stage('Cleaning WS on Buildcomputes'){
+			// only if no other instance of the same job is running in parallel
+			// if another instance is running this procedure would delete its WS and make it failing
+			when {
+				expression { currentBuild.getPreviousBuildInProgress() == null && !(env.NODE_NAME =~ /5G-LMVL/) }
+			}
+			steps{
+				catchError(message: "Timeout while cleaning WS on Buildcomputes", buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+				// remove all (!) content (including the git repo)
+		
+					script {
+						env.AGENT_LABEL="${AGENT_LABEL}"
+						env.LOCAL_PATH = sh(returnStdout: true, script: 'pwd').trim()
+						println "LOCAL PATH: ${LOCAL_PATH}"
+						println "WORKSPACE: ${WORKSPACE}"
+						println "JOB_NAME: ${JOB_NAME}"
+						withCredentials([usernamePassword(credentialsId: 'eiffelesc-user-password', usernameVariable: 'USER', passwordVariable: 'PASSWORD')]) {
+							def NODE_NAMES_LABEL = sh(returnStdout: true, script: 'curl -s -u $USER:$PASSWORD ${JENKINS_URL}/label/${AGENT_LABEL}/api/json?pretty=true | jq -r ".nodes[].nodeName"').trim().split("\n");
+							println "LABEL: ${AGENT_LABEL}, ${NODE_NAMES_LABEL}"
+							for (NODE_NAME_LABEL in NODE_NAMES_LABEL) {
+								env.NODE_NAME_LABEL = "${NODE_NAME_LABEL}"
+								def NODE_OFFLINE = sh(returnStdout: true, script: 'curl -s -u $USER:$PASSWORD ${JENKINS_URL}/computer/${NODE_NAME_LABEL}/api/json?pretty=true | jq -r ".offline"').trim();
+								if ("${NODE_OFFLINE}" == "false" && env.NODE_NAME != "${NODE_NAME_LABEL}" && env.NODE_NAME != "") {
+								    def NODE_ADDRESS_LABEL = sh(returnStdout: true, script: 'curl -s -u $USER:$PASSWORD ${JENKINS_URL}/computer/${NODE_NAME_LABEL}/config.xml | awk -F\'[<>]\' \'/<host>/{print $3;exit}\'').trim();
+									env.NODE_ADDRESS_LABEL = "${NODE_ADDRESS_LABEL}"
+									if (env.LOCAL_PATH == env.WORKSPACE && env.WORKSPACE != "" && (env.WORKSPACE.endsWith("${JOB_NAME}"))) {
+										sh '''#!/bin/bash -x
+										echo "PATH: ${WORKSPACE}"
+										echo "REMOTE NODE: ${NODE_NAME_LABEL}"
+										timeout 60 ssh eiffelesc@${NODE_ADDRESS_LABEL} "if [ -d ${WORKSPACE} ]; then rm -rf ${WORKSPACE}/; else echo \"Nothing to clean\"; fi;"
+										'''
+									} //if
+								} //if
+							} //for
+						} //withCredentials
+					} //script
+				} //catchError
+			} //steps
+		} //stage
+		stage('Init') {
+			steps {
+				// prepare git submodules
+				sh 'git submodule update --init --recursive'
+				
+				sh './bob/bob sc.config.clean:directories'
+				
+				sh './bob/bob sc.base.init:create-output-dir'
+				sh './bob/bob sc.base.init:copy-helm-credentials'
+				sh './bob/bob sc.base.init:policy-api-version' // chart lint
+				
+				// the esc-version is available after bob init
+				script{
+					// set the displayed build name to "BUILD_NUMBER - COMMIT"
+					currentBuild.displayName = "#${env.BUILD_NUMBER} - ${env.COMMIT}"
+					// set displayed description to "NODE_NAME, KUBE_HOST, CHART_VERSION"
+					currentBuild.description = "node: ${env.NODE_NAME}, committer: ${env.COMMITTER}<br/>";
+					currentBuild.description += "Update dependencies:<br/>";
+					currentBuild.description += "NAME: ${env.CHART_NAME}<br/>";
+					currentBuild.description += "REPO: ${env.CHART_REPO}<br/>";
+					currentBuild.description += "VERSION: ${env.CHART_VERSION}<br/>";
+					
+					// the commit is the one that has been checked out by Jenkins
+					//	if COMMIT was set to "origin/branch" then COMMIT gets the hash here (latest of the branch)
+					//	if COMMIT was set to a hash already then it gets the same value again here
+					//env.COMMIT = sh( returnStdout: true, script: "git log --format=\"%h\" | head -1 | tr -d '\n'")
+					//env.SUBCHART_VERSION = sh( returnStdout: true, script: "cat ./.bob/var.sc-version | tr -d '\n'")
+					// findCommitters() writes commiter names und eMails to files
+					findCommitters();
+					env.COMMITTER = sh( returnStdout: true, script: "cat culprits.txt | sed ':a;N;\$!ba;s/\\n/, /g' ")
+					env.EMAIL_COMMITTER = sh( returnStdout: true, script: "cat culprits_email.txt | sed ':a;N;\$!ba;s/\\n/, /g' ")
+					// sed: see https://stackoverflow.com/questions/1251999/how-can-i-replace-each-newline-n-with-a-space-using-sed
+
+					if ( fileExists("/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh") ) {
+						// Log current job
+						sh "/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh -start"
+					} // if
+				} // script
+				sh 'printenv | sort'
+			} // steps
+		} // stage
+		// TODO: concider log-shipper upgrades
+		stage('Create BSF IHC') {
+			when {
+				anyOf {
+					expression { env.CHART_NAME.toLowerCase().contains('eric-bsf') }
+					expression { env.CHART_NAME.toLowerCase().contains('eric-bsf-diameter') }
+					expression { env.CHART_NAME.toLowerCase().contains('eric-stm-diameter') }
+					expression { env.CHART_NAME.toLowerCase().contains('eric-data-wide-column-database-cd') }
+					expression { env.CHART_NAME.toLowerCase().contains('eric-sc-bsf-log-shipper') }
+				}
+			}
+			steps {
+				//sh './bob/bob sc.scbsf.update-chart'
+				script {
+					// TeamCI = prepare-dev-ci, Smoke/PRA = publish, CSAR/RV/ManualTest = only deploy
+					withCredentials([usernamePassword(credentialsId: 'eiffelesc-credentials', usernameVariable: 'GERRIT_USERNAME', passwordVariable: 'GERRIT_PASSWORD'),
+									usernamePassword(credentialsId: 'eiffelesc-armsero-token-credentials', usernameVariable: 'HELM_USER', passwordVariable: 'ARM_API_TOKEN')]) {
+						//switch (env.TEST_TYPE) {
+						//case [ 'SmokeTest', 'PRA' ]:
+							//sh './bob/bob sc.scbsf.package:publish'
+							//break
+						//default:
+							sh './bob/bob sc.scbsf.package:prepare-ci'
+							//break
+						//} //switch
+					} // withCredentials
+				} // script
+				sh './bob/bob sc.scbsf.post-publish:chart-version-local'
+			} // steps
+		} // stage
+		// TODO: concider log-shipper upgrades
+		stage('Create SCP IHC') {
+			when {
+				anyOf {
+					expression { env.CHART_NAME.toLowerCase().contains('eric-scp') }
+					expression { env.CHART_NAME.toLowerCase().contains('eric-sc-slf') }
+				}
+			}
+			steps {
+				//sh './bob/bob sc.scscp.update-chart'
+				script {
+					// TeamCI = prepare-dev-ci, Smoke/PRA = publish, CSAR/RV/ManualTest = only deploy
+					withCredentials([usernamePassword(credentialsId: 'eiffelesc-credentials', usernameVariable: 'GERRIT_USERNAME', passwordVariable: 'GERRIT_PASSWORD'),
+									usernamePassword(credentialsId: 'eiffelesc-armsero-token-credentials', usernameVariable: 'HELM_USER', passwordVariable: 'ARM_API_TOKEN')]) {
+						//switch (env.TEST_TYPE) {
+						//case [ 'SmokeTest', 'PRA' ]:
+							//sh './bob/bob sc.scscp.package:publish'
+							//break
+						//default:
+							sh './bob/bob sc.scscp.package:prepare-ci'
+							//break
+						//} //switch
+					} // withCredentials
+				} // script
+				sh './bob/bob sc.scscp.post-publish:chart-version-local'
+			} //steps
+		} // stage
+		// TODO: concider log-shipper upgrades
+		stage('Create SEPP IHC') {
+			when {
+				expression { env.CHART_NAME.toLowerCase().contains('eric-sepp') }
+			}
+			steps {
+				//sh './bob/bob sc.scsepp.update-chart'
+				script {
+					// TeamCI = prepare-dev-ci, Smoke/PRA = publish, CSAR/RV/ManualTest = only deploy
+					withCredentials([usernamePassword(credentialsId: 'eiffelesc-credentials', usernameVariable: 'GERRIT_USERNAME', passwordVariable: 'GERRIT_PASSWORD'),
+									usernamePassword(credentialsId: 'eiffelesc-armsero-token-credentials', usernameVariable: 'HELM_USER', passwordVariable: 'ARM_API_TOKEN')]) {
+						//switch (env.TEST_TYPE) {
+						//case [ 'SmokeTest', 'PRA' ]:
+							//sh './bob/bob sc.scsepp.package:publish'
+							//break
+						//default:
+							sh './bob/bob sc.scsepp.package:prepare-ci'
+							//break
+						//} //switch
+					} // withCredentials
+				} // script
+				sh './bob/bob sc.scsepp.post-publish:chart-version-local'
+			} // steps
+		} // stage
+		stage('Cleanup & Archiving') {
+			steps {
+				script{
+					env.SC_SCP_INT_CHART_VERSION = sh( returnStdout: true, script: "cat ./.bob/var.sc-scp-version | tr -d '\n'")
+					env.SC_SEPP_INT_CHART_VERSION = sh( returnStdout: true, script: "cat ./.bob/var.sc-sepp-version | tr -d '\n'")
+					env.SC_BSF_INT_CHART_VERSION = sh( returnStdout: true, script: "cat ./.bob/var.sc-bsf-version | tr -d '\n'")
+					// update displayed description with integration chart version
+					currentBuild.description += "SC Integration Helm Charts:<br/>";
+					currentBuild.description += "eric-sc-scp: ${env.SC_SCP_INT_CHART_VERSION}<br/>";
+					currentBuild.description += "eric-sc-sepp: ${env.SC_SEPP_INT_CHART_VERSION}<br/>";
+					currentBuild.description += "eric-sc-bsf: ${env.SC_BSF_INT_CHART_VERSION}";
+				} // script
+				archiveArtifacts artifacts: 'artifact.properties', onlyIfSuccessful: true
+			} // steps
+		} // stage
+	} // stages
+
+	post {
+		always {
+			script{
+				// Log current job
+				if ( fileExists("/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh") ) {
+					sh "/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh -stop"
+				} // if
+			} // script
+		} // always
+		//success {
+			//cleanWs()
+		//} // success
+		failure {
+			script {
+				// only send mail for smoketest
+				if ( env.TEST_TYPE == 'SmokeTest' ) {
+					COLOR = "<body style=\"background-color: LightYellow;\">"
+
+					emailext body: "$COLOR" + "Hi ${env.COMMITTER},\n" +
+											  "<p>the build failed, maybe due to your commit?\n" +
+											  "<p>Please check:\n" +
+											  "<br>${env.BUILD_URL}\n" +
+											  "<br><br>Thank you for pushing.\n" +
+											  "<br><br>BR,<br>SCCI",
+
+						mimeType: 'text/html',
+						subject: "5G Smoke-test build failed for ${env.PROJECT} : ${env.COMMIT}",
+						to: "${env.EMAIL_COMMITTER}, ${env.EMAIL_OTHER}"  // mail to committers and respective Teams channel
+						//to: "${env.EMAIL_COMMITTER}, DSCAteam@ericsson.onmicrosoft.com, f37b6763.ericsson.onmicrosoft.com@emea.teams.ms"  //Teams: Master Channel
+						//to: "${env.EMAIL_COMMITTER}, DSCAteam@ericsson.onmicrosoft.com, 7352f6e6.ericsson.onmicrosoft.com@emea.teams.ms"  //Teams: Release Channel
+				} //if
+			} //script
+		} //failure
+	} //post
+} //pipeline

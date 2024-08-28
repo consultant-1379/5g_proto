@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package scp.service.outlier.v1;
+
+option java_outer_classname = "OutlierProto";
+option java_multiple_files = true;
+option java_package = "io.scp.service.outlier.v1";
+option java_generic_services = true;
+option go_package = "ericsson.com/5g/scp/service/v1/outlier_service";
+
+import "scp/api/v1/outlier.proto";
+import "scp/api/v1/healthcheck.proto";
+
+// [#not-implemented-hide:] Not configuration. Workaround c++ protobuf issue with importing
+// services: https://github.com/google/protobuf/issues/4221
+message OutlierDummy {
+}
+
+// Service to transport outlier log messages from Envoy resp. its sidecar
+// to the SCP Manager.
+service OutlierLogService {
+  // This is a gRPC-only API.
+  rpc StreamOutlierLogEvents(stream scp.api.v1.OutlierLogEvent)
+    returns (stream scp.api.v1.OutlierLogEventResponse) {
+  }
+}
+
+service HealthCheckLogService {
+  rpc StreamHealthCheckLogEvents(stream scp.api.v1.HealthCheckLogEvent)
+    returns (stream scp.api.v1.HealthCheckLogEventResponse) {
+  }
+}

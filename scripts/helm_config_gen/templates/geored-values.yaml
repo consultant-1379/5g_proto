@@ -1,0 +1,32 @@
+eric-data-wide-column-database-cd:
+  replicaCount: 2
+  dataCenters:
+  - name: datacenter1
+    service:
+      externalIP:
+        annotations:
+          addressPoolName: default2
+  persistence:
+    dataVolume:
+      persistentVolumeClaim:
+        size: 100Gi #40Gi
+        storageClassName: network-block
+  resources:
+    cassandra:
+      limits:
+        cpu: 4
+        memory: 16Gi
+      requests:
+        cpu: 4
+        memory: 16Gi
+  service:
+    externalTrafficPolicy: Local
+    external:
+      tls:
+        enabled: true
+    endpoints:
+      cql:
+        tls:
+          enforced: optional
+    externalIP:
+      enabled: true

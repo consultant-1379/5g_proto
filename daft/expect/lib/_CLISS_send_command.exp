@@ -1,0 +1,93 @@
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.9
+#  Date     : 2016-11-18 13:59:50
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2014-2016
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Send a command to the CLISS shell.
+#
+# This subroutine expects that it is already connected to the CLISS prompt.
+#
+# Input:
+#  - Command to send
+#
+# Output:
+#  -  0: Success
+#    >0: Command returned an error
+#    -1: Timeout
+#
+proc CLISS_send_command {command} {
+    global spawn_id
+
+    set errorcnt 0
+
+    # Send the command
+    send -- "$command\r"
+
+    expect {
+        -re "ERROR: \[^\n\]*\n" {
+            # Some error have occurred, increment an error counter
+            incr errorcnt
+            exp_continue
+        }
+        "\n" {
+            # New line received, continue waiting
+            exp_continue
+        }
+        -re "<\[^>\]*>" {
+            # Part of a line received and not a prompt, continue waiting
+            # Work around for BSP cliss problems where e.g. <read-only> was sent
+            # to expect but the ending NL didn't come directly but after a few ms
+            # causing the ">$" prompt check below thinking it was a cliss prompt.
+            # Examples:
+            # .....<read-only>
+            # .....<empty>
+            # .....<default>
+            exp_continue
+        }
+        -re "\"SC-\[12\]\"" {
+            # Part of a line received and not a prompt, continue waiting
+            # Work around for BSP cliss problems where e.g. "SC-1" was sent
+            # to expect but the ending NL didn't come directly but after a few ms
+            # causing the "SC-\[12\]" prompt check below thinking it was a prompt.
+            # Example:
+            # ...  userLabel="SC-1"
+            exp_continue
+        }
+        -re ">$" {
+            # Ready for next command
+        }
+        -re "SC-2-\[12\]\[^\n\]*$" {
+            # On the BSP SCXB: Ready for next command
+        }
+        -re "SC-\[12\]\[^\n\]*$" {
+            # On the Controller Blades: Ready for next command
+        }
+        -re "(root|advanced|expert)\@blade_0_(0|25|26|28)\[^\n\]*$" {
+            # On the CMX: Ready for next command
+        }
+        timeout {
+            return -1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    return $errorcnt
+}

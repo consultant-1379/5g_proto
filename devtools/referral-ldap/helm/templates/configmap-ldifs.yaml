@@ -1,0 +1,223 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Chart.Name }}-ldifs
+data:
+  001-schema-auth.ldif: |-
+    dn: cn=eric_user_authentic_authoriz-extended,cn=schema,cn=config
+    objectClass: olcSchemaConfig
+    cn: eric_user_authentic_authoriz-extended
+    # ericssonUserAuthenticationScope
+    olcAttributeTypes: {0}( 1.3.6.1.4.1.193.207.372
+      NAME 'ericssonUserAuthenticationScope'
+      DESC 'Ericsson User Authentication Scope'
+      EQUALITY caseIgnoreIA5Match
+      SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+    # ericssonUserAuthorizationScope
+    olcAttributeTypes: {1}( 1.3.6.1.4.1.193.207.373
+      NAME 'ericssonUserAuthorizationScope'
+      DESC 'Ericsson User Authorization Scope'
+      EQUALITY caseIgnoreIA5Match
+      SUBSTR caseIgnoreIA5SubstringsMatch
+      SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+    # Role
+    olcAttributeTypes: {2}( 1.3.6.1.4.1.193.207.371
+       NAME 'role'
+       DESC 'Ericsson Role'
+       EQUALITY caseIgnoreIA5Match
+       SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+    # ericssonUserAuthentication
+    olcObjectClasses: {0}( 1.3.6.1.4.1.193.207.374
+       NAME 'ericssonUserAuthentication'
+       SUP top
+       AUXILIARY
+       MAY ericssonUserAuthenticationScope )
+    # ericssonUserAuthorization
+    olcObjectClasses: {1}( 1.3.6.1.4.1.193.207.376
+       NAME 'ericssonUserAuthorization'
+       SUP top
+       AUXILIARY
+       MAY ericssonUserAuthorizationScope )
+    # ericssonRoleAlias
+    olcObjectClasses: {2}( 1.3.6.1.4.1.193.207.375
+       NAME 'ericssonRoleAlias'
+       SUP top
+       STRUCTURAL
+       MAY ( role $ ericssonUserAuthorizationScope ) )
+
+  01-ous.ldif: |-
+    dn: ou=people,{{ .Values.baseDN }}
+    objectClass: organizationalUnit
+    ou: people
+
+    dn: ou=roles,{{ .Values.baseDN }}
+    objectClass: organizationalUnit
+    ou: people
+
+    dn: ou=blond,ou=people,{{ .Values.baseDN }}
+    objectClass: organizationalUnit
+    ou: blond
+
+    dn: ou=accounts,{{ .Values.baseDN }}
+    objectClass: organizationalUnit
+    ou: accounts
+
+  02-roles.ldif: |-
+    dn: cn=role1,ou=roles,{{ .Values.baseDN }}
+    objectClass: top
+    objectClass: groupOfNames
+    cn: role1
+    member: uid=user1,ou=people,{{ .Values.baseDN }}
+
+    dn: cn=role2,ou=roles,{{ .Values.baseDN }}
+    objectClass: top
+    objectClass: groupOfNames
+    cn: role2
+    member: uid=user2,ou=people,{{ .Values.baseDN }}
+
+    dn: cn=manage-users,ou=roles,{{ .Values.baseDN }}
+    objectClass: top
+    objectClass: posixGroup
+    gidNumber: 1000
+    cn: manage-users
+
+    dn: cn=view-users,ou=roles,{{ .Values.baseDN }}
+    objectClass: top
+    objectClass: posixGroup
+    gidNumber: 1001
+    cn: view-users
+
+    # dn: cn=manage-users,ou=roles,{{ .Values.baseDN }}
+    # objectClass: top
+    # objectClass: groupOfNames
+    # cn: manage-users
+    # member: uid=user1,ou=people,{{ .Values.baseDN }}
+
+    # dn: cn=view-users,ou=roles,{{ .Values.baseDN }}
+    # objectClass: top
+    # objectClass: groupOfNames
+    # cn: view-users
+    # member: uid=user2,ou=people,{{ .Values.baseDN }}
+    # member: uid=user1,ou=people,{{ .Values.baseDN }}
+
+  03-users.ldif: |-
+    dn: uid=bob,ou=people,{{ .Values.baseDN }}
+    objectClass: top
+    objectClass: account
+    objectClass: posixAccount
+    objectClass: ericssonUserAuthorization
+    ericssonUserAuthorizationScope: sc-admin
+    ericssonUserAuthorizationScope: system-admin
+    ericssonUserAuthorizationScope: manage-users
+    ericssonUserAuthorizationScope: role1
+    userPassword: bob_pw
+    memberOf: cn=manage-users,ou=roles,{{ .Values.baseDN }}
+    memberOf: cn=view-users,ou=roles,{{ .Values.baseDN }}
+    cn: bob
+    uid: bob
+    uidNumber: 1001
+    gidNumber: 1000
+    homeDirectory: /home/bob
+    description: bob_pw
+    
+    dn: uid=alice,ou=people,{{ .Values.baseDN }}
+    objectClass: top
+    objectClass: account
+    objectClass: posixAccount
+    objectClass: ericssonUserAuthorization
+    ericssonUserAuthorizationScope: sc-security-admin
+    ericssonUserAuthorizationScope: system-security-admin
+    ericssonUserAuthorizationScope: view-users
+    ericssonUserAuthorizationScope: role2
+    userPassword: alice_pw
+    cn: alice
+    uid: alice
+    uidNumber: 1002
+    gidNumber: 1000
+    homeDirectory: /home/alice
+    description: alice_pw
+    
+    dn: uid=guest,ou=people,{{ .Values.baseDN }}
+    objectClass: top
+    objectClass: account
+    objectClass: posixAccount
+    objectClass: ericssonUserAuthorization
+    ericssonUserAuthorizationScope: system-read-only
+    ericssonUserAuthorizationScope: sc-read-only
+    userPassword: guest_pw
+    cn: guest
+    uid: guest
+    uidNumber: 1003
+    gidNumber: 1000
+    homeDirectory: /home/guest
+    description: guest_pw
+    
+    dn: uid=scpAdmin,ou=people,{{ .Values.baseDN }}
+    objectClass: top
+    objectClass: account
+    objectClass: posixAccount
+    objectClass: ericssonUserAuthentication
+    objectClass: ericssonUserAuthorization
+    ericssonUserAuthorizationScope: sc-admin
+    ericssonUserAuthorizationScope: scp-admin
+    userPassword: scpscp
+    cn: scpAdmin
+    uid: scpAdmin
+    uidNumber: 1005
+    gidNumber: 1000
+    homeDirectory: /home/scpAdmin
+    description: scpscp
+    
+    dn: uid=bsfAdmin,ou=people,{{ .Values.baseDN }}
+    objectClass: top
+    objectClass: account
+    objectClass: posixAccount
+    objectClass: ericssonUserAuthentication
+    objectClass: ericssonUserAuthorization
+    ericssonUserAuthorizationScope: sc-admin
+    ericssonUserAuthorizationScope: bsf-admin
+    userPassword: bsfbsf
+    cn: bsfAdmin
+    uid: bsfAdmin
+    uidNumber: 1006
+    gidNumber: 1000
+    homeDirectory: /home/bsfAdmin
+    description: bsfbsf
+    
+    dn: uid=seppAdmin,ou=people,{{ .Values.baseDN }}
+    objectClass: top
+    objectClass: account
+    objectClass: posixAccount
+    objectClass: ericssonUserAuthentication
+    objectClass: ericssonUserAuthorization
+    ericssonUserAuthorizationScope: sc-admin
+    ericssonUserAuthorizationScope: sepp-admin
+    userPassword: seppsepp
+    cn: seppAdmin
+    uid: seppAdmin
+    uidNumber: 1007
+    gidNumber: 1000
+    homeDirectory: /home/seppAdmin
+    description: seppsepp
+
+  03-config.ldif: |-
+    dn: cn=config
+    changetype: modify
+    replace: olcAuthzRegexp
+    olcAuthzRegexp: {{ .Values.tls.saslAuthRegex | quote  }}  "cn=proxy,{{ .Values.baseDN }}"
+
+    dn: olcDatabase={1}mdb,cn=config
+    changetype: modify
+    replace: olcAccess
+    olcAccess: {0}to attrs=userPassword,shadowLastChange
+      by self write
+      by dn.base="cn=admin,{{ .Values.baseDN }}" write
+      by anonymous auth
+      by * none
+    olcAccess: {1}to dn.subtree="{{ .Values.baseDN }}"
+      by dn.base="cn=admin,{{ .Values.baseDN }}" write
+      by dn.base="cn=proxy,{{ .Values.baseDN }}" read
+      by * none
+    olcAccess: {2}to dn.base=""
+      by dn.base="cn=proxy,{{ .Values.baseDN }}" read
+      by * none

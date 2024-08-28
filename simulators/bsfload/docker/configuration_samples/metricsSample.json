@@ -1,0 +1,22 @@
+{
+  "metrics": {
+    "export-metrics": ["PROMETHEUS", "CSV_FILE"],
+    "csv-convert-durations-to": "MILLISECONDS",
+    "csv-convert-rates-to": "SECONDS",
+    "csv-name-prefix": "metrics",
+    "csv-poll-interval": 1,
+    "pm-enable-percentiles": false,
+    "pm-target-percentiles": [
+      "0.75",
+      "0.99"
+    ],
+    "pm-percentile-precision": 1,
+    "pm-percentile-metrics": [
+      "vertx.http.client.response.time"
+    ],
+    "pm-enable-histogram-buckets": false,
+    "pm-histogram-buckets-metrics": [
+      "vertx.http.client.response.time"
+    ]
+  }
+}

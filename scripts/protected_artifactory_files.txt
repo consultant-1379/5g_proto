@@ -1,0 +1,47 @@
+# Directories are indicated by the '/' at the end of the line
+# files/directories marked with <keep-on-node=yes> are not removed from
+# the node by script clean_directory.pl
+# <keep-on-node=xxx> has no effect on the GA Versions stored on artifactory
+<keep-on-node=no>1.1.0+843/
+<keep-on-node=no>1.2.0+18/
+<keep-on-node=no>1.2.1+141/
+<keep-on-node=no>1.2.2+263/
+<keep-on-node=no>1.2.3+9/
+<keep-on-node=no>1.3.0+61/
+<keep-on-node=no>1.3.0+73/
+<keep-on-node=no>1.3.1+329/
+<keep-on-node=no>1.3.2+8/
+<keep-on-node=no>1.3.3+18/
+<keep-on-node=no>1.3.4+21/
+<keep-on-node=no>1.4.0+250/
+<keep-on-node=no>1.4.1+3/
+<keep-on-node=no>1.5.0+63/
+<keep-on-node=no>1.5.0+190/
+<keep-on-node=no>1.5.1+30/
+<keep-on-node=no>1.6.0+172/
+<keep-on-node=no>1.6.1+111/
+<keep-on-node=no>1.7.0+194/
+<keep-on-node=no>1.8.0+180/
+<keep-on-node=no>1.8.1+9/
+<keep-on-node=no>1.9.0+1/
+<keep-on-node=no>1.10.0+88/
+<keep-on-node=no>1.10.1+45/
+<keep-on-node=no>1.10.2+56/
+<keep-on-node=no>1.10.4+22/
+<keep-on-node=no>1.11.0+18/
+<keep-on-node=no>1.11.4+10/
+<keep-on-node=no>1.12.0+43/
+<keep-on-node=no>1.13.0+4/
+<keep-on-node=no>1.13.1+3/
+<keep-on-node=yes>1.14.0+74/
+<keep-on-node=yes>master/
+<keep-on-node=no>VNFM_n103-ccd-pccpcg-vnflcm.xml
+<keep-on-node=no>ESC1.2_DAFT_CXP9036965_99_R1A_20210104_122850.tar.gz
+<keep-on-node=no>ESC1.4_DAFT_CXP9036965_99_R1A_20210922_112126.tar.gz
+<keep-on-node=no>ESC1.5_DAFT_CXP9036965_99_R1A_20220105_165653.tar.gz
+<keep-on-node=no>ESC1.6_DAFT_CXP9036965_99_R1A_20220214_061818.tar.gz
+<keep-on-node=no>ESC1.7_DAFT_CXP9036965_99_R1A_20220302_102853.tar.gz
+<keep-on-node=no>ESC1.8_DAFT_CXP9036965_99_R1A_20220825_113444.tar.gz
+<keep-on-node=no>ESC1.10_DAFT_CXP9036965_99_R1A_20221123_110120.tar.gz
+<keep-on-node=no>ESC1.11_DAFT_CXP9036965_99_R1A_20221206_224306.tar.gz
+

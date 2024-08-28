@@ -1,0 +1,215 @@
+# Copyright 2022 Ericsson GmbH
+---
+# IPfamilies supported deployment (singlestack of choice or dualstack)
+# Service options under service.externalIPvX are used. Service names has suffix of IPfamilies
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ .Values.service.worker.name | quote }}
+  labels:
+    ericsson.com/tapcollector-traffic-service: {{ .Values.service.worker.name | quote }}  
+{{- include "eric-scp.labels" . | indent 4 }}
+  annotations:
+  {{- include "eric-scp.helm-annotations" . | indent 4 }}
+  {{- include "eric-scp.config-annotations" . | indent 4 }}
+  {{- include "eric-scp.workerLB-annotations" . | indent 4 }}
+  {{- include "eric-scp.metallb-annotations" . | indent 4 }}
+spec:
+  type: {{ .Values.service.worker.type }}
+  allocateLoadBalancerNodePorts: {{ .Values.service.worker.allocateLoadBalancerNodePorts }}
+{{- include "eric-scp.ipfamilypolicy" . | indent 2 }}
+  # Conditional ipFamilyPolicy != "RequireDualStack"
+  {{- if ne ( .Values.service.worker.ipFamilyPolicy | toString ) "RequireDualStack" }}
+
+  # ipFamily value for Service type LoadBalancer
+  {{- $isIpV4Enabled := include "eric-scp.enabled-IPv4" .}}
+  {{- $isIpV6Enabled := include "eric-scp.enabled-IPv6" .}}
+  {{- if ne $isIpV4Enabled $isIpV6Enabled }}
+    {{- if $isIpV4Enabled }}
+  ipFamilies: ["IPv4"]
+    {{- end }}
+    {{- if $isIpV6Enabled }}
+  ipFamilies: ["IPv6"]
+    {{- end }}
+  {{- end }}
+  {{- end }}
+
+  {{- if not .Values.service.worker.annotations.loadBalancerIPs }}
+  {{- if .Values.service.worker.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.service.worker.loadBalancerIP | quote }}
+  {{- end }}
+  {{- end}}
+  {{- if .Values.service.worker.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ .Values.service.worker.externalTrafficPolicy | quote }}
+  {{ end }}
+  ports:
+  - name: unencrypted-port
+    protocol: TCP
+    port: {{ .Values.service.worker.port }}
+    targetPort: {{ .Values.service.worker.portName }}
+  - name: encrypted-port
+    protocol: TCP
+    port: {{ .Values.service.worker.tlsport }}
+    targetPort: {{ .Values.service.worker.tlsPortName }}
+  selector:
+    app: {{ .Values.service.worker.name | quote }}
+---
+{{ if .Values.service.worker.multiVpn.enabled }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ .Values.service.worker.multiVpn.name | quote }}
+  labels:
+    ericsson.com/tapcollector-traffic-service: {{ .Values.service.worker.name | quote }}
+{{- include "eric-scp.labels" . | indent 4 }}
+  annotations:
+  {{- include "eric-scp.helm-annotations" . | indent 4 }}
+  {{- include "eric-scp.config-annotations" . | indent 4 }}
+  {{- include "eric-scp.workerLB-annotations" . | indent 4 }}
+  {{- include "eric-scp.multiVpn.metallb-annotations" . | indent 4 }}
+spec:
+  type: {{ .Values.service.worker.type }}
+  allocateLoadBalancerNodePorts: {{ .Values.service.worker.allocateLoadBalancerNodePorts }}
+  {{- include "eric-scp.multiVpn.ipfamilypolicy" . | indent 2 }}
+  # Conditional ipFamilyPolicy != "RequireDualStack"
+  {{- if ne ( .Values.service.worker.multiVpn.ipFamilyPolicy | toString ) "RequireDualStack" }}
+
+  # ipFamily value for Service type LoadBalancer
+  {{- $isIpV4Enabled := include "eric-scp.multiVpn.enabled-IPv4" .}}
+  {{- $isIpV6Enabled := include "eric-scp.multiVpn.enabled-IPv6" .}}
+  {{- if ne $isIpV4Enabled $isIpV6Enabled }}
+    {{- if $isIpV4Enabled }}
+  ipFamilies: ["IPv4"]
+    {{- end }}
+    {{- if $isIpV6Enabled }}
+  ipFamilies: ["IPv6"]
+    {{- end }}
+  {{- end }}
+  {{- end }}
+  {{- if not .Values.service.worker.multiVpn.annotations.loadBalancerIPs }}
+  {{- if .Values.service.worker.multiVpn.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.service.worker.multiVpn.loadBalancerIP | quote }}
+  {{- end }}
+  {{- end}}
+  {{- if .Values.service.worker.multiVpn.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ .Values.service.worker.multiVpn.externalTrafficPolicy | quote }}
+  {{ end }}
+  ports:
+  - name: unencrypted-port
+    protocol: TCP
+    port: {{ .Values.service.worker.multiVpn.port }}
+    targetPort: {{ .Values.service.worker.multiVpn.port2Name }}
+  - name: encrypted-port
+    protocol: TCP
+    port: {{ .Values.service.worker.multiVpn.tlsport }}
+    targetPort: {{ .Values.service.worker.multiVpn.tlsPort2Name }}
+  selector:
+    app: {{ .Values.service.worker.name | quote }}
+{{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.service.certnotifier.name | quote }}
+  labels:
+{{- include "eric-scp.labels" . | indent 4 }}
+    app: {{ .Values.service.worker.name | quote }}
+  annotations:
+{{- include "eric-scp.helm-annotations" . | indent 4 }}
+{{- include "eric-scp.config-annotations" . | indent 4 }}
+spec:
+  ipFamilyPolicy: PreferDualStack
+  type: ClusterIP
+  {{- include "eric-scp.ipfamilies" . | indent 2 }}
+  ports:
+  - protocol: TCP
+    port: {{ .Values.service.certnotifier.port }}
+    targetPort: {{ .Values.spec.certnotifier.port }}
+  selector:
+    app: {{ .Values.service.worker.name | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.service.sds.name | quote }}
+  labels:
+{{- include "eric-scp.labels" . | indent 4 }}
+    app: {{ .Values.service.worker.name | quote }}
+  annotations:
+{{- include "eric-scp.helm-annotations" . | indent 4 }}
+{{- include "eric-scp.config-annotations" . | indent 4 }}
+spec:
+  ipFamilyPolicy: PreferDualStack
+  type: ClusterIP
+  {{- include "eric-scp.ipfamilies" . | indent 2 }}
+  ports:
+  - protocol: TCP
+    port: {{ .Values.service.sds.server.oam.port }}
+    targetPort: {{ .Values.service.sds.server.oam.targetPort }}
+  selector:
+    app: {{ .Values.service.worker.name | quote }}
+---
+{{- if .Values.metrics.worker.enabled }}
+{{- if eq (include "eric-scp.tls" .) "true" }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ .Values.service.worker.metrics.name }}-tls
+  labels:
+{{- include "eric-scp.labels" . | indent 4 }}
+    app: {{ .Values.service.worker.name | quote }}
+  annotations:
+{{- include "eric-scp.helm-annotations" . | indent 4 }}
+{{- include "eric-scp.config-annotations" . | indent 4 }}
+    prometheus.io/scrape: {{ .Values.metrics.worker.enabled | quote }}
+    prometheus.io/path: "/stats/prometheus"
+    prometheus.io/scheme: https
+spec:
+  ipFamilyPolicy: PreferDualStack
+  type: ClusterIP
+{{- include "eric-scp.ipfamilies" . | indent 2 }}
+  ports:
+  - name: https-metrics
+    protocol: TCP
+    port: {{ .Values.spec.worker.metricsPort }}
+    targetPort: {{ .Values.spec.worker.metricsPort }}
+  selector:
+    app: {{ .Values.service.worker.name | quote }}
+{{- end }}
+---
+{{ if or ( eq (include "eric-scp.tapcollector.worker.enabled" .) "true" ) (eq (include "eric-scp.tls" .) "false" ) }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ .Values.service.worker.metrics.name }}-non-tls
+  labels:
+{{- include "eric-scp.labels" . | indent 4 }}
+    app: {{ .Values.service.worker.name | quote }}
+  annotations:
+{{- include "eric-scp.helm-annotations" . | indent 4 }}
+{{- include "eric-scp.config-annotations" . | indent 4 }}
+    prometheus.io/scrape: {{ .Values.metrics.worker.enabled | quote }}
+    prometheus.io/path: "/stats/prometheus"
+    prometheus.io/scheme: http
+spec:
+  ipFamilyPolicy: PreferDualStack
+  type: ClusterIP
+  {{- include "eric-scp.ipfamilies" . | indent 2 }}
+  ports:
+{{- if eq (include "eric-scp.tapcollector.worker.enabled" .) "true" }}
+  - name: http-metrics1
+    protocol: TCP
+    port: {{ .Values.tapcollector.worker.pmClientPort }}
+    targetPort: {{ .Values.tapcollector.worker.pmClientPort }}
+{{- end }}
+{{- if eq (include "eric-scp.tls" .) "false" }}
+  - name: http-metrics2
+    protocol: TCP
+    port: {{ .Values.spec.worker.metricsPort }}
+    targetPort: {{ .Values.spec.worker.metricsPort }}
+{{- end }}
+  selector:
+    app: {{ .Values.service.worker.name | quote }}
+{{- end }}
+{{- end }}

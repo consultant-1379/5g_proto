@@ -1,0 +1,850 @@
+modelVersion: 2.0
+
+import:
+  base: ruleset2.0-eric-base.yaml
+
+description: "Development tools of SC"
+
+properties:
+  - K6_VERSION: v0.29.0
+  - INFLUXDB_VERSION: 1.5.4-alpine
+  - INFLUXDB2_VERSION: 2.0.12
+  - GRAFANA_VERSION: 6.29.1
+  - TELEGRAF_VERSION: 1.8.18
+  - ESC_SERVICE_TOOLS_NAME: eric-sc-simtools
+  - NELS_SERVICE_NAME: eric-nels
+  - CHFSIM_SERVICE_NAME: eric-chfsim
+  - REDIS_SERVICE_NAME: eric-chfsim-redis
+  - K6_SERVICE_NAME: eric-k6
+  - SEPP_SIM_SERVICE_NAME: eric-seppsim
+  - INFLUXDB_SERVICE_NAME: eric-influxdb
+  - INFLUXDB2_CHART_NAME: influxdb2
+  - TELEGRAF_CHART_NAME: telegraf
+  - GRAFANA_CHART_NAME: grafana
+  - SFTP_SERVICE_NAME: eric-atmoz-sftp
+  - DSCLOAD_SERVICE_NAME: eric-dscload
+  - SYSLOG_SERVICE_NAME: eric-syslog
+  - NRFSIM_SERVICE_NAME: eric-nrfsim
+  - ARM_DOCKER_REGISTRY: ${base.ARM_DOCKER_REGISTRY}
+  - ARM_DOCKER_RELEASE_REGISTRY: armdocker.rnd.ericsson.se/proj-5g-sc
+  - DOCKER_REGISTRY_URL: ${base.DOCKER_REGISTRY_URL}
+  - DOCKER_REPO_PATH: ${base.DOCKER_REPO_PATH}
+  - DOCKER_RELEASE_REPO_PATH: proj-5g-sc
+  - DOCKER_BASE_IMG: ${base.SC_CBOS_IMG}
+  - HELM_CHART_REPO: ${base.HELM_CHART_REPO}
+  - HELM_VERSION_HELMBUILDERPY3: ${base.HELM_VERSION_HELMBUILDERPY3}
+  - SC_BASE_IMG_NAME: ${base.SC_CBOS_IMG_NAME}
+  - CHFSIM_IMAGE_NAME: ${CHFSIM_SERVICE_NAME}
+  - REDIS_IMAGE_NAME: ${REDIS_SERVICE_NAME}
+  - K6_IMAGE_NAME: ${K6_SERVICE_NAME}
+  - INFLUXDB_IMAGE_NAME: ${INFLUXDB_SERVICE_NAME}
+  - SFTP_IMAGE_NAME: ${SFTP_SERVICE_NAME}
+  - SYSLOG_IMAGE_NAME: ${SYSLOG_SERVICE_NAME}
+  - NRFSIM_IMAGE_NAME: ${NRFSIM_SERVICE_NAME}
+  - SEPP_SIM_IMAGE_NAME: ${SEPP_SIM_SERVICE_NAME}
+  - DSCLOAD_IMAGE_NAME: ${DSCLOAD_SERVICE_NAME}
+  - IMAGE_TAG: 0.0.1-3
+  - TEST_REPO: https://armdocker.rnd.ericsson.se/artifactory/proj-5g-bsf-generic-local
+  - HELM_CHART_RELEASE_REPO: https://armdocker.rnd.ericsson.se/artifactory/proj-5g-sc-helm
+  - RELEASE_REPO: https://armdocker.rnd.ericsson.se/artifactory/proj-5g-sc-generic-local
+
+  - OUTPUT_DIR: .bob
+  - EXPORT_DIR: ${OUTPUT_DIR}/export-k6
+  - CERTIFICATES_DIR: devtools/k6/certs
+  - INFLUXDB2_DIR: devtools/influxdb2
+  - GRAFANA_DIR: devtools/grafana
+  - TELEGRAF_DIR: devtools/telegraf
+
+  - INSTALLED_CERTS_DIR: ${CERTS_OUT_DIR}/k6 # certs output directory of k6
+  - NAMESPACE: $NAMESPACE
+  - CERTS_OUT_DIR: .certificates
+
+  - INFLUXDB2_REPO_URL: https://helm.influxdata.com/
+  - INFLUXDB2_REPO_NAME: influxdata
+  - TELEGRAF_REPO_URL: https://helm.influxdata.com/
+  - TELEGRAF_REPO_NAME: influxdata
+  - GRAFANA_REPO_URL: https://grafana.github.io/helm-charts
+
+env:
+ - USER (default=anonymous)
+ - HOSTNAME (default=nohost)
+ - RELEASE (default=false)
+ - KUBE_HOST
+ - ARTIFACTORY_TOKEN
+ - PACKAGING
+ - CSAR_DETAIL (default=false)
+ - CSAR_CHARTS (default=false)
+ - PACKAGING (default=false)
+
+var:
+ - namespace
+ - build-proxy
+ - k6-version
+ - influxdb-version
+ - influxdb2-chart-version
+ - grafana-chart-version
+ - telegraf-chart-version
+ - ldap-creds
+ - username
+ - pm-server-fqdn
+ - iccr-http-port
+ - tools-version
+ - sftp-version
+ - syslog-version
+ - nrfsim-version
+ - chfsim-version
+ - seppsim-version
+ - redis-version
+ - dscload-version
+ - build-token
+ - armsero_token # token for https://arm.sero.gic.ericsson.se/artifactory/ and https://arm.rnd.ki.sw.ericsson.se/artifactory/
+ - armdocker_token
+ - credentials
+ - helm-repo
+ - docker-repo
+
+rules:
+  init:
+    - task: credentials
+      cmd: /bin/bash -c 'cat ~/.docker/config.json | jq -r ".auths.\"armdocker.rnd.ericsson.se\".auth" | base64 -d | sed "s/${env.USER}://g" > ${OUTPUT_DIR}/var.credentials;
+                  [ -s "${OUTPUT_DIR}/var.credentials" ]; exit $?'
+    - task: create-artifactory-file
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--env HELM_VERSION=${HELM_VERSION_HELMBUILDERPY3}"
+      cmd: sh -c './scripts/helm_repositories.py -c -ep ${OUTPUT_DIR}/var.credentials -eu ${env.USER}'
+    - task: token1
+      description: Extract token to be used for arm.rnd.ki.sw.ericsson.se and arm.sero.gic.ericsson.se artifactories & check existence
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        #- "--env HELM_VERSION=${HELM_VERSION_HELMBUILDERPY3}"
+      cmd: sh -c './scripts/helm_repositories.py -p --repository https://arm.sero.gic.ericsson.se/artifactory/ > ${OUTPUT_DIR}/var.armsero_token;
+                  [ -s "${OUTPUT_DIR}/var.armsero_token" ]; exit $?'
+    - task: token2
+      description: Extract token to be used for armdocker.rnd.ericsson.se and arm.epk.ericsson.se artifactories & check existence
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        #- "--env HELM_VERSION=${HELM_VERSION_HELMBUILDERPY3}"
+      cmd: sh -c './scripts/helm_repositories.py -p --repository https://armdocker.rnd.ericsson.se/artifactory/ > ${OUTPUT_DIR}/var.armdocker_token;
+                  [ -s "${OUTPUT_DIR}/var.armdocker_token" ]; exit $?'
+    - task: set-namespace
+      cmd: /bin/bash -c "if [[ \"${env.USER}\" != \"eiffelesc\" ]];
+                         then
+                            echo '5g-bsf-'${env.USER} > ${OUTPUT_DIR}/var.namespace;
+                            echo ${env.USER} > ${OUTPUT_DIR}/var.username;
+                         else
+                            ./scripts/bash/allocateDynNamespace ${NAMESPACE} ${env.KUBE_HOST};
+                         fi;"
+    - task: create-output-dir
+      cmd: /bin/bash -c "if [[ ! -d ${OUTPUT_DIR} ]];
+                         then
+                            mkdir ${OUTPUT_DIR};
+                         fi"
+    - task: set-supreme-properties
+      cmd: /bin/bash -c "if [[ ! -d ${CERTS_OUT_DIR} ]];
+                      then
+                          mkdir ${CERTS_OUT_DIR};
+                      fi;
+                      cp /proj/sc-tools/bin/supreme/simple_prop3.yaml ${CERTS_OUT_DIR}/supreme.yaml; sed -i 's/<NAMESPACE>/${var.namespace}/g' ${CERTS_OUT_DIR}/supreme.yaml; sed -i 's_<DIR>_${CERTS_OUT_DIR}_g' ${CERTS_OUT_DIR}/supreme.yaml"
+    - task: set-build-proxy
+      cmd: /bin/bash -c "if [[ ! -d ${OUTPUT_DIR} ]];
+                         then
+                            mkdir ${OUTPUT_DIR};
+                         fi;
+                         echo 'settings.xml' > ${OUTPUT_DIR}/var.build-proxy"
+    - task: set-kube-config
+      cmd: /bin/bash -c "cp /home/${env.USER}/.kube/${env.KUBE_HOST}.config ${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf;"
+    - task: create-output-dir
+      cmd: /bin/bash -c "if [[ ! -d ${OUTPUT_DIR} ]];
+                         then
+                            mkdir -p ${OUTPUT_DIR};
+                         fi;"
+    - task: influxdb-version
+      docker-image: base.adp-release-auto
+      cmd: generate-version --is-release ${env.RELEASE} --output influxdb-version
+    - task: influxdb2-chart-version
+      docker-image: base.adp-release-auto
+      cmd: /bin/bash -c "if [[ ! -d ${OUTPUT_DIR} ]];
+                         then
+                            mkdir -p ${OUTPUT_DIR};
+                         fi;
+                         ./scripts/bash/setNamespace -u ${env.USER} -n ${env.base.NAMESPACE} -h ${env.KUBE_HOST};
+                         echo ${INFLUXDB2_VERSION} > ${OUTPUT_DIR}/var.influxdb2-chart-version;"
+    - task: k6-version
+      docker-image: base.adp-release-auto
+      cmd: generate-version --is-release ${env.RELEASE} --output k6-version
+    - task: grafana-chart-version
+      cmd: /bin/bash -c "echo ${GRAFANA_VERSION} > ${OUTPUT_DIR}/var.grafana-chart-version"
+    - task: get-pm-server-fqdn
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECTL_VERSION=${base.KUBECTL_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: sh -c 'echo "pm.5g-bsf-ekoteva.hall022.rnd.gic.ericsson.se" > ${base.OUTPUT_DIR}/var.pm-server-fqdn; exit $?'
+      #cmd: sh -c 'kubectl get httpproxy eric-pm-server -o=jsonpath='{.spec.virtualhost.fqdn}' -n 5g-bsf-${env.base.USER} > ${base.OUTPUT_DIR}/var.pm-server-fqdn; exit $?'
+    - task: get-iccr-http-port
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECTL_VERSION=${base.KUBECTL_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: sh -c 'echo "32293" > ${base.OUTPUT_DIR}/var.iccr-http-port; exit $?'
+      #cmd: sh -c 'kubectl get svc eric-tm-ingress-controller-cr -o=jsonpath="{.spec.ports[?(@.port==80)].nodePort}" -n 5g-bsf-${env.base.USER} > ${base.OUTPUT_DIR}/var.iccr-http-port; exit $?'
+    - task: telegraf-chart-version
+      docker-image: base.adp-release-auto
+      cmd: /bin/bash -c "if [[ ! -d ${OUTPUT_DIR} ]];
+                         then
+                            mkdir -p ${OUTPUT_DIR};
+                         fi;
+                         ./scripts/bash/setNamespace -u ${env.base.USER} -n ${env.base.NAMESPACE} -h ${env.base.KUBE_HOST};
+                         echo ${TELEGRAF_VERSION} > ${base.OUTPUT_DIR}/var.telegraf-chart-version;"
+    - task: sftp-version
+      docker-image: base.adp-release-auto
+      cmd: generate-version --is-release ${env.RELEASE} --output sftp-version
+    - task: syslog-version
+      docker-image: base.adp-release-auto
+      cmd: generate-version --is-release ${env.RELEASE} --output syslog-version
+    - task: nrfsim-version
+      docker-image: base.adp-release-auto
+      cmd: generate-version --is-release ${env.RELEASE} --output nrfsim-version
+    - task: tools-version
+      docker-image: base.adp-release-auto
+      cmd: generate-version --is-release ${env.RELEASE} --output tools-version
+    - task: chfsim-version
+      docker-image: base.adp-release-auto
+      cmd: generate-version --is-release ${env.RELEASE} --output chfsim-version
+    - task: redis-version
+      docker-image: base.adp-release-auto
+      cmd: generate-version --is-release ${env.RELEASE} --output redis-version
+    - task: seppsim-version
+      docker-image: base.adp-release-auto
+      cmd: generate-version --is-release ${env.RELEASE} --output seppsim-version
+    - task: dscload-version
+      docker-image: base.adp-release-auto
+      cmd: generate-version --is-release ${env.RELEASE} --output dscload-version
+    # - task: fixed-version
+    #   cmd: /bin/bash -c "echo 1.5.0+183    > ${OUTPUT_DIR}/var.dscload-version ;
+    #                      echo 1.5.0+183    > ${OUTPUT_DIR}/var.k6-version ;
+    #                      echo 1.5.0+183    > ${OUTPUT_DIR}/var.sftp-version  ;
+    #                      echo 1.5.0+183    > ${OUTPUT_DIR}/var.seppsim-version ;
+    #                      echo 1.5.0+183    > ${OUTPUT_DIR}/var.redis-version ;
+    #                      echo 1.5.0+183    > ${OUTPUT_DIR}/var.nrfsim-version  ;
+    #                      echo 1.5.0+183    > ${OUTPUT_DIR}/var.chfsim-version  ;
+    #                      echo 1.5.0+183    > ${OUTPUT_DIR}/var.dscload-version;
+    #                      echo 1.5.0+183    > ${OUTPUT_DIR}/var.tools-version ;"
+    - task: set-helm-repo
+      docker-image: base.adp-release-auto
+      cmd: /bin/bash -c 'if [[ \"${env.PACKAGING}\" == \"true\" ]]; then
+                             echo ${HELM_CHART_RELEASE_REPO} > ${OUTPUT_DIR}/var.helm-repo;
+                         elif [[ \"${env.CSAR_CHARTS}\" = \"true\" ]]; then
+                             echo ${HELM_CHART_REPO}/${env.USER} > ${OUTPUT_DIR}/var.helm-repo;
+                         else
+                             echo ${HELM_CHART_REPO} > ${OUTPUT_DIR}/var.helm-repo;
+                         fi;'
+    - task: set-docker-repo
+      docker-image: base.adp-release-auto
+      cmd: /bin/bash -c 'if [[ \"${env.PACKAGING}\" == \"true\" ]]; then
+                             echo ${ARM_DOCKER_RELEASE_REGISTRY} > ${OUTPUT_DIR}/var.docker-repo;
+                         else
+                             echo ${ARM_DOCKER_REGISTRY}/${env.USER} > ${OUTPUT_DIR}/var.docker-repo;
+                         fi;'
+
+  # Build a docker image pointing to internal repository
+  build-images:
+    # - task: influxdb
+    #   cmd: docker build ./devtools/influxdb
+    #        --build-arg INFLUXDB_VERSION=${INFLUXDB_VERSION}
+    #        --file devtools/influxdb/Dockerfile
+    #        --tag ${ARM_DOCKER_REGISTRY}/${env.USER}/${INFLUXDB_IMAGE_NAME}:${var.k6-version}
+    - task: k6
+      cmd: docker build ./devtools/k6/
+           --build-arg K6_VERSION=${K6_VERSION}
+           --file devtools/k6/Dockerfile
+           --tag ${var.docker-repo}/${K6_IMAGE_NAME}:$(echo ${var.k6-version}| sed 's/+/-/')
+    - task: sftp
+      cmd: docker build ./devtools/sftp/
+           --file devtools/sftp/Dockerfile
+           --tag ${var.docker-repo}/${SFTP_IMAGE_NAME}:$(echo ${var.sftp-version} | sed 's/+/-/')
+    - task: syslog
+      cmd: docker build ./devtools/syslog/
+           --file devtools/syslog/Dockerfile
+           --tag ${var.docker-repo}/${SYSLOG_IMAGE_NAME}:$(echo ${var.syslog-version} | sed 's/+/-/')
+    - task: nrfsim
+      cmd: docker build ./simulators/nrfsim/
+           --file simulators/nrfsim/Dockerfile
+           --build-arg DOCKER_BASE_IMG=${DOCKER_BASE_IMG}
+           --tag ${var.docker-repo}/${NRFSIM_IMAGE_NAME}:$(echo ${var.nrfsim-version} | sed 's/+/-/')
+    - task: redis
+      cmd: docker build ./devtools/redis/
+           --file devtools/redis/Dockerfile
+           --tag ${var.docker-repo}/${REDIS_IMAGE_NAME}:$(echo ${var.redis-version} | sed 's/+/-/')
+    - task: chfsim
+      cmd: docker build ./simulators/chfsim/
+           --file simulators/chfsim/Dockerfile
+           --build-arg DOCKER_BASE_IMG=${DOCKER_BASE_IMG}
+           --build-arg PKG_NAME=${CHFSIM_IMAGE_NAME}-${var.chfsim-version}.jar
+           --tag ${var.docker-repo}/${CHFSIM_IMAGE_NAME}:$(echo ${var.chfsim-version} | sed 's/+/-/')
+    - task: seppsim
+      cmd: docker build ./simulators/seppsim/
+           --file simulators/seppsim/Dockerfile
+           --build-arg DOCKER_BASE_IMG=${DOCKER_BASE_IMG}
+           --tag ${var.docker-repo}/${SEPP_SIM_IMAGE_NAME}:$(echo ${var.seppsim-version} | sed 's/+/-/')
+    - task: dscload
+      cmd:  docker build ./devtools/dscload/
+           --file devtools/dscload/docker/Dockerfile
+           --build-arg TOKEN=${var.armsero_token}
+           --tag ${var.docker-repo}/${DSCLOAD_IMAGE_NAME}:$(echo ${var.dscload-version}| sed 's/+/-/')
+  build:
+    - task: nrfsim
+      docker-image: base.java-maven-builder
+      cmd: /bin/bash -c "mvn -s ${var.build-proxy} -Duser.home=. -DskipTests -am -pl :eric-nrfsim ${base.MVN_ARGS} package"
+    - task: chfsim
+      cmd: /bin/bash -c "mvn -s ${var.build-proxy} -Duser.home=. -DskipTests -am -pl :eric-chfsim ${base.MVN_ARGS} package"
+    - task: seppsim
+      docker-image: base.java-maven-builder
+      cmd: /bin/bash -c "mvn -s ${var.build-proxy} -Duser.home=. -DskipTests -am -pl :eric-seppsim ${base.MVN_ARGS} package"
+
+  push-images:
+    # - task: influxdb
+    #   cmd: docker push ${ARM_DOCKER_REGISTRY}/${env.USER}/${INFLUXDB_IMAGE_NAME}:${var.influxdb-version}
+    - task: k6
+      cmd: docker push ${var.docker-repo}/${K6_IMAGE_NAME}:$(echo ${var.k6-version} | sed 's/+/-/')
+    - task: sftp
+      cmd: docker push ${var.docker-repo}/${SFTP_IMAGE_NAME}:$(echo ${var.sftp-version} | sed 's/+/-/')
+    - task: syslog
+      cmd: docker push ${var.docker-repo}/${SYSLOG_IMAGE_NAME}:$(echo ${var.syslog-version} | sed 's/+/-/')
+    - task: nrfsim
+      cmd: docker push ${var.docker-repo}/${NRFSIM_IMAGE_NAME}:$(echo ${var.nrfsim-version}| sed 's/+/-/')
+    - task: chfsim
+      cmd: docker push ${var.docker-repo}/${CHFSIM_IMAGE_NAME}:$(echo ${var.chfsim-version} | sed 's/+/-/')
+    - task: redis
+      cmd: docker push ${var.docker-repo}/${REDIS_IMAGE_NAME}:$(echo ${var.redis-version}| sed 's/+/-/')
+    - task: seppsim
+      cmd: docker push ${var.docker-repo}/${SEPP_SIM_IMAGE_NAME}:$(echo ${var.seppsim-version}| sed 's/+/-/')
+    - task: dscload
+      cmd: docker push ${var.docker-repo}/${DSCLOAD_IMAGE_NAME}:$(echo ${var.dscload-version}| sed 's/+/-/')
+
+  package-helm:
+    # - task: influxdb
+    #   docker-image: base.helm-builder
+    #   cmd: /bin/bash -c "mkdir -p ${OUTPUT_DIR}/${INFLUXDB_SERVICE_NAME}; cp -r devtools/influxdb/helm/* ${OUTPUT_DIR}/${INFLUXDB_SERVICE_NAME};
+    #         update_values.rb ${OUTPUT_DIR}/${INFLUXDB_SERVICE_NAME}/values.yaml
+    #         imageCredentials:registry:url=${DOCKER_REGISTRY_URL} imageCredentials:repoPath=${DOCKER_REPO_PATH}/${env.USER}
+    #         spec:image=${INFLUXDB_IMAGE_NAME} spec:tag=${var.influxdb-version} > ${OUTPUT_DIR}/${INFLUXDB_SERVICE_NAME}/values.tmp.yaml;
+    #         mv ${OUTPUT_DIR}/${INFLUXDB_SERVICE_NAME}/values.tmp.yaml ${OUTPUT_DIR}/${INFLUXDB_SERVICE_NAME}/values.yaml;
+    #         helm package --version ${var.influxdb-version} --app-version ${var.influxdb-version} ${OUTPUT_DIR}/${INFLUXDB_SERVICE_NAME}/ -d ${OUTPUT_DIR}/";
+    - task: influxdb2
+      docker-image: base.adp-release-auto
+      cmd: /bin/bash -c "cp ${INFLUXDB2_DIR}/mods/values.yaml ${OUTPUT_DIR}/influxdb-values.yaml;
+                         if [[ ! -d ${OUTPUT_DIR}/${INFLUXDB2_CHART_NAME}/helm ]];
+                         then
+                            mkdir -p ${OUTPUT_DIR}/${INFLUXDB2_CHART_NAME}/helm;
+                         fi;
+                         cp -Rp ${INFLUXDB2_DIR}/helm/. ${OUTPUT_DIR}/${INFLUXDB2_CHART_NAME}/helm;
+                         helm-package --folder ${OUTPUT_DIR}/${INFLUXDB2_CHART_NAME}/helm
+                                      --output ${base.OUTPUT_DIR}
+                                      --version ${var.influxdb2-chart-version};"
+    - task: k6
+      docker-image: base.helm-builder
+      docker-flags:
+        - "--volume $PWD:/workspace"
+        - "--workdir /workspace"
+      cmd:
+        - /bin/bash -c "rm -rf ${OUTPUT_DIR}/eric-k6*.tgz;
+                        mkdir -p ${base.OUTPUT_DIR}/${K6_SERVICE_NAME};
+                        cp -r devtools/k6/helm/* ${base.OUTPUT_DIR}/${K6_SERVICE_NAME};
+                        sed -i 's|k6_repoPath|'${base.DOCKER_REPO_PATH}'/'${env.base.USER}'|g' ${base.OUTPUT_DIR}/${K6_SERVICE_NAME}/eric-product-info.yaml;
+                        sed -i 's/k6_image_name/'${K6_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${K6_SERVICE_NAME}/eric-product-info.yaml;
+                        sed -i 's/k6_image_tag/'${var.k6-version}'/g' ${base.OUTPUT_DIR}/${K6_SERVICE_NAME}/eric-product-info.yaml"
+        - helm package --version ${var.k6-version} --app-version ${var.k6-version} ${base.OUTPUT_DIR}/${K6_SERVICE_NAME}/ -d ${base.OUTPUT_DIR}/
+    - task: telegraf
+      docker-image: base.adp-release-auto
+      cmd: /bin/bash -c "cp ${TELEGRAF_DIR}/mods/values.yaml ${OUTPUT_DIR}/telegraf-values.yaml;
+                         if [[ ! -d ${OUTPUT_DIR}/${TELEGRAF_CHART_NAME}/helm ]];
+                         then
+                            mkdir -p ${OUTPUT_DIR}/${TELEGRAF_CHART_NAME}/helm;
+                         fi;
+                         cp -Rp ${TELEGRAF_DIR}/helm/. ${OUTPUT_DIR}/${TELEGRAF_CHART_NAME}/helm;
+                         \cp ${TELEGRAF_DIR}/mods/asymmetric-key-cert-cr.yaml ${OUTPUT_DIR}/${TELEGRAF_CHART_NAME}/helm/templates/;
+                         \cp ${TELEGRAF_DIR}/mods/trusted_cert_cr.yaml ${OUTPUT_DIR}/${TELEGRAF_CHART_NAME}/helm/templates/;
+                         \cp ${TELEGRAF_DIR}/mods/deployment.yaml ${OUTPUT_DIR}/${TELEGRAF_CHART_NAME}/helm/templates/;
+                         helm-package --folder ${OUTPUT_DIR}/${TELEGRAF_CHART_NAME}/helm
+                                      --output ${OUTPUT_DIR}
+                                      --version ${var.telegraf-chart-version};"
+    - task: grafana
+      docker-image: base.adp-release-auto
+      cmd: /bin/bash -c "cp ${GRAFANA_DIR}/mods/values.yaml ${OUTPUT_DIR}/${GRAFANA_CHART_NAME}-values.yaml;
+                         sed -i 's/eric-pm-server/'${var.pm-server-fqdn}'/g' ${OUTPUT_DIR}/${GRAFANA_CHART_NAME}-values.yaml;
+                         sed -i 's/9090/'${var.iccr-http-port}'/g' ${OUTPUT_DIR}/${GRAFANA_CHART_NAME}-values.yaml;
+                         if [[ ! -d ${OUTPUT_DIR}/${GRAFANA_CHART_NAME}/helm ]];
+                         then
+                            mkdir -p ${OUTPUT_DIR}/${GRAFANA_CHART_NAME}/helm;
+                         fi;
+                         cp -Rp ${GRAFANA_DIR}/helm/. ${OUTPUT_DIR}/${GRAFANA_CHART_NAME}/helm;
+                         \cp ${GRAFANA_DIR}/mods/sc-dashboards-configmap.yaml ${OUTPUT_DIR}/${GRAFANA_CHART_NAME}/helm/templates/;
+                         \cp ${GRAFANA_DIR}/mods/dashboards/* ${OUTPUT_DIR}/${GRAFANA_CHART_NAME}/helm/dashboards;
+                         \rm ${OUTPUT_DIR}/${GRAFANA_CHART_NAME}/helm/dashboards/custom-dashboard.json;
+                         helm-package --folder ${OUTPUT_DIR}/${GRAFANA_CHART_NAME}/helm
+                                      --output ${OUTPUT_DIR}
+                                      --version ${GRAFANA_VERSION};"
+    - task: sftp
+      docker-image: base.helm-builder
+      cmd:
+        - /bin/bash -c "rm -rf ${OUTPUT_DIR}/eric-sftp*.tgz;
+                        mkdir -p ${base.OUTPUT_DIR}/${SFTP_SERVICE_NAME};
+                        cp -r devtools/sftp/helm/* ${base.OUTPUT_DIR}/${SFTP_SERVICE_NAME};
+                        sed -i 's|sftp_repoPath|'${base.DOCKER_REPO_PATH}'/'${env.base.USER}'|g' ${base.OUTPUT_DIR}/${SFTP_SERVICE_NAME}/eric-product-info.yaml;
+                        sed -i 's/sftp_image_name/'${SFTP_SERVICE_NAME}'/g' ${base.OUTPUT_DIR}/${SFTP_SERVICE_NAME}/eric-product-info.yaml;
+                        sed -i 's/sftp_image_tag/'${var.sftp-version}'/g' ${base.OUTPUT_DIR}/${SFTP_SERVICE_NAME}/eric-product-info.yaml"
+        - helm package --version ${var.sftp-version} --app-version ${var.sftp-version} ${base.OUTPUT_DIR}/${SFTP_SERVICE_NAME}/ -d ${base.OUTPUT_DIR}/
+    - task: syslog
+      docker-image: base.helm-builder
+      cmd:
+        - /bin/bash -c "rm -rf ${OUTPUT_DIR}/eric-syslog*.tgz;
+                        mkdir -p ${base.OUTPUT_DIR}/${SYSLOG_SERVICE_NAME};
+                        cp -r devtools/syslog/helm/* ${base.OUTPUT_DIR}/${SYSLOG_SERVICE_NAME};
+                        sed -i 's|syslog_repoPath|'${base.DOCKER_REPO_PATH}'/'${env.base.USER}'|g' ${base.OUTPUT_DIR}/${SYSLOG_SERVICE_NAME}/eric-product-info.yaml;
+                        sed -i 's/syslog_image_name/'${SYSLOG_SERVICE_NAME}'/g' ${base.OUTPUT_DIR}/${SYSLOG_SERVICE_NAME}/eric-product-info.yaml;
+                        sed -i 's/syslog_image_tag/'${var.syslog-version}'/g' ${base.OUTPUT_DIR}/${SYSLOG_SERVICE_NAME}/eric-product-info.yaml"
+        - helm package --version ${var.syslog-version} --app-version ${var.syslog-version} ${base.OUTPUT_DIR}/${SYSLOG_SERVICE_NAME}/ -d ${base.OUTPUT_DIR}/
+    - task: nrfsim
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "
+           rm -rf ${OUTPUT_DIR}/eric-nrfsim*.tgz;
+           mkdir -p ${OUTPUT_DIR}/${NRFSIM_SERVICE_NAME};
+           cp -r simulators/nrfsim/helm/* ${OUTPUT_DIR}/${NRFSIM_SERVICE_NAME};
+           update_values.rb ${OUTPUT_DIR}/${NRFSIM_SERVICE_NAME}/values.yaml
+           imageCredentials:repoPath=${var.docker-repo}
+           spec:image=${NRFSIM_IMAGE_NAME} spec:tag=$(echo  ${var.nrfsim-version}  | sed 's/+/-/')> ${OUTPUT_DIR}/${NRFSIM_SERVICE_NAME}/values.tmp.yaml;
+           mv ${OUTPUT_DIR}/${NRFSIM_SERVICE_NAME}/values.tmp.yaml ${OUTPUT_DIR}/${NRFSIM_SERVICE_NAME}/values.yaml;
+           helm package --version ${var.nrfsim-version} ${OUTPUT_DIR}/${NRFSIM_SERVICE_NAME}/ -d ${OUTPUT_DIR}/";
+    - task: redis
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "mkdir -p ${OUTPUT_DIR}/${REDIS_SERVICE_NAME}; cp -r devtools/redis/helm/* ${OUTPUT_DIR}/${REDIS_SERVICE_NAME};
+           update_values.rb ${OUTPUT_DIR}/${REDIS_SERVICE_NAME}/values.yaml
+           imageCredentials:repoPath=${var.docker-repo}
+           spec:image=${REDIS_IMAGE_NAME} spec:tag=$(echo  ${var.redis-version} | sed 's/+/-/') spec:affinity:podAffinity=false > ${OUTPUT_DIR}/${REDIS_SERVICE_NAME}/values.tmp.yaml;
+           mv ${OUTPUT_DIR}/${REDIS_SERVICE_NAME}/values.tmp.yaml ${OUTPUT_DIR}/${REDIS_SERVICE_NAME}/values.yaml;
+           helm package --version ${var.redis-version} --app-version ${var.redis-version} ${OUTPUT_DIR}/${REDIS_SERVICE_NAME}/ -d ${OUTPUT_DIR}/";
+    - task: chfsim
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "mkdir -p ${OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}; cp -r simulators/chfsim/helm/* ${OUTPUT_DIR}/${CHFSIM_SERVICE_NAME};
+           update_values.rb ${OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/values.yaml
+           imageCredentials:repoPath=${var.docker-repo}
+           spec:image=${CHFSIM_IMAGE_NAME} spec:tag=$(echo  ${var.chfsim-version}  | sed 's/+/-/')> ${OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/values.tmp.yaml;
+           mv ${OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/values.tmp.yaml ${OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/values.yaml;
+           helm package --version ${var.chfsim-version} --app-version ${var.chfsim-version} ${OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}/ -d ${OUTPUT_DIR}/";
+    - task: seppsim
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "
+           rm -rf ${OUTPUT_DIR}/eric-seppsim*.tgz;
+           mkdir -p ${OUTPUT_DIR}/${SEPP_SIM_SERVICE_NAME};
+           cp -r simulators/seppsim/helm/* ${OUTPUT_DIR}/${SEPP_SIM_SERVICE_NAME};
+           update_values.rb ${OUTPUT_DIR}/${SEPP_SIM_SERVICE_NAME}/values.yaml
+           imageCredentials:repoPath=${var.docker-repo}
+           spec:image=${SEPP_SIM_IMAGE_NAME} spec:tag=$(echo ${var.seppsim-version}  | sed 's/+/-/')> ${OUTPUT_DIR}/${SEPP_SIM_SERVICE_NAME}/values.tmp.yaml;
+           mv ${OUTPUT_DIR}/${SEPP_SIM_SERVICE_NAME}/values.tmp.yaml ${OUTPUT_DIR}/${SEPP_SIM_SERVICE_NAME}/values.yaml;
+           helm package --version ${var.seppsim-version} ${OUTPUT_DIR}/${SEPP_SIM_SERVICE_NAME}/ -d ${OUTPUT_DIR}/";
+    - task: dscload
+      docker-image: base.helm-builder
+      docker-flags:
+        - "--volume $PWD:/workspace"
+        - "--workdir /workspace"
+      cmd: /bin/bash -c "mkdir -p ${OUTPUT_DIR}/${DSCLOAD_SERVICE_NAME}; cp -r devtools/dscload/helm/* ${OUTPUT_DIR}/${DSCLOAD_SERVICE_NAME};
+           update_values.rb ${OUTPUT_DIR}/${DSCLOAD_SERVICE_NAME}/values.yaml
+           imageCredentials:repoPath=${var.docker-repo}
+           spec:image=${DSCLOAD_IMAGE_NAME} spec:tag=$(echo  ${var.dscload-version}  | sed 's/+/-/')> ${OUTPUT_DIR}/${DSCLOAD_SERVICE_NAME}/values.tmp.yaml;
+           mv ${OUTPUT_DIR}/${DSCLOAD_SERVICE_NAME}/values.tmp.yaml ${OUTPUT_DIR}/${DSCLOAD_SERVICE_NAME}/values.yaml;
+           helm package --version ${var.dscload-version} --app-version ${var.dscload-version} ${OUTPUT_DIR}/${DSCLOAD_SERVICE_NAME}/ -d ${OUTPUT_DIR}/";
+
+  update-tools:
+    - task: k6
+      cmd: /bin/bash -c 'baseline_scripts/scripts/update_chart_requirements.py --appChartDir ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}
+                                                                                --chartName ${K6_SERVICE_NAME}
+                                                                                --chartRepo ${var.helm-repo}/
+                                                                                --chartVersion ${var.k6-version} ${env.base.DEBUG_FLAG}'
+    - task: sftp
+      cmd: /bin/bash -c 'baseline_scripts/scripts/update_chart_requirements.py --appChartDir ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}
+                                                                                --chartName ${SFTP_SERVICE_NAME}
+                                                                                --chartRepo ${var.helm-repo}/
+                                                                                --chartVersion ${var.sftp-version} ${env.base.DEBUG_FLAG}'
+    - task: syslog
+      cmd: /bin/bash -c 'baseline_scripts/scripts/update_chart_requirements.py --appChartDir ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}
+                                                                                --chartName ${SYSLOG_SERVICE_NAME}
+                                                                                --chartRepo ${var.helm-repo}/
+                                                                                --chartVersion ${var.syslog-version} ${env.base.DEBUG_FLAG}'
+    - task: nrfsim
+      cmd: /bin/bash -c 'baseline_scripts/scripts/update_chart_requirements.py --appChartDir ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}
+                                                                                --chartName ${NRFSIM_SERVICE_NAME}
+                                                                                --chartRepo ${var.helm-repo}/
+                                                                                --chartVersion ${var.nrfsim-version} ${env.base.DEBUG_FLAG}'
+    - task: chfsim
+      cmd: /bin/bash -c 'baseline_scripts/scripts/update_chart_requirements.py --appChartDir ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}
+                                                                                --chartName ${CHFSIM_SERVICE_NAME}
+                                                                                --chartRepo ${var.helm-repo}/
+                                                                                --chartVersion ${var.chfsim-version} ${env.base.DEBUG_FLAG}'
+    - task: seppsim
+      cmd: /bin/bash -c 'baseline_scripts/scripts/update_chart_requirements.py --appChartDir ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}
+                                                                                --chartName ${SEPP_SIM_SERVICE_NAME}
+                                                                                --chartRepo ${var.helm-repo}/
+                                                                                --chartVersion ${var.seppsim-version} ${env.base.DEBUG_FLAG}'
+    - task: redis
+      cmd: /bin/bash -c 'baseline_scripts/scripts/update_chart_requirements.py --appChartDir ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}
+                                                                                --chartName ${REDIS_SERVICE_NAME}
+                                                                                --chartRepo ${var.helm-repo}/
+                                                                                --chartVersion ${var.redis-version} ${env.base.DEBUG_FLAG}'
+    - task: dscload
+      cmd: /bin/bash -c 'baseline_scripts/scripts/update_chart_requirements.py --appChartDir ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}
+                                                                                --chartName ${DSCLOAD_SERVICE_NAME}
+                                                                                --chartRepo ${var.helm-repo}/
+                                                                                --chartVersion ${var.dscload-version} ${env.base.DEBUG_FLAG}'
+    - task: influxdb2
+      cmd: /bin/bash -c 'baseline_scripts/scripts/update_chart_requirements.py --appChartDir ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}
+                                                                                --chartName ${INFLUXDB2_CHART_NAME}
+                                                                                --chartRepo ${var.helm-repo}/
+                                                                                --chartVersion ${var.influxdb2-chart-version} ${env.base.DEBUG_FLAG}'
+    - task: telegraf
+      cmd: /bin/bash -c 'baseline_scripts/scripts/update_chart_requirements.py --appChartDir ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}
+                                                                               --chartName ${TELEGRAF_CHART_NAME}
+                                                                               --chartRepo ${var.helm-repo}/
+                                                                               --chartVersion ${var.telegraf-chart-version} ${env.base.DEBUG_FLAG}'
+    - task: grafana
+      cmd: /bin/bash -c 'baseline_scripts/scripts/update_chart_requirements.py --appChartDir ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}
+                                                                               --chartName ${GRAFANA_CHART_NAME}
+                                                                               --chartRepo ${var.helm-repo}/
+                                                                               --chartVersion ${var.grafana-chart-version} ${env.base.DEBUG_FLAG}'
+  update-tools-generic:
+    - task: clean
+      cmd: /bin/bash -c "rm -rf ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}; rm -rf ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}*.tgz"
+    - task: copy
+      cmd: /bin/bash -c "cp -r esc/helm/${ESC_SERVICE_TOOLS_NAME} ${OUTPUT_DIR}/"
+
+  package-tools:
+    - task: all
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--env HELM_VERSION=${HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+      cmd: /bin/bash -c "pwd; mkdir -p charts_tools/ ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}/charts/ && cp -r charts_tools/ ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}/ &&
+           ./scripts/fetch_dep.sh ${ESC_SERVICE_TOOLS_NAME} && ./scripts/fetch_dep_dirty.sh"
+    - task: tools
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--env HELM_VERSION=${HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+      cmd: /bin/bash -c "helm package --version ${var.tools-version} ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}/ -d ${OUTPUT_DIR}/"
+
+
+  push-helm:
+    # - task: influxdb
+    #   cmd: curl -f -k -H "X-JFrog-Art-Api:${var.armdocker_token}" --upload-file ${OUTPUT_DIR}/${INFLUXDB_SERVICE_NAME}-${var.influxdb-version}.tgz "${HELM_CHART_REPO}/${INFLUXDB_SERVICE_NAME}-${var.influxdb-version}.tgz
+    - task: k6
+      cmd: curl -f -k -H "X-JFrog-Art-Api:${var.armdocker_token}" --upload-file ${OUTPUT_DIR}/${K6_SERVICE_NAME}-${var.k6-version}.tgz "${var.helm-repo}/${K6_SERVICE_NAME}-${var.k6-version}.tgz"
+    - task: sftp
+      cmd: curl -f -k -H "X-JFrog-Art-Api:${var.armdocker_token}" --upload-file ${OUTPUT_DIR}/${SFTP_SERVICE_NAME}-${var.sftp-version}.tgz "${var.helm-repo}/${SFTP_SERVICE_NAME}-${var.sftp-version}.tgz"
+    - task: syslog
+      cmd: curl -f -k -H "X-JFrog-Art-Api:${var.armdocker_token}" --upload-file ${OUTPUT_DIR}/${SYSLOG_SERVICE_NAME}-${var.syslog-version}.tgz "${var.helm-repo}/${SYSLOG_SERVICE_NAME}-${var.syslog-version}.tgz"
+    - task: nrfsim
+      cmd: curl -f -k -H "X-JFrog-Art-Api:${var.armdocker_token}" --upload-file ${OUTPUT_DIR}/${NRFSIM_SERVICE_NAME}-${var.nrfsim-version}.tgz "${var.helm-repo}/${NRFSIM_SERVICE_NAME}-${var.nrfsim-version}.tgz"
+    - task: redis
+      cmd: curl -f -k -H "X-JFrog-Art-Api:${var.armdocker_token}" --upload-file ${OUTPUT_DIR}/${REDIS_SERVICE_NAME}-${var.redis-version}.tgz "${var.helm-repo}/${REDIS_SERVICE_NAME}-${var.redis-version}.tgz"
+    - task: chfsim
+      cmd: curl -f -k -H "X-JFrog-Art-Api:${var.armdocker_token}" --upload-file ${OUTPUT_DIR}/${CHFSIM_SERVICE_NAME}-${var.chfsim-version}.tgz "${var.helm-repo}/${CHFSIM_SERVICE_NAME}-${var.chfsim-version}.tgz"
+    - task: seppsim
+      cmd: curl -f -k -H "X-JFrog-Art-Api:${var.armdocker_token}" --upload-file ${OUTPUT_DIR}/${SEPP_SIM_SERVICE_NAME}-${var.seppsim-version}.tgz "${var.helm-repo}/${SEPP_SIM_SERVICE_NAME}-${var.seppsim-version}.tgz"
+    - task: dscload
+      cmd: curl -f -k -H "X-JFrog-Art-Api:${var.armdocker_token}" --upload-file ${OUTPUT_DIR}/${DSCLOAD_SERVICE_NAME}-${var.dscload-version}.tgz "${var.helm-repo}/${DSCLOAD_SERVICE_NAME}-${var.dscload-version}.tgz"
+    - task: influxdb2
+      cmd: curl -f -k -H "X-JFrog-Art-Api:${var.armdocker_token}" --upload-file ${OUTPUT_DIR}/${INFLUXDB2_CHART_NAME}-${var.influxdb2-chart-version}.tgz "${var.helm-repo}/${INFLUXDB2_CHART_NAME}-${var.influxdb2-chart-version}.tgz"
+    - task: telegraf
+      cmd: curl -f -k -H "X-JFrog-Art-Api:${var.armdocker_token}" --upload-file ${OUTPUT_DIR}/${TELEGRAF_CHART_NAME}-${var.telegraf-chart-version}.tgz "${var.helm-repo}/${TELEGRAF_CHART_NAME}-${var.telegraf-chart-version}.tgz"
+    - task: grafana
+      cmd: curl -f -k -H "X-JFrog-Art-Api:${var.armdocker_token}" --upload-file ${OUTPUT_DIR}/${GRAFANA_CHART_NAME}-${var.grafana-chart-version}.tgz "${var.helm-repo}/${GRAFANA_CHART_NAME}-${var.grafana-chart-version}.tgz"
+    - task: tools
+      docker-image: base.helm-builder
+      cmd: curl -f -k -H "X-JFrog-Art-Api:${var.armdocker_token}" --upload-file ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}-${var.tools-version}.tgz "${var.helm-repo}/${ESC_SERVICE_TOOLS_NAME}-${var.tools-version}.tgz" ${base.DEBUG_CURL_FLAGS} ${env.base.DEBUG_FLAG}
+
+  csar:
+    - task: package
+      docker-image: package-manager
+      docker-flags:
+        - "--volume $PWD/${OUTPUT_DIR}:/csar"
+        - "--volume /var/run/docker.sock:/var/run/docker.sock"
+        - "--workdir /csar"
+        - "--user root:root"
+      cmd: "generate --helm ${ESC_SERVICE_TOOLS_NAME}-${var.tools-version}.tgz  --name ${ESC_SERVICE_TOOLS_NAME}-${var.tools-version}  "
+
+    - task: fix-permissions
+      docker-image: base.helm-builder
+      docker-flags:
+        - "--volume $PWD/${OUTPUT_DIR}:/csar"
+        - "--user root:root"
+      cmd: /bin/bash -c "chown -R $(id -u):$(id -g) /csar/${ESC_SERVICE_TOOLS_NAME}-${var.tools-version}.csar; rm -rf /csar/source"
+
+    - task: create-md5sum
+      cmd: /bin/bash -c "cd ${OUTPUT_DIR}; md5sum ${ESC_SERVICE_TOOLS_NAME}-${var.tools-version}.csar > ${ESC_SERVICE_TOOLS_NAME}-${var.tools-version}.csar.md5; cd .."
+
+    - task: create-tools
+      cmd: /bin/bash -c "cp scripts/collect_ADP_logs.sh ${OUTPUT_DIR}/; cp scripts/retagger.sh ${OUTPUT_DIR}/; cd ${OUTPUT_DIR}/; tar -czvf eric-sc-tools-${var.tools-version}.tgz  collect_ADP_logs.sh retagger.sh"
+
+    - task: csar-folders-user-file
+      cmd: curl -H "X-JFrog-Art-Api:${var.armdocker_token}" https://armdocker.rnd.ericsson.se/artifactory/api/search/aql -d $(if [ \"${env.PACKAGING}\" = \"true\" ]; then echo 'items.find({"repo":{"$eq":"proj-5g-sc-generic-local"}},{"type":{"$eq":"folder"}},{"depth":{"$eq":"2"}},{"path":{"$eq":"${env.USER}"}}).sort({"$asc":["created"]})'; else echo 'items.find({"repo":{"$eq":"proj-5g-bsf-generic-local"}},{"type":{"$eq":"folder"}},{"depth":{"$eq":"3"}},{"path":{"$eq":"eiffelesc/master"}}).sort({"$asc":["created"]})'; fi;) -H "content-type:text/plain" | grep name | sed 's/"name" ://' | sed 's/"//g' | sed 's/,//' | sed 's/^ *//g' > ${OUTPUT_DIR}/csar_folders_user.txt
+    # - task: fetch-branch
+    #   cmd: /bin/bash -c "if [ \"${env.USER}\" != \"eiffelesc\" ];
+    #                         then
+    #                              git rev-parse --abbrev-ref HEAD > ${OUTPUT_DIR}/var.get-branch;
+    #                         else
+    #                              echo ${env.BRANCH} > ${OUTPUT_DIR}/var.get-branch;
+    #                     fi;"
+    # - task: remove-old-csar-folders
+    #   cmd: ./scripts/bash/rem_csar_folders.bash ${OUTPUT_DIR}/var.get-branch
+    - task: push-csar
+      cmd: curl -f -k -H "X-JFrog-Art-Api:${var.armdocker_token}" --upload-file ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}-${var.tools-version}.csar "$(if [ \"${env.PACKAGING}\" = \"true\" ];
+                                                                                             then
+                                                                                                echo ${RELEASE_REPO};
+                                                                                             elif [ \"${env.CSAR_DETAIL}\" = \"false\" ];
+                                                                                                 then
+                                                                                                    echo ${TEST_REPO}/${env.USER}/${var.tools-version};
+                                                                                                 else
+                                                                                                    echo ${TEST_REPO}/${env.USER}/${var.tools-version}_${env.CSAR_DETAIL};
+                                                                                             fi;)/csar/${ESC_SERVICE_TOOLS_NAME}-${var.tools-version}.csar"
+    - task: push-md5sum
+      cmd: curl -f -k -H "X-JFrog-Art-Api:${var.armdocker_token}" --upload-file ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}-${var.tools-version}.csar.md5 "$(if [ \"${env.PACKAGING}\" = \"true\" ];
+                                                                                             then
+                                                                                                echo ${RELEASE_REPO};
+                                                                                             elif [ \"${env.CSAR_DETAIL}\" = \"false\" ];
+                                                                                                 then
+                                                                                                    echo ${TEST_REPO}/${env.USER}/${var.tools-version};
+                                                                                                 else
+                                                                                                    echo ${TEST_REPO}/${env.USER}/${var.tools-version}_${env.CSAR_DETAIL};
+                                                                                             fi;)/csar/${ESC_SERVICE_TOOLS_NAME}-${var.tools-version}.csar.md5"
+
+
+  deploy-tools:
+    - task: all
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: /bin/bash -c 'helm install ${ESC_SERVICE_TOOLS_NAME}-${var.username} --timeout 600s --namespace ${var.namespace} ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}-${var.tools-version}.tgz -f ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}/values.yaml'
+
+  certs:
+    - task: k6
+      docker-image: base.supreme
+      docker-flags:
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+      cmd: generate install -d k6 -p ${CERTS_OUT_DIR}/supreme.yaml; cd ../devtools/k6; mkdir -p 'certs'; cp -R ${CERTS_OUT_DIR}/k6/* certs/
+    - task: chfsim
+      docker-image: base.supreme
+      docker-flags:
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+      cmd: generate install -d chfsim,chfsim-sepp -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: nrfsim
+      docker-image: base.supreme
+      docker-flags:
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+      cmd: generate install -d nrfsim -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: seppsim
+      docker-image: base.supreme
+      docker-flags:
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+      cmd: generate install -d seppsim -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: syslog
+      docker-image: base.supreme
+      docker-flags:
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+      cmd: generate install -d syslog -p ${CERTS_OUT_DIR}/supreme.yaml
+
+  repository-index:
+    - task: create-index-user-helm-repo
+      cmd: /bin/bash -c "if [ \"${env.PACKAGING}\" == \"true\" ];
+                         then
+                            echo 'no index.yaml file is created for the release repo';
+                         else
+                            helm repo index ./${OUTPUT_DIR} --url ${HELM_CHART_REPO}/${env.USER};
+                         fi;"
+
+    - task: push-index
+      cmd: /bin/bash -c 'if [ \"${env.PACKAGING}\" == \"true\" ];
+                         then
+                            echo no index.yaml file is uploaded in the release repo;
+                         else
+                            curl -f -k -H "X-JFrog-Art-Api:${var.armdocker_token}" --upload-file ./${OUTPUT_DIR}/index.yaml ${HELM_CHART_REPO}/${env.USER}/index.yaml;
+                         fi;'
+  check-charts-versions:
+    - task: charts
+      cmd: ./scripts/bash/check_charts_versions.bash ${var.tools-version}
+
+  csar-test:
+    - task: unzip-csar
+      cmd: /bin/bash -c "unzip ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}-${var.tools-version}.csar -d ${OUTPUT_DIR}; rm -f ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}-${var.tools-version}.tgz; mv ${OUTPUT_DIR}/Definitions/OtherTemplates/${ESC_SERVICE_TOOLS_NAME}-${var.tools-version}.tgz ${OUTPUT_DIR}/.; "
+    - task: all
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: /bin/bash -c 'helm install --timeout 600s  --namespace ${var.namespace} ${ESC_SERVICE_TOOLS_NAME}-${var.username} ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}-${var.tools-version}.tgz'
+
+
+  undeploy:
+    - task: release
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: /bin/bash -c 'helm uninstall ${ESC_SERVICE_TOOLS_NAME}-${var.username} --timeout 600s --namespace ${var.namespace} '
+
+  modify-selected:
+    - task: chfsim
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--volume $PWD:/baseline_scripts"
+        - "--workdir /baseline_scripts"
+        - "--env HELM_VERSION=${HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+      cmd: /bin/bash -c "baseline_scripts/scripts/mod_requirements.py --appChartDir ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME} --name chfsim"
+    - task: nrfsim
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--volume $PWD:/baseline_scripts"
+        - "--workdir /baseline_scripts"
+        - "--env HELM_VERSION=${HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+      cmd: /bin/bash -c "baseline_scripts/scripts/mod_requirements.py --appChartDir ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME} --name nrfsim"
+    - task: seppsim
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--volume $PWD:/baseline_scripts"
+        - "--workdir /baseline_scripts"
+        - "--env HELM_VERSION=${HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+      cmd: /bin/bash -c "baseline_scripts/scripts/mod_requirements.py --appChartDir ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME} --name seppsim"
+    - task: dscload
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--volume $PWD:/baseline_scripts"
+        - "--workdir /baseline_scripts"
+        - "--env HELM_VERSION=${HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+      cmd: /bin/bash -c "baseline_scripts/scripts/mod_requirements.py --appChartDir ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME} --name dscload"
+    - task: sftp
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--volume $PWD:/baseline_scripts"
+        - "--workdir /baseline_scripts"
+        - "--env HELM_VERSION=${HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+      cmd: /bin/bash -c "baseline_scripts/scripts/mod_requirements.py --appChartDir ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME} --name sftp"
+    - task: syslog
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--volume $PWD:/baseline_scripts"
+        - "--workdir /baseline_scripts"
+        - "--env HELM_VERSION=${HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+      cmd: /bin/bash -c "baseline_scripts/scripts/mod_requirements.py --appChartDir ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME} --name syslog"
+    - task: k6
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--volume $PWD:/baseline_scripts"
+        - "--workdir /baseline_scripts"
+        - "--env HELM_VERSION=${HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+      cmd: /bin/bash -c "baseline_scripts/scripts/mod_requirements.py --appChartDir ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME} --name k6"
+    - task: influxdb2
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--volume $PWD:/baseline_scripts"
+        - "--workdir /baseline_scripts"
+        - "--env HELM_VERSION=${HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+      cmd: /bin/bash -c "baseline_scripts/scripts/mod_requirements.py --appChartDir ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME} --name influxdb2"
+    - task: telegraf
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--volume $PWD:/baseline_scripts"
+        - "--workdir /baseline_scripts"
+        - "--env HELM_VERSION=${HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+      cmd: /bin/bash -c "baseline_scripts/scripts/mod_requirements.py --appChartDir ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME} --name telegraf"
+    - task: grafana
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--volume $PWD:/baseline_scripts"
+        - "--workdir /baseline_scripts"
+        - "--env HELM_VERSION=${HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+      cmd: /bin/bash -c "baseline_scripts/scripts/mod_requirements.py --appChartDir ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME} --name grafana"
+    - task: redis
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--volume $PWD:/baseline_scripts"
+        - "--workdir /baseline_scripts"
+        - "--env HELM_VERSION=${HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+      cmd: /bin/bash -c "baseline_scripts/scripts/mod_requirements.py --appChartDir ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME} --name redis"
+
+  zip:
+    - task: prepare
+      cmd: /bin/bash -c "rm -rf csar tools; mkdir ./csar ./tools ./release_artifacts; cp -r  ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}-${var.tools-version}.csar ./csar; "
+    - task: copy
+      cmd: /bin/bash -c "cp -r  ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}-${var.tools-version}.csar ./csar;
+                         cp -r ${OUTPUT_DIR}/eric-sc-tools-${var.tools-version}.tgz  ./tools;
+                         cp -r  ${OUTPUT_DIR}/${ESC_SERVICE_TOOLS_NAME}-${var.tools-version}.csar.md5 ./csar;
+                         cp esc/release_artifacts/${ESC_SERVICE_TOOLS_NAME}-values.yaml ./release_artifacts/${ESC_SERVICE_TOOLS_NAME}-values.yaml"
+    - task: all
+      cmd: /bin/bash -c " tar -czvf ${ESC_SERVICE_TOOLS_NAME}-package-${var.tools-version}.tgz csar tools instructions release_artifacts"
+    - task: cleanup
+      cmd: /bin/bash -c "rm -rf ./csar ./tools ./release_artifacts"
+
+  push-package-tgz:
+    - task: push
+      cmd: curl -f -k -H "X-JFrog-Art-Api:${var.armdocker_token}" --upload-file ${ESC_SERVICE_TOOLS_NAME}-package-${var.tools-version}.tgz  "https://arm.seli.gic.ericsson.se/artifactory/proj-5g-bsf-generic-local/simulated-tools/"

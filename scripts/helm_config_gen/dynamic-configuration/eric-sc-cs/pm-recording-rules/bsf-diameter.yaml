@@ -1,0 +1,7 @@
+server:
+  extraConfigmapMounts:
+    - name: eric-bsf-diameter-rr-volume
+      configMap: eric-bsf-diameter-rr
+      mountPath: /etc/config/scbsfdiameter
+      subPath: ""
+      readOnly: true

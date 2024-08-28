@@ -1,0 +1,184 @@
+#!/usr/bin/perl
+
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.1
+#  Date     : 2022-10-25 09:38:30
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2022
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+#
+# This script is used as a DAFT playlist extension for upgrades to cleanup
+# eric-data-search-engine-curator-xxxxxx pods that are in Status "Error" after
+# the upgrade since these will not automatically be cleaned up.
+# If will check if there are any eric-data-search-engine-curator-xxxxxx pods
+# in Status Error and if there is also at least 1 on Status Completed then it
+# will delete the faulty pods.
+#
+# Script was introduced by user story DND-34450 and bug DND-35050.
+# https://eteamproject.internal.ericsson.com/browse/DND-34450
+# https://eteamproject.internal.ericsson.com/browse/DND-35050
+#
+################################################################################
+
+use strict;
+use Cwd qw(abs_path cwd);
+use File::Basename qw(dirname);
+
+my $debug_cmd = "";    # Modify this to read "echo " to enable debugging of script without changing data
+my $daft_script_path = "";
+my $job_log_file = "";
+my $job_params_file = "";
+my %job_params_hash;
+
+my $command;
+my $error_cnt = 0;
+my $kubectl_command;
+my @pods_in_error;
+my @pods_in_completed;
+my $rc = 0;
+my @result;
+my $sc_namespace;
+
+# Check if the needed environment variables exist
+print "Reading environment variables\n";
+if (exists $ENV{'TOOL_PATH_DAFT'} && $ENV{'TOOL_PATH_DAFT'} ne "") {
+    $daft_script_path = $ENV{'TOOL_PATH_DAFT'};
+} else {
+    print "The environment variable TOOL_PATH_DAFT does not exist or is empty\n";
+    exit 1;
+}
+if (exists $ENV{'JOB_WORKSPACE_PATH_DAFT'} && $ENV{'JOB_WORKSPACE_PATH_DAFT'} ne "") {
+    $job_params_file = "$ENV{'JOB_WORKSPACE_PATH_DAFT'}/job_parameters.conf";
+    $job_log_file = "$ENV{'JOB_WORKSPACE_PATH_DAFT'}/all.log";
+} else {
+    print "The environment variable JOB_WORKSPACE_PATH_DAFT does not exist or is empty\n";
+    exit 1;
+}
+
+# Check if the job parameters file exist
+unless (-f "$job_params_file") {
+    print "The job parameters file '$job_params_file' does not exist\n";
+    exit 1;
+}
+
+# Update the Perl library path to allow this script to use existing library files
+use lib abs_path $ENV{'TOOL_PATH_DAFT'} . '/perl/lib';
+
+# Import existing library files
+use General::Logging;
+use General::OS_Operations;
+use General::Playlist_Operations;
+
+# Read the job parameters file into an hash
+print "Reading job variables from file: $job_params_file\n";
+if (General::Playlist_Operations::job_parameters_read($job_params_file, \%job_params_hash) != 0) {
+    print "Failure to read the job parameters file '$job_params_file'\n";
+    exit 1;
+}
+
+# Check for job parameters to see if we should skip this playlist extension script
+if (exists $job_params_hash{'SKIP_DEPLOY_UPGRADE_SC'} && $job_params_hash{'SKIP_DEPLOY_UPGRADE_SC'} eq "yes") {
+    print "Job parameter SKIP_DEPLOY_UPGRADE_SC=yes, we shall not execute this script\n";
+    exit 0;
+}
+
+# Check for job parameters needed by this script
+if (exists $job_params_hash{'SC_NAMESPACE'}) {
+    $sc_namespace = $job_params_hash{'SC_NAMESPACE'};
+    print "SC Namespace: $sc_namespace\n";
+} else {
+    print "Job parameter SC_NAMESPACE does not exist in the job parameter file\n";
+    exit 1;
+}
+unless (exists $job_params_hash{'KUBECTL_EXECUTABLE'}) {
+    print "Job parameter KUBECTL_EXECUTABLE does not exist in the job parameter file\n";
+    exit 1;
+}
+$kubectl_command = $job_params_hash{'KUBECTL_EXECUTABLE'};
+
+# Enable logging of all executed commands to the job all.log file
+General::Logging::log_enable($job_log_file);
+
+print "Reading eric-data-search-engine-curator pod status\n";
+$command = "$kubectl_command -n $sc_namespace get pods | grep eric-data-search-engine-curator-";
+$rc = General::OS_Operations::send_command(
+    {
+        "command"       => $command,
+        "hide-output"   => 1,
+        "return-output" => \@result,
+    }
+);
+if ($rc != 0) {
+    print "Failed to execute command: $command\nReturn Code: $rc\nDetails:\n" . (join "\n", @result) . "\n";
+    $error_cnt++;
+}
+for (@result) {
+    # For example:
+    #eric-data-search-engine-curator-27768865-wwv4r                    0/1     Error       0               80m
+    #eric-data-search-engine-curator-27768865-wzzbl                    0/1     Error       0               79m
+    #eric-data-search-engine-curator-27768945-qwddz                    0/1     Completed   0               85s
+    #eric-data-search-engine-curator-27768946-fpx85                    0/1     Completed   0               25s
+    if (/^(eric-data-search-engine-curator-\S+)\s+\d+\/\d+\s+Error\s+/) {
+        push @pods_in_error, $1;
+    } elsif (/^(eric-data-search-engine-curator-\S+)\s+\d+\/\d+\s+Completed\s+/) {
+        push @pods_in_completed, $1;
+    }
+}
+
+if (scalar @pods_in_error == 0) {
+    print "\nNo pods found in Status 'Error', nothing to be done\n";
+
+    # Disable logging
+    General::Logging::log_disable();
+
+    exit 0;
+} elsif (scalar @pods_in_completed == 0) {
+    printf "\n%d pods found in Status 'Error', but no pod in Status 'Completed' so no cleanup will be done\n", scalar @pods_in_error;
+
+    # Disable logging
+    General::Logging::log_disable();
+
+    exit 0;
+}
+printf "\n%d pods found in Status 'Error' and %d pods in Status 'Completed' so cleanup will be attempted\n", scalar @pods_in_error, scalar @pods_in_completed;
+
+for my $pod_name (@pods_in_error) {
+    print "\nDeleting pod $pod_name\n";
+
+    $command = "$debug_cmd$kubectl_command -n $sc_namespace delete pods $pod_name";
+    $rc = General::OS_Operations::send_command(
+        {
+            "command"       => $command,
+            "hide-output"   => 1,
+            "return-output" => \@result,
+        }
+    );
+    if ($rc != 0) {
+        print "Failed to execute command: $command\nReturn Code: $rc\nDetails:\n" . (join "\n", @result) . "\n";
+        $error_cnt++;
+    }
+}
+
+# Disable logging
+General::Logging::log_disable();
+
+if ($error_cnt == 0) {
+    print "\nCleanup completed\n";
+    exit 0;
+} else {
+    print "\nCleanup failed, but ignored\n";
+    exit 0;
+}

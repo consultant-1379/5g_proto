@@ -1,0 +1,8 @@
+apiVersion:  certm.sec.ericsson.com/v1 
+kind: ExternalCertificate
+metadata:
+  name: certificate-authority-cr
+spec:
+  generated-secret-name: trusted-certificate-authority
+  generated-secret-type: opaque
+  trusted-certificate-list-name: ca-certs-list

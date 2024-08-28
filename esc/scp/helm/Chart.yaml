@@ -1,0 +1,4 @@
+apiVersion: v1
+description: Signaling Controller SCP NF. (c) Ericsson AB 2019.
+name: eric-scp
+version: 1.0.0-0

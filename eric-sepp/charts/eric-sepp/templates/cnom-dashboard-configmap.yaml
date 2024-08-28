@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "eric-sepp.name" . }}-cnom-dashboard-config
+  labels:
+    ericsson.com/cnom-server-dashboard-models: "true"
+{{- include "eric-sepp.de-facto-labels" . | indent 4 }}
+  annotations:
+{{- include "eric-sepp.helm-annotations" . | indent 4 }}
+{{- include "eric-sepp.config-annotations" . | indent 4 }}
+data:
+{{- if (index .Values "rlf" "enabled") }}
+{{ (.Files.Glob "dashboardconfig/seppRlfDashboard.json").AsConfig | indent 4 }}
+{{- else }}
+{{ (.Files.Glob "dashboardconfig/seppDashboard.json").AsConfig | indent 4 }}
+{{- end }}
+{{- if (index .Values "vtap" "enabled") }}
+{{ (.Files.Glob "dashboardconfig/seppVtapDashboard.json").AsConfig | indent 4 }}
+{{- end }}

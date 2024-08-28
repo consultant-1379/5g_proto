@@ -1,0 +1,93 @@
+eric-cloud-native-kvdb-rd-operand:
+  metrics:
+    enabled: false
+
+eric-cm-mediator:
+  metrics:
+    enabled: false
+
+eric-ctrl-bro:
+  metrics:
+    enabled: false
+
+eric-data-coordinator-zk:
+  metrics:
+    enabled: false
+
+eric-data-distributed-coordinator-ed:
+  metricsexporter:
+    enabled: false
+
+eric-data-document-database-pg:
+  metrics:
+    enabled: false
+
+eric-data-message-bus-kf:
+  metricsexporter:
+    enabled: false
+
+eric-data-object-storage-mn:
+  metrics:
+    serviceMonitor:
+      enabled: false
+
+eric-data-search-engine:
+  metrics:
+    enabled: false
+
+eric-dst-collector:
+  spanSizeMetrics:
+    enabled: false
+
+eric-fh-alarm-handler:
+  service:
+    endpoints:
+      metrics:
+        enabled: false
+  authorizationProxy:
+    metrics:
+      enabled: false
+
+eric-fh-snmp-alarm-provider:
+  metrics:
+    enabled: false
+
+eric-lm-combined-server:
+  metrics:
+    enabled: false
+
+eric-log-shipper:
+  metrics:
+    enabled: false
+
+eric-log-transformer:
+  metrics:
+    enabled: false
+
+eric-odca-diagnostic-data-collector:
+  env:
+    enablePromReceiver: false
+  pmRemoteWrite:
+    enabled: false
+  promQuery:
+    enabled: false
+
+eric-sec-access-mgmt:
+  metrics:
+    enabled: false
+
+eric-sec-certm:
+  metrics:
+    enabled: false
+
+eric-sec-key-management:
+  metrics:
+    enabled: false
+
+eric-sec-sip-tls:
+  metrics:
+    enabled: false
+
+eric-tm-ingress-controller-cr:
+  metrics:
+    enabled: false

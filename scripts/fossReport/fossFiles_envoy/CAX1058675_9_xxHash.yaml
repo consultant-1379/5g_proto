@@ -1,0 +1,42 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: Jan 11, 2024
+FOSS:
+    # Available in Bazaar
+    FOSSName: xxHash
+    # Available in Bazaar
+    FOSSVersion: 0.8.2
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/Cyan4973/xxHash/archive/v0.8.2.tar.gz
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 9/CAX1058675
+    # Not Available in Bazaar
+    Primary: N
+    # Available in Bazaar
+    STAKOCode: ESW2
+    # Available in Bazaar
+    STAKOReason: ()
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: "xxHash is an extremely fast non-cryptographic hash algorithm, working at speeds close to RAM limits. It is proposed in two flavors, 32 and 64 bits. "
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: BSD 2-Clause "Simplified" License (BSD-2-Clause)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: BSD 2-Clause "Simplified" License (BSD-2-Clause)
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Classpath
+    # Not Available in Bazaar
+    MavenDependency: NO
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    #Comments
+    Comments: ()
+    ReportAuthor: EEDRAK Ralf Kernchen

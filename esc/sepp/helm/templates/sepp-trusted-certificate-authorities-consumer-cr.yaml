@@ -1,0 +1,13 @@
+{{- range $authority := .Values.certificates.traf.trustedAuthority }}
+---
+
+apiVersion: certm.sec.ericsson.com/v1
+kind: ExternalCertificate
+metadata:
+  name: {{ printf "%s" $authority.caList }}-external-certificate
+spec:
+  generated-secret-name: {{ printf "%s" $authority.caList }}-secret
+  generated-secret-type: opaque
+  trusted-certificates-file-name: "cert1.pem"
+  trusted-certificate-list-name: {{ printf "%s" $authority.caList }}
+{{- end}}

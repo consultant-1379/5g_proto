@@ -1,0 +1,14 @@
+The following steps are performed with rule build-vertx
+-Download the vert.x source code from github
+-Apply a patch
+-Update the library with the new version and compile the changed library
+-Upload the changed library to our internal maven repository for distribution
+-Copy changed source code of the library back to this directory for reference
+
+To create a new version
+-Open the ruleset and edit the rule build-vertx
+-Change the VERTX_VERSION and VERTX_TARGET_VERSION
+-Run bob/bob build-vertx
+
+Afterwards, check in the ruleset with the updated versions and the changed source files
+stored in vertx-trace/edited_vertx_files

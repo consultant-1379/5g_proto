@@ -1,0 +1,38 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2019-06-21 12:24
+FOSS:
+    # Available in Bazaar
+    FOSSName: jnr-ffi
+    # Available in Bazaar
+    FOSSVersion: 2.1.7
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/jnr/jnr-ffi/archive/jnr-ffi-{{FOSSVersion}}.tar.gz
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 3/CAX1059980
+    # Not Available in Bazaar
+    PRIMNumber(CTC): CTC1014463
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: Java Abstracted Foreign Function Layer.
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: (LGPL GNU Lesser General Public License V3, Apache License 2.0) 
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'com.github.jnr:jnr-ffi:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ENTNGRG Georgios Antoniou

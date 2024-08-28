@@ -1,0 +1,16 @@
+global:
+  internalIPFamily: "IPv6"
+
+eric-cm-yang-provider:
+  ldap:
+    ipv6Enabled: true
+
+eric-data-sftp-server:
+  userManagement:
+    ldap:
+      lookupFamilyOrder: ipv6_first
+
+eric-pm-bulk-reporter:
+  service:
+    externalIPv6:
+      enabled: true

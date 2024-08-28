@@ -1,0 +1,51 @@
+{
+	"name": "bsf",
+	"title": "bsf",
+	"data": {
+		"nrfProfile": {
+			"uri": "http://nrfsim/server",
+			"nrfIpEndpoints": [
+				{
+					"ipv4Address": "127.0.0.1",
+					"ipv6Prefix": "IPv6Prefix1",
+					"transport": "TCP",
+					"port": 8080
+				},
+				{
+					"ipv4Address": "127.0.0.2",
+					"ipv6Prefix": "IPv6Prefix2",
+					"transport": "TCP",
+					"port": 8081
+				}
+			]
+		},
+		"pcfProfiles": [
+			{
+				"pcfNfId": "pcfNfId1",
+				"pcfIpEndpoints": [
+					{
+						"ipv4Address": "127.0.1.1",
+						"transport": "TCP",
+						"port": 8180
+					},
+					{
+						"ipv4Address": "127.0.1.2",
+						"transport": "TCP",
+						"port": 8181
+					}
+				],
+				"pcfFqdn": "pcf1.fqdn.ericsson.de",
+				"servingIpv4AddressRanges": [
+					{
+						"start": "127.0.0.2",
+						"end": "127.0.0.10"
+					},
+					{
+						"start": "10.0.0.2",
+						"end": "10.0.0.10"
+					}
+				]
+			}
+		]
+	}
+}

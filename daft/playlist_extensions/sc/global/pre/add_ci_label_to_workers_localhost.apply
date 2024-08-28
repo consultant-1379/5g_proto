@@ -1,0 +1,106 @@
+#!/usr/bin/perl
+
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.1
+#  Date     : 2022-11-08 17:26:38
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2022
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+#
+# This script is used as a DAFT playlist extension to add 'ci/ip' labels for all
+# worker nodes to allow the CI framework to find the right IP-address.
+#
+# This script will call another script to perform the work.
+#
+################################################################################
+
+use strict;
+use Cwd qw(abs_path);
+use File::Basename qw(dirname);
+
+my $command = "";
+my $daft_script_path = "";
+my $job_log_file = "";
+my $job_params_file = "";
+my %job_params_hash;
+
+my $rc = 0;
+my $rc_failure = 0;     # For now we ignore failures in this extension, but if needed in the future just change the value to 1.
+
+# Check if the needed environment variables exist
+print "Reading environment variables\n";
+if (exists $ENV{'TOOL_PATH_DAFT'} && $ENV{'TOOL_PATH_DAFT'} ne "") {
+    $daft_script_path = $ENV{'TOOL_PATH_DAFT'};
+} else {
+    print "The environment variable TOOL_PATH_DAFT does not exist or is empty\n";
+    exit $rc_failure;
+}
+if (exists $ENV{'JOB_WORKSPACE_PATH_DAFT'} && $ENV{'JOB_WORKSPACE_PATH_DAFT'} ne "") {
+    $job_params_file = "$ENV{'JOB_WORKSPACE_PATH_DAFT'}/job_parameters.conf";
+    $job_log_file = "$ENV{'JOB_WORKSPACE_PATH_DAFT'}/all.log";
+} else {
+    print "The environment variable JOB_WORKSPACE_PATH_DAFT does not exist or is empty\n";
+    exit $rc_failure;
+}
+
+# Check if the job parameters file exist
+unless (-f "$job_params_file") {
+    print "The job parameters file '$job_params_file' does not exist\n";
+    exit $rc_failure;
+}
+
+# Update the Perl library path to allow this script to use existing library files
+use lib abs_path $ENV{'TOOL_PATH_DAFT'} . '/perl/lib';
+
+# Import existing library files
+use General::Logging;
+use General::OS_Operations;
+use General::Playlist_Operations;
+
+# Read the job parameters file into an hash
+print "Reading job variables from file: $job_params_file\n";
+if (General::Playlist_Operations::job_parameters_read($job_params_file, \%job_params_hash) != 0) {
+    print "Failure to read the job parameters file '$job_params_file'\n";
+    exit $rc_failure;
+}
+
+$command = "$daft_script_path/perl/bin/add_ci_label_to_workers.pl --log-file $job_log_file";
+
+if (exists $job_params_hash{'KUBECONFIG'} && $job_params_hash{'KUBECONFIG'} ne "") {
+    $command .= " --kubeconfig $job_params_hash{'KUBECONFIG'}";
+}
+
+# Enable logging of all executed commands to the job all.log file
+General::Logging::log_enable($job_log_file);
+
+print "Executing command $command\n";
+$rc = General::OS_Operations::send_command(
+    {
+        "command"       => $command,
+        "hide-output"   => 0,
+    }
+);
+
+# Disable logging
+General::Logging::log_disable();
+
+if ($rc == 0) {
+    print "The command execution was successful\n";
+    exit $rc;
+} else {
+    print "The command execution failed\n";
+    exit $rc_failure;
+}

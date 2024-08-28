@@ -1,0 +1,44 @@
+eric-pm-server:
+  config: ## used only INTERNALLY -> changes applied in config_gen
+    ## For remote write over TLS
+    certm_tls:
+      - name: sc-pm-wr
+        trustedCertName: "sc-trusted-default-cas"
+        clientKeyName: "sc-pm-wr-default-cert"
+        clientCertName: "sc-pm-wr-default-cert"
+  externalRemoteWrite:
+    # - url: "https://eric-influxdb:8086/api/v1/prom/write?db=prometheus"
+    - url: "https://eric-telegraf:8080/metrics"
+      tls_config:
+        ca_file: /run/secrets/remwrtca/sc-pm-wr/cert1.pem
+        cert_file: /run/secrets/remwrtcert/sc-pm-wr/tls.crt
+        key_file: /run/secrets/remwrtcert/sc-pm-wr/tls.key
+      write_relabel_configs:
+        - action: replace
+          regex: scp
+          replacement: scp-application
+          source_labels:
+            - nf__type
+          target_label: remote_write_group
+        - action: replace
+          regex: bsf
+          replacement: bsf-application
+          source_labels:
+            - nf__type
+          target_label: remote_write_group
+        - action: replace
+          regex: sepp
+          replacement: sepp-application
+          source_labels:
+            - nf__type
+          target_label: remote_write_group
+        - action: replace
+          regex: resource-usage
+          replacement: sc-application
+          source_labels:
+            - type
+          target_label: remote_write_group
+        - action: keep
+          regex: (.+)
+          source_labels:
+            - remote_write_group

@@ -1,0 +1,29 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ template "eric-sepp.name" . }}-manager-grpc
+  labels:
+{{- include "eric-sepp.labels" . | indent 4 }}
+    app: {{ template "eric-sepp.name" . }}-manager
+  annotations:
+{{- include "eric-sepp.helm-annotations" . | indent 4 }}
+{{- include "eric-sepp.config-annotations" . | indent 4 }}
+spec:
+  ports:
+  - protocol: TCP
+    port: 9900
+    targetPort: 9900
+    name: workerconfig
+  - protocol: TCP
+    port: 9899
+    targetPort: 9899
+    name: outlierevents
+  selector:
+  {{- if .Values.manager.leaderElection.enabled }}
+    leader: {{ template "eric-sepp.name" . }}-manager-leader
+  {{- else }}
+    app: {{ template "eric-sepp.name" . }}-manager
+  {{- end }}
+  ipFamilyPolicy: PreferDualStack
+  type: ClusterIP
+{{- include "eric-sepp.ipfamilies" . | indent 2 }}

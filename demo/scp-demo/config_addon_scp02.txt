@@ -1,0 +1,74 @@
+<hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <capabilities>
+        <capability>urn:ietf:params:netconf:base:1.0</capability>
+    </capabilities>
+</hello>
+]]>]]>
+
+<?xml version="1.0"?>
+<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:ns2="urn:com:ericsson:ecim:1.0" xmlns:ns3="http://tail-f.com/ns/netconf/actions/1.0" xmlns:ns4="urn:ietf:params:xml:ns:yang:ietf-netconf-monitoring"
+    xmlns:ns5="urn:ietf:params:xml:ns:netconf:notification:1.0" message-id="0">
+    <edit-config>
+        <target>
+            <running />
+        </target>
+        <config>
+            <scp-function xmlns="urn:rdns:com:ericsson:oammodel:ericsson-scp">
+                <nf-instance>   
+                    <name>scp_instance_1</name>
+                    <static-scp-instance-data>
+                        <name>scp02</name>
+                        <static-scp-instance>
+                            <name>scp02</name>
+                            <nf-type>scp</nf-type>
+                            <static-nf-service>
+                                <name>nudm-uecm</name>
+                                <address>
+                                    <scheme>http</scheme>
+                                    <fqdn>scp2.region1.scp.5gc.mnc073.mcc262.3gppnetwork.org</fqdn>
+                                </address>
+                            </static-nf-service>
+                        </static-scp-instance>
+                    </static-scp-instance-data>
+                    <nf-pool>
+                        <name>peer_scp</name>
+                        <static-scp-instance-data-ref>scp02</static-scp-instance-data-ref>                      
+                    </nf-pool> 
+                    <nf-pool>
+                        <name>NfUdm_pr_pool_set3</name>
+                        <nf-pool-discovery>
+                            <name>NfUdm_pr_dyn_pool_set3</name>
+                            <update-interval>5s</update-interval>
+                            <nrf-query>
+                                <name>NF_UDM</name>
+                                <nf-type>udm</nf-type>
+                                <nf-set-id>set3.udmset.5gc.mnc073.mcc262</nf-set-id>
+                            </nrf-query>
+                        </nf-pool-discovery>
+                    </nf-pool>                  
+                    <routing-case>      
+                        <name>default_routing</name>                    
+                        <routing-rule>
+                            <name>Send_to_ownPLMN_NfUdm_set3_pr</name>
+                            <condition>var.setid=='set3.udmset.5gc.mnc073.mcc262' and req.header['3gpp-sbi-target-apiRoot'] exists</condition>
+                            <routing-action>
+                                <name>NfUdm_preferred_with_scp_failover</name>
+                                <action-route-preferred>
+                                <preserve-if-indirect-routing>target-api-root-header</preserve-if-indirect-routing>
+                                    <from-target-api-root-header></from-target-api-root-header>
+                                    <target-nf-pool>
+                                        <nf-pool-ref>NfUdm_pr_pool_set3</nf-pool-ref>
+                                    </target-nf-pool>
+                                    <last-resort-nf-pool-ref>peer_scp</last-resort-nf-pool-ref>                                 
+                                    <failover-profile-ref>fop1</failover-profile-ref>
+                                </action-route-preferred>
+                            </routing-action>
+                        </routing-rule>
+                    </routing-case>                 
+                </nf-instance>
+            </scp-function>
+        </config>
+    </edit-config>
+</rpc>
+]]>]]>
+

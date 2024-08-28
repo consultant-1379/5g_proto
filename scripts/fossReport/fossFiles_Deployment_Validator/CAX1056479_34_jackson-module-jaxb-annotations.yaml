@@ -1,0 +1,38 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2019-07-03 16:00
+FOSS:
+    # Available in Bazaar
+    FOSSName: jackson-module-jaxb-annotations
+    # Available in Bazaar
+    FOSSVersion: 2.9.6
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: http://central.maven.org/maven2/com/fasterxml/jackson/module/jackson-module-jaxb-annotations/{{FOSSVersion}}/jackson-module-jaxb-annotations-{{FOSSVersion}}-sources.jar
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 34/CAX1056479
+    # Not Available in Bazaar
+    PRIMNumber(CTC): CTC 101 5285
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: This Jackson extension module provides support for using JAXB (javax.xml.bind) annotations as an alternative to native Jackson annotations.
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: Apache License 2.0
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'com.fasterxml.jackson.module:jackson-module-jaxb-annotations:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ENTNGRG Georgios Antoniou

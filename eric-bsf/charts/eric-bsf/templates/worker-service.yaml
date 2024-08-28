@@ -1,0 +1,139 @@
+# Copyright 2022 Ericsson GmbH
+# IPfamilies supported deployment (singlestack of choice or dualstack)
+# Service options under service.externalIPvX are used. Service names has suffix of IPfamilies
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ template "eric-bsf.name" . }}-worker
+  labels:
+    ericsson.com/tapcollector-traffic-service: {{ template "eric-bsf.name" . }}-worker
+{{- include "eric-bsf.labels" . | indent 4 }}
+    app: {{ template "eric-bsf.name" . }}-worker
+  annotations:
+{{- include "eric-bsf.helm-annotations" . | indent 4 }}
+{{- include "eric-bsf.config-annotations" . | indent 4 }}
+{{- include "eric-bsf.workerLB-annotations" . | indent 4 }}
+{{- include "eric-bsf.metallb-annotations" . | indent 4 }}
+spec:
+  type: {{ .Values.service.worker.type }}
+  allocateLoadBalancerNodePorts: {{ .Values.service.worker.allocateLoadBalancerNodePorts }}
+{{- include "eric-bsf.ipfamilypolicy" . | indent 2 }}
+  # Conditional ipFamilyPolicy != "RequireDualStack"
+  {{- if ne ( .Values.service.worker.ipFamilyPolicy | toString ) "RequireDualStack" }}
+  # ipFamily value for Service type LoadBalancer
+  {{- $isIpV4Enabled := include "eric-bsf.enabled-IPv4" .}}
+  {{- $isIpV6Enabled := include "eric-bsf.enabled-IPv6" .}}
+  {{- if ne $isIpV4Enabled $isIpV6Enabled }}
+    {{- if $isIpV4Enabled }}
+  ipFamilies: ["IPv4"]
+    {{- end }}
+    {{- if $isIpV6Enabled }}
+  ipFamilies: ["IPv6"]
+    {{- end }}
+  {{- end }}
+  {{- end }}
+  {{- if not .Values.service.worker.annotations.loadBalancerIPs }}
+  {{- if .Values.service.worker.loadBalancerIP}}
+  loadBalancerIP: {{ .Values.service.worker.loadBalancerIP | quote }}
+  {{- end }}
+  {{- end }}
+  {{- if .Values.service.worker.externalTrafficPolicy}}
+  externalTrafficPolicy: {{ .Values.service.worker.externalTrafficPolicy | quote }}
+  {{ end }}
+  ports:
+  - name: unencrypted-port
+    protocol: TCP
+    port: {{ .Values.service.worker.port }}
+    targetPort: {{ .Values.service.worker.portName }}
+  - name: encrypted-port
+    protocol: TCP
+    port: {{ .Values.service.worker.tlsport }}
+    targetPort: {{ .Values.service.worker.tlsPortName }}
+  selector:
+    app: {{ template "eric-bsf.name" . }}-worker
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "eric-bsf.name" . }}-worker-cert-notifier
+  labels:
+{{- include "eric-bsf.labels" . | indent 4 }}
+    app: {{ template "eric-bsf.name" . }}-worker
+  annotations:
+{{- include "eric-bsf.helm-annotations" . | indent 4 }}
+{{- include "eric-bsf.config-annotations" . | indent 4 }}
+spec:
+  ipFamilyPolicy: PreferDualStack
+  type: ClusterIP
+{{- include "eric-bsf.ipfamilies" . | indent 2 }}
+  ports:
+  - protocol: TCP
+    port: {{ .Values.service.certnotifier.port }}
+    targetPort: {{ .Values.spec.certnotifier.port }}
+  selector:
+    app: {{ template "eric-bsf.name" . }}-worker
+---
+{{- if .Values.metrics.worker.enabled }}
+{{- if eq (include "eric-bsf.tls" .) "true" }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ template "eric-bsf.name" . }}-worker-metrics-tls
+  labels:
+{{- include "eric-bsf.labels" . | indent 4 }}
+    app: {{ template "eric-bsf.name" . }}-worker
+  annotations:
+{{- include "eric-bsf.helm-annotations" . | indent 4 }}
+{{- include "eric-bsf.config-annotations" . | indent 4 }}
+    prometheus.io/scrape: {{ .Values.metrics.worker.enabled | quote }}
+    prometheus.io/scheme: https
+spec:
+  ipFamilyPolicy: PreferDualStack
+  type: ClusterIP
+{{- include "eric-bsf.ipfamilies" . | indent 2 }}
+  ports:
+  - name: https-metrics
+    protocol: TCP
+    port: {{ .Values.service.worker.server.oam.port }}
+    targetPort: {{ .Values.service.worker.server.oam.targetPort }}
+  selector:
+    app: {{ template "eric-bsf.name" . }}-worker
+{{- end }}
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ template "eric-bsf.name" . }}-worker-metrics-non-tls
+  labels:
+{{- include "eric-bsf.labels" . | indent 4 }}
+    app: {{ template "eric-bsf.name" . }}-worker
+  annotations:
+{{- include "eric-bsf.helm-annotations" . | indent 4 }}
+{{- include "eric-bsf.config-annotations" . | indent 4 }}
+    prometheus.io/scrape: {{ .Values.metrics.worker.enabled | quote }}
+    prometheus.io/scheme: http
+spec:
+  ipFamilyPolicy: PreferDualStack
+  type: ClusterIP
+{{- include "eric-bsf.ipfamilies" . | indent 2 }}
+  ports:
+  - name: http-metrics1
+    protocol: TCP
+    port: {{ .Values.spec.cddjmxexporter.port }}
+    targetPort: {{ .Values.spec.cddjmxexporter.port }}
+{{- if eq (include "eric-bsf.tapcollector.worker.enabled" .) "true" }}
+  - name: http-metrics2
+    protocol: TCP
+    port: {{ .Values.tapcollector.worker.pmClientPort }}
+    targetPort: {{ .Values.tapcollector.worker.pmClientPort }}
+{{- end }}
+{{- if eq (include "eric-bsf.tls" .) "false" }}
+  - name: http-metrics3
+    protocol: TCP
+    port: {{ .Values.service.worker.server.oam.port }}
+    targetPort: {{ .Values.service.worker.server.oam.targetPort }}
+{{- end }}
+  selector:
+    app: {{ template "eric-bsf.name" . }}-worker
+{{- end }}

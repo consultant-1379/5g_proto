@@ -1,0 +1,224 @@
+# RLF
+
+# global:
+  # pullSecret: ""
+  # registry:
+    # url: "armdocker.rnd.ericsson.se"
+    # imagePullPolicy: IfNotPresentpullSecret: ""
+
+imageCredentials:
+  rlf:
+    repoPath: "proj-5g-bsf" #"proj-ldc/common_base_os" # to be changed
+    registry:
+      url: # overrides global registry url
+      imagePullPolicy: # overrides global image pull policy
+
+networkPolicy:
+  enabled: true
+
+metrics:
+  enabled: "true"
+
+service:
+  rlf:
+    name: "eric-sc-rlf"
+    portRestOam: 80
+    portRest: 81
+    portGrpc: 82
+    server:
+      k8sProbe:
+        port: "8085"
+      oam:
+        port: "8082"
+        targetPort: "8082"
+        interfaces:
+          yang:
+            caPath: "/interfaces/server/oam/certificates/yang"
+          mediator:
+            caPath: "/interfaces/server/oam/certificates/mediator"
+          managers:
+            caPath: "/run/secrets/client-ca"
+            certsPath: "/run/secrets/rlf-manager-server-cert"
+        tls:
+          enabled: true
+          certificates:
+            certsPath: "/interfaces/server/oam/certificates"
+          pm:
+            caPath: "/run/secrets/pm/ca"
+    client:
+      interfaces:
+        mediator:
+          tls:
+            enabled: true
+            certificates:
+              certsPath: "/interfaces/mediator/client/certificates"
+              caPath: "/interfaces/mediator/client/certificates/trustCA"
+        dcedsc:
+          tls:
+            # enabled: true ## overwrite global tls, enable/disable tls for dcedsc client
+            certPath: "/run/secrets/dcedsc/certificates"
+        siptls:
+          caPath: "/run/secrets/siptls/ca"
+    # annotations: {}
+
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 0
+
+spec:
+  rlf:
+    replicaCount: "2"
+    affinity:
+      podAntiAffinity: "soft"
+    tolerations:
+    - key: node.kubernetes.io/not-ready
+      operator: Exists
+      effect: NoExecute
+      tolerationSeconds: 0
+    - key: node.kubernetes.io/unreachable
+      operator: Exists
+      effect: NoExecute
+      tolerationSeconds: 0
+    podDisruptionBudget:
+      minAvailable: 1
+    portNameRestOam: "rest-oam"
+    portRestOam: 8080
+    portNameRest: "rest"
+    portRest: 8081
+    portInternal: 8085
+    concurrent_streams_max: 1000
+    resources:
+      requests:
+        memory: 1Gi
+        cpu: 1500m
+        # ephemeral-storage: ""
+      limits:
+        memory: 2Gi
+        cpu: 3
+        # ephemeral-storage: ""
+
+probes:
+  rlf:
+    livenessProbe:
+      port: 8085
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+    readinessProbe:
+      port: 8085
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 1
+      successThreshold: 1
+      failureThreshold: 3
+  logshipper:
+    livenessProbe:
+      initialDelaySeconds: 180
+      timeoutSeconds: 10
+      periodSeconds: 10
+      failureThreshold: 3
+
+leaderElection:
+  enabled: true
+
+# Logshipper configured for an average throughput of 100logs/sec (covering the case of debug logs)
+# Refer to the "Sidecar dimensioning recommendations" section of LogShipper
+resources:
+  logshipper:
+    requests:
+      memory: "20Mi"
+      cpu: "33m"
+      ephemeral-storage:
+    limits:
+      memory: "30Mi"
+      cpu: "40m"
+      ephemeral-storage:
+
+## Log Shipper (as a sidecar) configuration
+## Used only if global.log.streamingMethod is "direct" or "dual"
+## Log Shipper also requires Log Transformer
+logShipper:
+  logLevel: "info"
+  storage:
+    path: "/logs"
+    size: "500Mi"
+    medium: "Ephemeral"
+  input:
+    files:
+    - enabled: true
+      paths:
+      - "rlf.log"
+      multilines:
+      - "java"
+  output:
+    logTransformer:
+      enabled: true
+      host: eric-log-transformer
+
+rbac:
+  # createServiceAccount controls the creation of ServiceAccount, ClusterRole and ClusterRoleBinding.
+  # The ClusterRole allows bragent POD to read configmaps from kube-system namespace.
+  # If set to false, the cluster administrator is responsible for creating those entities.
+  # If set to false, the serviceAccountName field is Mandatory.
+  #
+  createServiceAccount: true
+  # serviceAccountName contains the service account name to use.
+  # Mandatory, if createServiceAccount is set to false
+  serviceAccountName:
+
+security:
+  tls:
+    # TTL for the certificates, SIP-TLS default value if not provided
+    certificateTTL:
+
+etcd:
+  endpoint: "https://eric-data-distributed-coordinator-ed-sc:2379"
+  username: "root"
+  passwordKey: "etcdpasswd"
+  secretName: "eric-data-distributed-coordinator-creds-sc"
+
+adp:
+  cm:
+    mediator:
+      hostname: "eric-cm-mediator"
+      port: "5004"
+  pm:
+    server:
+      hostname: "eric-pm-server"
+  log:
+    transformer:
+      hostname: "eric-log-transformer"
+
+sc:
+  common:
+    monitor:
+      hostname: "eric-sc-monitor"
+    etcd:
+      hostname: "eric-data-distributed-coordinator-ed-sc"
+  scp:
+    manager:
+      hostname: "eric-scp-manager"
+    worker:
+      hostname: "eric-scp-worker"
+  sepp:
+    manager:
+      hostname: "eric-sepp-manager"
+    worker:
+      hostname: "eric-sepp-worker"
+
+jvm:
+  parameters:
+    rlf: "-server -XX:+ErrorFileToStderr -XX:MaxRAMPercentage=80 -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact -Dcom.sun.management.jmxremote.port=8090 -Dcom.sun.management.jmxremote.rmi.port=8090 -Djava.rmi.server.hostname=127.0.0.1 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.host=127.0.0.1 -Dvertx.cacheDirBase=/vertx/vertx-cache -Dio.netty.native.workdir=/vertx"
+    tlskeylogagent: "-server -XX:+ErrorFileToStderr -XX:+UseG1GC -XX:MaxRAMPercentage=80 -Dcom.sun.management.jmxremote.port=8099 -Dcom.sun.management.jmxremote.rmi.port=8099 -Djava.rmi.server.hostname=127.0.0.1 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.host=127.0.0.1"
+
+annotations: {}
+
+labels: {}
+
+log:
+  rlf:
+    level: info

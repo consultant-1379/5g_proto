@@ -1,0 +1,7 @@
+imageCredentials:
+  registry:
+    url: "k8s-registry.eccd.local"
+    pullSecret: "k8s-registry-secret"
+    
+persistentVolumeClaim:
+  storageClassName: network-block

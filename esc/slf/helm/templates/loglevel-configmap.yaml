@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "eric-sc-slf.name" . }}-loglevel-config
+  labels:
+{{- include "eric-sc-slf.labels" . | indent 4 }}
+    app: {{ template "eric-sc-slf.name" . }}
+  annotations:
+{{- include "eric-sc-slf.helm-annotations" . | indent 4 }}
+{{- include "eric-sc-slf.config-annotations" . | indent 4 }}
+data:
+  logcontrol.json: |-
+    [
+        {
+          "container": {{ include "eric-sc-slf.name" . | quote }},
+          "severity": {{ .Values.log.slf.level | quote }}
+        }{{- if eq (include "eric-sc-slf.tapagent.enabled" .) "true" }},
+        {
+          "container": {{ .Values.tlskeylogagent.name | quote }},
+          "severity": {{ .Values.log.tlskeylogagent.level | quote }}
+        }{{- end }}
+    ]

@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+
+package ratelimiting.grpc;
+
+option java_multiple_files = true;
+option java_package = "com.ericsson.sc.ratelimiting.service.grpc";
+option java_outer_classname = "RateLimiting";
+option optimize_for = SPEED;
+
+service RateLimitingService
+{	
+	// Pull tokens
+	rpc PullTokens (PullTokensRequest) returns (PullTokensResponse);
+}
+
+message PullTokensRequest
+{
+	// The namespace of the buckets from which to pull the token(s).
+	// Default: general
+	string namespace = 1;
+	
+	repeated PullTokensContext contexts = 2;
+}	
+	
+message PullTokensContext
+{
+	// The bucket from which to pull the tokens.
+	string name = 1;
+		
+	// The watermark for which to pull the token(s).
+	// Default: 0
+	double watermark = 2;
+	
+	// The amount of tokens to be pulled.
+	// Default: 1
+	uint32 amount = 3;
+}
+
+message PullTokensResponse
+{
+	// The result of the pull
+	repeated PullTokensResult result = 1;
+}
+
+message PullTokensResult
+{
+	enum ResultCode
+	{
+		Ok = 0;
+		TooManyRequests = 1;
+		NotFound = 2;
+		InternalServerError = 3;
+	}
+	
+	ResultCode rc = 1;
+	uint32 ra = 2;
+}

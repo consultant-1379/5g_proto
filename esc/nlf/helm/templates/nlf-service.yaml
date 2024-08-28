@@ -1,0 +1,42 @@
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ template "eric-sc-nlf.name" . }}
+  labels:
+{{- include "eric-sc-nlf.labels" . | indent 4 }}
+    app: {{ .Values.service.nlf.name | quote }}
+  annotations:
+{{- include "eric-sc-nlf.helm-annotations" . | indent 4 }}
+{{- include "eric-sc-nlf.config-annotations" . | indent 4 }}
+{{- if .Values.metrics.enabled }}
+    prometheus.io/scrape: {{ .Values.metrics.enabled | quote }}
+    prometheus.io/port: {{ .Values.service.nlf.metrics.port | quote }}
+{{- if eq (include "eric-sc-nlf.tls" .) "true" }}
+    prometheus.io/scheme: https
+{{- else }}
+    prometheus.io/scheme: http
+{{- end }}
+{{- end }}
+spec:
+  ipFamilyPolicy: PreferDualStack
+  type: ClusterIP
+  clusterIP: None
+{{- include "eric-sc-nlf.ipfamilies" . | indent 2 }}
+  ports:
+  - name: rest-oam
+    protocol: TCP
+    port: {{ .Values.service.nlf.restOam.port }}
+    targetPort: {{ .Values.service.nlf.restOam.targetPortName }}
+  - name: rest
+    protocol: TCP
+    port: {{ .Values.service.nlf.rest.port }}
+    targetPort: {{ .Values.service.nlf.rest.targetPortName }}
+{{- if .Values.metrics.enabled }}
+  - name: oam-server
+    protocol: TCP
+    port: {{ .Values.service.nlf.metrics.port }}
+    targetPort: {{ .Values.service.nlf.metrics.targetPort }}
+{{- end }}
+  selector:
+    app: {{ .Values.service.nlf.name | quote }}

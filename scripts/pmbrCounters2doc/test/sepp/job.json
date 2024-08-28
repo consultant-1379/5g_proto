@@ -1,0 +1,87 @@
+[
+  {
+    "granularity-period": "five-min",
+    "name": "sepp_system_job",
+    "current-job-state": "active",
+    "type": "measurement-job",
+    "measurement-reader": [
+      {
+        "group-ref": "sepp_egress",
+        "name": "sepp_egress_reader"
+      },
+      {
+        "group-ref": "sepp_ingress",
+        "name": "sepp_ingress_reader"
+      },
+      {
+        "group-ref": "sepp_system_metrics",
+        "name": "sepp_system_metrics_reader"
+      },
+      {
+        "group-ref": "sepp_nrf",
+        "name": "sepp_nrf_reader"
+      },
+      {
+        "group-ref": "sepp_ms",
+        "name": "sepp_ms_reader"
+      },
+      {
+        "group-ref": "sepp_rate_limit",
+        "name": "sepp_rate_limit_reader"
+      }
+    ],
+    "requested-job-state": "active"
+  },
+  {
+    "granularity-period": "one-min",
+    "name": "sepp_overload_job",
+    "current-job-state": "active",
+    "type": "threshold-job",
+    "measurement-reader": [
+      {
+        "name": "sepp_overload_reader",
+        "measurement-type-ref": "sepp_load",
+        "group-ref": "sepp_system_metrics",
+        "threshold-direction": "increasing",
+        "threshold-monitoring": [
+          {
+            "name": "sepp_overload_threshold_monitoring",
+            "threshold-high": "70",
+            "threshold-low": "60",
+            "threshold-severity": "major"
+          },
+          {
+            "name": "sepp_overload_threshold_escalation",
+            "threshold-high": "80",
+            "threshold-low": "75",
+            "threshold-severity": "critical"
+          }
+        ]
+      }
+    ],
+    "requested-job-state": "active"
+  },
+  {
+    "granularity-period": "one-min",
+    "name": "sepp_ingress_open_tcp_connections_job",
+    "current-job-state": "active",
+    "type": "threshold-job",
+    "measurement-reader": [
+      {
+        "name": "sepp_ingress_open_tcp_connections_reader",
+        "measurement-type-ref": "envoy_ingress_downstream_cx_active",
+        "group-ref": "sepp_ingress",
+        "threshold-direction": "increasing",
+        "threshold-monitoring": [
+          {
+            "name": "sepp_ingress_open_tcp_connections_threshold_monitoring",
+            "threshold-high": "700",
+            "threshold-low": "650",
+            "threshold-severity": "minor"
+          }
+        ]
+      }
+    ],
+    "requested-job-state": "stopped"
+  }
+]

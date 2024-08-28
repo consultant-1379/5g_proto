@@ -1,0 +1,650 @@
+{
+	"product": "sc",
+	"version": "1.14",
+	"wizardSteps": [
+		{
+			"title": "Select Network Functions",
+			"subtitle": "Please select the network functions that needs to be installed",
+			"questions": [
+				{
+					"name": "SCP",
+					"type": "group"
+				},
+				{
+					"name": "SEPP",
+					"type": "group"
+				},
+				{
+					"name": "BSF",
+					"type": "group"
+				}
+			]
+		},
+		{
+			"title": "Select additional services",
+			"subtitle": "Please select additional Services that will be used",
+			"questions": [
+				{
+					"name": "RLF",
+					"type": "group"
+				},
+				{
+					"name": "SLF",
+					"type": "group"
+				},
+				{
+					"name": "NLF",
+					"type": "group"
+				},
+				{
+					"name": "vTAP",
+					"type": "group"
+				}
+			]
+		}
+	],
+	"wizardGroupSelections": [
+		{
+			"name": "RLF",
+			"groups": [],
+			"default": [],
+			"multiSelection": true,
+			"enableCondition": {
+				"or": [
+					{
+						"group": "SCP",
+						"value": true
+					},
+					{
+						"group": "SEPP",
+						"value": true
+					}
+				]
+				
+			}
+
+
+		},{
+			"name": "SLF",
+			"groups": [],
+			"default": [],
+			"multiSelection": true,
+			"enableCondition": {
+				"group": "SCP",
+				"value": true
+			}
+
+
+		},{
+			"name": "NLF",
+			"groups": [],
+			"default": [],
+			"multiSelection": true,
+			"enableCondition": {
+				"default": true,
+				"modifiable": true,
+				"group": "SCP",
+				"value": true
+			}
+
+
+		}
+	],
+	"groups": [
+		{
+			"name": "SCP",
+			"controlledParameters": [
+				{
+					"parameters": {
+						"helm": [
+							""
+						],
+						"yang": [
+							"/scp-function"
+						],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "add",
+						"condition": true
+					}
+				},
+				{
+					"parameters": {
+						"helm": [
+							"/eric-scp/spec.worker/replicaCount",
+							"/eric-scp/spec.worker/max_active_tcp_connections",
+							"/eric-scp/spec.worker/concurrency",
+							"/eric-scp/service.worker/loadBalancerIP",
+							"/eric-scp/ipVersion"
+						],
+						"yang": [],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "add",
+						"condition": true
+					}
+				},
+				{
+					"parameters": {
+						"helm": [
+							"/global/ericsson/scp/enabled"
+						],
+						"yang": [],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "set",
+						"value": true,
+						"condition": true
+					}
+				},
+				{
+					"parameters": {
+						"helm": [
+							"/global/ericsson/scp/enabled"
+						],
+						"yang": [],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "set",
+						"value": false,
+						"condition": false
+					}
+				}
+			],
+			"wizard": {
+				"default": false,
+				"modifiable": true
+			}
+		},
+		{
+			"name": "SEPP",
+			"controlledParameters": [
+				{
+					"parameters": {
+						"helm": [
+							""
+						],
+						"yang": [
+							"/sepp-function"
+						],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "add",
+						"condition": true
+					}
+				},
+				{
+					"parameters": {
+						"helm": [
+							"/eric-sepp/ipVersion",
+							"/eric-sepp/spec/worker/replicaCount",
+							"/eric-sepp/service/worker/loadBalancerIP"
+						],
+						"yang": [
+							""
+						],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "add",
+						"condition": true
+					}
+				},
+				{
+					"parameters": {
+						"helm": [
+							"/global/ericsson/sepp/enabled"
+						],
+						"yang": [],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "set",
+						"value": true,
+						"condition": true
+					}
+				},
+				{
+					"parameters": {
+						"helm": [
+							"/global/ericsson/sepp/enabled"
+						],
+						"yang": [],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "set",
+						"value": false,
+						"condition": false
+					}
+				}
+			],
+			"wizard": {
+				"default": false,
+				"modifiable": true
+			}
+		},
+		{
+			"name": "BSF",
+			"controlledParameters": [
+				{
+					"parameters": {
+						"helm": [
+							""
+						],
+						"yang": [
+							"/bsf-function",
+							"/diameter"
+						],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "add",
+						"condition": true
+					}
+				},
+				{
+					"parameters": {
+						"helm": [
+							"/eric-bsf/service.worker/loadBalancerIP",
+							"/eric-bsf/spec.worker/replicaCount",
+							"/eric-bsf-diameter/replicaCount",
+							"/eric-stm-diameter/replicaCount",
+							"/eric-stm-diameter/service/loadBalancerIP",
+							"/eric-data-wide-column-database-cd/persistence/dataVolume/persistentVolumeClaim.storageClassName"
+
+						],
+						"yang": [
+							""
+						],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "add",
+						"condition": true
+					}
+				},
+				{
+					"parameters": {
+						"helm": [
+							"/global/ericsson/bsf/enabled",
+							"/global/ericsson/wcdb/enabled"
+
+						],
+						"yang": [],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "set",
+						"value": true,
+						"condition": true
+					}
+				},
+				{
+					"parameters": {
+						"helm": [
+							"/global/ericsson/bsf/enabled",
+							"/global/ericsson/wcdb/enabled"
+						],
+						"yang": [],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "set",
+						"value": false,
+						"condition": false
+					}
+				}
+			],
+			"wizard": {
+				"default": false,
+				"modifiable": true
+			}
+		},
+		{
+			"name": "RLF",
+			"controlledParameters": [
+				{
+					"parameters": {
+						"helm": [
+							""
+						],
+						"yang": [
+							"/scp-function/nf-instance/global-rate-limit-profile",
+							"/scp-function/nf-instance/local-rate-limit-profile",
+							"/sepp-function/nf-instance/global-rate-limit-profile",
+							"/sepp-function/nf-instance/local-rate-limit-profile"
+						],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "add",
+						"condition": true
+					}
+				},
+				{
+					"parameters": {
+						"helm": [
+							"/eric-sc-rlf/spec/rlf/replicaCount"
+						],
+						"yang": [
+							""
+						],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "add",
+						"condition": true
+					}
+				},
+				{
+					"parameters": {
+						"helm": [
+							"/global/ericsson/rlf/enabled"
+						],
+						"yang": [],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "set",
+						"value": true,
+						"condition": true
+					}
+				},
+				{
+					"parameters": {
+						"helm": [
+							"/global/ericsson/rlf/enabled"
+						],
+						"yang": [],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "set",
+						"value": false,
+						"condition": false
+					}
+				}
+			],
+			"wizard": {
+				"default": false,
+				"modifiable": true,
+				"enableCondition": {
+					"or": [
+						{
+							"group": "SCP",
+							"value": true
+						},{
+							"group": "SEPP",
+							"value": true
+						}
+
+					]
+			}
+			}
+		},
+		{
+			"name": "NLF",
+			"controlledParameters": [
+				{
+					"parameters": {
+						"helm": [
+							""
+						],
+						"yang": [
+							"/scp-function/nf-instance/global-rate-limit-profile",
+							"/scp-function/nf-instance/local-rate-limit-profile"
+						],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "add",
+						"condition": true
+					}
+				},
+				{
+					"parameters": {
+						"helm": [
+							"/eric-sc-nlf/replicaCount"
+						],
+						"yang": [
+							""
+						],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "add",
+						"condition": true
+					}
+				},
+				{
+					"parameters": {
+						"helm": [
+							"/global/ericsson/nlf/enabled"
+						],
+						"yang": [],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "set",
+						"value": true,
+						"condition": true
+					}
+				},
+				{
+					"parameters": {
+						"helm": [
+							"/global/ericsson/nlf/enabled"
+						],
+						"yang": [],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "set",
+						"value": false,
+						"condition": false
+					}
+				}
+			],
+			"wizard": {
+				"default": false,
+				"modifiable": true,
+				"enableCondition": {
+					"group": "SCP",
+					"value": true
+				}
+			}
+		},
+		{
+			"name": "SLF",
+			"controlledParameters": [
+				{
+					"parameters": {
+						"helm": [
+							""
+						],
+						"yang": [
+							"/scp-function/nf-instance/slf-lookup-profile",
+							"/scp-function/nf-instance/routing-case/routing-rule/routing-action/action-slf-lookup",
+							"/sepp-function/nf-instance/slf-lookup-profile",
+							"/sepp-function/nf-instance/routing-case/routing-rule/routing-action/action-slf-lookup"
+						],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "add",
+						"condition": true
+					}
+				},
+				{
+					"parameters": {
+						"helm": [
+							"/eric-sc-slf/spec/slf/replicaCount"
+						],
+						"yang": [],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "add",
+						"condition": true
+					}
+				},
+				{
+					"parameters": {
+						"helm": [
+							"/global/ericsson/slf/enabled"
+						],
+						"yang": [],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "set",
+						"value": true,
+						"condition": true
+					}
+				},
+				{
+					"parameters": {
+						"helm": [
+							"/global/ericsson/slf/enabled"
+						],
+						"yang": [],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "set",
+						"value": false,
+						"condition": false
+					}
+				}
+			],
+			"wizard": {
+				"default": false,
+				"modifiable": true,
+				"enableCondition": {
+					"group": "SCP",
+					"value": true
+				}
+			}
+		},
+		{
+			"name": "vTAP",
+			"controlledParameters": [
+				{
+					"parameters": {
+						"helm": [
+							""
+						],
+						"yang": [
+							"/scp-function/nf-instance/vtap",
+							"/bsf-function/nf-instance/vtap",
+							"/sepp-function/nf-instance/vtap"
+						],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "add",
+						"condition": true
+					}
+				},
+				{
+					"parameters": {
+						"helm": [
+							"/eric-probe-virtual-tap-broker/replicaCount"
+
+						],
+						"yang": [
+							""
+						],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "add",
+						"condition": true
+					}
+				}
+				,
+				{
+					"parameters": {
+						"helm": [
+							"/eric-probe-virtual-tap-broker/replicaCount"
+
+						],
+						"yang": [
+							""
+						],
+						"k8sResources": {
+							"secrets": []
+						}
+					},
+					"wizard": {
+						"action": "set",
+						"value" : 1,
+						"condition": true
+					}
+				}
+			],
+			"wizard": {
+				"default": false,
+				"modifiable": true
+			}
+		}
+	]
+}

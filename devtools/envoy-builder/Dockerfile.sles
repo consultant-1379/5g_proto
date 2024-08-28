@@ -1,0 +1,153 @@
+ARG CBOS_IMG_NAME
+ARG ENVOY_BUILDER_CBOS
+FROM armdocker.rnd.ericsson.se/proj-ldc/common_base_os/sles:$ENVOY_BUILDER_CBOS as builder
+
+ENV PATH="$PATH:/root/bin:/root/.local/bin"
+ENV CC=gcc-12
+ENV CXX=g++-12
+#ARG YOU_REPO_BASE_URL=https://arm.sero.gic.ericsson.se/artifactory/proj-suse-repos-rpm-local/SLE15
+
+ARG ADP_BUILD_ENV_REPO_URL
+ARG ENVOY_BUILDER_ADP_DEV
+ARG CBOS_REPO_URL
+ARG ENVOY_BUILDER_CBOS
+RUN zypper addrepo --gpgcheck-strict $ADP_BUILD_ENV_REPO_URL/${ENVOY_BUILDER_ADP_DEV} ADP_DEV_REPO &&\ 
+    zypper addrepo --gpgcheck-strict $CBOS_REPO_URL/$ENVOY_BUILDER_CBOS CBOS_REPO &&\
+    zypper addrepo --gpgcheck-strict "$CBOS_REPO_URL/$ENVOY_BUILDER_CBOS"_devel CBOS_REPO_DEVEL &&\    
+    zypper --gpg-auto-import-keys refresh -f &&\
+    zypper  --no-refresh --quiet install --no-recommends --auto-agree-with-licenses --no-confirm ADP_DEV_REPO:autoconf \
+                                                                                                 ADP_DEV_REPO:automake \
+                                                                                                 ADP_DEV_REPO:clang7 \
+                                                                                                 ADP_DEV_REPO:cmake \
+                                                                                                 ADP_DEV_REPO:gcc12 \
+                                                                                                 ADP_DEV_REPO:gcc12-c++ \
+                                                                                                 ADP_DEV_REPO:libasan8 \
+                                                                                                 ADP_DEV_REPO:libatomic1 \
+                                                                                                 ADP_DEV_REPO:libtool \
+                                                                                                 ADP_DEV_REPO:make \
+                                                                                                 ADP_DEV_REPO:ninja \
+                                                                                                 CBOS_REPO:bzip \    
+                                                                                                 CBOS_REPO:ca-certificates \
+                                                                                                 CBOS_REPO:ca-certificates-mozilla \
+                                                                                                 CBOS_REPO:curl \
+                                                                                                 CBOS_REPO:git-core \
+                                                                                                 CBOS_REPO:glibc \
+                                                                                                 CBOS_REPO:jemalloc \
+                                                                                                 CBOS_REPO:less \
+                                                                                                 CBOS_REPO:libffi7 \
+                                                                                                 CBOS_REPO:libltdl7 \
+                                                                                                 CBOS_REPO:libncurses5 \
+                                                                                                 CBOS_REPO:openssh \
+                                                                                                 CBOS_REPO:patch \
+                                                                                                 CBOS_REPO:perl \
+                                                                                                 CBOS_REPO:python3 \
+                                                                                                 CBOS_REPO:sudo \
+                                                                                                 CBOS_REPO:tar \
+                                                                                                 CBOS_REPO:terminfo-base \
+                                                                                                 CBOS_REPO:unzip \
+                                                                                                 CBOS_REPO:wget \
+                                                                                                 CBOS_REPO:xz \
+                                                                                                 CBOS_REPO:zip \
+                                                                                                 CBOS_REPO:python311-base \
+                                                                                                 CBOS_REPO:python311-pip \
+                                                                                                 CBOS_REPO_DEVEL:jemalloc-devel \
+                                                                                                 CBOS_REPO_DEVEL:libedit-devel \
+                                                                                                 CBOS_REPO_DEVEL:libffi-devel \
+                                                                                                 CBOS_REPO_DEVEL:libxml2-devel \
+                                                                                                 CBOS_REPO_DEVEL:python311-devel \
+                                                                                                 CBOS_REPO_DEVEL:zlib-devel &&\
+	zypper clean -a &&\ 
+    #Needed for compdb update in vscode
+    ln -s /usr/bin/gcc-11 /usr/bin/gcc
+
+#Python 2 got removed from CBOS 4 onwards
+#RUN wget -q https://www.python.org/ftp/python/2.7.18/Python-2.7.18.tgz &&\
+#    tar -xvf Python-2.7.18.tgz &&\
+#    rm -rf Python-2.7.18.tgz &&\
+#    cd Python-2.7.18 &&\
+#    ./configure &&\
+#    make &&\
+#    #Keeps the system python links untouched
+#    make altinstall &&\
+#    cd .. &&\
+#    rm -rf Python-2.7.18 
+
+#Set Python 3.10 as default
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1 &&\
+    update-alternatives --install /usr/bin/python python /usr/bin/python3.6 2 &&\
+#    update-alternatives --install /usr/bin/python python /usr/local/bin/python2.7 3 &&\
+    update-alternatives --set python /usr/bin/python3.11 &&\
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 &&\
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 2 &&\
+    update-alternatives --set python3 /usr/bin/python3.11
+
+#This will install virtualenv for 3.11 only
+RUN python3 -m pip install --user virtualenv
+
+RUN mkdir -p /build &&\
+    mkdir -p /llvm &&\
+    mkdir -p /llvm-packages &&\
+    groupadd -g 64000 eusers &&\    
+    chgrp -R eusers /build /llvm /llvm-packages &&\
+    chmod -R 775 /build /llvm /llvm-packages
+
+#### LLVM Builds
+
+FROM builder as llvm-14
+ENV LLVM_VERSION_14=14.0.6
+RUN mkdir -p llvm-build/llvm-$LLVM_VERSION_14 &&\
+    git clone --depth 1 --branch llvmorg-$LLVM_VERSION_14 https://github.com/llvm/llvm-project.git llvm-build/llvm-$LLVM_VERSION_14
+WORKDIR /llvm-build/llvm-$LLVM_VERSION_14
+RUN cmake -S llvm -B build -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;lld;lldb" -DLLVM_TARGETS_TO_BUILD="X86" -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_C_COMPILER=gcc-12 &&\
+    cmake --build build -j 3
+WORKDIR /llvm-build/llvm-$LLVM_VERSION_14/build
+RUN tar -cvJf llvm-$LLVM_VERSION_14.tar.xz bin include lib libexec share
+RUN mv llvm-$LLVM_VERSION_14.tar.xz /llvm-packages
+
+FROM builder as llvm-17
+ENV LLVM_VERSION_17=17.0.6
+RUN mkdir -p llvm-build/llvm-$LLVM_VERSION_17 &&\
+    git clone --depth 1 --branch llvmorg-$LLVM_VERSION_17 https://github.com/llvm/llvm-project.git llvm-build/llvm-$LLVM_VERSION_17
+WORKDIR /llvm-build/llvm-$LLVM_VERSION_17
+RUN cmake -S llvm -B build -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;lld;lldb" -DLLVM_TARGETS_TO_BUILD="X86" -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_C_COMPILER=gcc-12 &&\
+    cmake --build build -j 3
+WORKDIR /llvm-build/llvm-$LLVM_VERSION_17/build
+RUN tar -cvJf llvm-$LLVM_VERSION_17.tar.xz bin include lib libexec share
+RUN mv llvm-$LLVM_VERSION_17.tar.xz /llvm-packages
+
+#### Final Image
+
+FROM builder as final
+
+#This remains packed to save space
+#It will be unpacked on demand if an old version is built
+RUN mkdir -p llvm/11.0.1 &&\
+    wget -q --no-check-certificate https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.1/clang+llvm-11.0.1-x86_64-linux-sles12.4.tar.xz &&\
+    mv clang+llvm-11.0.1-x86_64-linux-sles12.4.tar.xz /llvm-packages
+
+RUN mkdir -p llvm/12.0.0 &&\
+    wget -q --no-check-certificate https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.0/clang+llvm-12.0.0-x86_64-linux-sles12.4.tar.xz &&\
+    tar -C llvm/12.0.0/ -xJf clang+llvm-12.0.0-x86_64-linux-sles12.4.tar.xz --strip-components=1 &&\
+    rm -rf clang+llvm-12.0.0-x86_64-linux-sles12.4.tar.xz
+
+ENV JAVA_VERSION=21.0.2
+ENV JAVA_HOME=/usr/local/jdk-$JAVA_VERSION
+RUN wget -q --no-check-certificate https://download.java.net/java/GA/jdk$JAVA_VERSION/f2283984656d49d69e91c558476027ac/13/GPL/openjdk-"$JAVA_VERSION"_linux-x64_bin.tar.gz &&\
+    tar -C /usr/local/ -xzf openjdk-"$JAVA_VERSION"_linux-x64_bin.tar.gz &&\
+    rm openjdk-"$JAVA_VERSION"_linux-x64_bin.tar.gz
+
+ENV BAZELISK_VERSION=1.19.0
+RUN wget -q -O /usr/bin/bazel https://github.com/bazelbuild/bazelisk/releases/download/v$BAZELISK_VERSION/bazelisk-linux-amd64 &&\
+    chmod +x /usr/bin/bazel
+
+COPY --from=llvm-14 /llvm-packages/ /llvm-packages
+COPY --from=llvm-17 /llvm-packages/ /llvm-packages
+
+ADD build_envoy.sh /build
+
+LABEL \
+    bazelisk.version=$BAZELISK_VERSION \
+    java.version=$JAVA_VERSION \
+    llvm.versions="11.0.1, 12.0.0, 14.0.6, 17.0.6"
+
+CMD ["/bin/bash"]

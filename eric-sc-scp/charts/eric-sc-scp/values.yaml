@@ -1,0 +1,82 @@
+global:
+  timezone: UTC
+  pullSecret: ""
+  registry:
+    url: "armdocker.rnd.ericsson.se"
+    # imagePullPolicy: IfNotPresent
+  externalIPv4:
+    enabled:
+  externalIPv6:
+    enabled:
+  internalIPFamily: ""
+  security:
+    tls:
+      enabled: true
+  log:
+    streamingMethod: "indirect" ## supports direct, indirect or dual
+  logShipper:
+    deployment:
+      type: "" # supports sidecar or empty
+  featureGates:
+    caBootstrap_v2: true
+  networkPolicy:
+    enabled: true
+  licenseConsumer:
+    features:
+      monitoring:
+        licenses:
+           enabled: true
+
+eric-scp:
+  manager:
+    leaderElection:
+      enabled: true
+  tapagent:
+    worker:
+      enabled: false
+    manager:
+      enabled: false
+  tapcollector:
+    worker:
+      enabled: false
+  vtap:
+    enabled: false
+  nlf:
+    enabled: false
+  rlf:
+    enabled: false
+  slf:
+    enabled: false
+  
+eric-sc-slf:
+  enabled: false
+  tapagent:
+    enabled: false
+
+eric-sc-scp-license-consumer:
+  enabled: true
+
+eric-sc-scp-log-shipper:
+  ## This alias chart name avoids conflicts with the Log Shipper chart defined in other integration charts.
+  ## The default values below can be overridden for deployment specific values.
+  ## In case sidecar deployment needs to be enabled for LS service, the below 'enabled' parameter is to be set to 'true'
+  ## together with the global log streaming parameter
+  enabled: false
+
+# Used for sc-scp alarm severities configmap   
+severities:
+  - service-name: "eric-scp-manager"
+    highest-severity-reported: "Critical"
+    replication-controller-type: "deployment"
+    minimum-replicas-required: 1
+    high-availability-replicas-required: 0
+  - service-name: "eric-scp-worker"
+    highest-severity-reported: "Critical"
+    replication-controller-type: "deployment"
+    minimum-replicas-required: 2
+    high-availability-replicas-required: 0
+  - service-name: "eric-sc-slf"
+    highest-severity-reported: "Critical"
+    replication-controller-type: "deployment"
+    minimum-replicas-required: 2
+    high-availability-replicas-required: 0

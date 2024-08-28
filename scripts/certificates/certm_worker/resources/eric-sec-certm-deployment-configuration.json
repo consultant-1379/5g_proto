@@ -1,0 +1,27 @@
+{
+    "pkcs12": [
+        {
+            "name": "internode-external-key",
+            "certificate-name": "internode-external-cert",
+            "pkcs12": "internode-pkcs12",
+            "password": "passwrd"
+        },
+{
+            "name": "cql-client-external-key",
+            "certificate-name": "cql-client-external-cert",
+            "pkcs12": "client-pkcs12",
+            "password": "passwrd"
+        },
+{
+            "name": "cql-server-external-key",
+            "certificate-name": "cql-server-external-cert",
+            "pkcs12": "server-pkcs12",
+            "password": "passwrd"
+        }
+    ],
+    "ca-certs": [
+        {
+            "name": "sc-trusted-default-cas",
+            "pem": "-----BEGIN CERTIFICATE-----\nrootca\n-----END CERTIFICATE-----"
+        }
+    ]}

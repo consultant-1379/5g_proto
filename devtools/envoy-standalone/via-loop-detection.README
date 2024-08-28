@@ -1,0 +1,93 @@
+Test loop-protection with via-headers. Envoy is configured to add a via-header with
+its own ID. In the routing section, a match on the via-header is added that checks
+for the Envoy-ID being present in the via-header. If yes, then Envoy directly replies
+with 508.
+The regex to find the Envoy-ID in the via-header contains the Envoy-ID twice because
+Envoy adds the via-header before the request goes into the routing section.
+
+Load Envoy configuration 25-supi-lua-notify-via.yaml
+
+NAME                      TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
+envoy-standalone          NodePort    10.104.162.177   <none>        80:32578/TCP                 47h
+eric-chfsim-1             NodePort    10.102.92.5      <none>        80:31571/TCP,443:31134/TCP   23d
+eric-chfsim-2             NodePort    10.102.93.220    <none>        80:32460/TCP,443:31650/TCP   23d
+eric-chfsim-3             NodePort    10.101.7.87      <none>        80:31419/TCP,443:30075/TCP   23d
+eric-chfsim-redis         NodePort    10.97.60.61      <none>        6379:31373/TCP               23d
+eric-nrfsim               NodePort    10.101.231.163   <none>        80:31135/TCP,443:30489/TCP   23d
+eric-snmp-trap-receiver   ClusterIP   10.111.78.202    <none>        162/UDP                      17d
+nrf-interrogator          NodePort    10.103.191.26    <none>        80:30753/TCP                 10d
+
+1. No via header present --> expect normal SUPI-routing:
+curl -vs -X POST -H "Content-Type: application/json" -d '@/home/eedala/create-body.json' 'http://10.41.83.174:32578/nchf-convergedcharging/v1/chargingdata' 
+* About to connect() to 10.41.83.174 port 32578 (#0)
+*   Trying 10.41.83.174...
+* Connected to 10.41.83.174 (10.41.83.174) port 32578 (#0)
+> POST /nchf-convergedcharging/v1/chargingdata HTTP/1.1
+> User-Agent: curl/7.29.0
+> Host: 10.41.83.174:32578
+> Accept: */*
+> Content-Type: application/json
+> Content-Length: 5972
+> Expect: 100-continue
+> 
+< HTTP/1.1 100 Continue
+< HTTP/1.1 201 Created
+< x-origin: eric-chfsim-2-687b448495-drkb5
+< location: http://10.41.83.174:32578/nchf-convergedcharging/v1/chargingdata/occ2-10044072
+< content-type: application/json; charset=utf-8
+< x-envoy-upstream-service-time: 1
+< date: Fri, 17 Apr 2020 13:23:49 GMT
+< server: envoy
+< via: eric-scp-worker-5fa3c
+< transfer-encoding: chunked
+
+
+2. Via header present but without the Envoy ID --> also expect normal SUPI routing
+curl -vs -X POST -H "via: 1.1 other-scp, 1.1 proxyA" -H "Content-Type: application/json" -d '@/home/eedala/create-body.json' 'http://10.41.83.174:32578/nchf-convergedcharging/v1/chargingdata'
+* About to connect() to 10.41.83.174 port 32578 (#0)
+*   Trying 10.41.83.174...
+* Connected to 10.41.83.174 (10.41.83.174) port 32578 (#0)
+> POST /nchf-convergedcharging/v1/chargingdata HTTP/1.1
+> User-Agent: curl/7.29.0
+> Host: 10.41.83.174:32578
+> Accept: */*
+> via: 1.1 other-scp, 1.1 proxyA
+> Content-Type: application/json
+> Content-Length: 5972
+> Expect: 100-continue
+> 
+< HTTP/1.1 100 Continue
+< HTTP/1.1 201 Created
+< x-origin: eric-chfsim-2-687b448495-drkb5
+< location: http://10.41.83.174:32578/nchf-convergedcharging/v1/chargingdata/occ2-10044071
+< content-type: application/json; charset=utf-8
+< x-envoy-upstream-service-time: 2
+< date: Fri, 17 Apr 2020 12:24:11 GMT
+< server: envoy
+< via: eric-scp-worker-5fa3c
+< transfer-encoding: chunked
+
+
+3. Via header present with the Envoy ID --> expect error 508 Loop Detected:
+curl -vs -X POST -H "via: 1.1 other-scp, eric-scp-worker-5fa3c, 1.1 proxyA" -H "Content-Type: application/json" -d '@/home/eedala/create-body.json' 'http://10.41.83.174:32578/nchf-convergedcharging/v1/chargingdata'
+* About to connect() to 10.41.83.174 port 32578 (#0)
+*   Trying 10.41.83.174...
+* Connected to 10.41.83.174 (10.41.83.174) port 32578 (#0)
+> POST /nchf-convergedcharging/v1/chargingdata HTTP/1.1
+> User-Agent: curl/7.29.0
+> Host: 10.41.83.174:32578
+> Accept: */*
+> via: 1.1 other-scp, eric-scp-worker-5fa3c, 1.1 proxyA
+> Content-Type: application/json
+> Content-Length: 5972
+> Expect: 100-continue
+> 
+< HTTP/1.1 100 Continue
+< HTTP/1.1 508 Loop Detected
+< date: Fri, 17 Apr 2020 12:24:18 GMT
+< server: envoy
+< via: eric-scp-worker-5fa3c
+< content-length: 0
+* HTTP error before end of send, stop sending
+< 
+

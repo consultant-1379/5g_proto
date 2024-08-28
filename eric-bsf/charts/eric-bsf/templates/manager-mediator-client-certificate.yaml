@@ -1,0 +1,24 @@
+# Copyright 2019 Ericsson GmbH
+{{- if eq (include "eric-bsf.tls" .) "true" }}
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+  name: {{ template "eric-bsf.name" . }}-manager-mediator-client-certificate
+  labels:
+{{- include "eric-bsf.labels" . | indent 4 }}
+    app: {{ template "eric-bsf.name" . }}-manager
+  annotations:
+{{- include "eric-bsf.helm-annotations" . | indent 4 }}
+{{- include "eric-bsf.config-annotations" . | indent 4 }}
+spec:
+  kubernetes:
+    generatedSecretName: {{ template "eric-bsf.name" . }}-manager-mediator-client-certificate
+  certificate:
+    subject:
+      cn: {{ template "eric-bsf.name" . }}-manager
+    issuer:
+      reference: {{ .Values.adp.cm.mediator.hostname }}-ca
+    extendedKeyUsage:
+      tlsClientAuth: true
+      tlsServerAuth: false
+{{- end }}

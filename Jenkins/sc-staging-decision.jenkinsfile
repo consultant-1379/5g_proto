@@ -1,0 +1,91 @@
+def AGENT_LABEL = null
+node('SERO_GIC') {
+	stage('Set agent') {
+		if (env.IP_VERSION == '6') {
+			// move to IPv6 buildslave(s)
+			AGENT_LABEL = '5G-SC-IPv6'
+		} // if
+		else {
+			// move to IPv4 buildslave(s)
+			AGENT_LABEL = '5G-SC'
+		} // else
+	} // stage
+} //node
+pipeline {
+	agent {
+		// set label according to IP_VERSION parameter
+		label "${AGENT_LABEL}"
+	} // agent
+	options {
+		timeout(time: 10, unit: 'MINUTES')
+		timestamps()
+	} // options
+	environment {
+		REQUIREMENTS = "esc/helm/eric-sc-umbrella/requirements.yaml"
+		CONFILE = ''
+		REQ_FLAG = ""
+		MASTER = ''
+		OUTPUT_DIR=".bob"
+	} // environment
+	stages{
+		stage('Explicit handling for chart version') {
+			steps {
+				script{
+					if ("${CHART_NAME}" == "eric-sc")  { // case running from master is
+						// update chart variables
+						echo "Checking out master"
+						sh "git checkout master"
+						sh 'echo CHART_VERSION=$(echo $(cat esc/helm/eric-sc-umbrella/requirements.yaml | grep $(cat VERSION_PREFIX) | tail -n 1  | awk -F \"version: \" \'{print $2}\')) >> test.properties'
+						sh "git checkout ${env.BRANCH}"
+					} // if
+					else {
+						sh 'echo "CHART_VERSION=$(echo ${CHART_VERSION})" >> test.properties'
+					} // else
+				} // script
+			} // steps 
+		} // stage
+		stage("Checking namespace"){
+			// this scripts sets in .bob/var.namespace our namespace 
+			// if there is deploy in eiffelesc-1 , namespace is setted in eiffelesc-2
+			steps{
+				sh './bob/bob init:set-kube-config'
+				sh './bob/bob init:set-namespace'
+				sh "./bob/bob clean-resources:create-namespace"
+			} // steps
+		} // stage
+		stage("Checking crds existence"){
+			when{
+				environment name: 'MERGE_MASTER', value: 'false';
+			} // when
+			steps{
+				withCredentials([string(credentialsId: 'c9bf8e3d-476c-4be9-b26a-73d0275975bd', variable: 'ARM_ARTIFACTORY_TOKEN')]) {
+					// existense with CHART 
+					sh './bob/bob check-crds:existense'
+					// Incoming CHART has crd
+					sh './bob/bob check-crds:is-crd'
+				} // withCredentials
+				sh 'echo "UPGRADE_CRDS=$(cat ${OUTPUT_DIR}/var.is-crd )" >> test.properties'
+				sh 'echo "CLEAN_CRDS=$(cat ${OUTPUT_DIR}/var.no-crds)" >> test.properties'
+			} // steps
+		} // stage
+		stage('Creating .properties file'){
+			steps{
+				// you need to set all the parameters into the *.properties file otherwise they will not be seen by Spinnaker 
+				sh 'echo "KUBE_HOST=$(echo ${KUBE_HOST})" >> test.properties'
+				sh 'echo "BRANCH=$(echo ${BRANCH})" >> test.properties'
+				sh 'echo "NAMESPACE=$(cat ${OUTPUT_DIR}/var.namespace )" >> test.properties'
+				sh 'echo "TEST_BRANCH=$(echo ${TEST_BRANCH})" >> test.properties'
+				sh 'echo "TROUBLESHOOTING=$(echo ${TROUBLESHOOTING})" >> test.properties'
+				sh 'echo "TEST_TYPE=$(echo ${TEST_TYPE})" >> test.properties'
+				sh 'echo "CHART_NAME=$(echo ${CHART_NAME})" >> test.properties'
+				sh 'echo "CHART_REPO=$(echo ${CHART_REPO})" >> test.properties'
+				archiveArtifacts artifacts: 'test.properties', onlyIfSuccessful: true
+			} // steps
+		} // stage
+	} // stages
+    post{
+		always {
+			cleanWs()
+		}
+	} //post
+} //pipeline

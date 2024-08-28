@@ -1,0 +1,1825 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "urn:adp:helm:schemas:v1:eric-stm-diameter-proxy-grpc",
+    "type": "object",
+    "if": {
+        "$ref": "urn:adp:helm:schemas:v1:helm-schema-validation-conditions:v1/helmSchemaValidation-true"
+    },
+    "then": {
+        "allOf": [
+            {
+                "properties": {
+                    "nameOverride": {
+                        "description": "Override the base name used for chart-managed objects",
+                        "examples": [
+                            "custom-name-prefix"
+                        ],
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "global": {
+                        "properties": {
+                            "labels": {
+                                "description": "K8s label added to all managed resources",
+                                "examples": [
+                                    {
+                                        "ericsson.com/more-key": "more-value",
+                                        "ericsson.com/my-info-key": "my-info-value"
+                                    }
+                                ],
+                                "type": [
+                                    "object",
+                                    "null"
+                                ]
+                            },
+                            "annotations": {
+                                "description": "K8s annotations added to all managed resources",
+                                "examples": [
+                                    {
+                                        "ericsson.com/more-key": "more-value",
+                                        "ericsson.com/my-info-key": "my-info-value"
+                                    }
+                                ],
+                                "type": [
+                                    "object",
+                                    "null"
+                                ]
+                            },
+                            "podSecurityContext": {
+                                "properties": {
+                                    "supplementalGroups": {
+                                        "description": "A list of supplemental groups.",
+                                        "examples": [
+                                            [
+                                                1000,
+                                                2000,
+                                                3000
+                                            ]
+                                        ],
+                                        "type": [
+                                            "array",
+                                            "null"
+                                        ],
+                                        "items": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "object",
+                                    "null"
+                                ]
+                            },
+                            "fsGroup": {
+                                "properties": {
+                                    "namespace": {
+                                        "description": "Use the default fsGroup for the namespace as defined by the cluster admin",
+                                        "examples": [
+                                            true
+                                        ],
+                                        "type": [
+                                            "boolean",
+                                            "null"
+                                        ]
+                                    },
+                                    "manual": {
+                                        "description": "Directly configure group id to use for persistent data ownership; overrides namespace value, if set",
+                                        "examples": [
+                                            10000
+                                        ]
+                                    }
+                                },
+                                "type": [
+                                    "object",
+                                    "null"
+                                ]
+                            },
+                            "security": {
+                                "properties": {
+                                    "tls": {
+                                        "properties": {
+                                            "enabled": {
+                                                "description": "Enable or disable TLS for all applicable inter- and intra-service communication. Default behavior is true, and should only be set to false if required for demo configurations.",
+                                                "examples": [
+                                                    true,
+                                                    false
+                                                ],
+                                                "type": [
+                                                    "boolean",
+                                                    "null"
+                                                ]
+                                            }
+                                        },
+                                        "type": [
+                                            "object",
+                                            "null"
+                                        ]
+                                    },
+                                    "policyBinding": {
+                                        "properties": {
+                                            "create": {
+                                                "description": "Automatically create role bindings for each service corresponding to the cluster role associated with security policy assigned to the service",
+                                                "examples": [
+                                                    true
+                                                ],
+                                                "type": [
+                                                    "boolean",
+                                                    "null"
+                                                ]
+                                            }
+                                        },
+                                        "type": [
+                                            "object",
+                                            "null"
+                                        ]
+                                    },
+                                    "policyReferenceMap": {
+                                        "description": "Map internal security policies to the policies used by the customer",
+                                        "type": [
+                                            "object",
+                                            "null"
+                                        ],
+                                        "additionalProperties": {
+                                            "description": "Key-value pair mapping an internal security policy to a customer-defined security policy. Requires the customer's security policy and its associated cluster role have the same name.",
+                                            "$comment": "The example helm function handles null values, so the schema will support them as a way of cancelling a mapping",
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "examples": [
+                                                "customer-z-default"
+                                            ]
+                                        },
+                                        "examples": [
+                                            {
+                                                "default-restricted-security-policy": "customer-z-restricted",
+                                                "plc-5c43d80b0987ea36dfa3d5967adc18": "customer-z-network"
+                                            }
+                                        ]
+                                    }
+                                },
+                                "type": [
+                                    "object",
+                                    "null"
+                                ]
+                            },
+                            "securityPolicy": {
+                                "properties": {
+                                    "rolekind": {
+                                        "description": "Sets the rolebinding kind to namespaced, or clusterscoped",
+                                        "examples": [
+                                            "ClusterRole",
+                                            "Role",
+                                            ""
+                                        ],
+                                        "enum": [
+                                            "ClusterRole",
+                                            "Role",
+                                            ""
+                                        ]
+                                    }
+                                },
+                                "type": [
+                                    "object",
+                                    "null"
+                                ]
+                            },
+                            "timezone": {
+                                "description": "Timezone value following the IANA Timezone Database",
+                                "examples": [
+                                    "Europe/Kiev"
+                                ],
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "pullSecret": {
+                                "description": "Name of the kubernetes secret containing any required image registry credentials",
+                                "examples": [
+                                    "docker-registry-credentials-secret"
+                                ]
+                            },
+                            "networkPolicy": {
+                                "properties": {
+                                    "enabled": {
+                                        "description": "Option to enable or disable network policy",
+                                        "examples": [
+                                            true,
+                                            false
+                                        ],
+                                        "type": [
+                                            "boolean",
+                                            "null"
+                                        ]
+                                    }
+                                },
+                                "type": [
+                                    "object",
+                                    "null"
+                                ]
+                            },
+                            "registry": {
+                                "properties": {
+                                    "url": {
+                                        "description": "Image registry url for container images",
+                                        "examples": [
+                                            "armdocker.rnd.ericsson.se"
+                                        ],
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "imagePullPolicy": {
+                                        "description": "Defines kubernetes behavior for fetching container images",
+                                        "examples": [
+                                            "IfNotPresent",
+                                            "Always",
+                                            "Never"
+                                        ]
+                                    }
+                                },
+                                "type": [
+                                    "object",
+                                    "null"
+                                ]
+                            },
+                            "nodeSelector": {
+                                "description": "Node label that must be satisfied",
+                                "examples": [
+                                    {
+                                        "region": "west",
+                                        "disktype": "ssd"
+                                    }
+                                ],
+                                "type": [
+                                    "object",
+                                    "null"
+                                ]
+                            },
+                            "hooklauncher": {
+                                "properties": {
+                                    "executor": {
+                                        "description": "If set to service, hooks for handling upgrades and rollbacks will be executed by this chart. If set to integration, all hooks for handling upgrades and rollbacks will be executed by Hooklauncher(s) in the defined integration chart(s) (see executorCharts).",
+                                        "examples": [
+                                            "service",
+                                            "integration"
+                                        ],
+                                        "enum": [
+                                            "service",
+                                            "integration",
+                                            null
+                                        ],
+                                        "default": "service"
+                                    },
+                                    "executorCharts": {
+                                        "description": "If global.hooklauncher.executor is set to integration, the integration chart names can be set in this parameter as an array that should run the Hooklauncher jobs rendering their subchart trees and taking care of all subchart hook execution.",
+                                        "examples": [
+                                            [
+                                                "chartOne",
+                                                "chartTwo"
+                                            ]
+                                        ],
+                                        "type": [
+                                            "array",
+                                            "null"
+                                        ],
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "object",
+                                    "null"
+                                ]
+                            },
+                            "log": {
+                                "properties": {
+                                    "streamingMethod": {
+                                        "description": "Indicate which streaming method has to be chosen by all services to write log records",
+                                        "examples": [
+                                            "indirect",
+                                            "direct",
+                                            "dual"
+                                        ],
+                                        "enum": [
+                                            "indirect",
+                                            "direct",
+                                            "dual",
+                                            null
+                                        ]
+                                    }
+                                },
+                                "type": [
+                                    "object",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "type": [
+                            "object",
+                            "null"
+                        ]
+                    },
+                    "labels": {
+                        "description": "K8s label added to all managed resources",
+                        "examples": [
+                            {
+                                "ericsson.com/more-key": "more-value",
+                                "ericsson.com/my-info-key": "my-info-value"
+                            }
+                        ],
+                        "type": "object"
+                    },
+                    "annotations": {
+                        "description": "K8s annotations added to all managed resources",
+                        "examples": [
+                            {
+                                "ericsson.com/more-key": "more-value",
+                                "ericsson.com/my-info-key": "my-info-value"
+                            }
+                        ],
+                        "type": "object"
+                    },
+                    "securityPolicy": {
+                        "properties": {
+                            "eric-stm-diameter-proxy-grpc": {
+                                "properties": {
+                                    "rolename": {
+                                        "description": "Sets the role name to the role binding.",
+                                        "minlength": 1,
+                                        "examples": [
+                                            "restricted"
+                                        ],
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "imageCredentials": {
+                        "properties": {
+                            "pullSecret": {
+                                "description": "Name of the kubernetes secret containing any required image registry credentials; overrides global pull secret.",
+                                "examples": [
+                                    "docker-registry-credentials-secret"
+                                ]
+                            },
+                            "hooklauncher": {
+                                "properties": {
+                                    "registry": {
+                                        "properties": {
+                                            "url": {
+                                                "description": "Image registry url for container images",
+                                                "examples": [
+                                                    "armdocker.rnd.ericsson.se"
+                                                ],
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ]
+                                            },
+                                            "imagePullPolicy": {
+                                                "description": "Defines kubernetes behavior for fetching container images",
+                                                "examples": [
+                                                    "IfNotPresent",
+                                                    "Always",
+                                                    "Never"
+                                                ]
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "repoPath": {
+                                        "description": "Path in the image registry to the image repo",
+                                        "examples": [
+                                            "proj-adp-ref-released"
+                                        ],
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "pattern": "^[a-z0-9A-Z_\\.\\-\\/]*$"
+                                    }
+                                },
+                                "type": "object",
+                                "required": [
+                                    "registry"
+                                ]
+                            },
+                            "logshipper": {
+                                "properties": {
+                                    "registry": {
+                                        "properties": {
+                                            "url": {
+                                                "description": "Image registry url for container images",
+                                                "examples": [
+                                                    "armdocker.rnd.ericsson.se"
+                                                ],
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ]
+                                            },
+                                            "imagePullPolicy": {
+                                                "description": "Defines kubernetes behavior for fetching container images",
+                                                "examples": [
+                                                    "IfNotPresent",
+                                                    "Always",
+                                                    "Never"
+                                                ]
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "repoPath": {
+                                        "description": "Path in the image registry to the image repo",
+                                        "examples": [
+                                            "proj-adp-ref-released"
+                                        ],
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "pattern": "^[a-z0-9A-Z_\\.\\-\\/]*$"
+                                    }
+                                },
+                                "type": "object",
+                                "required": [
+                                    "registry"
+                                ]
+                            },
+                            "dsl": {
+                                "properties": {
+                                    "registry": {
+                                        "properties": {
+                                            "url": {
+                                                "description": "Image registry url for container images",
+                                                "examples": [
+                                                    "armdocker.rnd.ericsson.se"
+                                                ],
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ]
+                                            },
+                                            "imagePullPolicy": {
+                                                "description": "Defines kubernetes behavior for fetching container images",
+                                                "examples": [
+                                                    "IfNotPresent",
+                                                    "Always",
+                                                    "Never"
+                                                ]
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "repoPath": {
+                                        "description": "Path in the image registry to the image repo",
+                                        "examples": [
+                                            "proj-adp-ref-released"
+                                        ],
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "pattern": "^[a-z0-9A-Z_\\.\\-\\/]*$"
+                                    }
+                                },
+                                "type": "object",
+                                "required": [
+                                    "registry"
+                                ]
+                            },
+                            "diameterproxygrpc": {
+                                "properties": {
+                                    "registry": {
+                                        "properties": {
+                                            "url": {
+                                                "description": "Image registry url for container images",
+                                                "examples": [
+                                                    "armdocker.rnd.ericsson.se"
+                                                ],
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ]
+                                            },
+                                            "imagePullPolicy": {
+                                                "description": "Defines kubernetes behavior for fetching container images",
+                                                "examples": [
+                                                    "IfNotPresent",
+                                                    "Always",
+                                                    "Never"
+                                                ]
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "repoPath": {
+                                        "description": "Path in the image registry to the image repo",
+                                        "examples": [
+                                            "proj-adp-ref-released"
+                                        ],
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "pattern": "^[a-z0-9A-Z_\\.\\-\\/]*$"
+                                    }
+                                },
+                                "type": "object",
+                                "required": [
+                                    "registry"
+                                ]
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "service": {
+                        "properties": {
+                            "endpoints": {
+                                "properties": {
+                                    "grpc": {
+                                        "properties": {
+                                            "tls": {
+                                                "properties": {
+                                                    "enforced": {
+                                                        "description": "Specify if the endpoint requires TLS or allows cleartext as well (only applies if TLS is enabled)",
+                                                        "examples": [
+                                                            "required",
+                                                            "optional"
+                                                        ],
+                                                        "enum": [
+                                                            "required",
+                                                            "optional"
+                                                        ]
+                                                    },
+                                                    "verifyClientCertificate": {
+                                                        "description": "Specify if the endpoint requires clients to provide a trusted client certificate (mTLS) or not (only applies if TLS is enabled)",
+                                                        "examples": [
+                                                            "required",
+                                                            "optional"
+                                                        ],
+                                                        "enum": [
+                                                            "required",
+                                                            "optional"
+                                                        ]
+                                                    }
+                                                },
+                                                "type": "object",
+                                                "required": [
+                                                    "enforced",
+                                                    "verifyClientCertificate"
+                                                ]
+                                            }
+                                        },
+                                        "type": "object",
+                                        "required": [
+                                            "tls"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "networkPolicy": {
+                        "properties": {
+                            "enabled": {
+                                "description": "Option to enable or disable network policy",
+                                "examples": [
+                                    true,
+                                    false
+                                ],
+                                "type": [
+                                    "boolean",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "type": [
+                            "object",
+                            "null"
+                        ]
+                    },
+                    "nodeSelector": {
+                        "properties": {
+                            "hooklauncher": {
+                                "description": "Node label that must be satisfied",
+                                "examples": [
+                                    {
+                                        "region": "west",
+                                        "disktype": "ssd"
+                                    }
+                                ],
+                                "type": [
+                                    "object",
+                                    "null"
+                                ]
+                            },
+                            "eric-stm-diameter-proxy-grpc": {
+                                "description": "Node label that must be satisfied",
+                                "examples": [
+                                    {
+                                        "region": "west",
+                                        "disktype": "ssd"
+                                    }
+                                ],
+                                "type": [
+                                    "object",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "type": [
+                            "object",
+                            "null"
+                        ]
+                    },
+                    "hooklauncher": {
+                        "properties": {
+                            "backoffLimit": {
+                                "description": "Set backoffLimit for the hooklauncher jobs",
+                                "examples": [
+                                    6
+                                ]
+                            },
+                            "cleanup": {
+                                "description": "Tell hooklauncher to delete jobs and its pods after execution",
+                                "examples": [
+                                    true,
+                                    "onSuccess"
+                                ],
+                                "oneOf": [
+                                    {
+                                        "type": [
+                                            "boolean",
+                                            "null"
+                                        ]
+                                    },
+                                    {
+                                        "enum": [
+                                            "true",
+                                            "false",
+                                            "onSuccess"
+                                        ]
+                                    }
+                                ]
+                            },
+                            "terminateEarlyOnFailure": {
+                                "description": "Tell hooklauncher to exit immediately on a failure from a dispatched job",
+                                "examples": [
+                                    true,
+                                    false
+                                ],
+                                "type": [
+                                    "boolean",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "type": [
+                            "object",
+                            "null"
+                        ]
+                    },
+                    "replicaCount": {
+                        "description": "Fixed number of pod replicas; used if autoScaling is not supported or disabled",
+                        "examples": [
+                            1
+                        ],
+                        "type": "integer"
+                    },
+                    "updateStrategy": {
+                        "properties": {
+                            "type": {
+                                "description": "Update strategy that will be employed to update pods when a template is updated with new revision",
+                                "examples": [
+                                    "RollingUpdate",
+                                    "Recreate",
+                                    "OnDelete"
+                                ],
+                                "not": {
+                                    "type": "null"
+                                }
+                            },
+                            "rollingUpdate": {
+                                "properties": {
+                                    "maxUnavailable": {
+                                        "description": "The maximum number of pods that can be unavailable during the update process",
+                                        "examples": [
+                                            "25%",
+                                            1
+                                        ]
+                                    },
+                                    "maxSurge": {
+                                        "description": "The maximum number of pods that can be created over the desired number of pods",
+                                        "examples": [
+                                            "50%",
+                                            0
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        },
+                        "type": "object",
+                        "required": [
+                            "rollingUpdate",
+                            "type"
+                        ]
+                    },
+                    "affinity": {
+                        "properties": {
+                            "podAntiAffinity": {
+                                "description": "Specify whether it is a (soft) preference that pod replicas be scheduled on different cluster nodes if possible, or a (hard) requirement.",
+                                "examples": [
+                                    "soft",
+                                    "hard"
+                                ],
+                                "enum": [
+                                    "soft",
+                                    "hard"
+                                ]
+                            }
+                        },
+                        "type": "object",
+                        "required": [
+                            "podAntiAffinity"
+                        ]
+                    },
+                    "terminationGracePeriodSeconds": {
+                        "description": "Grace period in seconds for a container to shut down before being forcibly killed",
+                        "minimum": 1,
+                        "examples": [
+                            30
+                        ]
+                    },
+                    "probes": {
+                        "properties": {
+                            "dsl": {
+                                "properties": {
+                                    "livenessProbe": {
+                                        "properties": {
+                                            "initialDelaySeconds": {
+                                                "description": "Initial delay before checking the probe",
+                                                "minimum": 0,
+                                                "examples": [
+                                                    0
+                                                ]
+                                            },
+                                            "periodSeconds": {
+                                                "description": "How often to perform a probe",
+                                                "minimum": 1,
+                                                "examples": [
+                                                    10
+                                                ]
+                                            },
+                                            "failureThreshold": {
+                                                "description": "Maximum number of failed probes before a container is restarted",
+                                                "minimum": 1,
+                                                "examples": [
+                                                    3
+                                                ]
+                                            },
+                                            "timeoutSeconds": {
+                                                "description": "How long to wait for a probe before failing",
+                                                "minimum": 1,
+                                                "examples": [
+                                                    1
+                                                ]
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "startupProbe": {
+                                        "properties": {
+                                            "initialDelaySeconds": {
+                                                "description": "Initial delay before checking the probe",
+                                                "minimum": 0,
+                                                "examples": [
+                                                    0
+                                                ]
+                                            },
+                                            "periodSeconds": {
+                                                "description": "How often to perform a probe",
+                                                "minimum": 1,
+                                                "examples": [
+                                                    10
+                                                ]
+                                            },
+                                            "failureThreshold": {
+                                                "description": "Maximum number of failed probes before a container is restarted",
+                                                "minimum": 1,
+                                                "examples": [
+                                                    3
+                                                ]
+                                            },
+                                            "timeoutSeconds": {
+                                                "description": "How long to wait for a probe before failing",
+                                                "minimum": 1,
+                                                "examples": [
+                                                    1
+                                                ]
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object",
+                                "required": [
+                                    "livenessProbe"
+                                ]
+                            },
+                            "diameterproxygrpc": {
+                                "properties": {
+                                    "livenessProbe": {
+                                        "properties": {
+                                            "initialDelaySeconds": {
+                                                "description": "Initial delay before checking the probe",
+                                                "minimum": 0,
+                                                "examples": [
+                                                    0
+                                                ]
+                                            },
+                                            "periodSeconds": {
+                                                "description": "How often to perform a probe",
+                                                "minimum": 1,
+                                                "examples": [
+                                                    10
+                                                ]
+                                            },
+                                            "failureThreshold": {
+                                                "description": "Maximum number of failed probes before a container is restarted",
+                                                "minimum": 1,
+                                                "examples": [
+                                                    3
+                                                ]
+                                            },
+                                            "timeoutSeconds": {
+                                                "description": "How long to wait for a probe before failing",
+                                                "minimum": 1,
+                                                "examples": [
+                                                    1
+                                                ]
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "startupProbe": {
+                                        "properties": {
+                                            "initialDelaySeconds": {
+                                                "description": "Initial delay before checking the probe",
+                                                "minimum": 0,
+                                                "examples": [
+                                                    0
+                                                ]
+                                            },
+                                            "periodSeconds": {
+                                                "description": "How often to perform a probe",
+                                                "minimum": 1,
+                                                "examples": [
+                                                    10
+                                                ]
+                                            },
+                                            "failureThreshold": {
+                                                "description": "Maximum number of failed probes before a container is restarted",
+                                                "minimum": 1,
+                                                "examples": [
+                                                    3
+                                                ]
+                                            },
+                                            "timeoutSeconds": {
+                                                "description": "How long to wait for a probe before failing",
+                                                "minimum": 1,
+                                                "examples": [
+                                                    1
+                                                ]
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object",
+                                "required": [
+                                    "livenessProbe"
+                                ]
+                            },
+                            "logshipper": {
+                                "properties": {
+                                    "livenessProbe": {
+                                        "properties": {
+                                            "initialDelaySeconds": {
+                                                "description": "Initial delay before checking the probe",
+                                                "minimum": 0,
+                                                "examples": [
+                                                    0
+                                                ]
+                                            },
+                                            "timeoutSeconds": {
+                                                "description": "How long to wait for a probe before failing",
+                                                "minimum": 1,
+                                                "examples": [
+                                                    1
+                                                ]
+                                            },
+                                            "periodSeconds": {
+                                                "description": "How often to perform a probe",
+                                                "minimum": 1,
+                                                "examples": [
+                                                    10
+                                                ]
+                                            },
+                                            "failureThreshold": {
+                                                "description": "Maximum number of failed probes before a container is restarted",
+                                                "minimum": 1,
+                                                "examples": [
+                                                    3
+                                                ]
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "resources": {
+                        "properties": {
+                            "dsl": {
+                                "properties": {
+                                    "requests": {
+                                        "properties": {
+                                            "cpu": {
+                                                "description": "The cpu request or limit",
+                                                "examples": [
+                                                    "250m",
+                                                    0.5
+                                                ]
+                                            },
+                                            "memory": {
+                                                "description": "The memory request or limit",
+                                                "examples": [
+                                                    "64Mi",
+                                                    128974848
+                                                ]
+                                            },
+                                            "ephemeral-storage": {
+                                                "description": "The ephemeral storage request or limit",
+                                                "examples": [
+                                                    "2Gi",
+                                                    128974848
+                                                ]
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "limits": {
+                                        "properties": {
+                                            "cpu": {
+                                                "description": "The cpu request or limit",
+                                                "examples": [
+                                                    "250m",
+                                                    0.5
+                                                ]
+                                            },
+                                            "memory": {
+                                                "description": "The memory request or limit",
+                                                "examples": [
+                                                    "64Mi",
+                                                    128974848
+                                                ]
+                                            },
+                                            "ephemeral-storage": {
+                                                "description": "The ephemeral storage request or limit",
+                                                "examples": [
+                                                    "2Gi",
+                                                    128974848
+                                                ]
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "diameterproxygrpc": {
+                                "properties": {
+                                    "requests": {
+                                        "properties": {
+                                            "cpu": {
+                                                "description": "The cpu request or limit",
+                                                "examples": [
+                                                    "250m",
+                                                    0.5
+                                                ]
+                                            },
+                                            "memory": {
+                                                "description": "The memory request or limit",
+                                                "examples": [
+                                                    "64Mi",
+                                                    128974848
+                                                ]
+                                            },
+                                            "ephemeral-storage": {
+                                                "description": "The ephemeral storage request or limit",
+                                                "examples": [
+                                                    "2Gi",
+                                                    128974848
+                                                ]
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "limits": {
+                                        "properties": {
+                                            "cpu": {
+                                                "description": "The cpu request or limit",
+                                                "examples": [
+                                                    "250m",
+                                                    0.5
+                                                ]
+                                            },
+                                            "memory": {
+                                                "description": "The memory request or limit",
+                                                "examples": [
+                                                    "64Mi",
+                                                    128974848
+                                                ]
+                                            },
+                                            "ephemeral-storage": {
+                                                "description": "The ephemeral storage request or limit",
+                                                "examples": [
+                                                    "2Gi",
+                                                    128974848
+                                                ]
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "hooklauncher": {
+                                "properties": {
+                                    "requests": {
+                                        "properties": {
+                                            "cpu": {
+                                                "description": "The cpu request or limit",
+                                                "examples": [
+                                                    "250m",
+                                                    0.5
+                                                ]
+                                            },
+                                            "memory": {
+                                                "description": "The memory request or limit",
+                                                "examples": [
+                                                    "64Mi",
+                                                    128974848
+                                                ]
+                                            },
+                                            "ephemeral-storage": {
+                                                "description": "The ephemeral storage request or limit",
+                                                "examples": [
+                                                    "2Gi",
+                                                    128974848
+                                                ]
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "limits": {
+                                        "properties": {
+                                            "cpu": {
+                                                "description": "The cpu request or limit",
+                                                "examples": [
+                                                    "250m",
+                                                    0.5
+                                                ]
+                                            },
+                                            "memory": {
+                                                "description": "The memory request or limit",
+                                                "examples": [
+                                                    "64Mi",
+                                                    128974848
+                                                ]
+                                            },
+                                            "ephemeral-storage": {
+                                                "description": "The ephemeral storage request or limit",
+                                                "examples": [
+                                                    "2Gi",
+                                                    128974848
+                                                ]
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "topologySpreadConstraints": {
+                        "description": "Topology spread constraint",
+                        "examples": [
+                            {
+                                "whenUnsatisfiable": "DoNotSchedule",
+                                "maxSkew": 2,
+                                "topologyKey": "kubernetes.io/hostname"
+                            }
+                        ],
+                        "type": "array"
+                    },
+                    "podPriority": {
+                        "properties": {
+                            "diameter-proxy-grpc": {
+                                "properties": {
+                                    "priorityClassName": {
+                                        "description": "Pod priorityClass name",
+                                        "examples": [
+                                            "high-priority",
+                                            ""
+                                        ],
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "hooklauncher": {
+                                "properties": {
+                                    "priorityClassName": {
+                                        "description": "Pod priorityClass name",
+                                        "examples": [
+                                            "high-priority",
+                                            ""
+                                        ],
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "podDisruptionBudget": {
+                        "anyOf": [
+                            {
+                                "description": "Maximum number of pods to evict concurrently during voluntary disruptions",
+                                "examples": [
+                                    "25%",
+                                    1
+                                ],
+                                "not": {
+                                    "type": "null"
+                                },
+                                "required": [
+                                    "maxUnavailable"
+                                ]
+                            },
+                            {
+                                "description": "Minimum number of pods to remain available during voluntary disruptions",
+                                "examples": [
+                                    "50%",
+                                    2
+                                ],
+                                "not": {
+                                    "type": "null"
+                                },
+                                "required": [
+                                    "minAvailable"
+                                ]
+                            }
+                        ]
+                    },
+                    "log": {
+                        "properties": {
+                            "streamingMethod": {
+                                "description": "Sets streaming method that the service shall use to write log records. Overrides the global streamingMethod.",
+                                "examples": [
+                                    "indirect",
+                                    "direct",
+                                    "dual"
+                                ],
+                                "enum": [
+                                    "indirect",
+                                    "direct",
+                                    "dual",
+                                    null
+                                ]
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "seccompProfile": {
+                        "properties": {
+                            "logshipper": {
+                                "properties": {
+                                    "localhostProfile": {
+                                        "description": "Path to the seccomp profile to use when loading from localhost",
+                                        "examples": [
+                                            "profiles/seccompprofile.json"
+                                        ],
+                                        "type": "string"
+                                    },
+                                    "type": {
+                                        "description": "Configure the seccomp profile choice",
+                                        "examples": [
+                                            "Unconfined",
+                                            "RuntimeDefault",
+                                            "Localhost",
+                                            ""
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "dsl": {
+                                "if": {
+                                    "properties": {
+                                        "type": {
+                                            "const": "localhost"
+                                        }
+                                    },
+                                    "required": [
+                                        "type"
+                                    ]
+                                },
+                                "then": {
+                                    "properties": {
+                                        "localhostProfile": {
+                                            "not": {
+                                                "type": "null"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "localhostProfile"
+                                    ]
+                                },
+                                "properties": {
+                                    "type": {
+                                        "description": "Configure the seccomp profile choice",
+                                        "examples": [
+                                            "Unconfined",
+                                            "RuntimeDefault",
+                                            "Localhost",
+                                            ""
+                                        ]
+                                    },
+                                    "localhostProfile": {
+                                        "description": "Path to the seccomp profile to use when loading from localhost",
+                                        "examples": [
+                                            "profiles/seccompprofile.json"
+                                        ],
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object",
+                                "required": [
+                                    "type"
+                                ]
+                            },
+                            "type": {
+                                "description": "Configure the seccomp profile choice",
+                                "examples": [
+                                    "Unconfined",
+                                    "RuntimeDefault",
+                                    "Localhost",
+                                    ""
+                                ]
+                            },
+                            "diameterproxygrpc": {
+                                "if": {
+                                    "properties": {
+                                        "type": {
+                                            "const": "localhost"
+                                        }
+                                    },
+                                    "required": [
+                                        "type"
+                                    ]
+                                },
+                                "then": {
+                                    "properties": {
+                                        "localhostProfile": {
+                                            "not": {
+                                                "type": "null"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "localhostProfile"
+                                    ]
+                                },
+                                "properties": {
+                                    "type": {
+                                        "description": "Configure the seccomp profile choice",
+                                        "examples": [
+                                            "Unconfined",
+                                            "RuntimeDefault",
+                                            "Localhost",
+                                            ""
+                                        ]
+                                    },
+                                    "localhostProfile": {
+                                        "description": "Path to the seccomp profile to use when loading from localhost",
+                                        "examples": [
+                                            "profiles/seccompprofile.json"
+                                        ],
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object",
+                                "required": [
+                                    "type"
+                                ]
+                            },
+                            "hooklauncher": {
+                                "if": {
+                                    "properties": {
+                                        "type": {
+                                            "const": "localhost"
+                                        }
+                                    },
+                                    "required": [
+                                        "type"
+                                    ]
+                                },
+                                "then": {
+                                    "properties": {
+                                        "localhostProfile": {
+                                            "not": {
+                                                "type": "null"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "localhostProfile"
+                                    ]
+                                },
+                                "properties": {
+                                    "type": {
+                                        "description": "Configure the seccomp profile choice",
+                                        "examples": [
+                                            "Unconfined",
+                                            "RuntimeDefault",
+                                            "Localhost",
+                                            ""
+                                        ]
+                                    },
+                                    "localhostProfile": {
+                                        "description": "Path to the seccomp profile to use when loading from localhost",
+                                        "examples": [
+                                            "profiles/seccompprofile.json"
+                                        ],
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object",
+                                "required": [
+                                    "type"
+                                ]
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "appArmorProfile": {
+                        "properties": {
+                            "logshipper": {
+                                "properties": {
+                                    "localhostProfile": {
+                                        "description": "Path to the AppArmor profile to use when loading from localhost",
+                                        "examples": [
+                                            "profiles/apparmorprofile.json"
+                                        ],
+                                        "type": "string"
+                                    },
+                                    "type": {
+                                        "description": "Configure the AppArmor profile choice",
+                                        "examples": [
+                                            "unconfined",
+                                            "runtime/default",
+                                            "localhost",
+                                            ""
+                                        ],
+                                        "enum": [
+                                            "unconfined",
+                                            "runtime/default",
+                                            "localhost",
+                                            ""
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "dsl": {
+                                "if": {
+                                    "properties": {
+                                        "type": {
+                                            "const": "localhost"
+                                        }
+                                    },
+                                    "required": [
+                                        "type"
+                                    ]
+                                },
+                                "then": {
+                                    "properties": {
+                                        "localhostProfile": {
+                                            "not": {
+                                                "type": "null"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "localhostProfile"
+                                    ]
+                                },
+                                "properties": {
+                                    "type": {
+                                        "description": "Configure the AppArmor profile choice",
+                                        "examples": [
+                                            "unconfined",
+                                            "runtime/default",
+                                            "localhost",
+                                            ""
+                                        ],
+                                        "enum": [
+                                            "unconfined",
+                                            "runtime/default",
+                                            "localhost",
+                                            ""
+                                        ]
+                                    },
+                                    "localhostProfile": {
+                                        "description": "Path to the AppArmor profile to use when loading from localhost",
+                                        "examples": [
+                                            "profiles/apparmorprofile.json"
+                                        ],
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    }
+                                },
+                                "type": "object",
+                                "required": [
+                                    "type"
+                                ]
+                            },
+                            "type": {
+                                "description": "Configure the AppArmor profile choice",
+                                "examples": [
+                                    "unconfined",
+                                    "runtime/default",
+                                    "localhost",
+                                    ""
+                                ],
+                                "enum": [
+                                    "unconfined",
+                                    "runtime/default",
+                                    "localhost",
+                                    ""
+                                ]
+                            },
+                            "diameterproxygrpc": {
+                                "if": {
+                                    "properties": {
+                                        "type": {
+                                            "const": "localhost"
+                                        }
+                                    },
+                                    "required": [
+                                        "type"
+                                    ]
+                                },
+                                "then": {
+                                    "properties": {
+                                        "localhostProfile": {
+                                            "not": {
+                                                "type": "null"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "localhostProfile"
+                                    ]
+                                },
+                                "properties": {
+                                    "type": {
+                                        "description": "Configure the AppArmor profile choice",
+                                        "examples": [
+                                            "unconfined",
+                                            "runtime/default",
+                                            "localhost",
+                                            ""
+                                        ],
+                                        "enum": [
+                                            "unconfined",
+                                            "runtime/default",
+                                            "localhost",
+                                            ""
+                                        ]
+                                    },
+                                    "localhostProfile": {
+                                        "description": "Path to the AppArmor profile to use when loading from localhost",
+                                        "examples": [
+                                            "profiles/apparmorprofile.json"
+                                        ],
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    }
+                                },
+                                "type": "object",
+                                "required": [
+                                    "type"
+                                ]
+                            },
+                            "hooklauncher": {
+                                "if": {
+                                    "properties": {
+                                        "type": {
+                                            "const": "localhost"
+                                        }
+                                    },
+                                    "required": [
+                                        "type"
+                                    ]
+                                },
+                                "then": {
+                                    "properties": {
+                                        "localhostProfile": {
+                                            "not": {
+                                                "type": "null"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "localhostProfile"
+                                    ]
+                                },
+                                "properties": {
+                                    "type": {
+                                        "description": "Configure the AppArmor profile choice",
+                                        "examples": [
+                                            "unconfined",
+                                            "runtime/default",
+                                            "localhost",
+                                            ""
+                                        ],
+                                        "enum": [
+                                            "unconfined",
+                                            "runtime/default",
+                                            "localhost",
+                                            ""
+                                        ]
+                                    },
+                                    "localhostProfile": {
+                                        "description": "Path to the AppArmor profile to use when loading from localhost",
+                                        "examples": [
+                                            "profiles/apparmorprofile.json"
+                                        ],
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    }
+                                },
+                                "type": "object",
+                                "required": [
+                                    "type"
+                                ]
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "tolerations": {
+                        "anyOf": [
+                            {
+                                "description": "Toleration allowing a pod to schedule / execute on tainted nodes",
+                                "examples": [
+                                    {
+                                        "operator": "Equal",
+                                        "value": "elasticsearch",
+                                        "key": "dedicated",
+                                        "effect": "NoSchedule"
+                                    },
+                                    {
+                                        "operator": "Exists",
+                                        "tolerationSeconds": 30,
+                                        "effect": "NoExecute",
+                                        "key": "node.kubernetes.io/memory-pressure"
+                                    }
+                                ],
+                                "type": "array"
+                            },
+                            {
+                                "patternProperties": {
+                                    "^.*$": {
+                                        "description": "Toleration allowing a pod to schedule / execute on tainted nodes",
+                                        "examples": [
+                                            {
+                                                "operator": "Equal",
+                                                "value": "elasticsearch",
+                                                "key": "dedicated",
+                                                "effect": "NoSchedule"
+                                            },
+                                            {
+                                                "operator": "Exists",
+                                                "tolerationSeconds": 30,
+                                                "effect": "NoExecute",
+                                                "key": "node.kubernetes.io/memory-pressure"
+                                            }
+                                        ],
+                                        "type": "array"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "affinity",
+                    "podDisruptionBudget",
+                    "podPriority",
+                    "replicaCount",
+                    "terminationGracePeriodSeconds",
+                    "tolerations",
+                    "topologySpreadConstraints",
+                    "updateStrategy"
+                ]
+            },
+            {
+                "if": {
+                    "properties": {
+                        "seccompProfile": {
+                            "properties": {
+                                "type": {
+                                    "const": ""
+                                }
+                            },
+                            "required": [
+                                "type"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "seccompProfile"
+                    ]
+                },
+                "then": {
+                    "if": {
+                        "properties": {
+                            "seccompProfile": {
+                                "patternProperties": {
+                                    "^.*$": {
+                                        "properties": {
+                                            "type": {
+                                                "not": {
+                                                    "const": ""
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "object"
+                                ]
+                            }
+                        }
+                    },
+                    "then": true,
+                    "else": {
+                        "properties": {
+                            "seccompProfile": {
+                                "patternProperties": {
+                                    "^.*$": {
+                                        "properties": {
+                                            "type": {
+                                                "const": ""
+                                            }
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "object"
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "if": {
+                    "properties": {
+                        "appArmorProfile": {
+                            "properties": {
+                                "type": {
+                                    "const": ""
+                                }
+                            },
+                            "required": [
+                                "type"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "appArmorProfile"
+                    ]
+                },
+                "then": {
+                    "if": {
+                        "properties": {
+                            "appArmorProfile": {
+                                "patternProperties": {
+                                    "^.*$": {
+                                        "properties": {
+                                            "type": {
+                                                "not": {
+                                                    "const": ""
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "object"
+                                ]
+                            }
+                        }
+                    },
+                    "then": true,
+                    "else": {
+                        "properties": {
+                            "appArmorProfile": {
+                                "patternProperties": {
+                                    "^.*$": {
+                                        "properties": {
+                                            "type": {
+                                                "const": ""
+                                            }
+                                        }
+                                    }
+                                },
+                                "type": [
+                                    "object"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "$defs": {
+        "validation-true": {
+            "$id": "urn:adp:helm:schemas:v1:helm-schema-validation-conditions:v1/helmSchemaValidation-true",
+            "$comment": "Condition for global.featureGates.helmSchemaValidation set to true",
+            "properties": {
+                "global": {
+                    "required": [
+                        "featureGates"
+                    ],
+                    "type": "object",
+                    "properties": {
+                        "featureGates": {
+                            "required": [
+                                "helmSchemaValidation"
+                            ],
+                            "type": "object",
+                            "properties": {
+                                "helmSchemaValidation": {
+                                    "const": true
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "required": [
+                "global"
+            ]
+        }
+    }
+}

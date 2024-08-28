@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ericsson-slf-pm-group-instances 0.1.0 -->
+<!-- modified: 2024-02-20 -->
+<!-- Copyright (c) 2024 Ericsson AB. All rights reserved.     -->
+<config xmlns="http://tail-f.com/ns/config/1.0">
+    <pm xmlns="urn:rdns:com:ericsson:oammodel:ericsson-pm">
+        <group>
+            <name>slf_system_metrics</name>
+            <description>Metrics to monitor the SLF system</description>
+            <validity>true</validity>
+            <version>1.0.0</version>
+            <measurement-type>
+                <id>slf_load</id>
+                <measurement-name>slf_load</measurement-name>
+                <size>8</size>
+                <collection-method>gauge</collection-method>
+                <description>SLF load in percent</description>
+                <condition>CPU load increased. CPU load decreased.</condition>
+                <aggregation>sum</aggregation>
+                <measurement-status>deprecated</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>false</reset-at-gran-period>
+            </measurement-type>
+            <measurement-type>
+                <id>slf_load_avg</id>
+                <measurement-name>slf_load_avg</measurement-name>
+                <size>8</size>
+                <collection-method>gauge</collection-method>
+                <description>Average SLF load in percent</description>
+                <condition>CPU load increased. CPU load decreased.</condition>
+                <aggregation>avg</aggregation>
+                <measurement-status>used</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>false</reset-at-gran-period>
+            </measurement-type>
+            <measurement-type>
+                <id>slf_load_max</id>
+                <measurement-name>slf_load_max</measurement-name>
+                <size>8</size>
+                <collection-method>gauge</collection-method>
+                <description>Max SLF load in percent</description>
+                <condition>CPU load increased. CPU load decreased.</condition>
+                <aggregation>max</aggregation>
+                <measurement-status>used</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>false</reset-at-gran-period>
+            </measurement-type>
+            <measurement-type>
+                <id>slf_container_memory_working_set_bytes</id>
+                <measurement-name>slf_container_memory_working_set_bytes</measurement-name>
+                <size>8</size>
+                <collection-method>gauge</collection-method>
+                <description>Memory usage per SLF container in bytes</description>
+                <condition>Memory usage increased. Memory usage decreased.</condition>
+                <aggregation>avg</aggregation>
+                <measurement-status>used</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>false</reset-at-gran-period>
+            </measurement-type>
+            <measurement-type>
+                <id>slf_container_memory_usage_bytes</id>
+                <measurement-name>slf_container_memory_usage_bytes</measurement-name>
+                <size>8</size>
+                <collection-method>gauge</collection-method>
+                <description>SLF memory usage in percentage</description>
+                <condition>Memory usage increased. Memory usage decreased.</condition>
+                <aggregation>sum</aggregation>
+                <measurement-status>deprecated</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>false</reset-at-gran-period>
+            </measurement-type>
+        </group>
+        <group>
+            <name>slf_nrf</name>
+            <description>Statistics regarding the connection between SLF and NRF</description>
+            <validity>true</validity>
+            <version>1.0.0</version>
+            <measurement-type>
+                <id>slf_nrf_out_requests_total</id>
+                <measurement-name>slf_nrf_out_requests_total</measurement-name>
+                <size>8</size>
+                <collection-method>cc</collection-method>
+                <description>Number of outgoing requests on the Nnrf interface</description>
+                <condition>Incremented: None Decremented: N/A</condition>
+                <aggregation>sum</aggregation>
+                <measurement-status>used</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>true</reset-at-gran-period>
+            </measurement-type>
+            <measurement-type>
+                <id>slf_nrf_discovery_success_rate</id>
+                <measurement-name>slf_nrf_discovery_success_rate</measurement-name>
+                <size>8</size>
+                <collection-method>gauge</collection-method>
+                <description>Success rate of HTTP transaction requests initiated by the SLF towards NRF</description>
+                <condition>Incremented: None Decremented: N/A</condition>
+                <aggregation>avg</aggregation>
+                <measurement-status>used</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>false</reset-at-gran-period>
+            </measurement-type>
+            <measurement-type>
+                <id>slf_nrf_in_answers_total</id>
+                <measurement-name>slf_nrf_in_answers_total</measurement-name>
+                <size>8</size>
+                <collection-method>cc</collection-method>
+                <description>Number of incoming answers on the Nnrf interface</description>
+                <condition>Incremented: None Decremented: N/A</condition>
+                <aggregation>sum</aggregation>
+                <measurement-status>used</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>true</reset-at-gran-period>
+            </measurement-type>
+            <measurement-type>
+                <id>slf_nrf_failovers_total</id>
+                <measurement-name>slf_nrf_failovers_total</measurement-name>
+                <size>8</size>
+                <collection-method>cc</collection-method>
+                <description>Number of failovers between NRF instances within an NRF group</description>
+                <condition>Incremented: None Decremented: N/A</condition>
+                <aggregation>sum</aggregation>
+                <measurement-status>used</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>true</reset-at-gran-period>
+            </measurement-type>
+            <measurement-type>
+                <id>slf_nrf_endpoint_failovers_total</id>
+                <measurement-name>slf_nrf_endpoint_failovers_total</measurement-name>
+                <size>8</size>
+                <collection-method>cc</collection-method>
+                <description>Number of failovers between NRF internal endpoints</description>
+                <condition>Incremented: None Decremented: N/A</condition>
+                <aggregation>sum</aggregation>
+                <measurement-status>used</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>true</reset-at-gran-period>
+            </measurement-type>
+        </group>
+    </pm>
+</config>

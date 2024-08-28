@@ -1,0 +1,38 @@
+diff --git a/source/extensions/filters/http/cdn_loop/filter.cc b/source/extensions/filters/http/cdn_loop/filter.cc
+index 9cc81ca..a68f608 100644
+--- a/source/extensions/filters/http/cdn_loop/filter.cc
++++ b/source/extensions/filters/http/cdn_loop/filter.cc
+@@ -17,12 +17,12 @@ namespace CdnLoop {
+ namespace {
+ 
+ Http::RegisterCustomInlineHeader<Http::CustomInlineHeaderRegistry::Type::RequestHeaders>
+-    cdn_loop_handle(Http::CustomHeaders::get().CdnLoop);
++    cdn_loop_handle(Http::Headers::get().Via);
+ 
+-constexpr absl::string_view ParseErrorMessage = "Invalid CDN-Loop header in request.";
+-constexpr absl::string_view ParseErrorDetails = "invalid_cdn_loop_header";
+-constexpr absl::string_view LoopDetectedMessage = "The server has detected a loop between CDNs.";
+-constexpr absl::string_view LoopDetectedDetails = "cdn_loop_detected";
++constexpr absl::string_view ParseErrorMessage = "Invalid via header in request.";
++constexpr absl::string_view ParseErrorDetails = "invalid_via_header";
++constexpr absl::string_view LoopDetectedMessage = "{\"title\": \"Loop Detected\", \"status\": \"508\"}";
++constexpr absl::string_view LoopDetectedDetails = "loop_detected";
+ 
+ } // namespace
+ 
+@@ -38,13 +38,13 @@ Http::FilterHeadersStatus CdnLoopFilter::decodeHeaders(Http::RequestHeaderMap& h
+                                          absl::nullopt, ParseErrorDetails);
+       return Http::FilterHeadersStatus::StopIteration;
+     } else if (*count > max_allowed_occurrences_) {
+-      decoder_callbacks_->sendLocalReply(Http::Code::BadGateway, LoopDetectedMessage, nullptr,
++      decoder_callbacks_->sendLocalReply(Http::Code::LoopDetected, LoopDetectedMessage, nullptr,
+                                          absl::nullopt, LoopDetectedDetails);
+       return Http::FilterHeadersStatus::StopIteration;
+     }
+   }
+ 
+-  headers.appendCopy(Http::CustomHeaders::get().CdnLoop, cdn_id_);
++  headers.appendCopy(Http::Headers::get().Via, cdn_id_);
+   return Http::FilterHeadersStatus::Continue;
+ }
+

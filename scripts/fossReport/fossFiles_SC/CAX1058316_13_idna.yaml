@@ -1,0 +1,41 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2023-06-16 12:30
+FOSS:
+    # Available in Bazaar
+    FOSSName: idna
+    # Available in Bazaar
+    FOSSVersion: 3.4
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/kjd/idna/archive/v3.4.tar.gz
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 13/CAX1058316
+    # Not Available in Bazaar
+    Primary: N
+    # Available in Bazaar
+    STAKOCode: General Use
+    # Available in Bazaar
+    STAKOReason: NA
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: Support for the Internationalised Domain Names in Applications (IDNA) protocol as specified in RFC 5891
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: BSD 3-Clause
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense:  BSD 3-Clause
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: NO
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ZVLOKON Konstantina Vlontzou

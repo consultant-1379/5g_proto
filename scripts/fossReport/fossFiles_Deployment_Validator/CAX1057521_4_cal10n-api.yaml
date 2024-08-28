@@ -1,0 +1,38 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2019-06-10 12:24
+FOSS:
+    # Available in Bazaar
+    FOSSName: cal10n-api
+    # Available in Bazaar
+    FOSSVersion: 0.7.4
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: http://central.maven.org/maven2/ch/qos/cal10n/cal10n-api/{{FOSSVersion}}/cal10n-api-{{FOSSVersion}}-sources.jar
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 4/CAX1057521
+    # Not Available in Bazaar
+    PRIMNumber(CTC): CTC1014442
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: Compiler Assisted Localization, abbreviated as CAL10N (pronounced as "calion") is a java library for writing localized (internationalized) messages using resource bundles. Used by
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: MIT License
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: MIT License
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'ch.qos.cal10n:cal10n-api:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: No
+    ReportAuthor: ENTNGRG Georgios Antoniou

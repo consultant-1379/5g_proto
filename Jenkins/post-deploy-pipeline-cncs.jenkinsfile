@@ -1,0 +1,227 @@
+node('SERO_GIC') {
+	stage('Set agent'){
+		if (env.IP_VERSION == '6') {
+			// move to IPv6 buildslave(s)
+			AGENT_LABEL = '5G-SC-IPv6'
+		} // if
+		else {
+			// move to IPv4 buildslave(s)
+			AGENT_LABEL = '5G-SC'
+		} // else
+	} // stage
+} // node
+
+pipeline {
+
+	agent { label "${AGENT_LABEL}"   } // set label according to IP_VERSION parameter
+
+	options{
+		//timeout(time: 30, unit: 'MINUTES')
+		timestamps()
+	} // options
+
+	environment {
+		KUBE_HOST = "${KUBE_HOST}"
+		NAMESPACE = "${NAMESPACE}"
+		BSF = "${env.BSF}"
+		SCP = "${env.SCP}"
+		SEPP = "${env.SEPP}"
+		RATE_LIMIT = "${env.RATE_LIMIT}"
+		VTAP = "${env.VTAP}"
+		VTAP_DTLS = "${env.VTAP_DTLS}"
+		LOGGING = "${env.LOGGING}"
+		SYSLOG = "${env.SYSLOG}"
+		LUMBERJACK = "${env.LUMBERJACK}"
+		REFERRAL_LDAP = "${env.REFERRAL_LDAP}"
+		PM_REMOTE_WRITE = "${env.PM_REMOTE_WRITE}"
+	} // environment
+
+	stages {
+		stage('Init Env') {
+			steps {
+				sh 'printenv | sort'
+				script {
+					// set displayed build name
+					currentBuild.displayName = "#${BUILD_NUMBER} - ${env.COMMIT}"
+					// set displayed description
+					currentBuild.description = "node: ${env.NODE_NAME}, k8s cluster: ${env.KUBE_HOST}, \n"
+					currentBuild.description += "ihc: ${env.INT_CHART_REPO}/${env.INT_CHART_NAME}/${env.INT_CHART_NAME}-${env.INT_CHART_VERSION}.tgz";
+					if ( fileExists("/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh") ) {
+						// Log current job
+						sh "/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh -start"
+					} // if
+				} //script
+			} //steps
+		} //stage
+		stage('Cleaning WS on Buildcomputes'){
+			// only if no other instance of the same job is running in parallel
+			// if another instance is running this procedure would delete its WS and make it failing
+			when {
+				expression { currentBuild.getPreviousBuildInProgress() == null && !(env.NODE_NAME =~ /5G-LMVL/) }
+			}
+			steps {
+				catchError(message: "Timeout while cleaning WS on Buildcomputes", buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+				// remove all (!) content (including the git repo)
+					script {
+						env.AGENT_LABEL="${AGENT_LABEL}"
+						env.LOCAL_PATH = sh(returnStdout: true, script: 'pwd').trim()
+						println "LOCAL PATH: ${LOCAL_PATH}"
+						println "WORKSPACE: ${WORKSPACE}"
+						println "JOB_NAME: ${JOB_NAME}"
+						withCredentials([usernamePassword(credentialsId: 'eiffelesc-user-password', usernameVariable: 'USER', passwordVariable: 'PASSWORD')]) {
+							def NODE_NAMES_LABEL = sh(returnStdout: true, script: 'curl -s -u $USER:$PASSWORD ${JENKINS_URL}/label/${AGENT_LABEL}/api/json?pretty=true | jq -r ".nodes[].nodeName"').trim().split("\n");
+							println "LABEL: ${AGENT_LABEL}, ${NODE_NAMES_LABEL}"
+							for (NODE_NAME_LABEL in NODE_NAMES_LABEL) {
+								env.NODE_NAME_LABEL = "${NODE_NAME_LABEL}"
+								def NODE_OFFLINE = sh(returnStdout: true, script: 'curl -s -u $USER:$PASSWORD ${JENKINS_URL}/computer/${NODE_NAME_LABEL}/api/json?pretty=true | jq -r ".offline"').trim();
+								if ("${NODE_OFFLINE}" == "false" && env.NODE_NAME != "${NODE_NAME_LABEL}" && env.NODE_NAME != "") {
+									def NODE_ADDRESS_LABEL = sh(returnStdout: true, script: 'curl -s -u $USER:$PASSWORD ${JENKINS_URL}/computer/${NODE_NAME_LABEL}/config.xml | awk -F\'[<>]\' \'/<host>/{print $3;exit}\'').trim();
+									env.NODE_ADDRESS_LABEL = "${NODE_ADDRESS_LABEL}"
+									if (env.LOCAL_PATH == env.WORKSPACE && env.WORKSPACE != "" && (env.WORKSPACE.endsWith("${JOB_NAME}"))) {
+										sh '''#!/bin/bash -x
+										echo "PATH: ${WORKSPACE}"
+										echo "REMOTE NODE: ${NODE_NAME_LABEL}"
+										timeout 60 ssh eiffelesc@${NODE_ADDRESS_LABEL} "if [ -d ${WORKSPACE} ]; then rm -rf ${WORKSPACE}/; else echo \"Nothing to clean\"; fi;"
+										'''
+									} //if
+								} //if
+							} //for
+						} //withCredentials
+					} //script
+				} //catchError
+			} //steps
+		} //stage
+
+		stage('Init bob') {
+			steps {
+				// prepare git submodules
+				sh 'git submodule update --init --recursive'
+				
+				sh './bob/bob sc.config.clean:directories'
+				sh './bob/bob base.init:create-output-dir' // create .bob directory
+				sh './bob/bob base.init:set-namespace' // set namespace
+				sh './bob/bob base.init:set-kube-config' // set kube config for k8s access
+				sh './bob/bob base.init:set-supreme-properties' // set supreme properties for certificate creation/installation
+				sh './bob/bob init:set-ingressHost' // set ingress host fqdn
+			} // steps
+		} // stage
+		stage("Wait for deployed resources") {
+			steps {
+				sh """#!/bin/bash -e
+					if [ '${env.VTAP_DTLS}' = 'true' ];
+					then
+						./bob/bob wait-for-deployed-resources:pvtbless;
+					else
+						./bob/bob wait-for-deployed-resources:services;
+					fi;
+					sleep 60;"""
+			} // steps
+		} // stage
+		stage('Show resources') {
+			parallel {
+				stage("Show deployed pods") {
+					steps {
+						sh "kubectl get pods -n \$(cat .bob/var.namespace) --kubeconfig .bob/${env.KUBE_HOST}.admin.conf;"
+					} // steps
+				} // stage
+				stage("Show deployed services") {
+					steps {
+						sh "kubectl get svc -n \$(cat .bob/var.namespace) --kubeconfig .bob/${env.KUBE_HOST}.admin.conf;"
+					} // steps
+				} // stage
+			} // parallel
+		} // stage
+		stage("Install Default Users") {
+			steps {
+				sh """ ./bob/bob sc.config.configuration:users;
+					sleep 60;"""
+			} // steps
+		} // stage
+		stage("Install Default Certificates") {
+			steps {
+				sh """#!/bin/bash -e
+					./bob/bob sc.config.certificates:nbi-install;
+					[[ "${env.NRF_LOOKUP}" == "true" ]] && ./bob/bob sc.config.certificates:nlf-install;
+					[[ "${env.SCP}" == "true" ]] && ./bob/bob sc.config.certificates:scp-manager-install && ./bob/bob sc.config.certificates:scp-worker-install;
+					[[ "${env.SLF}" == "true" ]] && ./bob/bob sc.config.certificates:slf-install;
+					[[ "${env.SEPP}" == "true" ]] && ./bob/bob sc.config.certificates:sepp-manager-install && ./bob/bob sc.config.certificates:sepp-worker-install;
+					[[ "${env.VTAP}" == "true" && "${env.VTAP_DTLS}" == "true" ]] && ./bob/bob sc.config.certificates:pvtb-install;
+					"""
+			} // steps
+		} // stage
+		stage ("Install Default Configuration") {
+			steps {
+				parallel (
+					"nf-config" : {
+						sh 'set -e; ./bob/bob sc.config.configuration:sc; ./bob/bob wait-for-deployed-resources:selectedApps'
+					},
+					"delete-day0-certm-config" : {
+						sh './bob/bob sc.config.clean:certm-config-secret'
+					}
+				) // parallel
+			} // steps
+		} // stage
+		stage("Deploy HTTPProxy") {
+			steps {
+				parallel (
+					"pm-httpproxy" : {
+						sh './bob/bob sc.post-deploy:pm-httpproxy'
+					},
+					"osmn-httpproxy" : {
+						sh './bob/bob sc.post-deploy:osmn-httpproxy'
+					},
+					"envoy-httpproxy" : {
+						sh './bob/bob sc.post-deploy:envoy-admin-httpproxy'
+					},
+					"search-engine-httpproxy" : {
+						sh './bob/bob sc.post-deploy:search-engine-httpproxy'
+					}
+				) // parallel
+			} // steps
+		} // stage
+	} // stages
+	post {
+		always {
+			script{
+				// Log current job
+				if ( fileExists("/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh") ) {
+					sh "/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh -stop"
+				} // if
+			} // script
+		} // always
+		//success {
+			//cleanWs()
+		//} // success
+		aborted {
+			script {
+				//cleanCluster(env.KUBE_HOST, env.NAMESPACE);
+				sh "./scripts/collect_ADP_logs.sh -c ~/.kube/${env.KUBE_HOST}.config -n `cat .bob/var.namespace`"
+				archiveArtifacts allowEmptyArchive: true, artifacts: 'logs_*.tgz', onlyIfSuccessful: false
+				// do not undeploy for troubleshooting purposes
+				if ((env.CLEANCLUSTER != 'FALSE') || ("$TEST_TYPE".contains("SmokeTest"))) {
+					sh "./scripts/force-clean.sh --cluster ${env.KUBE_HOST} --namespace `cat .bob/var.namespace` --delete-namespace --debug"
+				} // if
+			} // script
+		} // aborted
+		failure{
+			script {
+				sh "./scripts/collect_ADP_logs.sh -c ~/.kube/${env.KUBE_HOST}.config -n `cat .bob/var.namespace`"
+				archiveArtifacts allowEmptyArchive: true, artifacts: 'logs_*.tgz', onlyIfSuccessful: false
+				// do not undeploy for troubleshooting purposes
+				if ((env.CLEANCLUSTER != 'FALSE') || ("$TEST_TYPE".contains("SmokeTest"))) {
+					sh "./scripts/force-clean.sh --cluster ${env.KUBE_HOST} --namespace `cat .bob/var.namespace` --delete-namespace --debug"
+				} // if
+				// only send mail for smoketest
+				if ("$TEST_TYPE".contains("SmokeTest")) {
+					COLOR = "<body style=\"background-color: LightYellow;\">"
+					emailext body: "$COLOR" + "Hi ${env.COMMITTER},<p> the deploy failed, maybe due to your commit? <p> Please check:<br>${env.BUILD_URL}<br><br>Thank you for pushing.<br><br>BR,<br>A-Team",
+					mimeType: 'text/html',
+					subject: "5G Smoke-test deploy failed for ${env.PROJECT} : ${COMMIT}",
+					to: "${env.EMAIL_COMMITTER}, ${env.EMAIL_OTHER}"  // mail to committers and respective Teams channel
+					//to: "${env.EMAIL_COMMITTER}, DSCAteam@ericsson.onmicrosoft.com, f37b6763.ericsson.onmicrosoft.com@emea.teams.ms"  //Teams: Master Channel
+					//to: "${env.EMAIL_COMMITTER}, DSCAteam@ericsson.onmicrosoft.com, 7352f6e6.ericsson.onmicrosoft.com@emea.teams.ms"  //Teams: Release Channel
+				} // if
+			} // script
+		} // failure
+	} // post
+} // pipeline

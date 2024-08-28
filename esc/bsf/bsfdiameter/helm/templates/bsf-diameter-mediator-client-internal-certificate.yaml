@@ -1,0 +1,27 @@
+# Copyright 2019 Ericsson GmbH
+
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+# START. DND-27025: DR-D1121-121 & DR-D1121-144 & DR-D1121-065 & DR-D1121-068
+  name: eric-bsf-diameter-mediator-client-internal-certificate
+  labels:
+    app.kubernetes.io/name: {{ template "eric-stm-diameter-proxy-grpc.name" . }}
+    app.kubernetes.io/version: {{ template "eric-stm-diameter-proxy-grpc.version" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- include "eric-stm-diameter-proxy-grpc.config-labels" . | indent 4 }}
+  annotations:
+{{- include "eric-stm-diameter-proxy-grpc.config-annotations" . | indent 4 }}
+{{- include "eric-stm-diameter-proxy-grpc.product-info" . | indent 4 }}
+# STOP. DND-27025: DR-D1121-121 & DR-D1121-144 & DR-D1121-065 & DR-D1121-068
+spec:
+  kubernetes:
+    generatedSecretName: bsf-diameter-mediator-client-if-certificate-secret
+  certificate:
+    subject:
+      cn: eric-bsf-diameter
+    issuer:
+      reference: eric-cm-mediator-ca
+    extendedKeyUsage:
+      tlsClientAuth: true
+      tlsServerAuth: false

@@ -1,0 +1,100 @@
+modelVersion: 2.0
+
+import:
+  base: ruleset2.0-eric-base.yaml
+
+description: "EJBCA external CA Server"
+
+properties:
+  - EJBCA_NAME: eric-sec-certm-ejbca
+
+  - EXPORT_DIR: ${base.OUTPUT_DIR}/export-ejbca
+  
+env:
+ - BOB_FORCE_IMAGE_PULL (default=false)
+ - RELEASE (default=false)
+
+var:
+ - build-proxy
+ - ejbca-version
+ - namespace
+ - username
+
+rules:
+  init:
+    - task: base.init:create-output-dir
+    - task: base.init:set-namespace
+    - task: base.init:set-kube-config
+    - task: base.init:api-tokens
+    - task: ejbca-version
+      docker-image: base.adp-release-auto
+      cmd: generate-version --is-release ${env.RELEASE} --output ejbca-version
+    - task: set-kube-config
+      cmd: /bin/bash -c "cp /home/${env.base.USER}/.kube/${env.base.KUBE_HOST}.config ${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf;"
+
+  image:
+    - task: build-ejbca
+      cmd: docker build ./devtools/ejbca/
+           --file devtools/ejbca/Dockerfile
+           --tag ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${EJBCA_NAME}:${var.ejbca-version}
+           
+  lint:
+    - task: helm-ejbca
+      docker-image: base.helm-builder
+      cmd: helm devtools/ejbca/helm
+
+  package:
+    - task: helm-chart-ejbca
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "mkdir -p ${base.OUTPUT_DIR}/${EJBCA_NAME}; cp -r devtools/ejbca/helm/* ${base.OUTPUT_DIR}/${EJBCA_NAME};
+           update_values.rb ${base.OUTPUT_DIR}/${EJBCA_NAME}/values.yaml
+           imageCredentials:registry:url=${base.DOCKER_REGISTRY_URL} imageCredentials:repoPath=${base.DOCKER_REPO_PATH}/${env.base.USER}
+           spec:image=${EJBCA_NAME} spec:tag=${var.ejbca-version} > ${base.OUTPUT_DIR}/${EJBCA_NAME}/values.tmp.yaml;
+           mv ${base.OUTPUT_DIR}/${EJBCA_NAME}/values.tmp.yaml ${base.OUTPUT_DIR}/${EJBCA_NAME}/values.yaml;
+           helm package --version ${var.ejbca-version} --app-version ${var.ejbca-version} ${base.OUTPUT_DIR}/${EJBCA_NAME}/ -d ${base.OUTPUT_DIR}/";
+
+  push:
+    - task: docker-image-ejbca
+      cmd: docker push ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${EJBCA_NAME}:${var.ejbca-version}
+    - task: helm-chart-ejbca
+      cmd: "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\" --upload-file ${base.OUTPUT_DIR}/${EJBCA_NAME}-${var.ejbca-version}.tgz \"${base.HELM_CHART_REPO}/${EJBCA_NAME}-${var.ejbca-version}.tgz\""
+
+  deploy:
+    - task: deploy-ejbca
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"        
+      cmd: /bin/bash -c 'helm install ${EJBCA_NAME}-${var.username} --namespace ${var.namespace} ${base.OUTPUT_DIR}/${EJBCA_NAME}-${var.ejbca-version}.tgz --set ingress.host=ejbca.${var.namespace}.${env.base.KUBE_HOST}.rnd.gic.ericsson.se.kaas'
+
+  undeploy:
+    - task: undeploy-ejbca
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm" 
+      cmd: helm uninstall ${EJBCA_NAME}-${var.username} --namespace ${var.namespace} 
+      
+  export:
+    - task: clean
+      cmd: /bin/bash -c "rm -rf ${EXPORT_DIR}";
+    - task: folders
+      cmd: /bin/bash -c "mkdir -p ${EXPORT_DIR}; mkdir -p ${EXPORT_DIR}/helm; mkdir -p ${EXPORT_DIR}/docker";      
+    - task: helm
+      cmd: /bin/bash -c 'cp ${base.OUTPUT_DIR}/${EJBCA_NAME}-${var.ejbca-version}.tgz ${EXPORT_DIR}/helm';
+    - task: image
+      cmd: /bin/bash -c 'docker save ${base.DOCKER_REGISTRY_URL}/${base.DOCKER_REPO_PATH}/${env.base.USER}/${EJBCA_NAME}:${var.ejbca-version} > ${EXPORT_DIR}/docker/${EJBCA_NAME}-${var.ejbca-version}.tar';
+
+  clean:
+    - task: export
+      cmd: rm -rf ${EXPORT_DIR}
+    - task: helm
+      cmd:
+        - rm -f ${base.OUTPUT_DIR}/${EJBCA_NAME}-*.tgz
+        - rm -rf ${base.OUTPUT_DIR}/${EJBCA_NAME}
+    - task: templates-ejbca
+      cmd: rm -rf ${base.OUTPUT_DIR}/${EJBCA_NAME}/templates/*.yaml
+    - task: version
+      cmd: rm -f ${base.OUTPUT_DIR}/var.ejbca-version

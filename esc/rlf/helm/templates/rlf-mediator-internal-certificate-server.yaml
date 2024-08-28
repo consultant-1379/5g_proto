@@ -1,0 +1,22 @@
+# Copyright 2022 Ericsson GmbH
+
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+  name: {{ template "eric-sc-rlf.name" . }}-mediator-server-internal-certificate
+  annotations:
+{{- include "eric-sc-rlf.helm-annotations" . | indent 4 }}
+{{- include "eric-sc-rlf.config-annotations" . | indent 4 }}
+  labels:
+{{- include "eric-sc-rlf.labels" . | indent 4 }}
+spec:
+  kubernetes:
+    generatedSecretName: rlf-oam-server-if-certificate-secret
+    certificateName: tls.crt
+    privateKeyName: tls.key
+  certificate:
+    subject:
+      cn: eric-sc-rlf
+    extendedKeyUsage:
+      tlsClientAuth: false
+      tlsServerAuth: true

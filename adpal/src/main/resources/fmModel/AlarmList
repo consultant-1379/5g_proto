@@ -1,0 +1,9 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "id": "file://schema/AlarmList#",
+  "description":"A list of active alarms",
+  "type": "array",
+  "items": {
+        "$ref": "Alarm"
+  }
+}

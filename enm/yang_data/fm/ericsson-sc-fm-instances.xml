@@ -1,0 +1,107 @@
+<?xml version="1.0" ?>
+<!-- ericsson-sc-fm-instances 0.1.6 -->
+<!-- modified: 2020-10-02 -->
+<!-- Copyright (c) 2020 Ericsson AB. All rights reserved.     -->
+<config xmlns="http://tail-f.com/ns/config/1.0">
+    <fm xmlns="urn:rdns:com:ericsson:oammodel:ericsson-fm">
+        <alarm-model>
+            <id>eric-sc-fm</id>
+            <alarm-type>
+                <id>ScBackupFault</id>
+                <major-type>193</major-type>
+                <minor-type>10027008</minor-type>
+                <specific-problem>SC, Backup Fault</specific-problem>
+                <event-type>other</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>The SC backup agent failed to create or export SC configuration backup</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>PodFailure</id>
+                <major-type>193</major-type>
+                <minor-type>10027009</minor-type>
+                <specific-problem>SC, Pod Fault</specific-problem>
+                <event-type>other</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>Pod failure was detected in SC deployment</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+			<alarm-type>
+                <id>LicenseInformationUnavailable</id>
+                <major-type>193</major-type>
+                <minor-type>10027010</minor-type>
+                <specific-problem>SC, License Information Unavailable</specific-problem>
+                <event-type>other</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>License information is unavailable</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>PvtbDifferenceReceivedSentSuccessesPacketsRatio</id>
+                <major-type>193</major-type>
+                <minor-type>10027011</minor-type>
+                <specific-problem>SC,PVTB deviation between successful sent/received packets ratio</specific-problem>
+                <event-type>other</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>PVTB difference between successful sent and received packets ratio</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>TapcollectorOutTapFramesDroppedRatio</id>
+                <major-type>193</major-type>
+                <minor-type>10027012</minor-type>
+                <specific-problem>SC,Tapcollector out tap frames dropped ratio</specific-problem>
+                <event-type>other</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>TapCollector out tap frames dropped ratio</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>ScRlfHighLoad</id>
+                <major-type>193</major-type>
+                <minor-type>10027013</minor-type>
+                <specific-problem>SC, RLF High Load</specific-problem>
+                <event-type>other</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>RLF load has passed a defined threshold</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>ScNlfHighLoad</id>
+                <major-type>193</major-type>
+                <minor-type>10027014</minor-type>
+                <specific-problem>SC, NLF High Load</specific-problem>
+                <event-type>other</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>NLF load has passed a defined threshold</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>ScNlfNrfGroupUnavailable</id>
+                <major-type>193</major-type>
+                <minor-type>10027015</minor-type>
+                <specific-problem>SC, NLF NRF Group Unavailable</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>The NRF-group is unavailable</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+        </alarm-model>
+    </fm>
+</config>

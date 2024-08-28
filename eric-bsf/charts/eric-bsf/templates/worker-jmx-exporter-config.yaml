@@ -1,0 +1,647 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "eric-bsf.name" . }}-worker-jmx-config
+  labels:
+{{- include "eric-bsf.labels" . | indent 4 }}
+    app: {{ template "eric-bsf.name" . }}-worker
+  annotations:
+{{- include "eric-bsf.helm-annotations" . | indent 4 }}
+{{- include "eric-bsf.config-annotations" . | indent 4 }}
+data:
+  config.yml: |
+    ---
+    startDelaySeconds: 60
+    hostPort: localhost:8090
+    username: 
+    password: 
+    ssl: false
+    lowercaseOutputName: false
+    lowercaseOutputLabelNames: false
+    whitelistObjectNames: [{{- range $index, $blrule := .Values.service.cddjmxexporter.whitelist }}{{if $index}},{{end}}{{ $blrule | quote }}{{- end }}]
+    blacklistObjectNames: [{{- range $index, $blrule := .Values.service.cddjmxexporter.blacklist }}{{if $index}},{{end}}{{ $blrule | quote }}{{- end }}]
+
+    rules:
+      - pattern: cdd-(.+)<name=(.+).cql-requests(.*)><>Count
+        name: cassandra_driver_cql_requests_counter
+        labels:
+          "cdd-metric-name": "cql-requests"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-attribute": "Count"
+          "cdd-metric-type": "long"
+          "nf": "bsf"
+        help: "Cassandra Driver cql-requests metric"
+        type: COUNTER
+      - pattern: cdd-(.+)<name="(.+).nodes.(.+).errors.(.+)"><>Count
+        name: cassandra_driver_nodes_errors_$4_counter
+        labels:
+          "cdd-metric-name": "errors.$4"
+          "cdd-metric-source": "$1"
+          "cdd-node-instance": "$3"
+          "cdd-session": "$2"
+          "cdd-metric-attribute": "Count"
+          "cdd-metric-type": "long"
+          "nf": "bsf"
+        help: "Cassandra Driver $4 errors metric"
+        type: COUNTER
+      - pattern: cdd-(.+)<name=(.+).cql-client-timeouts(.*)><>Count
+        name: cassandra_driver_cql_client_timeouts_counter
+        labels:
+          "cdd-metric-name": "cql-client-timeouts"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-attribute": "Count"
+          "cdd-metric-type": "long"
+          "nf": "bsf"
+        help: "Cassandra Driver cql-client-timeouts metric"
+        type: COUNTER
+      - pattern: cdd-(.+)<name=(.+).throttling.errors(.*)><>Count
+        name: cassandra_driver_throttling_errors_counter
+        labels:
+          "cdd-metric-name": "throttling-errors"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-attribute": "Count"
+          "cdd-metric-type": "long"
+          "nf": "bsf"
+        help: "Cassandra Driver throttling errors metric"
+        type: COUNTER
+      - pattern: cdd-(.+)<name="(.+).nodes.(.+).cql-messages"><>Count
+        name: cassandra_driver_cql_messages_counter
+        labels:
+          "cdd-metric-name": "cql-messages"
+          "cdd-metric-source": "$1"
+          "cdd-node-instance": "$3"
+          "cdd-session": "$2"
+          "cdd-metric-attribute": "Count"
+          "cdd-metric-type": "long"
+          "nf": "bsf"
+        help: "Cassandra Driver cql-messages metric"
+        type: COUNTER
+      - pattern: cdd-(.+)<name="(.+).nodes.(.+).cql-messages"><>50thPercentile
+        name: cassandra_driver_cql_messages_50th_percentile
+        labels:
+          "cdd-metric-name": "cql-messages-50th-percentile"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver cql-messages 50thPercentile latency metric (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name="(.+).nodes.(.+).cql-messages"><>75thPercentile
+        name: cassandra_driver_cql_messages_75th_percentile
+        labels:
+          "cdd-metric-name": "cql-messages-75th-percentile"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver cql-messages 75thPercentile latency metric (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name="(.+).nodes.(.+).cql-messages"><>95thPercentile
+        name: cassandra_driver_cql_messages_95th_percentile
+        labels:
+          "cdd-metric-name": "cql-messages-95th-percentile"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver cql-messages 95thPercentile latency metric (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name="(.+).nodes.(.+).cql-messages"><>98thPercentile
+        name: cassandra_driver_cql_messages_98th_percentile
+        labels:
+          "cdd-metric-name": "cql-messages-98th-percentile"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver cql-messages 98thPercentile latency metric (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name="(.+).nodes.(.+).cql-messages"><>99thPercentile
+        name: cassandra_driver_cql_messages_99th_percentile
+        labels:
+          "cdd-metric-name": "cql-messages-99th-percentile"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver cql-messages 99thPercentile latency metric (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name="(.+).nodes.(.+).cql-messages"><>999thPercentile
+        name: cassandra_driver_cql_messages_999th_percentile
+        labels:
+          "cdd-metric-name": "cql-messages-999th-percentile"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver cql-messages 999thPercentile latency metric (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name="(.+).nodes.(.+).cql-messages"><>OneMinuteRate
+        name: cassandra_driver_cql_messages_1m_rate
+        labels:
+          "cdd-metric-name": "cql-messages-1m-rate"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "events/second"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver cql-messages 1minute rate metric (events/second)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name="(.+).nodes.(.+).cql-messages"><>FiveMinuteRate
+        name: cassandra_driver_cql_messages_5m_rate
+        labels:
+          "cdd-metric-name": "cql-messages-5m-rate"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "events/second"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver cql-messages 5minute rate metric (events/second)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name="(.+).nodes.(.+).cql-messages"><>FifteenMinuteRate
+        name: cassandra_driver_cql_messages_15m_rate
+        labels:
+          "cdd-metric-name": "cql-messages-15m-rate"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "events/second"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver cql-messages 15minute rate metric (events/second)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name="(.+).nodes.(.+).cql-messages"><>Max
+        name: cassandra_driver_cql_messages_max
+        labels:
+          "cdd-metric-name": "cql-messages-max"
+          "cdd-metric-source": "$1"
+          "cdd-node-instance": "$3"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver cql-messages Max latency metric (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name="(.+).nodes.(.+).cql-messages"><>Min
+        name: cassandra_driver_cql_messages_min
+        labels:
+          "cdd-metric-name": "cql-messages-min"
+          "cdd-metric-source": "$1"
+          "cdd-node-instance": "$3"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver cql-messages Min latency metric (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name="(.+).nodes.(.+).cql-messages"><>Mean
+        name: cassandra_driver_cql_messages_mean
+        labels:
+          "cdd-metric-name": "cql-messages-mean"
+          "cdd-metric-source": "$1"
+          "cdd-node-instance": "$3"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver cql-messages Mean latency metric (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name="(.+).nodes.(.+).cql-messages"><>StdDev
+        name: cassandra_driver_cql_messages_stddev
+        labels:
+          "cdd-metric-name": "cql-messages-stddev"
+          "cdd-metric-source": "$1"
+          "cdd-node-instance": "$3"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver cql-messages StdDev latency metric (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name="(.+).nodes.(.+).ignores.(.+)"><>Count
+        name: cassandra_driver_nodes_ignores_$4_counter
+        labels:
+          "cdd-metric-name": "ignores.$4"
+          "cdd-metric-source": "$1"
+          "cdd-node-instance": "$3"
+          "cdd-session": "$2"
+          "cdd-metric-attribute": "Count"
+          "cdd-metric-type": "long"
+          "nf": "bsf"
+        help: "Cassandra Driver nodes ignores metric"
+        type: COUNTER
+      - pattern: cdd-(.+)<name="(.+).nodes.(.+).pool.(.+)"><>Value
+        name: cassandra_driver_nodes_pool_$4_value
+        labels:
+          "cdd-metric-name": "pool.$4"
+          "cdd-metric-source": "$1"
+          "cdd-node-instance": "$3"
+          "cdd-session": "$2"
+          "cdd-metric-attribute": "Value"
+          "nf": "bsf"
+        help: "Cassandra Driver nodes pool metric"
+        type: GAUGE
+      - pattern: cdd-(.+)<name="(.+).nodes.(.+).retries.(.+)"><>Count
+        name: cassandra_driver_nodes_retries_$4_counter
+        labels:
+          "cdd-metric-name": "retries.$4"
+          "cdd-metric-source": "$1"
+          "cdd-node-instance": "$3"
+          "cdd-session": "$2"
+          "cdd-metric-attribute": "Count"
+          "cdd-metric-type": "long"
+          "nf": "bsf"
+        help: "Cassandra Driver nodes retries  metric"
+        type: COUNTER
+      - pattern: cdd-(.+)<name="(.+).nodes.(.+).speculative-executions"><>Count
+        name: cassandra_driver_nodes_speculative_executions_counter
+        labels:
+          "cdd-metric-name": "speculative-executions"
+          "cdd-metric-source": "$1"
+          "cdd-node-instance": "$3"
+          "cdd-session": "$2"
+          "cdd-metric-attribute": "Count"
+          "cdd-metric-type": "long"
+          "nf": "bsf"
+        help: "Cassandra Driver speculative-executions metric"
+        type: COUNTER
+      - pattern: cdd-(.+)<name=(.+).bytes-(.+),(.*)><>OneMinuteRate
+        name: cassandra_driver_bytes_1m_rate
+        labels:
+          "cdd-metric-name": "bytes-$3-1m-rate"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "events/second"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver bytes $3 1minute rate metric (events/second)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).bytes-(.+),(.*)><>FiveMinuteRate
+        name: cassandra_driver_bytes_5m_rate
+        labels:
+          "cdd-metric-name": "bytes-$3-5m-rate"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "events/second"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver bytes $3 5minute rate metric (events/second)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).bytes-(.+),(.*)><>FifteenMinuteRate
+        name: cassandra_driver_bytes_15m_rate
+        labels:
+          "cdd-metric-name": "bytes-$3-15m-rate"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "events/second"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver bytes $3 1minute rate metric (events/second)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).bytes-(.+),(.*)><>Count
+        name: cassandra_driver_bytes_counter
+        labels:
+          "cdd-metric-name": "bytes-$3"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-attribute": "Count"
+          "cdd-metric-type": "long"
+          "nf": "bsf"
+        help: "Cassandra Driver bytes sent/received metric"
+        type: COUNTER
+      - pattern: cdd-(.+)<name=(.+).connected-nodes(.*)><>Value
+        name: cassandra_driver_connected_nodes_value
+        labels:
+          "cdd-metric-name": "connected-nodes"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-attribute": "Value"
+          "nf": "bsf"
+        help: "Cassandra Driver connected-nodes metric"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).cql-prepared-cache-size(.*)><>Value
+        name: cassandra_driver_cql_prepared_cache_size_value
+        labels:
+          "cdd-metric-name": "cql-prepared-cache-size"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-attribute": "Value"
+          "nf": "bsf"
+        help: "Cassandra Driver cql-prepared-cache-size metric"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).cql-requests(.*)><>50thPercentile
+        name: cassandra_driver_cql_requests_50th_percentile
+        labels:
+          "cdd-metric-name": "cql-requests-50th-percentile"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver cql_requests 50thPercentile latency metric (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).cql-requests(.*)><>75thPercentile
+        name: cassandra_driver_cql_requests_75th_percentile
+        labels:
+          "cdd-metric-name": "cql-requests-75th-percentile"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver cql_requests 75thPercentile latency metric (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).cql-requests(.*)><>95thPercentile
+        name: cassandra_driver_cql_requests_95th_percentile
+        labels:
+          "cdd-metric-name": "cql-requests-95th-percentile"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver cql_requests 95thPercentile latency metric (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).cql-requests(.*)><>98thPercentile
+        name: cassandra_driver_cql_requests_98th_percentile
+        labels:
+          "cdd-metric-name": "cql-requests-98th-percentile"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver cql_requests 98thPercentile latency metric (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).cql-requests(.*)><>99thPercentile
+        name: cassandra_driver_cql_requests_99th_percentile
+        labels:
+          "cdd-metric-name": "cql-requests-99th-percentile"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver cql_requests 99thPercentile latency metric (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).cql-requests(.*)><>999thPercentile
+        name: cassandra_driver_cql_requests_999th_percentile
+        labels:
+          "cdd-metric-name": "cql-requests-999th-percentile"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver cql_requests 999thPercentile latency metric (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).cql-requests(.*)><>OneMinuteRate
+        name: cassandra_driver_cql_requests_1m_rate
+        labels:
+          "cdd-metric-name": "cql-requests-1m-rate"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "events/second"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver cql-requests 1minute rate metric (events/second)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).cql-requests(.*)><>FiveMinuteRate
+        name: cassandra_driver_cql_requests_5m_rate
+        labels:
+          "cdd-metric-name": "cql-requests-5m-rate"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "events/second"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver cql-requests 5minute rate metric (events/second)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).cql-requests(.*)><>FifteenMinuteRate
+        name: cassandra_driver_cql_requests_15m_rate
+        labels:
+          "cdd-metric-name": "cql-requests-15m-rate"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "events/second"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver cql-requests 15minute rate metric (events/second)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).cql-requests(.*)><>Max
+        name: cassandra_driver_cql_requests_max
+        labels:
+          "cdd-metric-name": "cql-requests-max"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver cql-requests Max latency metric (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).cql-requests(.*)><>Min
+        name: cassandra_driver_cql_requests_min
+        labels:
+          "cdd-metric-name": "cql-requests-min"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver cql-requests Min latency metric (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).cql-requests(.*)><>Mean
+        name: cassandra_driver_cql_requests_mean
+        labels:
+          "cdd-metric-name": "cql-requests-mean"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-attribute": "Mean"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver cql-requests Mean latency metric (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).cql-requests(.*)><>StdDev
+        name: cassandra_driver_cql_requests_stddev
+        labels:
+          "cdd-metric-name": "cql-requests-stddev"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver cql-requests StdDev latency metric (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).throttling.delay(.*)><>Count
+        name: cassandra_driver_throttling_delay_counter
+        labels:
+          "cdd-metric-name": "throttling-delay"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-attribute": "Count"
+          "cdd-metric-type": "long"
+          "nf": "bsf"
+        help: "Cassandra Driver throttling-delay metric"
+        type: COUNTER
+      - pattern: cdd-(.+)<name=(.+).throttling.delay(.*)><>50thPercentile
+        name: cassandra_driver_throttling_delay_50th_percentile
+        labels:
+          "cdd-metric-name": "throttling-delay-50th-percentile"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver throttling-delay 50thPercentile latency metric (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).throttling.delay(.*)><>75thPercentile
+        name: cassandra_driver_throttling_delay_75th_percentile
+        labels:
+          "cdd-metric-name": "throttling-delay-75th-percentile"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver throttling-delay 75thPercentile latency metric (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).throttling.delay(.*)><>95thPercentile
+        name: cassandra_driver_throttling_delay_95th_percentile
+        labels:
+          "cdd-metric-name": "throttling-delay-95th-percentile"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver throttling-delay 95thPercentile latency metric (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).throttling.delay(.*)><>98thPercentile
+        name: cassandra_driver_throttling_delay_98th_percentile
+        labels:
+          "cdd-metric-name": "throttling-delay-98th-percentile"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver throttling-delay 98thPercentile latency metric (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).throttling.delay(.*)><>99thPercentile
+        name: cassandra_driver_throttling_delay_99th_percentile
+        labels:
+          "cdd-metric-name": "throttling-delay-99th-percentile"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver throttling-delay 99thPercentile latency metric (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).throttling.delay(.*)><>999thPercentile
+        name: cassandra_driver_throttling_delay_999th_percentile
+        labels:
+          "cdd-metric-name": "throttling-delay-999th-percentile"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver throttling-delay 999thPercentile latency metric (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).throttling.delay(.*)><>OneMinuteRate
+        name: cassandra_driver_throttling_delay_1m_rate
+        labels:
+          "cdd-metric-name": "throttling-delay-1m-rate"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "events/second"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver throttling-delay 1minute rate metric (events/second)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).throttling.delay(.*)><>FiveMinuteRate
+        name: cassandra_driver_throttling_delay_5m_rate
+        labels:
+          "cdd-metric-name": "throttling-delay-5m-rate"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "events/second"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver throttling-delay 5minute rate metric (events/second)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).throttling.delay(.*)><>FifteenMinuteRate
+        name: cassandra_driver_throttling_delay_15m_rate
+        labels:
+          "cdd-metric-name": "throttling-delay-15m-rate"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "events/second"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver throttling-delay 15minute rate metric (events/second)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).throttling.delay(.*)><>Max
+        name: cassandra_driver_throttling_delay_max
+        labels:
+          "cdd-metric-name": "throttling-delay-max"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver throttling-delay Max latency metric for session $1 (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).throttling.delay(.*)><>Min
+        name: cassandra_driver_throttling_delay_min
+        labels:
+          "cdd-metric-name": "throttling-delay-min"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver throttling-delay Min latency metric for session $1 (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).throttling.delay(.*)><>Mean
+        name: cassandra_driver_throttling_delay_mean
+        labels:
+          "cdd-metric-name": "throttling-delay-mean"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver throttling-delay Mean latency metric for session $1 (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).throttling.delay(.*)><>StdDev
+        name: cassandra_driver_throttling_delay_stddev
+        labels:
+          "cdd-metric-name": "throttling-delay-stddev"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-unit": "milliseconds"
+          "cdd-metric-type": "double"
+          "nf": "bsf"
+        help: "Cassandra Driver throttling-delay StdDev latency metric for session $1 (milliseconds)"
+        type: GAUGE
+      - pattern: cdd-(.+)<name=(.+).throttling.queue-size(.*)><>Value
+        name: cassandra_driver_throttling_queue_size_value
+        labels:
+          "cdd-metric-name": "throttling-queue-size"
+          "cdd-metric-source": "$1"
+          "cdd-session": "$2"
+          "cdd-metric-attribute": "Value"
+          "nf": "bsf"
+        help: "Cassandra Driver throttling queue-size metric for session $1"
+        type: GAUGE

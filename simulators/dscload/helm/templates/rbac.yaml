@@ -1,0 +1,33 @@
+# Copyright 2021 Ericsson GmbH
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "eric-dsc-load.name" . }}-sa
+  labels:
+    {{- include "eric-dsc-load.de-facto-labels" . | indent 4 }}
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ include "eric-dsc-load.name" . }}-role
+  labels:
+    {{- include "eric-dsc-load.de-facto-labels" . | indent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ include "eric-dsc-load.name" . }}-rolebinding
+  labels:
+    {{- include "eric-dsc-load.de-facto-labels" . | indent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "eric-dsc-load.name" . }}-sa
+roleRef:
+  kind: Role
+  name: {{ include "eric-dsc-load.name" . }}-role
+  apiGroup: rbac.authorization.k8s.io

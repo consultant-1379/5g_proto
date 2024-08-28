@@ -1,0 +1,76 @@
+Test Notify handling with absolute URL and if Envoy can forward the request
+to ChfSim.  Use the --proxy variable to make curl send the request to Envoy
+and use an absolute URL.
+
+Load Envoy configuration 24-supi-lua-notify.yaml
+
+NAME                      TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
+envoy-standalone          NodePort    10.104.162.177   <none>        80:32578/TCP                 47h
+eric-chfsim-1             NodePort    10.102.92.5      <none>        80:31571/TCP,443:31134/TCP   23d
+eric-chfsim-2             NodePort    10.102.93.220    <none>        80:32460/TCP,443:31650/TCP   23d
+eric-chfsim-3             NodePort    10.101.7.87      <none>        80:31419/TCP,443:30075/TCP   23d
+eric-chfsim-redis         NodePort    10.97.60.61      <none>        6379:31373/TCP               23d
+eric-nrfsim               NodePort    10.101.231.163   <none>        80:31135/TCP,443:30489/TCP   23d
+eric-snmp-trap-receiver   ClusterIP   10.111.78.202    <none>        162/UDP                      17d
+nrf-interrogator          NodePort    10.103.191.26    <none>        80:30753/TCP                 10d
+
+
+curl -vs  -X POST 'http://eric-chfsim-1/nchf-convergedcharging/notify-cg/v2/chargingdata/' --proxy 10.41.83.174:32578
+
+PCAP file for such a request is notify-proxy.pcap and the important part is:
+
+The first packet is the request from curl to Envoy. Note that the URL (after POST) is an
+absolute URL and that the Host is eric-chfsim-1 (not Envoy). This is because of the --proxy
+parameter to Envoy.
+
+The second packet is the request forwarded by Envoy to eric-chfsim-1 with the normal relative URL.
+
+Frame 44: 243 bytes on wire (1944 bits), 243 bytes captured (1944 bits)
+Ethernet II, Src: ee:ee:ee:ee:ee:ee (ee:ee:ee:ee:ee:ee), Dst: 3e:d5:cf:5d:c9:6a (3e:d5:cf:5d:c9:6a)
+Internet Protocol Version 4, Src: 192.168.66.64 (192.168.66.64), Dst: 192.168.178.230 (192.168.178.230)
+Transmission Control Protocol, Src Port: 41096 (41096), Dst Port: http (80), Seq: 1, Ack: 1, Len: 177
+Hypertext Transfer Protocol
+    POST http://eric-chfsim-1/nchf-convergedcharging/notify-cg/v2/chargingdata/ HTTP/1.1\r\n
+        [Expert Info (Chat/Sequence): POST http://eric-chfsim-1/nchf-convergedcharging/notify-cg/v2/chargingdata/ HTTP/1.1\r\n]
+            [Message: POST http://eric-chfsim-1/nchf-convergedcharging/notify-cg/v2/chargingdata/ HTTP/1.1\r\n]
+            [Severity level: Chat]
+            [Group: Sequence]
+        Request Method: POST
+        Request URI: http://eric-chfsim-1/nchf-convergedcharging/notify-cg/v2/chargingdata/
+        Request Version: HTTP/1.1
+    User-Agent: curl/7.29.0\r\n
+    Host: eric-chfsim-1\r\n
+    Accept: */*\r\n
+    Proxy-Connection: Keep-Alive\r\n
+    \r\n
+    [Full request URI: http://eric-chfsim-1http://eric-chfsim-1/nchf-convergedcharging/notify-cg/v2/chargingdata/]
+    [HTTP request 1/1]
+
+[....]
+
+Frame 51: 326 bytes on wire (2608 bits), 326 bytes captured (2608 bits)
+Ethernet II, Src: 3e:d5:cf:5d:c9:6a (3e:d5:cf:5d:c9:6a), Dst: ee:ee:ee:ee:ee:ee (ee:ee:ee:ee:ee:ee)
+Internet Protocol Version 4, Src: 192.168.178.230 (192.168.178.230), Dst: 10.102.92.5 (10.102.92.5)
+Transmission Control Protocol, Src Port: 35966 (35966), Dst Port: http (80), Seq: 1, Ack: 1, Len: 260
+Hypertext Transfer Protocol
+    POST /nchf-convergedcharging/notify-cg/v2/chargingdata/ HTTP/1.1\r\n
+        [Expert Info (Chat/Sequence): POST /nchf-convergedcharging/notify-cg/v2/chargingdata/ HTTP/1.1\r\n]
+            [Message: POST /nchf-convergedcharging/notify-cg/v2/chargingdata/ HTTP/1.1\r\n]
+            [Severity level: Chat]
+            [Group: Sequence]
+        Request Method: POST
+        Request URI: /nchf-convergedcharging/notify-cg/v2/chargingdata/
+        Request Version: HTTP/1.1
+    host: eric-chfsim-1\r\n
+    user-agent: curl/7.29.0\r\n
+    accept: */*\r\n
+    x-forwarded-proto: http\r\n
+    x-request-id: 70ef815e-e8aa-438a-b8cd-f1a5c096ae6b\r\n
+    x-envoy-expected-rq-timeout-ms: 500\r\n
+    content-length: 0\r\n
+        [Content length: 0]
+    \r\n
+    [Full request URI: http://eric-chfsim-1/nchf-convergedcharging/notify-cg/v2/chargingdata/]
+    [HTTP request 1/1]
+
+

@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "eric-influxdb.name" . }}-configmap
+  labels:
+    app: {{ template "eric-influxdb.name" . }}
+data:
+  influxdb.conf: |
+    [meta]
+       dir = "/var/lib/influxdb/meta"
+    
+    [data]
+       dir = "/var/lib/influxdb/data"
+       engine = "tsm1"
+       index-version = "tsi1"
+       wal-dir = "/var/lib/influxdb/wal"
+    
+    [http]
+       max-body-size = 0
+       https-enabled = {{ .Values.service.tls.enabled }}
+       https-certificate = "/etc/ssl/certificate.pem"
+       https-private-key = "/etc/ssl/key.pem"

@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "eric-bsf.name" . }}-manager-log-ctrl
+  labels:
+{{- include "eric-bsf.labels" . | indent 4 }}
+    app: {{ template "eric-bsf.name" . }}-manager
+  annotations:
+{{- include "eric-bsf.helm-annotations" . | indent 4 }}
+{{- include "eric-bsf.config-annotations" . | indent 4 }}
+data:
+  logcontrol.json: |-
+    [
+        {
+          "container": "eric-bsf-manager",
+          "severity": {{ .Values.log.manager.level | quote }}
+        },
+        {
+          "container": "license-consumer",
+          "severity": {{ .Values.log.licenseConsumer.level | quote }}
+        }{{- if eq (include "eric-bsf.tapagent.manager.enabled" .) "true" }},
+        {
+          "container": "tlskeylogagent",
+          "severity": {{ .Values.log.tlskeylogagent.level | quote }}
+        }{{- end }}
+    ]

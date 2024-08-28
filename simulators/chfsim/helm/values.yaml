@@ -1,0 +1,48 @@
+# CHF Simulator
+
+service:
+  name: "eric-chfsim"
+  type: "NodePort"
+
+imageCredentials:
+  registry:
+    url: "armdocker.rnd.ericsson.se"
+  pullSecret: "regcred"
+  repoPath: "proj-5g-bsf"
+  pullPolicy: Always
+
+chfsim: "chfsim"
+
+spec:
+  replicas: "1"
+  image: 
+  tag: latest
+  port: "80"
+  resources:
+    requests:
+      cpu: 0.5
+      memory: 1Gi
+    limits:
+      cpu: 1
+      memory: 4Gi
+
+backend:
+  resources:
+    requests:
+      cpu: 0.1
+      memory: 128Mi
+    limits:
+      cpu: 0.5
+      memory: 256Mi
+
+certificates:
+  enabled: true
+  secret: chf-certificates
+  seppSecret: chf-sepp-certificates
+  certificate: cert.pem
+  key: key.pem
+  ca: rootCA.crt
+
+jvm:
+  parameters:
+    chfsim: "-server -XX:+ErrorFileToStderr -XX:+UseG1GC -XX:MaxRAMPercentage=80 -Dcom.sun.management.jmxremote.port=8091 -Dcom.sun.management.jmxremote.rmi.port=8091 -Djava.rmi.server.hostname=::1 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false"

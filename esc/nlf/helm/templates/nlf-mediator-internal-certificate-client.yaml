@@ -1,0 +1,22 @@
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+  name: {{ template "eric-sc-nlf.name" . }}-mediator-client-internal-certificate
+  annotations:
+{{- include "eric-sc-nlf.helm-annotations" . | indent 4 }}
+{{- include "eric-sc-nlf.config-annotations" . | indent 4 }}
+  labels:
+{{- include "eric-sc-nlf.labels" . | indent 4 }}
+spec:
+  kubernetes:
+    generatedSecretName: nlf-mediator-client-if-certificate-secret
+    certificateName: tls.crt
+    privateKeyName: tls.key
+  certificate:
+    subject:
+      cn: eric-sc-nlf
+    issuer:
+      reference: eric-cm-mediator-ca
+    extendedKeyUsage:
+      tlsClientAuth: true
+      tlsServerAuth: false

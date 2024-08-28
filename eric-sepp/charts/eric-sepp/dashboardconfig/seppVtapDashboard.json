@@ -1,0 +1,212 @@
+{
+    "namespace": "sc",
+    "dashboards": [
+        {
+            "_id": "sepp_vtap_traffic",
+            "title": "SEPP vTAP View",
+            "order": 38,
+            "apps": [
+                "statusOverview"
+            ],
+            "dashboardTreeView": { "tree": [["SEPP"]] },
+            "tiles": [
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "sepp_pvtb_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "sepp_pvtb_rate_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "sepp_tapcollector_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "sepp_tapcollector_rate_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "sepp_envoy_tap_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "sepp_envoy_tap_rate_timeline"
+                },
+                {
+                    "xSize": 10,
+                    "ySize": 2,
+                    "widget": "selectable_sepp_vtap_counters"
+                },
+                {
+                    "xSize": 10,
+                    "ySize": 2,
+                    "variables": {
+                      "podListFilterProp": "metadata.name",
+                      "podListFilterRegex": "^eric-sepp-|^eric-probe-virtual-tap-broker-"
+                    },
+                    "widget": "sc:pod_table"
+                }
+            ]
+        }
+    ],
+    "widgets": [
+        {
+            "_id": "sepp_pvtb_timeline",
+            "widgetType": "timeline",
+            "title": "Timeline [MPS] - Tapped Packets in Probe Virtual Tap Broker (PVTB)",
+            "sources": [
+                {
+                    "source": "sepp_pvtb_received_total"
+                },
+                {
+                    "source": "sepp_pvtb_send_total"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_pvtb_rate_timeline",
+            "widgetType": "timeline",
+            "title": "Timeline [%] - Tapping Failures in Probe Virtual Tap Broker (PVTB)",
+            "sources": [
+                {
+                    "source": "sepp_pvtb_received_failure_ratio"
+                },
+                {
+                    "source": "sepp_pvtb_send_failure_ratio"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_tapcollector_timeline",
+            "widgetType": "timeline",
+            "title": "Timeline [MPS] - Tapped Packets in SEPP Worker (Tapcollector)",
+            "sources": [
+                {
+                    "source": "sepp_tapcollector_in_tap_frames_total"
+                },
+                {
+                    "source": "sepp_tapcollector_sent_frames_total"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_tapcollector_rate_timeline",
+            "widgetType": "timeline",
+            "title": "Timeline [%] - Tapping Failures in SEPP Worker (Tapcollector)",
+            "sources": [
+                {
+                    "source": "sepp_tapcollector_recv_frames_failure_ratio"
+                },
+                {
+                    "source": "sepp_tapcollector_sent_frames_failure_ratio"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_envoy_tap_timeline",
+            "widgetType": "timeline",
+            "title": "Timeline [MPS] - SEPP Worker Segments Tapped (Envoy)",
+            "sources": [
+                {
+                    "source": "sepp_envoy_ingress_vtap_segments_tapped"
+                },
+                {
+                    "source": "sepp_envoy_egress_vtap_segments_tapped"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_envoy_tap_rate_timeline",
+            "widgetType": "timeline",
+            "title": "Timeline [%] - SEPP Worker Segments Dropped (Envoy)",
+            "sources": [
+                {
+                    "source": "sepp_envoy_segment_tapped_failure_ratio"
+                }
+            ]
+        },
+        {
+            "_id": "selectable_sepp_vtap_counters",
+            "widgetType": "timeline",
+            "title": "Select metrics to display",
+            "selectionMechanism": { "selectorConfigId": "sepp_vtap_selector_config" },
+            "sources": []
+       }
+    ],
+    "sources": [
+        {
+            "_id": "sepp_pvtb_received_total",
+            "sourceType": "prometheus",
+            "query": "sepp_pvtb_received_total_rate or vector(0)",
+            "label": "Received [MPS]"
+        },
+        {
+            "_id": "sepp_pvtb_send_total",
+            "sourceType": "prometheus",
+            "query": "sepp_pvtb_send_total_rate or vector(0)",
+            "label": "Sent [MPS]"
+        },
+        {
+            "_id": "sepp_pvtb_received_failure_ratio",
+            "sourceType": "prometheus",
+            "query": "sepp_pvtb_received_failure_ratio",
+            "label": "Received [%]"
+        },
+        {
+            "_id": "sepp_pvtb_send_failure_ratio",
+            "sourceType": "prometheus",
+            "query": "sepp_pvtb_send_failure_ratio",
+            "label": "Sent [%]"
+        },
+        {
+            "_id": "sepp_tapcollector_in_tap_frames_total",
+            "sourceType": "prometheus",
+            "query": "sepp_tapcollector_in_tap_frames_total_rate or vector(0)",
+            "label": "Received [MPS]"
+        },
+        {
+            "_id": "sepp_tapcollector_sent_frames_total",
+            "sourceType": "prometheus",
+            "query": "sepp_tapcollector_sent_frames_total_rate or vector(0)",
+            "label": "Sent [MPS] "
+        },
+        {
+            "_id": "sepp_tapcollector_recv_frames_failure_ratio",
+            "sourceType": "prometheus",
+            "query": "sepp_tapcollector_recv_frames_failure_ratio",
+            "label": "Received [%]"
+        },
+        {
+            "_id": "sepp_tapcollector_sent_frames_failure_ratio",
+            "sourceType": "prometheus",
+            "query": "sepp_tapcollector_sent_frames_failure_ratio",
+            "label": "Sent [%]"
+        },
+        {
+            "_id": "sepp_envoy_ingress_vtap_segments_tapped",
+            "sourceType": "prometheus",
+            "query": "sepp_envoy_ingress_vtap_segments_tapped_rate or vector(0)",
+            "label": "Ingress Segments Tapped [MPS]"
+        },
+        {
+            "_id": "sepp_envoy_egress_vtap_segments_tapped",
+            "sourceType": "prometheus",
+            "query": "sepp_envoy_egress_vtap_segments_tapped_rate or vector(0)",
+            "label": "Egress Segments Tapped [MPS]"
+        },
+        {
+            "_id": "sepp_envoy_segment_tapped_failure_ratio",
+            "sourceType": "prometheus",
+            "query": "sepp_envoy_segment_tapped_failure_ratio",
+            "label": "Segments Dropped [%]"
+        }
+    ]
+}

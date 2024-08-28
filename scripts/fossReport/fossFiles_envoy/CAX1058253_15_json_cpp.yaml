@@ -1,0 +1,42 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2024-02-12T00:00:00Z
+FOSS:
+    # Available in Bazaar
+    FOSSName: JSON for Modern cpp  
+    # Available in Bazaar
+    FOSSVersion: 3.11.3
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/nlohmann/json/archive/refs/tags/v3.11.3.tar.gz
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 15/CAX1058253
+    # Not Available in Bazaar
+    Primary: N
+    # Available in Bazaar
+    STAKOCode: ESW2
+    # Available in Bazaar
+    STAKOReason: ()
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: "JSON for Modern cpp"
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: MIT License (MIT)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: MIT License (MIT)
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Statically
+    # Not Available in Bazaar
+    MavenDependency: NO
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    #Comments
+    Comments: "only one file under copyleft license found in tests/thirdparty (this is not used in our product)"
+    ReportAuthor: ERAPRPA Prashant Pratik

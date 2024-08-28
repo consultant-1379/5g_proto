@@ -1,0 +1,182 @@
+#!/usr/bin/perl
+
+################################################################################
+#
+#  Author   : EEDTWO
+#
+#  Revision : 1.1
+#  Date     : 2021-07-16 11:02:09
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2021
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+#
+# v1.00     : Creation of script
+#
+# If for testinf the number of max_connections needs to be changed, use:
+# kubectl exec -it eric-data-document-database-pg-0 -n eiffelesc -- curl -s -XPATCH -d '{"postgresql":{"parameters": {"max_connections":200}}}' http://localhost:8008/config
+
+use strict;
+use Cwd qw(abs_path);
+use File::Basename qw(dirname);
+use Getopt::Long;            # standard Perl module
+
+###############################################################################
+# GLOBAL FIXED VALUES
+###############################################################################
+my $POD                                 = "eric-data-document-database-pg-0";       # which pod contains max_connections
+my $LOCAL                               = "http://localhost:8008/config";           # url to localhost, needed in the curl command
+my $KUBE_CTL                            = "kubectl exec -it";
+
+
+###############################################################################
+# GLOBAL VARIABLES
+###############################################################################
+my $vDEFAULT_ANSWER                     = "";
+
+
+###############################################################################
+# MAIN
+###############################################################################
+my $daft_script_path = "";
+my $job_params_file = "";
+my %job_params_hash;
+
+my $namespace                           = "";                                       # eiffelesc
+my $set_max_connections                 = 300;                                      # (default) new value for max_connections
+my $max_connections;
+my $pod_check;
+
+# Check if the needed environment variables exist
+print "Reading namespace from environment\n";
+if (exists $ENV{'TOOL_PATH_DAFT'} && $ENV{'TOOL_PATH_DAFT'} ne "") {
+    $daft_script_path = $ENV{'TOOL_PATH_DAFT'};
+} else {
+    print "The environment variable TOOL_PATH_DAFT does not exist or is empty\n";
+    exit 1;
+}
+if (exists $ENV{'JOB_WORKSPACE_PATH_DAFT'} && $ENV{'JOB_WORKSPACE_PATH_DAFT'} ne "") {
+    $job_params_file = "$ENV{'JOB_WORKSPACE_PATH_DAFT'}/job_parameters.conf";
+} else {
+    print "The environment variable JOB_WORKSPACE_PATH_DAFT does not exist or is empty\n";
+    exit 1;
+}
+
+# Check if the job parameters file exist
+unless (-f "$job_params_file") {
+    print "The job parameters file '$job_params_file' does not exist\n";
+    exit 1;
+}
+
+use lib abs_path $ENV{'TOOL_PATH_DAFT'} . '/perl/lib';
+use General::Logging;
+use General::Message_Generation;
+use General::OS_Operations;
+use General::Playlist_Operations;
+# Read the job parameters file into an hash
+if (General::Playlist_Operations::job_parameters_read($job_params_file, \%job_params_hash) != 0) {
+    print "Failure to read the job parameters file '$job_params_file'\n";
+    exit 1;
+}
+if (exists $job_params_hash{'SC_NAMESPACE'}) {
+    $namespace = $job_params_hash{'SC_NAMESPACE'};
+    print "Namespace found                    : $namespace\n";
+} else {
+    print "Job parameter SC_NAMESPACE does not exist in the job parameter file\n";
+    exit 1;
+}
+
+
+print "Checking namespace for pod        : $POD\n";
+$pod_check = `kubectl get pods --namespace=$namespace | grep $POD`;
+if (index($pod_check,$POD) != -1) {
+    $max_connections = get_max_connections($namespace);
+    set_max_connections($max_connections,$set_max_connections,$namespace);
+}
+
+exit 0;
+
+###############################################################################
+# SUBROUTINES
+###############################################################################
+sub set_max_connections {
+    my $cur_max_connections = $_[0];
+    my $new_max_connections = $_[1];
+    my $namespace           = $_[2];
+
+    my $user_answer;
+    my $result;
+    print "Changing value of max_connections\n";
+    print "Current max_connections            : $cur_max_connections\n";
+    print "New value for max_connections      : $new_max_connections\n";
+    if ($cur_max_connections == $new_max_connections) {
+        print "Current and new value are the same, no need to do anything\n";
+    } elsif ($cur_max_connections < $new_max_connections) {
+        print "Changing max_connections to        : $new_max_connections\n";
+        if ($namespace) {
+            $result = `$KUBE_CTL $POD -n $namespace -- curl -s -XPATCH -d '{"postgresql":{"parameters": {"max_connections":$new_max_connections}}}' $LOCAL`;
+        } else {
+            $result = `$KUBE_CTL $POD -- curl -s -XPATCH -d '{"postgresql":{"parameters": {"max_connections":$new_max_connections}}}' $LOCAL`;
+        }
+        print "Checking if change was successful\n";
+        $cur_max_connections = get_max_connections($namespace);
+        if ($cur_max_connections != $new_max_connections) {
+            print "Something went wrong, max_connections not changed!\n";
+            exit 1;
+        }
+        print "max_connections changed to         : $cur_max_connections\n";
+    }
+    return $cur_max_connections;
+}
+
+sub get_max_connections {
+    my $namespace   =   $_[0];
+    my $returnvalue;
+    my $result;
+    print "Reading value of max_connections\n";
+    if ($namespace) {
+        $result = `$KUBE_CTL $POD -n $namespace -- patronictl show-config`;
+    } else {
+        $result = `$KUBE_CTL $POD -- patronictl show-config`;
+    }
+    $result = substr($result,index($result,"max_connections:")+17);
+    if (index($result,"\n") != -1) {
+        $returnvalue = substr($result,0,index($result,"\n")-1);
+        if (isnum($returnvalue)) {
+            return $returnvalue;
+        }
+    }
+    return;
+}
+
+sub isnum {
+    my $var_to_check = $_[0];
+    my $return_value;
+    if ($var_to_check eq  $var_to_check+0) {
+        $return_value = 1;
+    }
+    if (!$return_value) {
+        my $dec_point_at = index($var_to_check,".");
+        if ($dec_point_at != -1) {
+            my @splitted = split('\.',$var_to_check);
+            my $intpart   = $splitted[0];
+            my $floatpart = $splitted[1];
+            if (($intpart eq $intpart+0) && ($floatpart eq $floatpart+0)) {
+                $return_value = 1;
+            } elsif (($intpart eq $intpart+0) && ($floatpart+0 == 0)) {
+                $return_value = 1;
+            }
+        }
+    }
+    return $return_value;
+}
+

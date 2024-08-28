@@ -1,0 +1,97 @@
+modelVersion: 2.0
+
+import:
+  base: ruleset2.0-eric-base.yaml
+
+description: "External Log Transformer"
+
+properties:
+  - SERVICE_NAME: eric-log-transformer
+  - ES_HOSTNAME: eric-ext-data-search-engine
+  - LS_HOSTNAME: eric-ext-log-transformer
+  - HELM_VERSION_HELMBUILDERPY3: ${base.HELM_VERSION_HELMBUILDERPY3}
+  - log-transformer-version: 8.1.0+31
+
+env:
+ - RELEASE (default=false)
+ - USER (default=anonymous)
+ - KUBE_HOST
+ - EXT_LOG_TRANSFORMER_NUMBER (default=3)
+
+var:
+ - build-proxy
+ - namespace
+ - log-transformer-repo
+
+rules:
+  init:
+    - task: set-build-proxy
+      cmd: /bin/bash -c "if [[ ! -d ${base.OUTPUT_DIR} ]];
+                         then
+                            mkdir ${base.OUTPUT_DIR};
+                         fi;
+                         echo 'settings.xml' > ${base.OUTPUT_DIR}/var.build-proxy"
+    - task: set-version
+      cmd: /bin/bash -c "cat ./esc/helm/eric-sc-umbrella/requirements.yaml | grep -E "${SERVICE_NAME}"$ -A 2 | grep version | sed 's/.*version:\ //g' > ${base.OUTPUT_DIR}/${log-transformer-version}"
+    - task: set-repo
+      cmd: cat esc/helm/eric-sc-umbrella/requirements.yaml | grep -E "${service}$" -A 2 | grep repository | sed "s/.*repository:\ //g"
+    - task: set-namespace
+      cmd: /bin/bash -c "./scripts/bash/setNamespace -u ${env.base.USER} -n ${env.base.NAMESPACE} -h ${env.base.KUBE_HOST}"
+    - task: set-kube-config
+      cmd: /bin/bash -c "cp /home/${env.base.USER}/.kube/${env.base.KUBE_HOST}.config ${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf;"
+  
+  fetch:
+    - task: helm-fetch
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${HELM_VERSION_HELMBUILDERPY3}"
+      cmd: sh -c 'helm fetch https://arm.sero.gic.ericsson.se/artifactory/proj-adp-gs-all-helm/${SERVICE_NAME}/${SERVICE_NAME}-${log-transformer-version}.tgz --destination ${base.OUTPUT_DIR}'
+
+  prepare-config:
+    - task: copy-config
+      cmd: sh -c 'mkdir -p ${base.OUTPUT_DIR}/${SERVICE_NAME}; tar xvf ${base.OUTPUT_DIR}/${SERVICE_NAME}-${log-transformer-version}.tgz --strip-components=1 -C ${base.OUTPUT_DIR}/${SERVICE_NAME}; cp -f devtools/ext-log-transformer/log-configmap.yaml ${base.OUTPUT_DIR}/${SERVICE_NAME}/templates/; helm package --version ${log-transformer-version} ${base.OUTPUT_DIR}/${SERVICE_NAME}/ -d ${base.OUTPUT_DIR}/'
+      
+  package:
+    - task: helm-chart
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "
+           rm -rf ${base.OUTPUT_DIR}/eric-syslog*.tgz;
+           mkdir -p ${base.OUTPUT_DIR}/${SERVICE_NAME};
+           cp -r devtools/syslog/helm/* ${base.OUTPUT_DIR}/${SERVICE_NAME};
+           update_values.rb ${base.OUTPUT_DIR}/${SERVICE_NAME}/values.yaml
+           imageCredentials:registry:url=${base.DOCKER_REGISTRY_URL} imageCredentials:repoPath=${base.DOCKER_REPO_PATH}/${env.base.USER}
+           spec:image=${IMAGE_NAME} spec:tag=${var.syslog-version} > ${base.OUTPUT_DIR}/${SERVICE_NAME}/values.tmp.yaml;
+           mv ${base.OUTPUT_DIR}/${SERVICE_NAME}/values.tmp.yaml ${base.OUTPUT_DIR}/${SERVICE_NAME}/values.yaml;
+           helm package --version ${log-transformer-version} ${base.OUTPUT_DIR}/${SERVICE_NAME}/ -d ${base.OUTPUT_DIR}/";
+
+  deploy:
+    - task: ipv4-tls
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: /bin/bash -c 'counter=1; while [ $counter -le ${env.EXT_LOG_TRANSFORMER_NUMBER} ]; do echo "Installing external logstash $counter"; helm install --namespace ${var.namespace} ${LS_HOSTNAME}-${env.base.USER}-$counter ${base.OUTPUT_DIR}/${SERVICE_NAME}-${log-transformer-version}.tgz -f ./devtools/ext-log-transformer/ext-values.yaml --set searchengine.host=${ES_HOSTNAME}-$counter --set imageCredentials.pullSecret=regcred --set fullnameOverride=${LS_HOSTNAME}-$counter --set egress.lumberjack.certificates.asymmetricKeyCertificateName=ext-lj$counter-key-cert; ((counter++)); done'
+  
+  install-certificate:
+    - task: ext-log-transformer
+      docker-image: base.supreme
+      docker-flags:
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf"
+      cmd: generate install -d ext-lj -p ${CERTS_OUT_DIR}/supreme.yaml
+
+  undeploy:
+    - task: all
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: /bin/bash -c 'counter=1; while [ $counter -le ${env.EXT_LOG_TRANSFORMER_NUMBER} ]; do echo "Uninstalling external logstash $counter"; helm uninstall --namespace ${var.namespace} ${LS_HOSTNAME}-${env.base.USER}-$counter; ((counter++)); done'
+
+  clean:
+    - task: directories
+      cmd: /bin/bash -c "rm -f ${base.OUTPUT_DIR}/${SERVICE_NAME}-${log-transformer-version}-*.tgz"

@@ -1,0 +1,73 @@
+modelVersion: 2.0
+
+description: "SC Configuration"
+
+import:
+  base: ruleset2.0-eric-base.yaml
+
+rules:
+
+  install-certificates:
+    - task: chfsim
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d chfsim -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: chfsim-sepp
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d chfsim-sepp -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: nrfsim
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d nrfsim -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: seppsim
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d seppsim -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: seppsim-n32c
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d seppsim-n32c -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: seppsim-scp
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d seppsim-scp -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: dscload
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d dscload -p ${CERTS_OUT_DIR}/supreme.yaml -l debug

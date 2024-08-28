@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eric-cnom-dashboard-configmap
+  labels:
+    ericsson.com/cnom-server-dashboard-models: "true"
+{{- include "eric-sc.de-facto-labels" . | indent 4 }}
+  annotations:
+{{- include "eric-sc.product-annotations" . | indent 4 }}
+data:
+{{ (.Files.Glob "dashboardconfig/scPodTable.json").AsConfig | indent 4 }}
+{{- if (index .Values "global" "ericsson" "bsf" "enabled") }}
+{{ (.Files.Glob "dashboardconfig/bsfDashboard.json").AsConfig | indent 4 }}
+        {{- if (index .Values "global" "ericsson" "pvtb" "enabled") }}
+{{ (.Files.Glob "dashboardconfig/bsfVtapDashboard.json").AsConfig | indent 4 }}
+        {{- end }}
+{{- end }}
+{{- if (index .Values "global" "ericsson" "scp" "enabled") }}
+        {{- if (index .Values "global" "ericsson" "slf" "enabled") }}
+                {{- if (index .Values "global" "ericsson" "rlf" "enabled") }}
+                        {{- if (index .Values "global" "ericsson" "nlf" "enabled") }}
+{{ (.Files.Glob "dashboardconfig/scpSlfNlfRlfDashboard.json").AsConfig | indent 4 }}
+                        {{- else }}
+{{ (.Files.Glob "dashboardconfig/scpSlfRlfDashboard.json").AsConfig | indent 4 }}
+                        {{- end }}
+                {{- else }}
+                        {{- if (index .Values "global" "ericsson" "nlf" "enabled") }}
+{{ (.Files.Glob "dashboardconfig/scpSlfNlfDashboard.json").AsConfig | indent 4 }}
+                        {{- else }}
+{{ (.Files.Glob "dashboardconfig/scpSlfDashboard.json").AsConfig | indent 4 }}
+                        {{- end }}
+                {{- end }}
+        {{- else }}
+                {{- if (index .Values "global" "ericsson" "rlf" "enabled") }}
+                        {{- if (index .Values "global" "ericsson" "nlf" "enabled") }}
+{{ (.Files.Glob "dashboardconfig/scpNlfRlfDashboard.json").AsConfig | indent 4 }}
+                        {{- else }}
+{{ (.Files.Glob "dashboardconfig/scpRlfDashboard.json").AsConfig | indent 4 }}
+                        {{- end }}
+                {{- else }}
+                        {{- if (index .Values "global" "ericsson" "nlf" "enabled") }}
+{{ (.Files.Glob "dashboardconfig/scpNlfDashboard.json").AsConfig | indent 4 }}
+                        {{- else }}
+{{ (.Files.Glob "dashboardconfig/scpDashboard.json").AsConfig | indent 4 }}
+                        {{- end }}
+                {{- end }}
+        {{- end }}
+        {{- if (index .Values "global" "ericsson" "pvtb" "enabled") }}
+{{ (.Files.Glob "dashboardconfig/scpVtapDashboard.json").AsConfig | indent 4 }}
+        {{- end }}
+{{- end }}
+{{- if (index .Values "global" "ericsson" "sepp" "enabled") }}
+        {{- if (index .Values "global" "ericsson" "rlf" "enabled") }}
+{{ (.Files.Glob "dashboardconfig/seppRlfDashboard.json").AsConfig | indent 4 }}
+        {{- else }}
+{{ (.Files.Glob "dashboardconfig/seppDashboard.json").AsConfig | indent 4 }}
+        {{- end }}
+        {{- if (index .Values "global" "ericsson" "pvtb" "enabled") }}
+{{ (.Files.Glob "dashboardconfig/seppVtapDashboard.json").AsConfig | indent 4 }}
+        {{- end }}
+{{- end }}

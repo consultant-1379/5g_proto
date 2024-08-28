@@ -1,0 +1,31 @@
+{{- $outer := . -}}
+{{- $replicaCount := .Values.spec.replicas | int -}}
+{{- range $index := until $replicaCount -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $.Values.service.name }}-{{ $index }}
+  labels:
+{{- include "eric-vtaprecorder.labels" $outer | indent 4 }}
+  annotations:
+{{- include "eric-vtaprecorder.config-annotations" $outer | indent 4 }}
+spec:
+  {{- include "eric-vtaprecorder.ipfamilies" $outer | indent 2 }}
+  ports:
+  - name: sink-port
+    protocol: UDP
+    port: {{ $.Values.spec.sinkPort }}
+    targetPort: sink
+  - name: dtls-port
+    protocol: UDP
+    port: {{ $.Values.spec.dtlsPort }}
+    targetPort: dtls
+  - name: control-port
+    protocol: TCP
+    port: {{ $.Values.spec.controlPort }}
+    targetPort: control
+  selector:
+    statefulset.kubernetes.io/pod-name: {{ $.Values.service.name }}-{{ $index }}
+  type: NodePort
+---
+{{- end -}}

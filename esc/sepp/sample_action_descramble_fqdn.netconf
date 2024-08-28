@@ -1,0 +1,28 @@
+<hello
+  xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <capabilities>
+    <capability>urn:ietf:params:netconf:base:1.0</capability>
+  </capabilities></hello>]]>]]>
+  <?xml version="1.0"?>
+  <rpc
+    xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"
+    xmlns:ns2="urn:com:ericsson:ecim:1.0"
+    xmlns:ns3="http://tail-f.com/ns/netconf/actions/1.0"
+    xmlns:ns4="urn:ietf:params:xml:ns:yang:ietf-netconf-monitoring"
+    xmlns:ns5="urn:ietf:params:xml:ns:netconf:notification:1.0" message-id="0">
+    <action
+      xmlns="urn:ietf:params:xml:ns:yang:1">
+      <sepp-function
+        xmlns="urn:rdns:com:ericsson:oammodel:ericsson-sepp">
+        <nf-instance
+          xmlns="urn:rdns:com:ericsson:oammodel:ericsson-sepp">
+          <name>instance_1</name>
+          <fqdn-scrambling-command>
+            <descramble-fqdn>
+              <scrambled-fqdn>AID01KOY4USZSPPJGY5A.5gc.mnc151.mcc115.3gppnetwork.org</scrambled-fqdn>
+            </descramble-fqdn>
+          </fqdn-scrambling-command>
+        </nf-instance>
+      </sepp-function>
+    </action></rpc>
+]]>]]>

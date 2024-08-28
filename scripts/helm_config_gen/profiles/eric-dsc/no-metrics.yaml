@@ -1,0 +1,4 @@
+eric-dsc-wcdb-cd:
+  metrics:
+    cassandra:
+      enabled: false

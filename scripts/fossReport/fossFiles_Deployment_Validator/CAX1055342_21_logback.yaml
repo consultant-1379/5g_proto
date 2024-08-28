@@ -1,0 +1,39 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2019-06-10 12:24
+FOSS:
+    # Available in Bazaar
+    FOSSName: logback
+    # Available in Bazaar
+    FOSSVersion: 1.2.3
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://logback.qos.ch/dist/{{FOSSName}}-{{FOSSVersion}}.tar.gz
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 21/CAX1055342
+    # Not Available in Bazaar
+    PRIMNumber(CTC): CTC1014424
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: Logback is intended as a successor to the popular log4j project, picking up where log4j leaves off. Logback's basic architecture is sufficiently generic so as to apply under different circumstances. At present time, logback is divided into three modules, logbackcore, logback-classic and logback-access.
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: (LGPL GNU Lesser General Public License V2.1, Eclipse Public License (EPL) 1.0)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: LGPL GNU Lesser General Public License V2.1
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: (SSL, TLS)
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'ch.qos.logback:logback-classic:jar:{{FOSSVersion}}'
+    - 'ch.qos.logback:logback-core:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: EEDBJHE Bjoern Hellebrand

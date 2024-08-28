@@ -1,0 +1,67 @@
+{
+  "content": {
+    "section": [
+      {
+        "hello": {
+          "capabilities": {
+            "capability": [
+              "urn:ietf:params:netconf:base:1.0"
+            ]
+          }
+        }
+      },
+      {
+        "rpc": {
+          "edit-config": {
+            "target": {
+              "running": ""
+            },
+            "config": {
+              "brm": {
+                "backup-manager": [
+                  {
+                    "id": "eric-ccpc-configuration-backup",
+                    "housekeeping": {
+                      "max-stored-manual-backups": 2
+                    },
+                    "scheduler": {
+                      "auto-export": "enabled",
+                      "auto-export-password": "bar",
+                      "auto-export-uri": "sftp://foo@sftp:22/upload",
+                      "periodic-event": [
+                        {
+                          "id": "24H",
+                          "hours": 24,
+                          "start-time": "2021-04-27T05:00:00Z"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "id": "eric-ccpc-provisioned-data-backup",
+                    "housekeeping": {
+                      "max-stored-manual-backups": 2
+                    },
+                    "scheduler": {
+                      "auto-export": "enabled",
+                      "auto-export-password": "bar",
+                      "auto-export-uri": "sftp://foo@sftp:22/upload",
+                      "periodic-event": [
+                        {
+                          "id": "24H",
+                          "hours": 24,
+                          "start-time": "2021-04-27T05:00:00Z"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "@message-id": 1
+        }
+      }
+    ]
+  }
+}

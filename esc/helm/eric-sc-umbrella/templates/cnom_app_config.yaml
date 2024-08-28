@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eric-cnom-app-config
+  labels:
+{{- include "eric-sc.de-facto-labels" . | indent 4 }}
+  annotations:
+{{- include "eric-sc.product-annotations" . | indent 4 }}
+data:
+{{ (.Files.Glob "dashboardconfig/appconfig.yaml").AsConfig | indent 4 }}

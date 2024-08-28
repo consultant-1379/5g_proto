@@ -1,0 +1,1 @@
+Default splunk user/password: Admin/changeme

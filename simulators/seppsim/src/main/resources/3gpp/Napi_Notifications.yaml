@@ -1,0 +1,43 @@
+openapi: 3.0.0
+
+info:
+  version: '1.0.0'
+  title: 'Napi_Notifications'
+  description: |
+    Definition of a common handler of notifications.
+    � 2020 Ericsson GmbH. All rights reserved.
+
+servers:
+  - url: '{api-root}'
+
+paths:
+  /{notifyUri}:
+    post:
+      operationId: ProcessNotification
+      parameters:
+        - name: notifyUri
+          in: path
+          description: The notify URI
+          required: true
+          schema:
+            $ref: '/3gpp_r16/runtime/TS29571_CommonData.yaml#/components/schemas/Uri'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '204':
+          description: Successful Notification response
+        '400':
+          $ref: '/3gpp_r16/runtime/TS29571_CommonData.yaml#/components/responses/400'
+        '404':
+          $ref: '/3gpp_r16/runtime/TS29571_CommonData.yaml#/components/responses/404'
+        '500':
+          $ref: '/3gpp_r16/runtime/TS29571_CommonData.yaml#/components/responses/500'
+        '503':
+          $ref: '/3gpp_r16/runtime/TS29571_CommonData.yaml#/components/responses/503'
+        default:
+          description: Unexpected error
+ 

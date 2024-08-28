@@ -1,0 +1,139 @@
+modelVersion: 2.0
+
+import:
+  base: ruleset2.0-eric-base.yaml
+
+description: "dscload diameter traffic generator tool"
+
+properties:
+  - DSCLOAD_SERVICE_NAME: eric-dscload
+  - DSCLOAD_IMAGE_NAME: ${DSCLOAD_SERVICE_NAME}
+  - EXPORT_DIR: ${base.OUTPUT_DIR}/export-dscload
+  - FINAL_TOKEN: dummy-value
+  - LOADTOOL_VERSION: 1.20.005
+  - TOKEN: dummy-value
+
+env:
+ - BOB_FORCE_IMAGE_PULL (default=false)
+ - HOSTNAME (default=nohost)
+ - RELEASE (default=false)
+ - TEST_TYPE (default=)
+
+var:
+ - build-proxy
+ - build-token
+ - dscload-version
+
+
+rules:
+  init:
+    - task: base.init:create-output-dir
+    - task: base.init:set-namespace
+    - task: base.init:set-kube-config
+    - task: base.init:api-tokens
+    - task: set-build-proxy
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume $PWD:/workspace"
+        - "--workdir /workspace"
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: /bin/bash -c "if [[ ${env.HOSTNAME} =~ seroi ]];
+                        then
+                          echo 'gic_proxy_settings.xml' > ${base.OUTPUT_DIR}/var.build-proxy;
+                        else
+                          echo 'settings.xml' > ${base.OUTPUT_DIR}/var.build-proxy;
+                        fi"
+    - task: dscload-version
+      docker-image: base.adp-release-auto
+      cmd: generate-version --is-release ${env.RELEASE} --output dscload-version
+    - task: set-artifactory-token
+      cmd: /bin/bash -c 'grep -m1 password ~/.artifactory/helm_repositories.yaml | sed "s/- "password:" //g" > ${base.OUTPUT_DIR}/var.build-token'
+
+  # cmd: /bin/bash -c export foo="- password:"; ${TOKEN}=$(grep -m1 password ~/.artifactory/helm_repositories.yaml | sed "s/$foo //g" ); docker build ./simulators/dscload/
+  image:
+    - task: build-dscload
+      cmd:  docker build ./simulators/dscload/
+           --file simulators/dscload/docker/Dockerfile
+           --build-arg ADP_DEV_REPO=${base.ADP_DEV_REPO}
+           --build-arg DOCKER_BASE_IMG=${base.CBOS_ZYPPER_IMG}
+           --build-arg CBOS_REPO=${base.CBOS_REPO}
+           --build-arg LOADTOOL_VERSION=${LOADTOOL_VERSION}
+           --build-arg TOKEN=${var.build-token}
+           --tag ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${DSCLOAD_IMAGE_NAME}:${var.dscload-version}
+
+  lint:
+    - task: helm-dscload
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: helm lint simulators/dscload/helm
+
+  package:
+    - task: helm-chart-dscload
+      docker-image: base.helm-builder
+      docker-flags:
+        - "--volume $PWD:/workspace"
+        - "--workdir /workspace"
+      cmd: /bin/bash -c "mkdir -p ${base.OUTPUT_DIR}/${DSCLOAD_SERVICE_NAME}; cp -r simulators/dscload/helm/* ${base.OUTPUT_DIR}/${DSCLOAD_SERVICE_NAME};
+           update_values.rb ${base.OUTPUT_DIR}/${DSCLOAD_SERVICE_NAME}/values.yaml
+           imageCredentials:registry:url=${base.DOCKER_REGISTRY_URL} imageCredentials:repoPath=${base.DOCKER_REPO_PATH}/${env.base.USER}
+           spec:image=${DSCLOAD_IMAGE_NAME} spec:tag=${var.dscload-version} > ${base.OUTPUT_DIR}/${DSCLOAD_SERVICE_NAME}/values.tmp.yaml;
+           mv ${base.OUTPUT_DIR}/${DSCLOAD_SERVICE_NAME}/values.tmp.yaml ${base.OUTPUT_DIR}/${DSCLOAD_SERVICE_NAME}/values.yaml;
+           helm package --version ${var.dscload-version} --app-version ${var.dscload-version} ${base.OUTPUT_DIR}/${DSCLOAD_SERVICE_NAME}/ -d ${base.OUTPUT_DIR}/";
+
+  push:
+    - task: docker-image-dscload
+      cmd: docker push ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${DSCLOAD_IMAGE_NAME}:${var.dscload-version}
+    - task: helm-chart-dscload
+      cmd: "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\" --upload-file ${base.OUTPUT_DIR}/${DSCLOAD_SERVICE_NAME}-${var.dscload-version}.tgz \"${base.HELM_CHART_REPO}/${DSCLOAD_SERVICE_NAME}-${var.dscload-version}.tgz\""
+
+  deploy:
+    - task: deploy-dscload
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume $PWD:/workspace"
+        - "--workdir /workspace"
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: /bin/bash -c 'if [[ "${env.TEST_TYPE}" = "IaaS_Stability_tools_on_separate_workers" ]];
+                        then
+                            helm install --namespace ${var.base.namespace} --set usage=tools ${DSCLOAD_SERVICE_NAME}-${env.base.USER} ${base.OUTPUT_DIR}/${DSCLOAD_SERVICE_NAME}-${var.dscload-version}.tgz;
+                        elif [[ "${env.TEST_TYPE}" = "IaaS_Stability" ]]; 
+                        then
+                            helm install --namespace ${var.base.namespace}  ${DSCLOAD_SERVICE_NAME}-${env.base.USER} ${base.OUTPUT_DIR}/${DSCLOAD_SERVICE_NAME}-${var.dscload-version}.tgz;
+                        elif [[ "${env.TEST_TYPE}" = "IaaS_backup_restore" ]];
+                        then
+                            echo "Nothing to install";
+                        else
+                            helm install --namespace ${var.base.namespace} ${DSCLOAD_SERVICE_NAME}-${env.base.USER} ${base.OUTPUT_DIR}/${DSCLOAD_SERVICE_NAME}-${var.dscload-version}.tgz;
+                        fi;
+                        '
+
+  undeploy:
+    - task: undeploy-dscload
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: helm uninstall --namespace ${var.base.namespace} ${DSCLOAD_SERVICE_NAME}-${env.base.USER}
+
+  export:
+    - task: clean:export
+    - task: folders
+      cmd: /bin/bash -c "mkdir -p ${EXPORT_DIR}; mkdir -p ${EXPORT_DIR}/helm; mkdir -p ${EXPORT_DIR}/docker; mkdir -p ${EXPORT_DIR}/certificates";
+    - task: helm
+      cmd: /bin/bash -c 'cp ${base.OUTPUT_DIR}/${DSCLOAD_SERVICE_NAME}-${var.dscload-version}.tgz ${EXPORT_DIR}/helm';
+    - task: image
+      cmd: /bin/bash -c 'docker save ${base.DOCKER_REGISTRY_URL}/${base.DOCKER_REPO_PATH}/${env.base.USER}/${DSCLOAD_IMAGE_NAME}:${var.dscload-version} > ${EXPORT_DIR}/docker/${DSCLOAD_IMAGE_NAME}-${var.dscload-version}.tar';
+
+  clean:
+    - task: export
+      cmd: rm -rf ${EXPORT_DIR}
+    - task: helm
+      cmd:
+        - rm -f ${base.OUTPUT_DIR}/${DSCLOAD_SERVICE_NAME}*.tgz
+        - rm -rf ${base.OUTPUT_DIR}/${DSCLOAD_SERVICE_NAME}
+    - task: version
+      cmd: rm -f ${base.OUTPUT_DIR}/var.dscload-version

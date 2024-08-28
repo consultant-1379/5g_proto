@@ -1,0 +1,63 @@
+# Copyright 2018 The DSC Evo Team
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ .Values.service.name }}
+spec:
+  ports:
+  - protocol: TCP
+    port: 6379
+    targetPort: {{ .Values.spec.port }}
+  selector:
+    app: {{ .Values.service.name }}
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.service.name }}
+  labels:
+    app: {{ .Values.service.name }}
+spec:
+  replicas: {{ .Values.spec.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.service.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.service.name }}
+    spec:
+      {{- if include "eric-redis.pullSecrets" . }}
+      imagePullSecrets:
+      - name: {{ template "eric-redis.pullSecrets" . }}
+      {{- end }}
+      containers:
+      - name: {{ .Values.service.name }}
+        image: {{ template "eric-redis.registryUrl" . }}/{{ .Values.imageCredentials.repoPath }}/{{ .Values.spec.image }}:{{ .Values.spec.tag }}        
+        imagePullPolicy: "Always"
+        ports:
+        - containerPort: 6379
+        {{ if .Values.spec.resources.requests.cpu }}
+        resources:
+          requests:
+            cpu: {{ .Values.spec.resources.requests.cpu | quote }}
+            memory: {{ .Values.spec.resources.requests.memory | quote }}
+          limits:
+            cpu: {{ .Values.spec.resources.limits.cpu | quote }}
+            memory: {{ .Values.spec.resources.limits.memory | quote }}            
+        {{ end }}        
+      {{- if eq .Values.spec.affinity.podAffinity true }}
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - eric-jkube
+            topologyKey: "kubernetes.io/hostname"
+      {{- end }}
+

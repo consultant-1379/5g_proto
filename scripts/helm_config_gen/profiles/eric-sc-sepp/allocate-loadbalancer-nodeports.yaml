@@ -1,0 +1,4 @@
+eric-sepp:
+  service:
+    worker:
+      allocateLoadBalancerNodePorts: true

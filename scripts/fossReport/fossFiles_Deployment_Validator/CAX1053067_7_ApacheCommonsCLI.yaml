@@ -1,0 +1,38 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2019-07-03 16:00
+FOSS:
+    # Available in Bazaar
+    FOSSName: Apache Commons CLI
+    # Available in Bazaar
+    FOSSVersion: 1.4
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: http://apache.mirrors.spacedump.net//commons/cli/source/commons-cli-{{FOSSVersion}}-src.zip
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 7/CAX1053067
+    # Not Available in Bazaar
+    PRIMNumber(CTC): CTC 101 5209
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: The Apache Commons CLI library provides an API for parsing command line options passed to programs. It's also able to print help messages detailing the options available for a command line tool.
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: Apache License 2.0
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'commons-cli:commons-cli:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ENTNGRG Georgios Antoniou

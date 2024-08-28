@@ -1,0 +1,27 @@
+# Copyright 2019 Ericsson GmbH
+{{- if eq (include "eric-bsf.tls" .) "true" }}
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+  name: {{ template "eric-bsf.name" . }}-wcdb-client-cert
+  labels:
+{{- include "eric-bsf.labels" . | indent 4 }}
+  annotations:
+{{- include "eric-bsf.helm-annotations" . | indent 4 }}
+{{- include "eric-bsf.config-annotations" . | indent 4 }}
+spec:
+  kubernetes:
+    generatedSecretName: eric-bsf-wcdb-client-cert
+#    certificateName: tls.crt
+#    privateKeyName: tls.key
+  certificate:
+    subject:
+      cn: eric-bsf
+    subjectAlternativeName:
+      populateKubernetesDns: false
+    issuer:
+      reference: eric-data-wide-column-database-cd-cql-client-ca
+    extendedKeyUsage:
+      tlsClientAuth: true
+      tlsServerAuth: false
+{{- end }}

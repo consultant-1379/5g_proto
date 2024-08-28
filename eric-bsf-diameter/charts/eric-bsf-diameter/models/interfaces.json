@@ -1,0 +1,81 @@
+{
+    "metadata": {
+        "serviceHelmChartName": "eric-stm-diameter-proxy-grpc",
+        "usedSchemaVersion": "1.0.0",
+        "fileVersion": "1.0.0",
+        "dateEdited": "2023-09-07"
+    },
+    "interfaceImpls": [
+        {
+            "id": "ADP.DIAPROXY",
+            "pod": "eric-stm-diameter-proxy-grpc",
+            "container": "diameterproxygrpc",
+            "provides": {
+                "netIf": [
+                    {
+                        "id": "IF.ADP.DIAPROXY.GRPC.V1",
+                        "description": "Diameter gRPC interface INT.STM.DIA.SU.GRPC. DIA Proxy GRPC can be deployed both as sidecar and as standalone service.",
+                        "specVer": "1.1.0",
+                        "type": "gRPC",
+                        "setup": "direct",
+                        "scope": "clusterInternal",
+                        "maturity": "stable",
+                        "specProductNr": "CAF10109"
+                    }
+                ],
+                "dataIf": [
+                    {
+                        "id": "IF.ADP.DIAPROXY.HELM_VALUES_SCHEMA.V1",
+                        "description": "Helm Values Model Schema",
+                        "specUri": "values.schema.json",
+                        "specVer": "1.0.0",
+                        "type": "HelmValues",
+                        "scope": "clusterExternal",
+                        "roles": [
+                            "definer"
+                        ]
+                    }
+                ]
+            },
+            "uses": {
+                "netIf": [
+                    {
+                        "id": "IF.ADP.DSL.IPNS.V1",
+                        "specVer": "1.0.0",
+                        "duringPhases": [
+                            "runtime"
+                        ]
+                    },
+                    {
+                        "id": "IF.ADP.DSL.SERVICE.DIR.V1",
+                        "specVer": "1.0.0",
+                        "duringPhases": [
+                            "runtime"
+                        ]
+                    },
+                    {
+                        "id": "IF.ADP.DSL.STAT.STREAMER.V1",
+                        "specVer": "1.0.0",
+                        "duringPhases": [
+                            "runtime"
+                        ]
+                    },
+                    {
+                        "id": "IF.ADP.DSL.SHORT.ID.V1",
+                        "specVer": "1.0.0",
+                        "duringPhases": [
+                            "runtime"
+                        ]
+                    },
+                    {
+                        "id": "IF.ADP.DIA.DSLCB.API.V1",
+                        "specVer": "1.0.0",
+                        "duringPhases": [
+                            "runtime"
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}

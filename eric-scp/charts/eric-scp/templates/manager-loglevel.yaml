@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "eric-scp.name" . }}-manager-loglevel-config
+  labels:
+{{- include "eric-scp.labels" . | indent 4 }}
+    app: {{ template "eric-scp.name" . }}-manager
+  annotations:
+{{- include "eric-scp.helm-annotations" . | indent 4 }}
+{{- include "eric-scp.config-annotations" . | indent 4 }}
+data:
+  logcontrol.json: |-
+    [
+        {
+          "container": "eric-scp-manager",
+          "severity": {{ .Values.log.manager.level | quote }}
+        },
+        {
+          "container": "license-consumer",
+          "severity": {{ .Values.log.licenseConsumer.level | quote }}
+        }{{- if eq (include "eric-scp.tapagent.manager.enabled" .) "true" }},
+        {
+          "container": "tlskeylogagent",
+          "severity": {{ .Values.log.tlskeylogagent.level | quote }}
+        }{{- end }}
+    ]

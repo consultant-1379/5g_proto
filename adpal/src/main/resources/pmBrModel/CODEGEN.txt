@@ -1,0 +1,1 @@
+~/opt/jsonschema2pojo-1.0.1/bin/jsonschema2pojo -o -D -b -c -a JACKSON2 -p com.ericsson.adpal.pmbr.model -s pmbr_schema.json -t ../../java/

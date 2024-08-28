@@ -1,0 +1,85 @@
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.5
+#  Date     : 2019-04-12 18:33:34
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2014,2018
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Send a command to the SIGNMCLI shell.
+#
+# This subroutine expects that it is already connected to the SIGNMCLI prompt.
+#
+# Input:
+#  - Command to send
+#
+# Output:
+#  -  0: Success
+#    >0: Command returned an error
+#    -1: Timeout
+#
+proc SIGNMCLI_send_command {command} {
+    global spawn_id
+
+    set errorcnt 0
+
+    # Send the command
+    send -- "$command\r"
+
+    expect {
+        -re "ERROR\[^\n\]\n" {
+            # Some error have occurred, increment an error counter
+            incr errorcnt
+            exp_continue
+        }
+        "\n" {
+            # New line received, continue waiting
+            exp_continue
+        }
+        -re "cli> $" {
+            # We successfully sent the command to the signaling CLI
+        }
+        -re " \\\[(PL|SC)-\[0-9\]+\\\]" {
+            # Part of the output e.g.:
+            # OAMP:0 [PL-3]    Running
+            # LOGD:0 [SC-1]    Running
+            # ECM:0 [SC-1]     Running
+            # ECM:1 [PL-3]     Running
+            # ECM:2 [PL-3]     Running
+            # ECM:3 [PL-4]     Running
+            # SAFOAM:0 [SC-1]  Running
+
+            # Continue waiting for remaining printout to complete the line
+            exp_continue
+        }
+        -re "SC-\[12\]\[^\n\]*$" {
+            if { [string tolower $command] != "exit" } {
+                if { [string tolower $command] != "exit;" } {
+                    # We failed to stay inside of the signaling CLI
+                    incr errorcnt
+                }
+            }
+        }
+        timeout {
+            return -1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    return $errorcnt
+}

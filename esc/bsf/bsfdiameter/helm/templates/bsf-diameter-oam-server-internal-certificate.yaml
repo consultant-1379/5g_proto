@@ -1,0 +1,36 @@
+# Copyright 2019 Ericsson GmbH
+
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+# START. DND-27025: DR-D1121-121 & DR-D1121-065 & DR-D1121-068 & DR-1121-144
+#START. Modify internal certificate name DND-34991
+  name: {{ template "eric-stm-diameter-proxy-grpc.name" . }}-oam-server
+# STOP. Modify internal certificate name DND-34991
+  labels:
+    app.kubernetes.io/name: {{ template "eric-stm-diameter-proxy-grpc.name" . }}
+    app.kubernetes.io/version: {{ template "eric-stm-diameter-proxy-grpc.version" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- include "eric-stm-diameter-proxy-grpc.config-labels" . | indent 4 }}
+  annotations:
+{{- include "eric-stm-diameter-proxy-grpc.config-annotations" . | indent 4 }}
+{{- include "eric-stm-diameter-proxy-grpc.product-info" . | indent 4 }}
+# STOP. DND-27025: DR-D1121-121 & DR-D1121-065 & DR-D1121-068 & DR-1121-144
+spec:
+  kubernetes:
+#START. Modify generated secret name DND-34991
+    generatedSecretName: {{ template "eric-stm-diameter-proxy-grpc.name" . }}-oam-server-certificate
+# STOP. Modify generated secret name DND-34991
+  certificate:
+    subject:
+#START. Modify CN to service name DND-34991
+      cn: {{ template "eric-stm-diameter-proxy-grpc.name" . }}
+# STOP. Modify CN to service name DND-34991
+# START. DND-31959
+    subjectAlternativeName:
+      dns:
+        - certified-scrape-target
+# STOP. DND-31959
+    extendedKeyUsage:
+      tlsClientAuth: false
+      tlsServerAuth: true

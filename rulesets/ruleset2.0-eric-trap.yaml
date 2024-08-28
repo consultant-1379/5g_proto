@@ -1,0 +1,73 @@
+modelVersion: 2.0
+
+import:
+  base: ruleset2.0-eric-base.yaml
+
+description: "SNMP trap receiver"
+
+properties:
+  - KUBE_NAMESPACE: 5g-bsf-$USER
+  
+  - DOCKER_REPO_PATH: ${base.DOCKER_REPO_PATH}/trap-receiver
+    
+  - TRAP_RECEIVER_DOCKER_IMAGE: eric-snmp-trap-receiver
+  - TRAP_RECEIVER_DOCKER_IMAGE_TAG: latest
+  - TRAP_RECEIVER_SERVICE_NAME: eric-snmp-trap-receiver
+  - TRAP_RECEIVER_CHART_VERSION: 0.0.1
+
+env:
+  - PWD
+
+
+rules:
+  init:
+    - task : set-kube-config
+      cmd: /bin/bash -c "if [ ! -f ${env.PWD}/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf ]; then cp /home/${env.base.USER}/.kube/${env.base.KUBE_HOST}.config ${env.PWD}/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf; fi"
+
+  image:
+    - task: build
+      cmd:  docker build ./devtools/trap-receiver/imageLocal/
+           --file devtools/trap-receiver/imageLocal/Dockerfile
+           --tag ${base.ARM_DOCKER_REGISTRY}/trap-receiver/${TRAP_RECEIVER_DOCKER_IMAGE}:${TRAP_RECEIVER_DOCKER_IMAGE_TAG}
+    - task: push
+      cmd: docker push ${base.ARM_DOCKER_REGISTRY}/trap-receiver/${TRAP_RECEIVER_DOCKER_IMAGE}:${TRAP_RECEIVER_DOCKER_IMAGE_TAG}
+
+  prepare:
+    - task: copy-helm
+      cmd: /bin/bash -c "cp -r ${env.PWD}/devtools/trap-receiver/helm ${env.PWD}/${base.OUTPUT_DIR}/${TRAP_RECEIVER_SERVICE_NAME}; cp ${env.PWD}/devtools/trap-receiver/values-trap.yaml ${env.PWD}/${base.OUTPUT_DIR}/;"
+    - task: update-helm
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "update_values.rb ${env.PWD}/${base.OUTPUT_DIR}/${TRAP_RECEIVER_SERVICE_NAME}/values.yaml imageCredentials:registry:url=${base.DOCKER_REGISTRY_URL} imageCredentials:repoPath=${DOCKER_REPO_PATH} spec:image=${TRAP_RECEIVER_DOCKER_IMAGE} spec:tag=${TRAP_RECEIVER_DOCKER_IMAGE_TAG} > ${env.PWD}/${base.OUTPUT_DIR}/${TRAP_RECEIVER_SERVICE_NAME}/values.tmp.yaml; mv ${env.PWD}/${base.OUTPUT_DIR}/${TRAP_RECEIVER_SERVICE_NAME}/values.tmp.yaml ${env.PWD}/${base.OUTPUT_DIR}/${TRAP_RECEIVER_SERVICE_NAME}/values.yaml;"
+
+  package:
+    - task: trap-receiver
+      docker-image: base.helm-builder-py3
+      docker-flags: 
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"  
+        - "--env XDG_CONFIG_HOME=/home/helmuser/.config"   
+        - "--env XDG_CACHE_HOME=/home/helmuser/.cache"     
+      cmd: /bin/bash -c "helm package --version ${TRAP_RECEIVER_CHART_VERSION} ${env.PWD}/${base.OUTPUT_DIR}/${TRAP_RECEIVER_SERVICE_NAME} -d ${env.PWD}/${base.OUTPUT_DIR}/;"
+
+  deploy:
+    - task: trap-receiver
+      docker-image: base.helm-builder-py3
+      docker-flags: 
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${env.PWD}/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm" 
+      cmd: /bin/bash -c "helm install --namespace ${KUBE_NAMESPACE} ${TRAP_RECEIVER_SERVICE_NAME}-${env.base.USER} ${env.PWD}/${base.OUTPUT_DIR}/${TRAP_RECEIVER_SERVICE_NAME}-${TRAP_RECEIVER_CHART_VERSION}.tgz -f ${env.PWD}/${base.OUTPUT_DIR}/values-trap.yaml"
+
+  undeploy:
+    - task: trap-receiver
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${env.PWD}/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm" 
+      cmd: /bin/bash -c "helm uninstall --namespace ${KUBE_NAMESPACE} ${TRAP_RECEIVER_SERVICE_NAME}-${env.base.USER}"
+
+  clean:
+    - task: directory
+      cmd: /bin/bash -c "cd ${env.PWD}/${base.OUTPUT_DIR}; rm -rf ${TRAP_RECEIVER_SERVICE_NAME} ${TRAP_RECEIVER_SERVICE_NAME}-*.tgz values-trap.yaml"

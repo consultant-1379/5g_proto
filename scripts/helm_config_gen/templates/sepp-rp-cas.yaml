@@ -1,0 +1,12 @@
+# SEPP
+
+eric-sepp:
+  certificates:
+    traf:
+      trustedAuthority:
+      - caList: sc-traf-root-ca-list1
+      - caList: sc-traf-root-ca-list2
+      - caList: sc-traf-root-ca-rp1
+      - caList: sc-traf-root-ca-rp2
+      - caList: sc-traf-root-ca-rp3
+      trustedAuthorityPath: /run/secrets/sepp/traf/certificates/trustedAuthority/

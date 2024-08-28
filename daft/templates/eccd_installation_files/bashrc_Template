@@ -1,0 +1,346 @@
+################################################################################
+#
+#  Author   : eustone and others
+#
+#  Revision : 1.4
+#  Date     : 2024-05-02 17:02:28
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2023-2024
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+source /usr/share/bash-completion/bash_completion
+
+# To stop warning messages when executing Perl scripts
+export LC_ALL="C"
+
+# To make the command line searching easier so you can start typing the command and then
+# press cursor up or cursor down to search instead of as default you have to first press
+# CTRL-r to start search and then you type the command to search for.
+if [[ $- == *i* ]]; then
+    bind '"\e[A": history-search-backward'
+    bind '"\e[B": history-search-forward'
+fi
+
+##################################
+############ aliases #############
+##################################
+
+alias download_csar='/home/eccd/bin/download_csar.pl -l https://arm.seli.gic.ericsson.se/artifactory/proj-5g-bsf-generic-local/eiffelesc/ -t /home/eccd/ --package '
+alias g='HISTTIMEFORMAT="[%F %T] " history | grep -i '
+alias reg='sudo cat /mnt/config/inventory/group_vars/all | grep custom_'
+
+# For namespace eiffelesc
+# -----------------------
+alias h='helm -n eiffelesc'
+alias k='kubectl -n eiffelesc'
+alias kdp='k describe pod'
+alias kgc='k get crds'
+alias kgp='k get pods'
+alias kgpg='k get pods | grep -i '
+alias kgs='k get svc'
+alias kgsg='k get svc | grep -i '
+alias kl='k logs'
+alias stm='kgp -o wide | grep -i stm'
+# Connect to CMYP CLI
+alias clb='ssh_cmyp bsf-admin eiffelesc'
+alias cle='ssh_cmyp expert eiffelesc'
+alias cls='ssh_cmyp scp-admin eiffelesc'
+alias clp='ssh_cmyp sepp-admin eiffelesc'
+#
+alias h1='helm -n eiffelesc-1'
+alias k1='kubectl -n eiffelesc-1'
+alias kdp1='k1 describe pod'
+alias kgc1='k1 get crds'
+alias kgp1='k1 get pods'
+alias kgpg1='k1 get pods | grep -i '
+alias kgs1='k1 get svc'
+alias kgsg1='k1 get svc | grep -i '
+alias kl1='k1 logs'
+alias stm1='kgp1 -o wide | grep -i stm'
+# Connect to CMYP CLI
+alias clb1='ssh_cmyp bsf-admin eiffelesc-1'
+alias cle1='ssh_cmyp expert eiffelesc-1'
+alias cls1='ssh_cmyp scp-admin eiffelesc-1'
+alias clp1='ssh_cmyp sepp-admin eiffelesc-1'
+#
+alias h2='helm -n eiffelesc-2'
+alias k2='kubectl -n eiffelesc-2'
+alias kdp2='k2 describe pod'
+alias kgc2='k2 get crds'
+alias kgp2='k2 get pods'
+alias kgpg2='k2 get pods | grep -i '
+alias kgs2='k2 get svc'
+alias kgsg2='k2 get svc | grep -i '
+alias kl2='k2 logs'
+alias stm2='kgp2 -o wide | grep -i stm'
+# Connect to CMYP CLI
+alias clb2='ssh_cmyp bsf-admin eiffelesc-2'
+alias cle2='ssh_cmyp expert eiffelesc-2'
+alias cls2='ssh_cmyp scp-admin eiffelesc-2'
+alias clp2='ssh_cmyp sepp-admin eiffelesc-2'
+#
+alias h3='helm -n eiffelesc-3'
+alias k3='kubectl -n eiffelesc-3'
+alias kdp3='k3 describe pod'
+alias kgc3='k3 get crds'
+alias kgp3='k3 get pods'
+alias kgpg3='k3 get pods | grep -i '
+alias kgs3='k3 get svc'
+alias kgsg3='k3 get svc | grep -i '
+alias kl3='k3 logs'
+alias stm3='kgp3 -o wide | grep -i stm'
+# Connect to CMYP CLI
+alias clb3='ssh_cmyp bsf-admin eiffelesc-3'
+alias cle3='ssh_cmyp expert eiffelesc-3'
+alias cls3='ssh_cmyp scp-admin eiffelesc-3'
+alias clp3='ssh_cmyp sepp-admin eiffelesc-3'
+#
+alias h4='helm -n eiffelesc-4'
+alias k4='kubectl -n eiffelesc-4'
+alias kdp4='k4 describe pod'
+alias kgc4='k4 get crds'
+alias kgp4='k4 get pods'
+alias kgpg4='k4 get pods | grep -i '
+alias kgs4='k4 get svc'
+alias kgsg4='k4 get svc | grep -i '
+alias kl4='k4 logs'
+alias stm4='kgp4 -o wide | grep -i stm'
+# Connect to CMYP CLI
+alias clb4='ssh_cmyp bsf-admin eiffelesc-4'
+alias cle4='ssh_cmyp expert eiffelesc-4'
+alias cls4='ssh_cmyp scp-admin eiffelesc-4'
+alias clp4='ssh_cmyp sepp-admin eiffelesc-4'
+
+# For namespace eiffeldsc
+# -----------------------
+alias hd='helm -n eiffeldsc'
+alias kd='kubectl -n eiffeldsc'
+alias kddp='kd describe pod'
+alias kdgc='kd get crds'
+alias kdgp='kd get pods'
+alias kdgpg='kd get pods | grep -i '
+alias kdgs='kd get svc'
+alias kdgsg='kd get svc | grep -i '
+alias kdl='kd logs'
+
+# For namespace eiffelesc-tools
+# -----------------------------
+alias ht='helm -n eiffelesc-tools'
+alias kt='kubectl -n eiffelesc-tools'
+alias ktdp='kt describe pod'
+alias ktgc='kt get crds'
+alias ktgp='kt get pods'
+alias ktgpg='kt get pods | grep -i '
+alias ktgs='kt get svc'
+alias ktgsg='kt get svc | grep -i '
+alias ktl='kt logs'
+#
+alias ht1='helm -n eiffelesc-1-tools'
+alias kt1='kubectl -n eiffelesc-1-tools'
+alias ktdp1='kt1 describe pod'
+alias ktgc1='kt1 get crds'
+alias ktgp1='kt1 get pods'
+alias ktgpg1='kt1 get pods | grep -i '
+alias ktgs1='kt1 get svc'
+alias ktgsg1='kt1 get svc | grep -i '
+alias ktl1='kt1 logs'
+#
+alias ht2='helm -n eiffelesc-2-tools'
+alias kt2='kubectl -n eiffelesc-2-tools'
+alias ktdp2='kt2 describe pod'
+alias ktgc2='kt2 get crds'
+alias ktgp2='kt2 get pods'
+alias ktgpg2='kt2 get pods | grep -i '
+alias ktgs2='kt2 get svc'
+alias ktgsg2='kt2 get svc | grep -i '
+alias ktl2='kt2 logs'
+#
+alias ht3='helm -n eiffelesc-3-tools'
+alias kt3='kubectl -n eiffelesc-3-tools'
+alias ktdp3='kt3 describe pod'
+alias ktgc3='kt3 get crds'
+alias ktgp3='kt3 get pods'
+alias ktgpg3='kt3 get pods | grep -i '
+alias ktgs3='kt3 get svc'
+alias ktgsg3='kt3 get svc | grep -i '
+alias ktl3='kt3 logs'
+#
+alias ht4='helm -n eiffelesc-4-tools'
+alias kt4='kubectl -n eiffelesc-4-tools'
+alias ktdp4='kt4 describe pod'
+alias ktgc4='kt4 get crds'
+alias ktgp4='kt4 get pods'
+alias ktgpg4='kt4 get pods | grep -i '
+alias ktgs4='kt4 get svc'
+alias ktgsg4='kt4 get svc | grep -i '
+alias ktl4='kt4 logs'
+
+# For other namespaces or no namespace
+alias kgn='kubectl get nodes -o wide'
+alias ks='kubectl -n kube-system'
+
+
+##################################
+########## functions #############
+##################################
+
+# Print Alarm List
+function alarm ()
+{
+    echo "Fetching current alarms";
+    alarmPod=$(kubectl -n eiffelesc get pods | grep -m 1 'fh-alarm' | awk '{ print $1 }');
+    #kubectl -n $NAMESPACE exec -it $alarmPod -- ah_alarm_list.sh
+    kubectl -n eiffelesc exec -it $alarmPod -- curl -i -sS -X GET https://localhost:5006/ah/api/v0/alarms?outputFormat=ShortAlarmList\&pp --cacert /etc/sip-tls-ca/cacertbundle.pem --cert /etc/sip-tls-client/clicert.pem --key /etc/sip-tls-client/cliprivkey.pem
+}
+function alarm1 ()
+{
+    echo "Fetching current alarms";
+    alarmPod=$(kubectl -n eiffelesc-1 get pods | grep -m 1 'fh-alarm' | awk '{ print $1 }');
+    #kubectl -n $NAMESPACE exec -it $alarmPod -- ah_alarm_list.sh
+    kubectl -n eiffelesc-1 exec -it $alarmPod -- curl -i -sS -X GET https://localhost:5006/ah/api/v0/alarms?outputFormat=ShortAlarmList\&pp --cacert /etc/sip-tls-ca/cacertbundle.pem --cert /etc/sip-tls-client/clicert.pem --key /etc/sip-tls-client/cliprivkey.pem
+}
+function alarm2 ()
+{
+    echo "Fetching current alarms";
+    alarmPod=$(kubectl -n eiffelesc-2 get pods | grep -m 1 'fh-alarm' | awk '{ print $1 }');
+    #kubectl -n $NAMESPACE exec -it $alarmPod -- ah_alarm_list.sh
+    kubectl -n eiffelesc-2 exec -it $alarmPod -- curl -i -sS -X GET https://localhost:5006/ah/api/v0/alarms?outputFormat=ShortAlarmList\&pp --cacert /etc/sip-tls-ca/cacertbundle.pem --cert /etc/sip-tls-client/clicert.pem --key /etc/sip-tls-client/cliprivkey.pem
+}
+function alarm3 ()
+{
+    echo "Fetching current alarms";
+    alarmPod=$(kubectl -n eiffelesc-3 get pods | grep -m 1 'fh-alarm' | awk '{ print $1 }');
+    #kubectl -n $NAMESPACE exec -it $alarmPod -- ah_alarm_list.sh
+    kubectl -n eiffelesc-3 exec -it $alarmPod -- curl -i -sS -X GET https://localhost:5006/ah/api/v0/alarms?outputFormat=ShortAlarmList\&pp --cacert /etc/sip-tls-ca/cacertbundle.pem --cert /etc/sip-tls-client/clicert.pem --key /etc/sip-tls-client/cliprivkey.pem
+}
+function alarm4 ()
+{
+    echo "Fetching current alarms";
+    alarmPod=$(kubectl -n eiffelesc-4 get pods | grep -m 1 'fh-alarm' | awk '{ print $1 }');
+    #kubectl -n $NAMESPACE exec -it $alarmPod -- ah_alarm_list.sh
+    kubectl -n eiffelesc-4 exec -it $alarmPod -- curl -i -sS -X GET https://localhost:5006/ah/api/v0/alarms?outputFormat=ShortAlarmList\&pp --cacert /etc/sip-tls-ca/cacertbundle.pem --cert /etc/sip-tls-client/clicert.pem --key /etc/sip-tls-client/cliprivkey.pem
+}
+
+
+# List container images from all worker nodes
+function dockerlist ()
+{
+    for n in $(kubectl get node -o wide |grep worker | gawk -F ' ' '{print $6}')
+    do
+        echo "$n:"
+        ssh -o "StrictHostKeyChecking no" -q eccd@${n} 'sudo docker image list'
+    done
+    echo "List done"
+}
+function nerdctllist ()
+{
+    for n in $(kubectl get node -o wide |grep worker | gawk -F ' ' '{print $6}')
+    do
+        echo "$n:"
+        ssh -o "StrictHostKeyChecking no" -q eccd@${n} 'sudo nerdctl image list'
+    done
+    echo "List done"
+}
+
+
+# Return the CMYP external IP-address
+function get_cmyp_ip ()
+{
+    local namespace=$1
+    if [[ $namespace != "" ]];
+    then
+        get_cmyp_service_name $namespace
+        local cmyp_svc_name=$retval
+        local cmyp_ip=$(kubectl get svc --no-headers -n $namespace $cmyp_svc_name | awk '{print $4}')
+        echo "CMYP IP: $cmyp_ip"
+        retval=$cmyp_ip
+    else
+        echo "No namespace given"
+    fi
+}
+
+
+# Return the CMYP external IP-address
+function get_cmyp_service_name ()
+{
+    local namespace=$1
+    if [[ $namespace != "" ]];
+    then
+        local cmyp_service_name=$(kubectl get svc --no-headers -n $namespace | grep -P '(eric-cm-yang-provider\s+|eric-cm-yang-provider-ipv4|eric-cm-yang-provider-ipv6|eric-cm-yang-provider-external)' | awk '{print $1}')
+        echo "CMYP Service Name: $cmyp_service_name"
+        retval=$cmyp_service_name
+    else
+        echo "No namespace given"
+    fi
+}
+
+
+# Login to docker.
+# Not enabled because it require hard coded password so it is not node independent.
+#logindocker ()
+#{
+#    for n in $(kubectl get node -o wide |grep worker | gawk -F ' ' '{print $6}');
+#    do
+#        echo "$n:"
+#        ssh -o "StrictHostKeyChecking no" -q eccd@${n} 'sudo docker login --username admin --password '7Ta9Fql2tvgXZYba3Q9kSaoUHdfFaGLi' k8s-registry.eccd.local';
+#    done
+#    echo "login done"
+#}
+
+
+# Prune images from all worker nodes
+function prunethemall ()
+{
+    for n in $(kubectl get node -o wide |grep worker | gawk -F ' ' '{print $6}')
+    do
+        echo "$n:"
+        ssh -o "StrictHostKeyChecking no" -q eccd@${n} 'sudo docker system prune --all -f'
+    done
+    echo "Prune done"
+}
+
+
+# Show Docker config file for all worker node
+showdocker ()
+{
+    for n in $(kubectl get node -o wide |grep worker | gawk -F ' ' '{print $6}');
+    do
+        echo "$n:"
+        ssh -o "StrictHostKeyChecking no" -q eccd@${n} 'sudo cat /var/lib/kubelet/config.json';
+    done
+    echo "Showed config.json files"
+}
+
+
+# SSH to CMYP
+function ssh_cmyp ()
+{
+    local user=$1
+    local namespace=$2
+
+    if [[ $user == "" ]];
+    then
+        user="expert"
+    fi
+
+    if [[ $namespace == "" ]];
+    then
+        namespace="eiffelesc"
+    fi
+
+    get_cmyp_ip $namespace
+    local cmyp_ip=$retval
+
+    echo "Connecting to $user@$cmyp_ip"
+    ssh $user@$cmyp_ip
+}

@@ -1,0 +1,27 @@
+spec:
+  template:
+    spec:
+      volumes:
+      - configMap:
+          defaultMode: 420
+          items:
+          - key: psepp1.db
+            path: psepp1.db
+          - key: psepp21.db
+            path: psepp21.db
+          - key: psepp31.db
+            path: psepp31.db
+          - key: nfudm.db
+            path: nfudm.db
+          - key: osepp3.db
+            path: osepp3.db
+          - key: osepp5.db
+            path: osepp5.db
+          - key: osepp8.db
+            path: osepp8.db
+          - key: osepp12.db
+            path: osepp12.db
+          - key: Corefile
+            path: Corefile
+          name: coredns
+        name: config-volume

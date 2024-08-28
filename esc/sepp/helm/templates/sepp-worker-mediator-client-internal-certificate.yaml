@@ -1,0 +1,25 @@
+# Copyright 2019 Ericsson GmbH
+{{- if eq (include "eric-sepp.sds.tls" .) "true" }}
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+  name: {{ template "eric-sepp.name" . }}-worker-mediator-client-internal-certificate
+  annotations:
+{{- include "eric-sepp.helm-annotations" . | indent 4 }}
+{{- include "eric-sepp.config-annotations" . | indent 4 }}
+  labels:
+{{- include "eric-sepp.labels" . | indent 4 }}
+spec:
+  kubernetes:
+    generatedSecretName: sepp-worker-mediator-client-if-certificate-secret
+    certificateName: tls.crt
+    privateKeyName: tls.key
+  certificate:
+    subject:
+      cn: eric-sepp-worker
+    issuer:
+      reference: eric-cm-mediator-ca
+    extendedKeyUsage:
+      tlsClientAuth: true
+      tlsServerAuth: false
+{{- end }}

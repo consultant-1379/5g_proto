@@ -1,0 +1,69 @@
+#Copyright 2022 Ericsson GmbH
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.service.manager.name | quote }}
+  labels:
+{{- include "eric-scp.labels" . | indent 4 }}
+    app: {{ .Values.service.manager.name | quote }}
+  annotations:
+{{- include "eric-scp.helm-annotations" . | indent 4 }}
+{{- include "eric-scp.config-annotations" . | indent 4 }}
+{{- if .Values.metrics.manager.enabled }}
+    prometheus.io/scrape: {{ .Values.metrics.manager.enabled | quote }}
+    prometheus.io/port: {{ .Values.service.manager.server.oam.port | quote }}
+{{- if eq (include "eric-scp.tls" .) "true" }}
+    prometheus.io/scheme: https
+{{- else }}
+    prometheus.io/scheme: http
+{{- end }}
+{{- end }}
+spec:
+  ipFamilyPolicy: PreferDualStack
+  type: ClusterIP
+{{- include "eric-scp.ipfamilies" . | indent 2 }}
+  ports:
+  - protocol: TCP
+    port: {{ .Values.service.manager.server.nrf.port }}
+    targetPort: {{ .Values.service.manager.server.nrf.targetPort }}
+    name: metrics
+  - protocol: TCP
+    port: {{ .Values.service.manager.server.oam.port }}
+    targetPort: {{ .Values.service.manager.server.oam.targetPort }}
+    name: oam-server
+  selector:
+  {{- if .Values.manager.leaderElection.enabled }}
+    leader: {{ .Values.service.manager.name }}-leader
+  {{- else }}
+    app: {{ .Values.service.manager.name | quote }}
+  {{- end }}
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ .Values.service.manager.name }}-grpc
+  labels:
+{{- include "eric-scp.labels" . | indent 4 }}
+  annotations:
+{{- include "eric-scp.helm-annotations" . | indent 4 }}
+{{- include "eric-scp.config-annotations" . | indent 4 }}
+spec:
+  ports:
+  - protocol: TCP
+    port: 9900
+    targetPort: 9900
+    name: workerconfig
+  - protocol: TCP
+    port: 9899
+    targetPort: 9899
+    name: outlierevents
+  selector:
+  {{- if .Values.manager.leaderElection.enabled }}
+    leader: {{ .Values.service.manager.name }}-leader
+  {{- else }}
+    app: {{ .Values.service.manager.name | quote }}
+  {{- end }}
+  ipFamilyPolicy: PreferDualStack
+  type: ClusterIP
+{{- include "eric-scp.ipfamilies" . | indent 2 }}

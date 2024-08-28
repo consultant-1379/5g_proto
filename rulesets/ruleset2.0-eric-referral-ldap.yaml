@@ -1,0 +1,132 @@
+modelVersion: 2.0
+
+import:
+  base: ruleset2.0-eric-base.yaml
+
+description: "Referral LDAP used for centralized authentication"
+
+properties:
+  - REFERRAL_LDAP_NAME: eric-referral-ldap
+  - EXPORT_DIR: ${base.OUTPUT_DIR}/export-referral-ldap
+  - CERTIFICATES_DIR: devtools/referral-ldap/helm/certs
+  - REFERRAL_LDAP_CERTS_DIR: scripts/certificates/certm_worker/keys/referral-ldap
+  - LDAP_CERTS_DIR: scripts/certificates/certm_worker/keys/ldap
+  - ROOT_CA_DIR: scripts/certificates/certm_worker/keys
+  
+env:
+ - RELEASE (default=false)
+
+var:
+ - referral-ldap-version
+
+
+rules:
+  init:
+    - rule: base.create-output-dir
+    - rule: base.set-kube-config
+    - rule: base.set-namespace
+    - task: referral-ldap-version
+      docker-image: base.adp-release-auto
+      cmd: generate-version --is-release ${env.RELEASE} --output referral-ldap-version
+
+  # Build a docker image pointing to internal repository
+  #image:
+  #  - task: build-referral-ldap
+  #    cmd: docker build ./devtools/referral-ldap/
+  #         --file devtools/referral-ldap/Dockerfile
+  #         --tag ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${REFERRAL_LDAP_NAME}:${var.referral-ldap-version}
+           
+  lint:
+    - task: helm-referral-ldap
+      docker-image: base.helm-builder
+      cmd: helm devtools/referral-ldap/helm
+
+  package:
+    - task: helm-chart-referral-ldap
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "mkdir -p ${base.OUTPUT_DIR}/${REFERRAL_LDAP_NAME}; cp -r devtools/referral-ldap/helm/* ${base.OUTPUT_DIR}/${REFERRAL_LDAP_NAME};
+           update_values.rb ${base.OUTPUT_DIR}/${REFERRAL_LDAP_NAME}/values.yaml
+           imageCredentials:registry:url=${base.DOCKER_REGISTRY_URL} imageCredentials:repoPath=${base.DOCKER_REPO_PATH}/${env.base.USER}
+           spec:image=${REFERRAL_LDAP_NAME} spec:tag=${var.referral-ldap-version} > ${base.OUTPUT_DIR}/${REFERRAL_LDAP_NAME}/values.tmp.yaml;
+           mv ${base.OUTPUT_DIR}/${REFERRAL_LDAP_NAME}/values.tmp.yaml ${base.OUTPUT_DIR}/${REFERRAL_LDAP_NAME}/values.yaml;
+           helm package --version ${var.referral-ldap-version} --app-version ${var.referral-ldap-version} ${base.OUTPUT_DIR}/${REFERRAL_LDAP_NAME}/ -d ${base.OUTPUT_DIR}/";
+
+  push:
+    #- task: docker-image-referral-ldap
+    #  cmd: docker push ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${REFERRAL_LDAP_NAME}:${var.referral-ldap-version}
+    - task: helm-chart-referral-ldap
+      cmd: curl -f -k -H "X-JFrog-Art-Api:$(cat ~/.secrets/armseli_token)" --upload-file ${base.OUTPUT_DIR}/${REFERRAL_LDAP_NAME}-${var.referral-ldap-version}.tgz "${base.HELM_CHART_REPO}/${REFERRAL_LDAP_NAME}/${REFERRAL_LDAP_NAME}-${var.referral-ldap-version}.tgz"
+
+  deploy:
+    - task: deploy-referral-ldap-tls
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"        
+      cmd: /bin/bash -c 'helm install ${REFERRAL_LDAP_NAME}-${env.base.USER} --namespace ${var.base.namespace} ${base.OUTPUT_DIR}/${REFERRAL_LDAP_NAME}-${var.referral-ldap-version}.tgz --set tls.enabled=true'
+    - task: deploy-referral-ldap
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"        
+      cmd: /bin/bash -c 'helm install ${REFERRAL_LDAP_NAME}-${env.base.USER} --namespace ${var.base.namespace} ${base.OUTPUT_DIR}/${REFERRAL_LDAP_NAME}-${var.referral-ldap-version}.tgz'
+
+  undeploy:
+    - task: undeploy-referral-ldap
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm" 
+      cmd: helm uninstall ${REFERRAL_LDAP_NAME}-${env.base.USER} --namespace ${var.base.namespace} 
+#    - task: clean-referral-ldap-secrets
+#      docker-image: base.helm-builder-py3
+#      docker-flags:
+#        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+#        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+#      cmd: kubectl delete secret eric-referral-ldap-${var.base.namespace}
+#    - task: clean-referral-ldap-pvc
+#      docker-image: base.helm-builder-py3
+#      docker-flags:
+#        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+#        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+#      cmd: kubectl delete pvc --all -n ${var.base.namespace}
+#    - task: clean-referral-ldap-configmap
+#      docker-image: base.helm-builder-py3
+#      docker-flags:
+#        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+#        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+#      cmd: kubectl delete configmap eric-referral-ldap-${var.base.namespace}-env
+
+#  install-certs:
+#    - task: create
+#      cmd: /bin/bash -c "cd scripts; ./install_certs.sh referral-ldap"
+#    - task: install-to-dir
+#      cmd: /bin/bash -c "cp ${REFERRAL_LDAP_CERTS_DIR}/cert.pem ${CERTIFICATES_DIR}/cert.pem;
+#                         cp ${REFERRAL_LDAP_CERTS_DIR}/key.pem ${CERTIFICATES_DIR}/key.pem;
+#                         cp ${ROOT_CA_DIR}/rootCA.crt ${CERTIFICATES_DIR}/rootCA.crt;
+#                         cp ${ROOT_CA_DIR}/rootCA.key ${CERTIFICATES_DIR}/rootCA.key;
+#                         cp ${LDAP_CERTS_DIR}/cert.pem ${CERTIFICATES_DIR}/ldap_cert.pem;
+#                         cp ${LDAP_CERTS_DIR}/key.pem ${CERTIFICATES_DIR}/ldap_key.pem"
+
+  export:
+    - task: clean
+      cmd: /bin/bash -c "rm -rf ${EXPORT_DIR}";
+    - task: folders
+      cmd: /bin/bash -c "mkdir -p ${EXPORT_DIR}; mkdir -p ${EXPORT_DIR}/helm; mkdir -p ${EXPORT_DIR}/docker";      
+    - task: helm
+      cmd: /bin/bash -c 'cp ${base.OUTPUT_DIR}/${REFERRAL_LDAP_NAME}-${var.referral-ldap-version}.tgz ${EXPORT_DIR}/helm';
+    #- task: image
+    #  cmd: /bin/bash -c 'docker save ${base.DOCKER_REGISTRY_URL}/${base.DOCKER_REPO_PATH}/${env.base.USER}/${REFERRAL_LDAP_NAME}:${var.referral-ldap-version} > ${EXPORT_DIR}/docker/${REFERRAL_LDAP_NAME}-${var.referral-ldap-version}.tar';
+
+  clean:
+    - task: directories
+      cmd: /bin/bash -c "rm -rf ${base.OUTPUT_DIR}/ *.tgz";
+    - task: export
+      cmd: /bin/bash -c "rm -rf ${EXPORT_DIR}";
+    - task: templates-referral-ldap
+      cmd: /bin/bash -c "rm -rf ${base.OUTPUT_DIR}/$(REFERRAL_LDAP_NAME)/templates/*.yaml";
+
+

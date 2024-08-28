@@ -1,0 +1,26 @@
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+  name: {{ template "eric-sc-nlf.name" . }}-server-certificate
+  labels:
+    {{- include "eric-sc-nlf.labels" . | indent 4 }}
+  annotations:
+    {{- include "eric-sc-nlf.helm-annotations" . | indent 4 }}
+    {{- include "eric-sc-nlf.config-annotations" . | indent 4 }}
+spec:
+  kubernetes:
+    generatedSecretName: {{ template "eric-sc-nlf.name" . }}-server-certificate
+  certificate:
+    subject:
+      cn: {{ template "eric-sc-nlf.name" . }}
+    subjectAlternativeName:
+      dns:
+        - localhost
+        - certified-scrape-target
+    {{- if .Values.security.tls.certificateTTL }}
+    validity:
+      overrideTtl: {{ .Values.security.tls.certificateTTL }}
+    {{- end }}
+    extendedKeyUsage:
+      tlsClientAuth: false
+      tlsServerAuth: true

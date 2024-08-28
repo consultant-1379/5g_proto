@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "eric-bsf.name" . }}-cnom-dashboard-config
+  labels:
+    ericsson.com/cnom-server-dashboard-models: "true"
+{{- include "eric-bsf.de-facto-labels" . | indent 4 }}
+  annotations:
+{{- include "eric-bsf.helm-annotations" . | indent 4 }}
+{{- include "eric-bsf.config-annotations" . | indent 4 }}
+data:
+{{ (.Files.Glob "dashboardconfig/bsfDashboard.json").AsConfig | indent 4 }}
+{{- if (index .Values "vtap" "enabled") }}
+{{ (.Files.Glob "dashboardconfig/bsfVtapDashboard.json").AsConfig | indent 4 }}
+{{- end }}

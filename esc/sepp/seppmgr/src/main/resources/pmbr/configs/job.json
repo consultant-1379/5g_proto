@@ -1,0 +1,336 @@
+[
+  {
+    "granularity-period": "five-min",
+    "reporting-period": "five-min",
+    "name": "sepp_system_job",
+    "type": "measurement-job",
+    "measurement-reader": [
+      {
+        "group-ref": "sepp_egress",
+        "name": "sepp_egress_reader"
+      },
+      {
+        "group-ref": "sepp_ingress",
+        "name": "sepp_ingress_reader"
+      },
+      {
+        "group-ref": "sepp_system_metrics",
+        "name": "sepp_system_metrics_reader"
+      },
+      {
+        "group-ref": "sepp_traffic_kpis",
+        "name": "sepp_traffic_kpis_reader"
+      },
+      {
+        "group-ref": "sepp_probe_virtual_tap_broker",
+        "name": "sepp_probe_virtual_tap_broker_reader"
+      },
+      {
+        "group-ref": "sepp_vtap",
+        "name": "sepp_vtap_reader"
+      },
+      {
+        "group-ref": "sepp_nrf",
+        "name": "sepp_nrf_reader"
+      },
+      {
+        "group-ref": "sepp_ms",
+        "name": "sepp_ms_reader"
+      },
+      {
+        "group-ref": "sepp_n32c_initiating",
+        "name": "sepp_n32c_initiating_reader"
+      },
+      {
+        "group-ref": "sepp_n32c_responding",
+        "name": "sepp_n32c_responding_reader"
+      }
+    ],
+    "requested-job-state": "active"
+  },
+  {
+    "granularity-period": "five-min",
+    "reporting-period": "five-min",
+    "name": "sepp_topology_hiding_job",
+    "type": "measurement-job",
+    "measurement-reader": [
+      {
+        "group-ref": "sepp_topology_hiding",
+        "name": "sepp_topology_hiding_reader"
+      }
+    ],
+    "requested-job-state": "active"
+  },
+  {
+    "granularity-period": "five-min",
+    "reporting-period": "five-min",
+    "name": "sepp_ingress_rate_limit_job",
+    "type": "measurement-job",
+    "measurement-reader": [
+      {
+        "group-ref": "sepp_rate_limit",
+        "name": "sepp_rate_limit_reader"
+      }
+    ],
+    "requested-job-state": "active"
+  },
+  {
+    "granularity-period": "one-min",
+    "reporting-period": "one-min",
+    "name": "sepp_overload_job",
+    "type": "threshold-job",
+    "measurement-reader": [
+      {
+        "name": "sepp_overload_reader",
+        "measurement-type-ref": "sepp_load_avg",
+        "group-ref": "sepp_system_metrics",
+        "threshold-direction": "increasing",
+        "threshold-monitoring": [
+          {
+            "name": "sepp_overload_threshold_monitoring",
+            "threshold-high": "70",
+            "threshold-low": "60",
+            "threshold-severity": "major"
+          },
+          {
+            "name": "sepp_overload_threshold_escalation",
+            "threshold-high": "80",
+            "threshold-low": "75",
+            "threshold-severity": "critical"
+          }
+        ]
+      }
+    ],
+    "requested-job-state": "active"
+  },
+  {
+    "granularity-period": "one-min",
+    "reporting-period": "one-min",
+    "name": "sepp_ingress_open_tcp_connections_job",
+    "type": "threshold-job",
+    "measurement-reader": [
+      {
+        "name": "sepp_ingress_open_tcp_connections_reader",
+        "measurement-type-ref": "envoy_ingress_downstream_cx_active_avg",
+        "group-ref": "sepp_ingress",
+        "threshold-direction": "increasing",
+        "threshold-monitoring": [
+          {
+            "name": "sepp_ingress_open_tcp_connections_threshold_monitoring",
+            "threshold-high": "700",
+            "threshold-low": "650",
+            "threshold-severity": "minor"
+          }
+        ]
+      }
+    ],
+    "requested-job-state": "stopped"
+  },
+  {
+    "granularity-period": "one-min",
+    "reporting-period": "one-min",
+    "name": "sepp_pvtb_diff_recv_send_successes_packets_ratio_job", 
+    "type": "threshold-job",
+    "measurement-reader": [ 
+      { 
+        "name": "sepp_pvtb_diff_recv_send_successes_packets_ratio_reader", 
+        "measurement-type-ref": "sepp_pvtb_diff_recv_send_successes_packets_ratio", 
+        "group-ref": "sepp_probe_virtual_tap_broker", 
+        "threshold-direction": "increasing", 
+        "threshold-monitoring": [ 
+          { 
+            "name": "sepp_pvtb_diff_recv_send_successes_packets_ratio_threshold_monitoring", 
+            "threshold-high": "5", 
+            "threshold-low": "0", 
+            "threshold-severity": "major" 
+          } 
+        ] 
+      }
+    ],
+    "requested-job-state": "active"
+  },
+  {
+    "granularity-period": "one-min",
+    "reporting-period": "one-min",
+    "name": "sepp_ingress_grl_dropped_msgs_ratio_job",
+    "type": "threshold-job",
+    "measurement-reader": [
+      {
+        "name": "sepp_ingress_grl_dropped_msgs_ratio_reader",
+        "measurement-type-ref": "envoy_ingress_global_rate_limit_dropped_ratio",
+        "group-ref": "sepp_rate_limit",
+        "threshold-direction": "increasing",
+        "threshold-monitoring": [
+          {
+            "name": "sepp_ingress_grl_dropped_msgs_ratio_threshold_monitoring",
+            "threshold-high": "1",
+            "threshold-low": "1",
+            "threshold-severity": "warning"
+          }
+        ]
+      }
+    ],
+    "requested-job-state": "active"
+  },
+  {
+    "granularity-period": "one-min",
+    "reporting-period": "one-min",
+    "name": "sepp_ingress_grl_rejected_msgs_ratio_job",
+    "type": "threshold-job",
+    "measurement-reader": [
+      {
+        "name": "sepp_ingress_grl_rejected_msgs_ratio_reader",
+        "measurement-type-ref": "envoy_ingress_global_rate_limit_rejected_ratio",
+        "group-ref": "sepp_rate_limit",
+        "threshold-direction": "increasing",
+        "threshold-monitoring": [
+          {
+            "name": "sepp_ingress_grl_rejected_msgs_ratio_threshold_monitoring",
+            "threshold-high": "1",
+            "threshold-low": "1",
+            "threshold-severity": "warning"
+          }
+        ]
+      }
+    ],
+    "requested-job-state": "active"
+  },
+  {
+    "granularity-period": "one-min",
+    "reporting-period": "one-min",
+    "name": "sepp_ingress_grl_rejected_msgs_per_network_ratio_job",
+    "type": "threshold-job",
+    "measurement-reader": [
+      {
+        "name": "sepp_ingress_grl_rejected_msgs_per_network_ratio_reader",
+        "measurement-type-ref": "envoy_ingress_global_rate_limit_rejected_ratio_per_network",
+        "group-ref": "sepp_rate_limit",
+        "threshold-direction": "increasing",
+        "threshold-monitoring": [
+          {
+            "name": "sepp_ingress_grl_rejected_msgs_per_network_ratio_threshold_monitoring",
+            "threshold-high": "1",
+            "threshold-low": "1",
+            "threshold-severity": "warning"
+          }
+        ]
+      }
+    ],
+    "requested-job-state": "active"
+  },
+  {
+    "granularity-period": "one-min",
+    "reporting-period": "one-min",
+    "name": "sepp_ingress_grl_dropped_msgs_per_network_ratio_job",
+    "type": "threshold-job",
+    "measurement-reader": [
+      {
+        "name": "sepp_ingress_grl_dropped_msgs_per_network_ratio_reader",
+        "measurement-type-ref": "envoy_ingress_global_rate_limit_dropped_ratio_per_network",
+        "group-ref": "sepp_rate_limit",
+        "threshold-direction": "increasing",
+        "threshold-monitoring": [
+          {
+            "name": "sepp_ingress_grl_dropped_msgs_per_network_ratio_threshold_monitoring",
+            "threshold-high": "1",
+            "threshold-low": "1",
+            "threshold-severity": "warning"
+          }
+        ]
+      }
+    ],
+    "requested-job-state": "active"
+  },
+  {
+    "granularity-period": "one-min",
+    "reporting-period": "one-min",
+    "name": "sepp_ingress_grl_rejected_msgs_per_roaming_partner_ratio_job",
+    "type": "threshold-job",
+    "measurement-reader": [
+      {
+        "name": "sepp_ingress_grl_rejected_msgs_per_roaming_partner_ratio_reader",
+        "measurement-type-ref": "envoy_ingress_global_rate_limit_rejected_ratio_per_roaming_partner",
+        "group-ref": "sepp_rate_limit",
+        "threshold-direction": "increasing",
+        "threshold-monitoring": [
+          {
+            "name": "sepp_ingress_grl_rejected_msgs_per_roaming_partner_ratio_threshold_monitoring",
+            "threshold-high": "1",
+            "threshold-low": "1",
+            "threshold-severity": "warning"
+          }
+        ]
+      }
+    ],
+    "requested-job-state": "active"
+  },
+  {
+    "granularity-period": "one-min",
+    "reporting-period": "one-min",
+    "name": "sepp_ingress_grl_dropped_msgs_per_roaming_partner_ratio_job",
+    "type": "threshold-job",
+    "measurement-reader": [
+      {
+        "name": "sepp_ingress_grl_dropped_msgs_per_roaming_partner_ratio_reader",
+        "measurement-type-ref": "envoy_ingress_global_rate_limit_dropped_ratio_per_roaming_partner",
+        "group-ref": "sepp_rate_limit",
+        "threshold-direction": "increasing",
+        "threshold-monitoring": [
+          {
+            "name": "sepp_ingress_grl_dropped_msgs_per_roaming_partner_ratio_threshold_monitoring",
+            "threshold-high": "1",
+            "threshold-low": "1",
+            "threshold-severity": "warning"
+          }
+        ]
+      }
+    ],
+    "requested-job-state": "active"
+  },
+  {
+    "granularity-period": "one-min",
+    "reporting-period": "one-min",
+    "name": "sepp_tapcollector_out_tap_frames_dropped_ratio_job",
+    "type": "threshold-job",
+    "measurement-reader": [
+      {
+        "name": "sepp_tapcollector_out_tap_frames_dropped_ratio_reader",
+        "measurement-type-ref": "sepp_tapcollector_out_tap_frames_dropped_ratio",
+        "group-ref": "sepp_vtap",
+        "threshold-direction": "increasing",
+        "threshold-monitoring": [
+          {
+            "name": "sepp_tapcollector_out_tap_frames_dropped_ratio_threshold_monitoring",
+            "threshold-high": "5",
+            "threshold-low": "0",
+            "threshold-severity": "major"
+          }
+        ]
+      }
+    ],
+    "requested-job-state": "active"
+  },
+  {
+    "granularity-period": "one-min",
+    "reporting-period": "one-min",
+    "name": "sepp_envoy_segments_dropped_ratio_job",
+    "type": "threshold-job",
+    "measurement-reader": [
+      {
+        "name": "sepp_envoy_segments_dropped_ratio_reader",
+        "measurement-type-ref": "sepp_envoy_segments_dropped_ratio",
+        "group-ref": "sepp_vtap",
+        "threshold-direction": "increasing",
+        "threshold-monitoring": [
+          {
+            "name": "sepp_envoy_segments_dropped_ratio_threshold_monitoring",
+            "threshold-high": "5",
+            "threshold-low": "0",
+            "threshold-severity": "major"
+          }
+        ]
+      }
+    ],
+    "requested-job-state": "active"
+  }
+]

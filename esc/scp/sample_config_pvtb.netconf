@@ -1,0 +1,24 @@
+<hello
+    xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <capabilities>
+        <capability>urn:ietf:params:netconf:base:1.0</capability>
+    </capabilities></hello>]]>]]>
+    <?xml version="1.0"?>
+    <rpc
+        xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"
+        xmlns:ns2="urn:com:ericsson:ecim:1.0"
+        xmlns:ns3="http://tail-f.com/ns/netconf/actions/1.0"
+        xmlns:ns4="urn:ietf:params:xml:ns:yang:ietf-netconf-monitoring"
+        xmlns:ns5="urn:ietf:params:xml:ns:netconf:notification:1.0" message-id="0">
+        <edit-config>
+            <target>
+                <running/>
+            </target>
+            <config>
+                <vtap operation="replace"
+                    xmlns="urn:rdns:com:ericsson:oammodel:ericsson-vtap-pc5gc">
+                    <enabled>true</enabled><profiles><profile><name>profile1</name><domain><name>sc-scp</name><protocol>raw-sbi</protocol></domain></profile><profile><name>profile2-rename</name><domain><name>sc-scp</name><protocol>raw-sbi</protocol></domain><domain><name>test</name><protocol>http</protocol><protocol>raw-http</protocol><protocol>pfcp</protocol></domain></profile><profile><name>profile2-rename_bak</name><domain><name>sc-scp-1</name><protocol>pfcp</protocol><protocol>raw-sbi</protocol></domain><domain><name>test1</name><protocol>http</protocol><protocol>raw-http</protocol><protocol>pfcp</protocol></domain></profile></profiles><stream-consumers><stream-consumer><name>sm-sbi-consumer</name><address>10.105.176.26</address><tapping-profile>profile1</tapping-profile></stream-consumer><stream-consumer><name>1</name><address>1.1.1.1</address><tapping-profile>profile2-rename</tapping-profile></stream-consumer><stream-consumer><name>test-addres</name><address>1.2.3.6</address><tapping-profile>profile2-rename_bak</tapping-profile></stream-consumer><stream-consumer><name>test-addres_bak</name><address>1.2.3.7</address><tapping-profile>profile2-rename</tapping-profile></stream-consumer></stream-consumers>
+                </vtap>
+            </config>
+        </edit-config></rpc>
+]]>]]>

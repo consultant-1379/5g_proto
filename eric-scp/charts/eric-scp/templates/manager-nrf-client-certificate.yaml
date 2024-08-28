@@ -1,0 +1,15 @@
+{{- $key := index .Values "certificates" "nrf" "key" }}
+{{- $certificate := index .Values "certificates" "nrf" "certificate" }}
+apiVersion: certm.sec.ericsson.com/v1
+kind: ExternalCertificate
+metadata: 
+  name: {{ template "eric-scp.name" . }}-manager-nrf-client-certificate
+  labels:
+{{- include "eric-scp.labels" . | indent 4 }}
+  annotations:
+{{- include "eric-scp.helm-annotations" . | indent 4 }}
+{{- include "eric-scp.config-annotations" . | indent 4 }}
+spec: 
+  generated-secret-name: {{ template "eric-scp.name" . }}-manager-nrf-client-certificate
+  generated-secret-type: tls
+  asymmetric-key-certificate-name: {{ printf "%s/%s" $key $certificate | quote }}

@@ -1,0 +1,46 @@
+#This file is intended to be used in a WSL/K3S environment
+#for running the test suites
+
+include Makefile.user
+
+export NAMESPACE=5g-bsf-$(USER)
+export KUBE_HOST=minikube
+export PROPERTIES=EscTest_minikube.properties
+
+export LOGDB=false
+export TEST_TYPE=SmokeTest
+export COMMIT=$(shell git rev-parse HEAD)
+export CHART_VERSION=123
+export TS_LOG_URL=/tmp
+export PROJECT=SC1.11
+
+BOB := bob/bob
+ESC_TEST_PROPERTIES := ../../5g_test_ci/jcat-esc/EscTestProperties
+TEST_REPO := ../../5g_test_ci/
+WSL_IP := $(shell ifconfig eth0 | grep 'inet ' | awk '{ print $$2}')
+
+test-libs:
+	cd ~/5g_proto/esc && make libs
+	mkdir -p ~/5g_test_ci/.m2/repository/com/ericsson
+	cp -r ~/5g_proto/.m2/repository/com/ericsson/* ~/.m2/repository/com/ericsson
+	cp -r ~/5g_proto/.m2/repository/com/ericsson/* ~/5g_test_ci/.m2/repository/com/ericsson
+
+test-prepare:
+    #Removes the old redis-container
+	docker system prune -f
+	cd $(TEST_REPO); $(BOB) local-ft
+	sed -i 's/127.0.1.1/'$(WSL_IP)'/g' $(ESC_TEST_PROPERTIES)/$(PROPERTIES)
+
+test-run:
+	cd $(TEST_REPO); $(BOB) adptest:update-hostfile adptest:jenkinsft
+
+test-log-lib:
+	cd ~/log-lib && mvn install -DskipTests
+	mkdir -p ~/5g_test_ci/.m2/repository/com/ericsson/sc/log-lib/
+	cp -r ~/.m2/repository/com/ericsson/sc/log-lib/* ~/5g_test_ci/.m2/repository/com/ericsson/sc/log-lib/
+	cp -r ~/.m2/repository/com/ericsson/sc/log-lib/ ~/5g_proto/.m2/repository/com/ericsson/sc/log-lib/
+	
+test-clean:
+	rm -rf ~/.m2/repository/com/ericsson/
+	rm -rf ~/5g_proto/.m2/repository/com/ericsson/
+	rm -rf ~/5g_test_ci/.m2/repository/com/ericsson/

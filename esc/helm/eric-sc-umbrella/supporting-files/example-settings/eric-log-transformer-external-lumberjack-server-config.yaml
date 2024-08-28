@@ -1,0 +1,39 @@
+# This file is used for configuring remote lumberjack server.
+# During helm install, declare the variables to be passed into your templates at deploy time using
+# "--values <path>/eric-log-transformer-external-lumberjack-server-config.yaml"
+
+# Configure external lumberjack server hostname, certificate and port number.
+# To enable multiple remote lumberjack severs, the host and port need to be configured for each server.
+
+# Lumberjack supports TLS (server authentication) and requires the configuration of CA certificates via Certificate Management service.
+# TLS requires the CA for the verification of external lumberjack server certificate.
+# Configure the CA in truststore with name equals to trustedCertificateListName parameter value.
+
+eric-log-transformer:
+  egress:
+    lumberjack:
+      enabled: true
+      certificates:
+        #  To enable TLS with remote lumberjack server, the following certificate information should be configured.
+        #  The value must be identical with the CLI configuration.
+        trustedCertificateListName: sc-trusted-default-cas
+      remoteHosts:
+        # In the example below, ext-lj-1 is for alarm logs, ext-lj-2 is for security logs and ext-lj-3 is for complete logs.
+        - id: ext-lj-1
+          host: eric-ext-log-transformer-1
+          port: 5044
+          codec: json
+          inclusions:
+            - field: "[extra_data][asi][log_plane]"
+              value: "alarm"
+        - id: ext-lj-2
+          host: eric-ext-log-transformer-2
+          port: 5044
+          codec: json
+          inclusions:
+            - field: "[facility]"
+              value: "security/authorization messages"
+        - id: ext-lj-3
+          host: eric-ext-log-transformer-3
+          port: 5044
+          codec: json

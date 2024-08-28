@@ -1,0 +1,32 @@
+{{- if eq (include "eric-sepp.tls" .) "true" }}
+{{- if .Values.global -}}
+{{- if .Values.global.ericsson -}}
+{{- if .Values.global.ericsson.rlf -}}
+{{- if .Values.global.ericsson.rlf.enabled -}}
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+  name: {{ template "eric-sepp.name" . }}-worker-rlf-client-internal-certificate
+  labels:
+{{- include "eric-sepp.labels" . | indent 4 }}
+  annotations:
+{{- include "eric-sepp.helm-annotations" . | indent 4 }}
+{{- include "eric-sepp.config-annotations" . | indent 4 }}
+spec:
+  kubernetes:
+    generatedSecretName: sepp-worker-rlf-client-if-certificate-secret
+    certificateName: tls.crt
+    privateKeyName: tls.key
+  certificate:
+    subject:
+      cn: eric-sepp-worker
+    issuer:
+      reference: eric-sc-rlf-ca
+    extendedKeyUsage:
+      tlsClientAuth: true
+      tlsServerAuth: false
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

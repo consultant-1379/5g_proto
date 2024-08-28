@@ -1,0 +1,37 @@
+config:
+  remote_write:
+    # - url: "https://eric-influxdb:8086/api/v1/prom/write?db=prometheus"
+    - url: "https://eric-telegraf:8080/metrics"
+      tls_config:
+        ca_file: /run/secrets/eric-pm-server-eric-telegraf-trusted-cert-consumer-secret/cert1.pem
+        cert_file: /run/secrets/eric-pm-server-eric-telegraf-asymmetric-key-cert-consumer-secret/tls.crt
+        key_file: /run/secrets/eric-pm-server-eric-telegraf-asymmetric-key-cert-consumer-secret/tls.key
+      write_relabel_configs:
+        - action: replace
+          regex: scp
+          replacement: scp-application
+          source_labels:
+            - nf__type
+          target_label: remote_write_group
+        - action: replace
+          regex: bsf
+          replacement: bsf-application
+          source_labels:
+            - nf__type
+          target_label: remote_write_group
+        - action: replace
+          regex: sepp
+          replacement: sepp-application
+          source_labels:
+            - nf__type
+          target_label: remote_write_group
+        - action: replace
+          regex: resource-usage
+          replacement: sc-application
+          source_labels:
+            - type
+          target_label: remote_write_group
+        - action: keep
+          regex: (.+)
+          source_labels:
+            - remote_write_group

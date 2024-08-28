@@ -1,0 +1,14 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ template "eric-influxdb.name" . }}
+  labels:
+    a: {{ .Values.service.name }}
+spec:
+  ports:
+  - protocol: TCP
+    port: {{ .Values.service.port }} 
+    targetPort: {{ .Values.spec.port }}
+  selector:
+    app: {{ .Values.service.name }}
+  type: NodePort

@@ -1,0 +1,38 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2019-07-12 16:00
+FOSS:
+    # Available in Bazaar
+    FOSSName: Apache XML Beans
+    # Available in Bazaar
+    FOSSVersion: 3.1.0
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: http://mvnrepository.com/artifact/org.apache.xmlbeans/xmlbeans/{{FOSSVersion}}
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 9/CAX1053725
+    # Not Available in Bazaar
+    PRIMNumber(CTC): CTC 101 5346
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: 'XMLBeans is a technology for accessing XML by binding it to Java types. XMLBeans provides several ways to get at the XML, including: Through XML schema that has been compiled to generate Java types that represent schema types. In this way, you can access instances of the schema through JavaBeans-style accessors after the fashion of getFoo and setFoo. The XMLBeans API also allows you to reflect into the XML schema itself through an XML Schema Object model; A cursor model through which you can traverse the full XML infoset; Support for XML DOM.'
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: Apache License 2.0
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'org.apache.xmlbeans:xmlbeans:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ENTNGRG Georgios Antoniou

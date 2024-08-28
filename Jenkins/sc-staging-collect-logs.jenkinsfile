@@ -1,0 +1,57 @@
+pipeline {
+    agent {
+        node {
+            label '5G-SC'
+        }
+    }
+    options {
+        timeout(time: 15, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '30'))
+        timestamps()
+    }
+    stages {
+        stage('List ENV Params') {
+            steps {
+                sh 'printenv | sort'
+            }
+        }
+        stage('Cleaning WS on Buildslaves') {
+            // only if no other instance of the same job is running in parallel
+            // if another instance is running this procedure would delete its WS and make it failing
+            when {
+                expression { currentBuild.getPreviousBuildInProgress() == null }
+            }
+            steps {
+                // remove all (!) content (including the git repo)
+                sh '''#!/bin/bash -x
+                    IP_ADDRESS_TMP=`hostname -i`;
+                    BUILD_PATH_TMP=`pwd`;
+                    for ip in 10.210.174.60 10.210.174.61 10.210.155.84 10.210.155.137 10.210.174.209;
+                    do
+                        if [ "${IP_ADDRESS_TMP}" != "${ip}" ];
+                        then
+                            ssh eiffelesc@${ip} "if [ -d ${BUILD_PATH_TMP} ]; then rm -rf ${BUILD_PATH_TMP}/; else echo \"Nothing to clean\"; fi;"
+                        fi;
+                    done;'''
+            } // steps
+        } // stage
+        stage('Collecting logs') {
+            when {
+                environment name: 'TROUBLESHOOTING', value: 'TRUE';
+            }
+            steps {
+                sh './scripts/collect_ADP_logs.sh -c ~/.kube/${KUBE_HOST}.config -n ${NAMESPACE}'
+            } // steps
+        } // stage
+        stage('Archive logs') {
+            steps {
+                archiveArtifacts allowEmptyArchive: true, artifacts: 'logs_*.tgz'
+            } // steps
+        } // stage 
+    } // stages
+    post {
+        always {
+            cleanWs()
+        } // always
+    } // post
+} // pipeline

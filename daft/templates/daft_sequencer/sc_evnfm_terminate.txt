@@ -1,0 +1,68 @@
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.2
+#  Date     : 2023-11-24 14:41:00
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2023
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+################################################################################
+# This file is used by the daft_sequencer.pl script and it contains commands to
+# be executed one-after-another.
+#
+# The file will undeploy both tools and SC deployments using EVNFM.
+#
+# NOTE:
+# This should be executed on the node.
+################################################################################
+
+# Playlist variables
+# ------------------
+PLAYLIST_VARIABLE: CREATE_PACKED_WORKSPACE_FILE_AT_FAILURE=yes
+PLAYLIST_VARIABLE: CREATE_PACKED_WORKSPACE_FILE_AT_SUCCESS=yes
+PLAYLIST_VARIABLE: INPUT_AVAILABLE=no
+PLAYLIST_VARIABLE: PACK_TROUBLESHOOTING_LOGS_SEPARATELY=yes
+
+# Environment variables
+# ---------------------
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_CLEAN_REGISTRY=no
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_REMOVE_LABEL=yes
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_UNDEPLOY_SC=yes
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_UNDEPLOY_TOOLS=yes
+# Remove the comment (#) from the following lines if you don't want to specify the values on the command line.
+#ENVIRONMENT_VARIABLE: DAFT_NETWORK_CONFIG_FILE=/home/eccd/daft/Snorlax.xml
+
+# Script variables
+# ----------------
+# Always stop on error when executing these commands
+SCRIPT_VARIABLE: stop-on-error=yes
+
+# Execute commands
+# ----------------
+
+# Clean the local registry on the node
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_CLEAN_REGISTRY="yes"    execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE -p 108_Miscellaneous_Tasks   -j Clean_Registry     -v CLEAN_REGISTRY=yes
+
+# Remove any node labels and taints from the workers on the node
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_REMOVE_LABEL="yes"      execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE -p 103_Tools_Management      -j Remove_Node_Label  -v DO_REMOVE_TAINT=yes -v DO_REMOVE_LABEL=yes -v NODE_TAINTS=NoSchedule -v NODE_LABEL=usage=tools
+
+# Undeploy any tools on the node
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_UNDEPLOY_TOOLS="yes"    execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE -p 106_Traffic_Tools_Remove  -j Undeploy_Tools     -v TOOLS_TO_REMOVE=dscload,k6,nrfsim,seppsim,sftp -v REMOVE_NAMESPACE=yes
+
+# Terminate any SC software using EVNFM
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_UNDEPLOY_SC="yes"       execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE -p 206_EVNFM_Terminate_SC    -j EVNFM_Terminate_SC -o EVNFM
+
+# Undeploy any SC software on the node
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_UNDEPLOY_SC="yes"       execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE -p 003_Undeploy_SC           -j Undeploy_SC        -v SKIP_UNDEPLOY_CRD=no -v CLEAN_REGISTRY=no

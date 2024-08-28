@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "eric-sepp.name" . }}-worker-cert-notifier
+  labels:
+{{- include "eric-sepp.labels" . | indent 4 }}
+    app: {{ template "eric-sepp.name" . }}-worker
+  annotations:
+{{- include "eric-sepp.helm-annotations" . | indent 4 }}
+{{- include "eric-sepp.config-annotations" . | indent 4 }}
+spec:
+  ipFamilyPolicy: PreferDualStack
+  type: ClusterIP
+{{- include "eric-sepp.ipfamilies" . | indent 2 }}
+  ports:
+  - protocol: TCP
+    port: {{ .Values.service.certnotifier.port }}
+    targetPort: {{ .Values.spec.certnotifier.port }}
+  selector:
+    app: {{ template "eric-sepp.name" . }}-worker

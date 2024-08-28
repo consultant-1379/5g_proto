@@ -1,0 +1,31 @@
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+# START Bsf-diameter only files
+metadata:
+# START CNCS/NF-SPLIT
+  name: {{ template "eric-stm-diameter-proxy-grpc.name" . }}-dcedsc-client-cert
+# STOP CNCS/NF-SPLIT
+  labels:
+    app.kubernetes.io/name: {{ template "eric-stm-diameter-proxy-grpc.name" . }}
+    app.kubernetes.io/version: {{ template "eric-stm-diameter-proxy-grpc.version" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- include "eric-stm-diameter-proxy-grpc.config-labels" . | indent 4 }}
+  annotations:
+{{- include "eric-stm-diameter-proxy-grpc.config-annotations" . | indent 4 }}
+{{- include "eric-stm-diameter-proxy-grpc.product-info" . | indent 4 }}
+spec:
+  kubernetes:
+# START CNCS/NF-SPLIT
+    generatedSecretName: {{ template "eric-stm-diameter-proxy-grpc.name" . }}-dcedsc-client-cert
+# STOP CNCS/NF-SPLIT
+  certificate:
+    subject:
+      cn: root
+    issuer:
+# START CNCS/NF-SPLIT
+      reference: {{ .Values.sc.common.etcd.hostname }}-ca
+# STOP CNCS/NF-SPLIT
+    extendedKeyUsage:
+      tlsClientAuth: true
+      tlsServerAuth: false
+# STOP Bsf-diameter only files

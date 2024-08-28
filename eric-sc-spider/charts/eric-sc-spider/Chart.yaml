@@ -1,0 +1,28 @@
+apiVersion: v2
+appVersion: 1.1.0-3
+dependencies:
+- name: eric-cloud-native-base
+  repository: https://arm.sero.gic.ericsson.se/artifactory/proj-adp-umbrella-released-helm/
+  version: 179.4.0-EP2+CCP
+- name: eric-cloud-native-nf-additions
+  repository: https://arm.sero.gic.ericsson.se/artifactory/proj-adp-umbrella-released-helm/
+  version: 54.3.0-EP1+CCP
+- name: eric-sc-cs
+  repository: https://arm.sero.gic.ericsson.se/artifactory/proj-sc-cs-umbrella-drop-helm/
+  version: 2.0.0-51
+- name: eric-sc-bsf
+  repository: https://arm.sero.gic.ericsson.se/artifactory/proj-sc-all-internal-helm
+  version: 1.1.0-4-h0254bf4
+- name: eric-sc-scp
+  repository: https://arm.sero.gic.ericsson.se/artifactory/proj-sc-all-internal-helm/
+  version: 1.1.0-5-h6fa1d31
+- name: eric-sc-sepp
+  repository: https://arm.sero.gic.ericsson.se/artifactory/proj-sc-all-internal-helm/
+  version: 1.1.0-4-hbc3ad5f
+- name: eric-dsc
+  repository: https://armdocker.rnd.ericsson.se/artifactory/proj-dsc-internal-helm/
+  version: 1.15.0-1-ha6fc4bb
+description: Signaling Controller. (c) Ericsson AB 2019.
+name: eric-sc-spider
+type: application
+version: 1.1.0-3

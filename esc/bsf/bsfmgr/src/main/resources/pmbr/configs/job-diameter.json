@@ -1,0 +1,23 @@
+[
+  {
+    "granularity-period": "five-min",
+    "reporting-period": "five-min",
+    "name": "bsf_job",
+    "type": "measurement-job",
+    "measurement-reader": [
+      {
+        "group-ref": "diameter_ingress",
+        "name": "diameter_ingress_reader"
+      },
+      {
+        "group-ref": "diameter_egress",
+        "name": "diameter_egress_reader"
+      },
+      {
+        "group-ref": "diameter_kpis",
+        "name": "diameter_kpis_reader"
+      }
+    ],
+    "requested-job-state": "active"
+  }
+]

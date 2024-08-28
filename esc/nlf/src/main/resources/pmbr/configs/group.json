@@ -1,0 +1,253 @@
+[
+  {
+    "measurement-type": [
+      {
+        "measurement-name": "nlf_in_requests_nnlf_nfdiscovery_total",
+        "description": "Number of incoming requests on the internal nnlf_nfdiscovery interface",
+        "collection-method": "cc",
+        "internal-metric-name": "nlf_in_requests_nnlf_nfdiscovery_total",
+        "multiplicity": 1,
+        "aggregation": "sum",
+        "measurement-status": "used",
+        "internal-metric-type": "Counter",
+        "reset-at-gran-period": true,
+        "id": "nlf_in_requests_nnlf_nfdiscovery_total",
+        "internal-instrumentation-label": {
+          "namespace": "",
+          "operation": "",
+          "kubernetes_pod_name": ""
+        },
+        "internal-target-pattern": "namespace=[namespace],operation=[operation],pod=[kubernetes_pod_name]",
+        "condition": "Incremented: None Decremented: N/A",
+        "size": 8
+      },
+      {
+        "measurement-name": "nlf_out_answers_nnlf_nfdiscovery_total",
+        "description": "Number of outgoing answers on the internal nnlf_nfdiscovery interface",
+        "collection-method": "cc",
+        "internal-metric-name": "nlf_out_answers_nnlf_nfdiscovery_total",
+        "multiplicity": 1,
+        "aggregation": "sum",
+        "measurement-status": "used",
+        "internal-metric-type": "Counter",
+        "reset-at-gran-period": true,
+        "id": "nlf_out_answers_nnlf_nfdiscovery_total",
+        "internal-instrumentation-label": {
+          "namespace": "",
+          "operation": "",
+          "status": "",
+          "kubernetes_pod_name": ""
+        },
+        "internal-target-pattern": "namespace=[namespace],operation=[operation],status=[status],pod=[kubernetes_pod_name]",
+        "condition": "Incremented: None Decremented: N/A",
+        "size": 8
+      }
+    ],
+    "version": "1.0.0",
+    "name": "nlf_service"
+  },
+  {
+    "measurement-type": [
+      {
+        "measurement-name": "nlf_cpu_usage",
+        "description": "CPU usage for nlf container",
+        "collection-method": "gauge",
+        "internal-metric-name": "nlf_cpu",
+        "multiplicity": 1,
+        "aggregation": "avg",
+        "measurement-status": "used",
+        "internal-metric-type": "Gauge",
+        "reset-at-gran-period": false,
+        "id": "nlf_cpu_usage",
+        "internal-instrumentation-label": {},
+        "internal-target-pattern": "service=eric-sc-nlf",
+        "condition": "CPU usage increased. CPU usage decreased.",
+        "size": 8
+      },
+      {
+        "measurement-name": "nlf_cpu_load",
+        "description": "NLF CPU load in percentage",
+        "collection-method": "gauge",
+        "internal-metric-name": "nlf_cpu_load",
+        "multiplicity": 1,
+        "aggregation": "avg",
+        "measurement-status": "used",
+        "internal-metric-type": "Gauge",
+        "reset-at-gran-period": false,
+        "id": "nlf_cpu_load",
+        "internal-instrumentation-label": {
+        },
+        "internal-target-pattern": "service=eric-sc-nlf",
+        "condition": "CPU load increased. CPU load decreased.",
+        "size": 8,
+        "fm-alarm-type": "/fme:fm/fme:alarm-model[fme:id='ericsson-sc']/fme:alarm-type[fme:id='ScNlfHighLoad']",
+        "fault-name": "ScNlfHighLoad",
+        "fault-description": "NLF load has passed a defined threshold",
+        "service-name": "ericsson-sc",
+        "threshold-direction": "increasing"
+      },
+      {
+        "measurement-name": "nlf_container_memory_working_set_bytes",
+        "description": "Memory usage per NLF container in bytes",
+        "collection-method": "gauge",
+        "internal-metric-name": "container_memory_working_set_bytes",
+        "multiplicity": 1,
+        "aggregation": "avg",
+        "measurement-status": "used",
+        "internal-metric-type": "Gauge",
+        "reset-at-gran-period": false,
+        "id": "nlf_container_memory_working_set_bytes",
+        "internal-instrumentation-label": {
+          "container": "eric-sc-nlf",
+          "pod": "",
+          "instance": ""
+        },
+        "internal-target-pattern": "container=[container],pod=[pod],k8snode=[instance]",
+        "condition": "Memory usage increased. Memory usage decreased.",
+        "size": 8
+      },
+      {
+        "measurement-name": "nlf_memory_usage",
+        "description": "NLF memory usage in percentage",
+        "collection-method": "gauge",
+        "internal-metric-name": "nlf_memory_usage",
+        "multiplicity": 1,
+        "aggregation": "avg",
+        "measurement-status": "used",
+        "internal-metric-type": "Gauge",
+        "reset-at-gran-period": false,
+        "id": "nlf_memory_usage",
+        "internal-instrumentation-label": {
+        },
+        "internal-target-pattern": "service=eric-sc-nlf",
+        "condition": "Memory usage increased. Memory usage decreased.",
+        "size": 8
+      }
+    ],
+    "version": "1.0.0",
+    "name": "nlf_system_metrics"
+  },
+  {
+    "measurement-type": [
+      {
+        "measurement-name": "nlf_nrf_discovery_success_rate",
+        "description": "Success rate of HTTP transaction requests initiated by the NLF towards NRF",
+        "collection-method": "gauge",
+        "internal-metric-name": "nlf_nrf_discovery_success_pmbr",
+        "multiplicity": 1,
+        "aggregation": "avg",
+        "measurement-status": "used",
+        "internal-metric-type": "Gauge",
+        "reset-at-gran-period": false,
+        "id": "nlf_nrf_discovery_success_rate",
+        "internal-instrumentation-label": {},
+        "condition": "Incremented: None Decremented: N/A",
+        "size": 8
+      },
+      {
+        "measurement-name": "nlf_nrf_out_requests_total",
+        "description": "Number of outgoing requests on the Nnrf interface",
+        "collection-method": "cc",
+        "internal-metric-name": "nrf_out_requests_total",
+        "multiplicity": 1,
+        "aggregation": "sum",
+        "measurement-status": "used",
+        "internal-metric-type": "Counter",
+        "reset-at-gran-period": true,
+        "id": "nlf_nrf_out_requests_total",
+        "internal-instrumentation-label": {
+          "service": "",
+          "nf": "",
+          "nf_instance": "",
+          "nrf_group": "",
+          "nrf": "",
+          "method": "",
+          "path": "",
+          "app": "eric-sc-nlf"
+        },
+        "internal-target-pattern": "nf=[nf],nf_instance=[nf_instance],nrf_group=[nrf_group],nrf=[nrf],service=[service],method=[method],path=[path]",
+        "condition": "Incremented: None Decremented: N/A",
+        "size": 8
+      },
+      {
+        "measurement-name": "nlf_nrf_in_answers_total",
+        "description": "Number of incoming answers on the Nnrf interface",
+        "collection-method": "cc",
+        "internal-metric-name": "nrf_in_answers_total",
+        "multiplicity": 1,
+        "aggregation": "sum",
+        "measurement-status": "used",
+        "internal-metric-type": "Counter",
+        "reset-at-gran-period": true,
+        "id": "nlf_nrf_in_answers_total",
+        "internal-instrumentation-label": {
+          "service": "",
+          "nf": "",
+          "nf_instance": "",
+          "nrf_group": "",
+          "nrf": "",
+          "method": "",
+          "path": "",
+          "status": "",
+          "app": "eric-sc-nlf"
+        },
+        "internal-target-pattern": "nf=[nf],nf_instance=[nf_instance],nrf_group=[nrf_group],nrf=[nrf],service=[service],method=[method],path=[path],status=[status]",
+        "condition": "Incremented: None Decremented: N/A",
+        "size": 8
+      },
+      {
+        "measurement-name": "nlf_nrf_failovers_total",
+        "description": "Number of failovers between NRF instances within an NRF group",
+        "collection-method": "cc",
+        "internal-metric-name": "nrf_failovers_total",
+        "multiplicity": 1,
+        "aggregation": "sum",
+        "measurement-status": "used",
+        "internal-metric-type": "Counter",
+        "reset-at-gran-period": true,
+        "id": "nlf_nrf_failovers_total",
+        "internal-instrumentation-label": {
+          "service": "",
+          "nf": "",
+          "nf_instance": "",
+          "nrf_group": "",
+          "from": "",
+          "to": "",
+          "cause": "",
+          "app": "eric-sc-nlf"
+        },
+        "internal-target-pattern": "nf=[nf],nf_instance=[nf_instance],nrf_group=[nrf_group],service=[service],from=[from],to=[to],cause=[cause]",
+        "condition": "Incremented: None Decremented: N/A",
+        "size": 8
+      },
+      {
+        "measurement-name": "nlf_nrf_endpoint_failovers_total",
+        "description": "Number of failovers between NRF internal endpoints",
+        "collection-method": "cc",
+        "internal-metric-name": "nrf_endpoint_failovers_total",
+        "multiplicity": 1,
+        "aggregation": "sum",
+        "measurement-status": "used",
+        "internal-metric-type": "Counter",
+        "reset-at-gran-period": true,
+        "id": "nlf_nrf_endpoint_failovers_total",
+        "internal-instrumentation-label": {
+          "service": "",
+          "nf": "",
+          "nf_instance": "",
+          "nrf_group": "",
+          "nrf": "",
+          "from": "",
+          "to": "",
+          "cause": "",
+          "app": "eric-sc-nlf"
+        },
+        "internal-target-pattern": "nf=[nf],nf_instance=[nf_instance],nrf_group=[nrf_group],nrf=[nrf],service=[service],from=[from],to=[to],cause=[cause]",
+        "condition": "Incremented: None Decremented: N/A",
+        "size": 8
+      }
+    ],
+    "version": "1.0.0",
+    "name": "nlf_nrf"
+  }
+]

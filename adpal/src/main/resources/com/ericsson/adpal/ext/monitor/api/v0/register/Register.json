@@ -1,0 +1,62 @@
+{
+    "$id": "file://schema/monitor_schema.json",
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Monitor Register Schema",
+    "definitions": 
+    {
+        "Callback": 
+        {
+            "$id": "#Callback",
+            "type": "object",
+            "properties": 
+            {
+                "operation": 
+                {
+                    "type": "string"
+                },
+                "source": 
+                {
+                    "type": "string"
+                },
+                "uri": 
+                {
+                    "type": "string",
+                    "format": "uri"
+                }
+            },
+            "additionalProperties": false,
+            "required": 
+            [
+                "operation",
+                "source",
+                "uri"
+            ]
+        }
+    },
+    "type": "object",
+    "properties": 
+    {
+        "id": 
+        {
+            "type": "string"
+        },
+        "callbacks": 
+        {
+            "type": "array",
+            "items": 
+            {
+                "$ref": "#definitions/Callback"
+            }
+        },
+        "result": 
+        {
+            "type": "string"
+        }
+    },
+    "additionalProperties": false,
+    "required": 
+    [
+        "id",
+        "callbacks"
+    ]
+}

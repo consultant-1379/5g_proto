@@ -1,0 +1,162 @@
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.1
+#  Date     : 2017-03-21 15:23:56
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2017
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Change user to root on GEP.
+#
+# This subroutine expects that it is already logged in to the GEP.
+#
+# Input:
+#  - Password for root user
+#
+# Output:
+#  - 0: Success
+#    1: Timeout or other error
+#
+proc GEP_su_root {root_psw} {
+    global spawn_id
+
+    set errorcnt 0
+
+    # Check what user is currently logged in
+    set current_user ""
+    send -- "whoami\r"
+
+    # Wait for result of command
+    expect {
+        -re "^(\[^\r\n\]*)\r*\n" {
+            # New line received, check contents and then continue waiting
+            set line $expect_out(1,string);
+
+            if { [regexp "^whoami$" $line junk] == 1 } {
+                # Command echoed back, ignore it and continue waiting
+            } elseif { [regexp "^(\[^ \]+)$" $line junk current_user] == 1 } {
+                # Current user, store it and continue waiting
+            } else {
+                # Some other information received, just ignore it
+            }
+
+            exp_continue
+        }
+        -re "SC-\[12\]\[^\n\]*$" {
+            # Ready for next command
+        }
+        -re "PL-\[0-9\]+\[^\n\]*$" {
+            # Ready for next command
+        }
+        timeout {
+            return 1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    if { $current_user == "root" } {
+        # No need to switch to root
+        return 0
+    }
+
+    set attempt 0
+
+    # Switch user id to root
+    send -- "su - root\r"
+
+    # Wait for password request from SCXB
+    expect {
+        "assword:" {
+            incr attempt
+            if { $attempt > 2 } {
+                # Failed twice, Send CTRL-C to exit
+                send "\x03"
+            } else {
+                send "$root_psw\r"
+            }
+            exp_continue
+        }
+        -re "^(\[^\r\n\]*)\r*\n" {
+            # New line received, check contents and then continue waiting
+            set line $expect_out(1,string);
+
+            if { [regexp "^su - root$" $line junk] == 1 } {
+                # Command echoed back, ignore it and continue waiting
+            } elseif { [regexp "^(\[^ \]+)$" $line junk current_user] == 1 } {
+                # Current user, store it and continue waiting
+            } else {
+                # Some other information received, just ignore it
+            }
+
+            exp_continue
+        }
+        -re "SC-\[12\]\[^\n\]*$" {
+            # Ready for next command
+        }
+        -re "PL-\[0-9\]+\[^\n\]*$" {
+            # Ready for next command
+        }
+        timeout {
+            return 1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    # Check that switch to root was successful
+    set current_user ""
+    send -- "whoami\r"
+
+    # Wait for result of command
+    expect {
+        -re "^(\[^\r\n\]*)\r*\n" {
+            # New line received, check contents and then continue waiting
+            set line $expect_out(1,string);
+
+            if { [regexp "^whoami$" $line junk] == 1 } {
+                # Command echoed back, ignore it and continue waiting
+            } elseif { [regexp "^(\[^ \]+)$" $line junk current_user] == 1 } {
+                # Current user, store it and continue waiting
+            } else {
+                # Some other information received, just ignore it
+            }
+
+            exp_continue
+        }
+        -re "SC-\[12\]\[^\n\]*$" {
+            # Ready for next command
+        }
+        -re "PL-\[0-9\]+\[^\n\]*$" {
+            # Ready for next command
+        }
+        timeout {
+            return 1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    if { $current_user == "root" } {
+        # Success
+        return 0
+    } else {
+        return 1
+    }
+}

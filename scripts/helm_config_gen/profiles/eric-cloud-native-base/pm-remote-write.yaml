@@ -1,0 +1,8 @@
+eric-pm-server:
+  config: ## used only INTERNALLY -> changes applied in config_gen
+    ## For remote write over TLS
+    certm_tls:
+      - name: eric-telegraf
+        trustedCertName: "sc-trusted-default-cas"
+        clientKeyName: "sc-pm-wr-default-cert"
+        clientCertName: "sc-pm-wr-default-cert"

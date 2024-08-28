@@ -1,0 +1,163 @@
+modelVersion: 2.0
+
+description: "BSF Diameter"
+
+import:
+  base: ../rulesets/ruleset2.0-eric-base.yaml
+  cddjmxexp: ../eric-sc-cddjmxexporter/ruleset2.0.yaml
+
+properties:
+  - HELM_REPO_INTERNAL: "proj-sc-all-internal-helm"
+  - HELM_REPO_DROP: "proj-sc-all-drop-helm"
+  - DOCKER_REPO_INTERNAL: "proj-sc-all-internal"
+  - DOCKER_REPO_DROP: "proj-sc-all-drop"
+  - CHART_NAME: "eric-bsf-diameter"
+  - CHART_PATH: ${CHART_NAME}/charts/${CHART_NAME}
+  - BSFDIAMETER_IMAGE_NAME: ${CHART_NAME}
+  - DOCKERFILE_PATH: "./esc/bsf/bsfdiameter/" # change to eric-bsf folder path when source code is isolated
+
+env:
+  # Common container images
+  - CDDJMXEXPORTER_IMAGE_NAME
+  - CDDJMXEXPORTER_IMAGE_VERSION
+  - CDDJMXEXPORTER_IMAGE_REPO
+  # the GERRIT username
+  - GERRIT_USERNAME
+  # the GERRIT password (Gerrit HTTP password)
+  - GERRIT_PASSWORD
+  # the ARM functional user token for Helm repository (J-Frog ARM Token)
+  - HELM_TOKEN
+  # Run git related actions in dry-run
+  - DRY_RUN (default=true)
+
+# variables' names include "bsf-diameter" because they will be stored in .bob/ of 5g_proto
+# TODO: remove "bsf-diameter" from the variables' names when bsf-diameter source code gets isolated
+# and the chart is moved to a separate git repo
+var:
+  - bsf-diameter-version
+  - bsf-diameter-image-repo
+  - bsf-diameter-chart-repo
+  - commithash
+  - branch
+
+rules:
+
+  all-local:
+    - rule: init
+    - rule: pre-package
+    - task: package:chart-local
+    - task: publish:chart-local
+    - task: clean:release-auto-tmp-folder
+
+  all-ci:
+    - rule: init
+    - rule: pre-package
+    - task: package:chart-ci
+    - task: publish:chart-ci
+    - rule: post-publish
+    - task: clean:release-auto-tmp-folder
+
+  clean:
+    - task: release-auto-tmp-folder
+      cmd: rm -rf ${base.OUTPUT_DIR}/untar_tmp
+
+  init:
+    - task: version
+      docker-image: base.adp-release-auto
+      cmd: version-handler generate
+            --is-release ${env.base.RELEASE}
+            --user ${env.base.USER}
+            --output bsf-diameter-version
+            --git-repo-path .
+            --version-prefix-file ./${CHART_NAME}/VERSION_PREFIX
+    - task: image-repo
+      cmd: /bin/bash -c 'if [ \"${env.base.RELEASE}\" == \"false\" ];
+                         then
+                            echo ${DOCKER_REPO_INTERNAL} > ${base.OUTPUT_DIR}/var.bsf-diameter-image-repo;
+                         else
+                            echo ${DOCKER_REPO_DROP} > ${base.OUTPUT_DIR}/var.bsf-diameter-image-repo;
+                         fi;'
+    - task: chart-repo
+      cmd: /bin/bash -c 'if [ \"${env.base.RELEASE}\" == \"false\" ];
+                         then
+                            echo ${HELM_REPO_INTERNAL} > ${base.OUTPUT_DIR}/var.bsf-diameter-chart-repo;
+                         else
+                            echo ${HELM_REPO_DROP} > ${base.OUTPUT_DIR}/var.bsf-diameter-chart-repo;
+                         fi;'
+
+  pre-package:
+    - task: build-bsfdiameter-image
+      cmd: docker build ${DOCKERFILE_PATH}/
+                --file ${DOCKERFILE_PATH}/Dockerfile
+                --build-arg DOCKER_BASE_IMG=${base.SC_CBOS_IMG}
+                --tag ${base.DOCKER_REGISTRY_URL}/${var.bsf-diameter-image-repo}/${BSFDIAMETER_IMAGE_NAME}:${var.bsf-diameter-version}
+    - task: publish-bsfdiameter-image
+      cmd: docker push ${base.DOCKER_REGISTRY_URL}/${var.bsf-diameter-image-repo}/${BSFDIAMETER_IMAGE_NAME}:${var.bsf-diameter-version}
+
+  package:
+    - task: chart-local
+      description: package helm chart by replacing the images' repo paths with the internal/drop repo
+      docker-image: base.adp-release-auto
+      cmd: helm-package
+        --folder ${CHART_PATH}
+        --workdir ${base.OUTPUT_DIR}
+        --output ${base.OUTPUT_DIR}
+        --version ${var.bsf-diameter-version}
+        --replace eric-product-info.yaml:bsfdiameter_repo_path=${var.bsf-diameter-image-repo}
+        --replace eric-product-info.yaml:bsfdiameter_image_name=${BSFDIAMETER_IMAGE_NAME}
+        --replace eric-product-info.yaml:bsfdiameter_image_tag=${var.bsf-diameter-version}
+        --replace eric-product-info.yaml:cddjmxexporter_repo_path=${var.cddjmxexp.cddjmxexporter-image-repo}
+        --replace eric-product-info.yaml:cddjmxexporter_image_name=${cddjmxexp.IMAGE_NAME}
+        --replace eric-product-info.yaml:cddjmxexporter_image_tag=${var.cddjmxexp.cddjmxexporter-image-version}
+    - task: chart-ci
+      description: package helm chart by replacing the images' repo paths with the internal/drop repo
+      docker-image: base.adp-release-auto
+      cmd: helm-package
+        --folder ${CHART_PATH}
+        --workdir ${base.OUTPUT_DIR}
+        --output ${base.OUTPUT_DIR}
+        --version ${var.bsf-diameter-version}
+        --replace eric-product-info.yaml:bsfdiameter_repo_path=${var.bsf-diameter-image-repo}
+        --replace eric-product-info.yaml:bsfdiameter_image_name=${BSFDIAMETER_IMAGE_NAME}
+        --replace eric-product-info.yaml:bsfdiameter_image_tag=${var.bsf-diameter-version}
+        --replace eric-product-info.yaml:cddjmxexporter_repo_path=${env.CDDJMXEXPORTER_IMAGE_REPO}
+        --replace eric-product-info.yaml:cddjmxexporter_image_name=${env.CDDJMXEXPORTER_IMAGE_NAME}
+        --replace eric-product-info.yaml:cddjmxexporter_image_tag=${env.CDDJMXEXPORTER_IMAGE_VERSION}
+
+  publish:
+    - task: chart-local
+      docker-image: base.inca
+      cmd: arm-upload
+        --file ${base.OUTPUT_DIR}/${CHART_NAME}-${var.bsf-diameter-version}.tgz
+        --destination ${base.ARMSERO_ARTIFACTORY_URL}/${var.bsf-diameter-chart-repo}/${CHART_NAME}/
+        --token ${var.base.serodocker-api-token}
+    - task: chart-ci
+      docker-image: base.inca
+      docker-envs:
+        - HELM_TOKEN
+      cmd: arm-upload
+        --file ${base.OUTPUT_DIR}/${CHART_NAME}-${var.bsf-diameter-version}.tgz
+        --destination ${base.ARMSERO_ARTIFACTORY_URL}/${var.bsf-diameter-chart-repo}/${CHART_NAME}/
+        --token ${env.HELM_TOKEN}
+
+  post-publish:
+    - task: get-commit
+      docker-image: base.adp-release-auto
+      cmd: git rev-parse --short HEAD > .bob/var.commithash
+    - task: get-branch
+      docker-image: base.adp-release-auto
+      cmd: git rev-parse --abbrev-ref HEAD > .bob/var.branch
+    - task: git-tag
+      docker-image: base.adp-release-auto
+      description: Create and push git tag. Example "eric-bsf-diameter/1.0.0-55"
+      docker-envs:
+        - GERRIT_USERNAME
+        - GERRIT_PASSWORD
+      cmd: version-handler create-git-tag
+           --git-repo-url ${base.GIT_REPO_URL}
+           --tag ${CHART_NAME}/${var.bsf-diameter-version}
+           --message "Release ${var.bsf-diameter-version}"
+           --commitid ${var.commithash}
+           --branch ${var.branch}
+           --dry-run ${env.DRY_RUN}
+           --debug

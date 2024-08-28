@@ -1,0 +1,21 @@
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalUserCA
+metadata:
+  name: {{ template "eric-stm-diameter-proxy-grpc.name" . }}-grpc-userca
+  labels:
+{{- if (include "eric-stm-diameter-proxy-grpc.labels" .) }}
+{{- include "eric-stm-diameter-proxy-grpc.labels" . | nindent 4 }}
+{{- end }}
+  annotations:
+{{- if (include "eric-stm-diameter-proxy-grpc.annotations" .) }}
+{{- include "eric-stm-diameter-proxy-grpc.annotations" . | nindent 4 }}
+{{- end }}
+spec:
+  kubernetes:
+    generatedSecretName: {{ template "eric-stm-diameter-proxy-grpc.name" . }}-grpc-userca-secret
+    certificateName: client-cacertbundle.pem
+  certificate:
+    subject:
+      cn: {{ template "eric-stm-diameter-proxy-grpc.name" . }}-ICCA
+{{- end }}

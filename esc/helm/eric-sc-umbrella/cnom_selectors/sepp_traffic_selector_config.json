@@ -1,0 +1,240 @@
+{
+    "id": "sepp_traffic_selector_config",
+    "sourceType": "prometheus",
+    "generalSelectors": [
+        {
+            "selectorId": "groupSelector",
+            "type": "local",
+            "label": "Traffic group",
+            "placeholder": "Select a SEPP traffic metrics group",
+            "useForLineChartTitle": true,
+            "values": [
+                {
+                    "name": "1. Ingress/Egress Traffic",
+                    "value": "sepp_ingress_egress_traffic"
+                },
+                {
+                    "name": "2. Traffic Success Rate",
+                    "value": "sepp_traffic_success_rate"
+                },
+                {
+                    "name": "3. Roaming Partner Ingress Traffic",
+                    "value": "sepp_roaming_partner_traffic"
+                },
+                {
+                    "name": "4. Egress Traffic per Pool",
+                    "value": "sepp_egress_traffic_pool"
+                },
+                {
+                    "name": "5. Egress Traffic per NF",
+                    "value": "sepp_egress_traffic_nf"
+                },
+                {
+                    "name": "6. Egress Traffic Success Rate per NF",
+                    "value": "sepp_egress_traffic_success_nf"
+                }
+            ]
+        },
+        {
+            "selectorId": "rp",
+            "type": "remote",
+            "label": "Roaming Partner",
+            "placeholder": "Select a roaming partner",
+            "map": {
+                "groupSelector": "sepp_roaming_partner_traffic"
+            },
+            "multi": true,
+            "selectAllItem": true,
+            "value": "roaming_partner"
+        },
+        {
+            "selectorId": "pool",
+            "type": "remote",
+            "label": "Pool",
+            "placeholder": "Select an egress traffic pool",
+            "map": {
+                "groupSelector": "sepp_egress_traffic_pool"
+            },
+            "multi": true,
+            "selectAllItem": true,
+            "value": "pool_name"
+        },
+        {
+            "selectorId": "nf_instance_id",
+            "type": "remote",
+            "label": "NF Instance ID",
+            "placeholder": "Select an egress NF instance ID",
+            "map": {
+                "groupSelector": "sepp_egress_traffic_nf"
+            },
+            "multi": true,
+            "selectAllItem": true,
+            "value": "nf_instance_id"
+        },
+        {
+            "selectorId": "pool_nf",
+            "type": "remote",
+            "label": "Pool",
+            "placeholder": "Select an egress traffic pool",
+            "map": {
+                "groupSelector": "sepp_egress_traffic_nf"
+            },
+            "multi": true,
+            "selectAllItem": true,
+            "value": "pool_name"
+        },
+        {
+            "selectorId": "nf_instance_id_success",
+            "type": "remote",
+            "label": "NF Instance ID",
+            "placeholder": "Select an egress NF instance ID",
+            "map": {
+                "groupSelector": "sepp_egress_traffic_success_nf"
+            },
+            "multi": true,
+            "selectAllItem": true,
+            "value": "nf_instance_id"
+        },
+        {
+            "selectorId": "pool_nf_success",
+            "type": "remote",
+            "label": "Pool",
+            "placeholder": "Select an egress traffic pool",
+            "map": {
+                "groupSelector": "sepp_egress_traffic_success_nf"
+            },
+            "multi": true,
+            "selectAllItem": true,
+            "value": "pool_name"
+        }
+    ],
+    "metricSelector": {
+        "label": "KPI",
+        "placeholder": "Select a KPI",
+        "multi": true,
+        "metrics": [
+            {
+                "map": {
+                    "groupSelector": "sepp_ingress_egress_traffic"
+                },
+                "values": [
+                    {
+                        "name": "sepp_ingress_mps"
+                    },
+                    {
+                        "name": "sepp_egress_mps"
+                    },
+                    {
+                        "name": "sepp_nrf_discovery_mps"
+                    },
+                    {
+                        "name": "sepp_licensed_traffic"
+                    }
+                ]
+            },
+            {
+                "map": {
+                    "groupSelector": "sepp_traffic_success_rate"
+                },
+                "values": [
+                    {
+                        "name": "sepp_ingress_success"
+                    },
+                    {
+                        "name": "sepp_egress_success"
+                    },
+                    {
+                        "name": "sepp_nrf_discovery_success"
+                    }
+                ]
+            },
+            {
+                "map": {
+                    "groupSelector": "sepp_roaming_partner_traffic"
+                },
+                "values": [
+                    {
+                        "name": "sepp_ingress_rp_mps"
+                    },
+                    {
+                        "name": "sepp_ingress_rp_class4"
+                    },
+                    {
+                        "name": "sepp_ingress_rp_class5"
+                    }
+                ]
+            },
+            {
+                "map": {
+                    "groupSelector": "sepp_egress_traffic_pool"
+                },
+                "values": [
+                    {
+                        "name": "sepp_egress_pool_mps"
+                    },
+                    {
+                        "name": "sepp_egress_pool_class4"
+                    },
+                    {
+                        "name": "sepp_egress_pool_class5"
+                    }
+                ]
+            },
+            {
+                "map": {
+                    "groupSelector": "sepp_egress_traffic_nf"
+                },
+                "values": [
+                    {
+                        "name": "sepp_egress_pool_nf_mps"
+                    },
+                    {
+                        "name": "sepp_egress_pool_nf_class2"
+                    },
+                    {
+                        "name": "sepp_egress_pool_nf_class4"
+                    },
+                    {
+                        "name": "sepp_egress_pool_nf_class5"
+                    },
+                    {
+                        "name": "sepp_egress_pool_nf_timeout"
+                    },
+                    {
+                        "name": "sepp_egress_pool_nf_rx_reset"
+                    },
+                    {
+                        "name": "sepp_egress_pool_nf_tx_reset"
+                    },
+                    {
+                        "name": "sepp_egress_pool_nf_rq_after_reselect"
+                    },
+                    {
+                        "name": "sepp_egress_pool_nf_rq_after_retry"
+                    }
+                ]
+            },
+            {
+                "map": {
+                    "groupSelector": "sepp_egress_traffic_success_nf"
+                },
+                "values": [
+                    {
+                        "name": "sepp_egress_pool_nf_success"
+                    }
+                ]
+            }
+        ]
+    },
+    "unit": {
+        "targetSelector": "groupSelector",
+        "map": {
+            "sepp_ingress_egress_traffic": " [MPS]",
+            "sepp_traffic_success_rate": " %",
+            "sepp_roaming_partner_traffic": " [MPS]",
+            "sepp_egress_traffic_pool": " [MPS]",
+            "sepp_egress_traffic_nf": " [MPS]",
+            "sepp_egress_traffic_success_nf": " %"
+        }
+    }
+}

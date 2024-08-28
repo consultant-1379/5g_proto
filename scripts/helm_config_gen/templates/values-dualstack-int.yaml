@@ -1,0 +1,9 @@
+#Remains empty, DS cluster should pick it up automatically
+#global:
+#  internalIPFamily: ["IPv4" , "IPv6"]
+ 
+#Last update: 1.29.0+39
+#eric-data-sftp-server:
+#  userManagement:
+#    ldap:
+#      lookupFamilyOrder: ipv4_first ## <empty>/ipv4_first/ipv6_first/ipv4_only/ipv6_only

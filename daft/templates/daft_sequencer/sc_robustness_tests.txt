@@ -1,0 +1,75 @@
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.3
+#  Date     : 2023-11-29 16:46:55
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2023
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+################################################################################
+# This file is used by the daft_sequencer.pl script and it contains commands to
+# be executed one-after-another.
+#
+# The file will execute the Robustness test cases one after another.
+#
+# NOTE:
+# This should be executed on the node.
+################################################################################
+
+# Environment variables
+# ---------------------
+# Change this parameter on the command line if you want to use a different "network-config-option" enabled, e.g. add -e DAFT_NETWORK_CONFIG_OPTION="-o SigDsOamDsDiamDs"
+ENVIRONMENT_VARIABLE: DAFT_NETWORK_CONFIG_OPTION=""
+# Change these on the command line if you want a different value, using -e DAFT_XXXX=yyyy
+ENVIRONMENT_VARIABLE: DAFT_DOWNLOAD_DIR="/home/eccd/download"
+ENVIRONMENT_VARIABLE: DAFT_TOOLS_NAMESPACE=tools
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_TIMEZONE_CHANGE=yes
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_MASTER_RESTART=yes
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_WORKER_RESTART=yes
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_WORKER_DRAIN=yes
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_MODERATE_NETWORK_IMPAIRMENT=yes
+# Remove the comment (#) from the following lines if you don't want to specify the values on the command line.
+#ENVIRONMENT_VARIABLE: DAFT_NETWORK_CONFIG_FILE=/home/eccd/network_config_files/Snorlax.xml
+#ENVIRONMENT_VARIABLE: DAFT_SC_SOFTWARE_VERSION=1.13.25+746
+
+# Playlist Variables
+# ------------------
+PLAYLIST_VARIABLE: CREATE_PACKED_WORKSPACE_FILE_AT_FAILURE=yes
+PLAYLIST_VARIABLE: CREATE_PACKED_WORKSPACE_FILE_AT_SUCCESS=yes
+PLAYLIST_VARIABLE: INPUT_AVAILABLE=no
+PLAYLIST_VARIABLE: PACK_TROUBLESHOOTING_LOGS_SEPARATELY=yes
+
+# Script variables
+# ----------------
+# Always stop on error when executing these commands
+SCRIPT_VARIABLE: stop-on-error=yes
+
+# Execute commands
+# ----------------
+
+# 301_Robustness_Test_Timezone_Change
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_TIMEZONE_CHANGE="yes"               execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE -p 301_Robustness_Test_Timezone_Change             $DAFT_NETWORK_CONFIG_OPTION -j Robustness_Test_Timezone_Change_SC_$DAFT_SC_SOFTWARE_VERSION -v SOFTWARE_DIR=$DAFT_DOWNLOAD_DIR/$DAFT_SC_SOFTWARE_VERSION
+
+# 302_Robustness_Test_K8s_Master_Restart
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_MASTER_RESTART="yes"                execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE -p 302_Robustness_Test_K8s_Master_Restart          $DAFT_NETWORK_CONFIG_OPTION -j Robustness_Test_Master_Restart_SC_$DAFT_SC_SOFTWARE_VERSION
+
+# 303_Robustness_Test_K8s_Worker_Restart
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_WORKER_RESTART="yes"                execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE -p 303_Robustness_Test_K8s_Worker_Restart          $DAFT_NETWORK_CONFIG_OPTION -j Robustness_Test_Worker_Restart_SC_$DAFT_SC_SOFTWARE_VERSION
+
+# 304_Robustness_Test_K8s_Worker_Drain
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_WORKER_DRAIN="yes"                  execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE -p 304_Robustness_Test_K8s_Worker_Drain            $DAFT_NETWORK_CONFIG_OPTION -j Robustness_Test_Worker_Drain_SC_$DAFT_SC_SOFTWARE_VERSION
+
+# 305_Robustness_Test_Moderate_Network_Impairment
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_MODERATE_NETWORK_IMPAIRMENT="yes"   execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE -p 305_Robustness_Test_Moderate_Network_Impairment $DAFT_NETWORK_CONFIG_OPTION -j Robustness_Test_Moderate_Network_Impairment_SC_$DAFT_SC_SOFTWARE_VERSION -v TOOLS_NAMESPACE=$DAFT_TOOLS_NAMESPACE

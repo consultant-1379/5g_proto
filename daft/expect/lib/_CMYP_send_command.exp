@@ -1,0 +1,206 @@
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.1
+#  Date     : 2023-01-26 11:06:09
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2021,2023
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+source [file join [file dirname [info script]] ../lib/_debug_message.exp]
+
+# -----------------------------------------------------------------------------
+# Send a command to the CMYP CLI shell.
+#
+# This subroutine expects that it is already connected to the CMYP CLI prompt.
+#
+# Input:
+#  - Command to send
+#
+# Output:
+#  -  0: Success
+#    >0: Command returned an error
+#    -1: Timeout
+#    -2: Connection lost
+#
+proc CMYP_send_command {command} {
+    global spawn_id
+    global timeout
+    global shell_type
+
+    # Fetch any previously detected prompt and update the local prompt variable
+    global detected_prompt
+    if {$detected_prompt == ""} {
+        set default_prompt "aPromptThatShouldNeverBeMatched1234567890"
+        set prompt $default_prompt
+    } else {
+        set default_prompt $detected_prompt
+        set prompt $default_prompt
+    }
+
+    set errorcnt 0
+
+    debug_message "CMYP_send_command: $command"
+
+    # Send the command
+    send -- "$command\r"
+    debug_message "    Prompt before sending command: $prompt"
+
+    # Save currently set timeout value
+    set default_timeout $timeout
+
+    set potential_prompt 0
+
+    expect {
+        -re "^syntax error: \[^\r\n\]*\r*\n" {
+            # Some invalid command have been given, increment an error counter
+            incr errorcnt
+            debug_message "    syntax error:..."
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt $default_prompt
+
+            exp_continue
+        }
+        -re "^Error:\[^\r\n\]*\r*\n" {
+            # Some invalid command have been given, increment an error counter
+            incr errorcnt
+            debug_message "    Error:..."
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt $default_prompt
+
+            exp_continue
+        }
+        -re "^\u002D+\u005E\r*\n" {
+            # ------------^
+            # Indicating some kind of error maybe not caught by above checks, increment an error counter
+            incr errorcnt
+            debug_message "    Some other kind of error not caught elsewhere"
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt $default_prompt
+
+            exp_continue
+        }
+        "\n" {
+            # New line received, continue waiting
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt $default_prompt
+
+            exp_continue
+        }
+        -re "\\-\\-More\\-\\-\[^\r\n\]*$" {
+            # Most likely the command "show running-config" have been given
+            # which produces paged output requiring the user to press a space
+            # for getting the next page.
+            send -- " "
+            exp_continue
+        }
+        -re "\(END\)\[^\r\n\]*$" {
+            # Most likely the command "show running-config" have been given
+            # which produces paged output requiring the user to press a space
+            # for getting the next page.
+            send -- " "
+            exp_continue
+        }
+        -re "$prompt$" {
+            debug_message "    Prompt detected: $prompt"
+            if { $prompt == "" } {
+                # Continue looking for prompt
+                exp_continue
+            } else {
+                # Restore timeout value
+                set timeout $default_timeout
+                # Ready for next command
+            }
+        }
+        -re "^\[^\r\n\]+#$" {
+            debug_message "    Potential Prompt detected 1: $prompt"
+            if { $prompt == "" } {
+                # Continue looking for prompt
+                exp_continue
+            } else {
+                # Restore timeout value
+                set timeout $default_timeout
+                # Ready for next command
+            }
+        }
+        -re "(\[^\r\n\]+)$" {
+            # We have received a potential prompt, wait max 1 second for something more to come
+            set timeout 1
+            if { $potential_prompt == 0 } {
+                # A new prompt possibly detected
+                set new_prompt $expect_out(1,string)
+            } else {
+                # More data received for the new prompt, append it to existing new prompt
+                set extra_prompt $expect_out(1,string)
+                set new_prompt "$prompt$extra_prompt"
+            }
+            set potential_prompt 1
+            debug_message "    Potential Prompt detected: $new_prompt"
+
+            exp_continue
+        }
+        eof {
+            puts "\nWe lost the connection to the node\n"
+            set timeout $default_timeout
+            debug_message "    eof detected"
+            return -2
+        }
+        timeout {
+            debug_message "    timeout detected, potential_prompt=$potential_prompt"
+            if { $potential_prompt == 1 } {
+                # Treat this as a success because a new prompt was detected, but first restore timeout value
+                set timeout $default_timeout
+                # Update the prompt variable with the new value
+                set prompt $new_prompt
+            } else {
+                puts "\nWe were unable to send the command due to a timeout\n"
+                set timeout $default_timeout
+                return -1
+            }
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    debug_message "    Command finished, errorcnt=$errorcnt"
+
+    # Update the detected prompt , if needed
+    if {$prompt != $default_prompt} {
+        # Convert all non-ASCII and Tcl-significant characters into \u escape sequences by using regsub and subst in combination
+        # Code copied from example on web page: https://www.tcl.tk/man/tcl8.4/TclCmd/regsub.htm
+        set RE {[][{}\$\s\u0100-\uffff]}
+        set substitution {[format \\\\u%04x [scan "\\&" %c]]}
+        debug_message "    Prompt has been changed from: $default_prompt"
+        set prompt [subst [regsub -all $RE $prompt $substitution]]
+        debug_message "    Prompt has been changed to:   $prompt"
+
+        set default_prompt $prompt
+        set detected_prompt $prompt
+    }
+
+    return $errorcnt
+}

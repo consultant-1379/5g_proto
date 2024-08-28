@@ -1,0 +1,50 @@
+# This file is intended to be used for UCC deployments
+# It contains settings to reduce memory, cpu,
+# disk space requests and limits.
+# Original base is the cloud native small footprint located
+# inside eric-cloud-native-nf-additions/profiles/small_footprint_resources.yaml
+# If values have been modified from this template,
+# the original values are mentioned in the same line after ##.
+
+#last update: eric-cloud-native-nf-additions-54.3.0-EP1+CCP
+eric-cm-yang-provider:
+  resources:
+    pmMetrics:
+      limits:
+        memory: 100Mi ## 50Mi
+      requests:
+        memory: 75Mi ## 50Mi
+
+eric-cnom-server:
+  resources:
+    server:
+      limits:
+        cpu: 500m ## 150m
+        memory: 400Mi ## 250Mi
+      requests:
+        cpu: 500m ## 100m
+        memory: 400Mi ## 100Mi
+
+eric-pm-bulk-reporter:
+  resources:
+    pmsftp:
+      limits:
+        memory: 300Mi ## 167Mi
+      requests:
+        memory: 150Mi ## 50Mi
+
+eric-sec-admin-user-management:
+  resources:
+    aum:
+      limits:
+        memory: 256Mi ## 150Mi
+      requests:
+        memory: 256Mi ## 100Mi
+
+eric-sec-ldap-server:
+  resources:
+    ldapagent:
+      limits:
+        memory: 310Mi ## 300Mi
+      requests:
+        memory: 310Mi ## 200Mi

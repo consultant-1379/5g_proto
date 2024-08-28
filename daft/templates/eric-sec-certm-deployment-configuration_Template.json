@@ -1,0 +1,28 @@
+{
+  "pkcs12": [
+    {
+      "name": "internode-external-key",
+      "certificate-name": "internode-external-cert",
+      "pkcs12": "<pkcs12_base64_without_spaces>",
+      "password": "<password _used_in_certificate_generation>"
+    },
+    {
+      "name": "cql-client-external-key",
+      "certificate-name": "cql-client-external-cert",
+      "pkcs12": "<pkcs12_base64_without_spaces>",
+      "password": "<password _used_in_certificate_generation>"
+    },
+    {
+      "name": "cql-server-external-key",
+      "certificate-name": "cql-server-external-cert",
+      "pkcs12": "<pkcs12_base64_without_spaces>",
+      "password": "<password _used_in_certificate_generation>"
+    }
+  ],
+  "ca-certs": [
+    {
+      "name": "sc-trusted-default-cas",
+      "pem": "-----BEGIN CERTIFICATE-----\nMIID...mgiiQ==\n-----END CERTIFICATE-----"
+    }
+  ]
+}

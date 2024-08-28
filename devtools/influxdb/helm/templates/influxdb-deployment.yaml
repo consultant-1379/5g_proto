@@ -1,0 +1,92 @@
+# Copyright 2019 Evo Team
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "eric-influxdb.name" . }}
+  labels:
+    app: {{ template "eric-influxdb.name" . }}
+    role: {{ .Values.service.name }}
+spec:
+  replicas: {{ .Values.spec.replicas }}
+  selector:
+    matchLabels:
+      app: {{ template "eric-influxdb.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "eric-influxdb.name" . }}
+        a: {{ .Values.service.name }}
+    spec:
+      volumes:
+{{ if .Values.service.tls.enabled }}
+        - name: {{ template "eric-influxdb.name" . }}-ca
+          secret:
+            secretName: {{ template "eric-influxdb.name" . }}-trusted-cert-secret
+        - name: {{ template "eric-influxdb.name" . }}-cert
+          secret:
+            secretName: {{ template "eric-influxdb.name" . }}-asymmetric-key-cert-secret
+            items:
+              - key: tls.crt
+                path: certificate.pem
+              - key: tls.key
+                path: key.pem
+{{ end }}
+        - name: {{ template "eric-influxdb.name" . }}-volume
+          configMap:
+            name: {{ template "eric-influxdb.name" . }}-configmap
+        - name: {{ template "eric-influxdb.name" . }}-storage
+          persistentVolumeClaim:
+            claimName: {{ template "eric-influxdb.name" . }}-pvc
+      imagePullSecrets:
+        - name: {{ .Values.imageCredentials.registry.pullSecret }}
+      containers:
+        - name: {{ .Values.service.name }}
+          image: {{ .Values.imageCredentials.registry.url }}/{{ .Values.imageCredentials.repoPath }}/{{ .Values.spec.image }}:{{ .Values.spec.tag }}
+{{ if .Values.service.tls.enabled }}
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh","-c","sleep 30; influx -ssl -unsafeSsl -host localhost -port 8086 -execute \"create database prometheus\"; result=$(influx -ssl -unsafeSsl -host localhost -port 8086 -execute \"show databases\"); echo ${result}; if [[ \"${result}\" =~ \"prometheus\" ]]; then echo \"prometheus exists\"; else echo \"prometheus does not exists\"; exit 1; fi"]
+{{ else }}
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh","-c","sleep 30; influx -host localhost -port 8086 -execute \"create database prometheus\"; result=$(influx -host localhost -port 8086 -execute \"show databases\"); echo ${result}; if [[ \"${result}\" =~ \"prometheus\" ]]; then echo \"prometheus exists\"; else echo \"prometheus does not exists\"; exit 1; fi"]
+{{ end }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: {{ .Values.spec.port }}
+          volumeMounts:
+{{ if .Values.service.tls.enabled }}
+            - name: {{ template "eric-influxdb.name" . }}-ca
+              mountPath: "/etc/ssl/certs"
+            - name: {{ template "eric-influxdb.name" . }}-cert
+              mountPath: "/etc/ssl"
+{{ end }}
+            - name: {{ template "eric-influxdb.name" . }}-storage
+              mountPath: "/var/lib/influxdb/data"
+            - name: {{ template "eric-influxdb.name" . }}-volume
+              mountPath: "/etc/influxdb"
+          env:
+            - name: INFLUXDB_USERNAME
+              value: "root"
+            - name: INFLUXDB_PASSWORD
+              value: "rootroot"
+{{ if .Values.spec.resources.requests.cpu }}
+          resources:
+            requests:
+              cpu: {{ .Values.spec.resources.requests.cpu | quote }}
+              memory: {{ .Values.spec.resources.requests.memory | quote }}
+            limits:
+              cpu: {{ .Values.spec.resources.limits.cpu | quote }}
+              memory: {{ .Values.spec.resources.limits.memory | quote }}
+{{ end }}
+{{ if .Values.usage }}
+      nodeSelector:
+        usage: {{ .Values.usage }}
+      tolerations:
+      - key: usage
+        operator: Equal
+        value: {{ .Values.usage }}
+        effect: "NoSchedule"
+{{ end }}

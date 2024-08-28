@@ -1,0 +1,154 @@
+openapi: 3.0.0
+info:
+  version: '1.0.0'
+  title: 'RLF O&M Service'
+  description: |
+    RLF Operation & Maintenance Service.
+    © 2022, Ericsson GmbH.
+    All rights reserved.
+servers:
+  - url: '{apiRoot}/nrlf-oam/v0'
+    variables:
+      apiRoot:
+        default: https://example.com
+        description: apiRoot as defined in clause 4.4 of 3GPP TS 29.501
+security:
+  - {}
+  - oAuth2ClientCredentials:
+      - nrlf-ratelimiting
+paths:
+  /buckets/{namespace}:
+    put:
+      summary: Update buckets
+      operationId: UpdateBuckets
+      parameters:
+        - name: namespace
+          in: path
+          description: The namespace of the token buckets
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BucketConfig' 
+      responses:
+        '204':
+          description: Expected response to a valid request
+        '400':
+          $ref: 'TS29571_CommonData.yaml#/components/responses/400'
+        '404':
+          $ref: 'TS29571_CommonData.yaml#/components/responses/404'
+        '500':
+          $ref: 'TS29571_CommonData.yaml#/components/responses/500'
+        '503':
+          $ref: 'TS29571_CommonData.yaml#/components/responses/503'
+        default:
+          $ref: 'TS29571_CommonData.yaml#/components/responses/default'
+  /buckets/state/{namespace}:
+    get:
+      summary: Get the state of all token buckets
+      operationId: GetBucketsState
+      parameters:
+        - name: namespace
+          in: path
+          description: The namespace of the token buckets
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BucketState' 
+        '400':
+          $ref: 'TS29571_CommonData.yaml#/components/responses/400'
+        '404':
+          $ref: 'TS29571_CommonData.yaml#/components/responses/404'
+        '500':
+          $ref: 'TS29571_CommonData.yaml#/components/responses/500'
+        '503':
+          $ref: 'TS29571_CommonData.yaml#/components/responses/503'
+        default:
+          $ref: 'TS29571_CommonData.yaml#/components/responses/default'
+    put:
+      summary: Set the state of all token buckets
+      operationId: SetBucketsState
+      parameters:
+        - name: namespace
+          in: path
+          description: The namespace of the token buckets
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BucketState' 
+      responses:
+        '204':
+          description: Expected response to a valid request
+        '400':
+          $ref: 'TS29571_CommonData.yaml#/components/responses/400'
+        '404':
+          $ref: 'TS29571_CommonData.yaml#/components/responses/404'
+        '500':
+          $ref: 'TS29571_CommonData.yaml#/components/responses/500'
+        '503':
+          $ref: 'TS29571_CommonData.yaml#/components/responses/503'
+        default:
+          $ref: 'TS29571_CommonData.yaml#/components/responses/default'
+components:
+  securitySchemes:
+    oAuth2ClientCredentials:
+      type: oauth2
+      flows: 
+        clientCredentials: 
+          tokenUrl: '/oauth2/token'
+          scopes:
+            nrlf-ratelimiting: Access to the Nrlf_RateLimiting API
+  schemas:
+    BucketConfig:
+      type: object
+      required:
+        - nm
+        - cp
+        - fr
+      properties:
+        nm:
+          description: The name of the token bucket, unique within its namespace
+          type: string
+        cp:
+          description: The capacity of the token bucket
+          type: integer
+          format: int64
+          minimum: 1
+        fr:
+          description: The fill rate [1/s] of the token bucket
+          type: number
+          format: double
+          minimum: 0
+    BucketState:
+      type: object
+      required:
+        - id
+        - fg
+      properties:
+        id:
+          description: The ID of the token bucket, unique within its namespace
+          type: integer
+        fg:
+          description: The fill grade [%] of the token bucket
+          type: number
+          format: double
+          minimum: 0     

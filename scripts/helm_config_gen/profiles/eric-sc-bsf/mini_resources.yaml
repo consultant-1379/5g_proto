@@ -1,0 +1,123 @@
+#eric-sc-bsf
+eric-bsf:
+  spec:
+    manager:
+      resources:
+        requests:
+#          memory: 512Mi
+          cpu: 250m #0.5
+        limits:
+          memory: 768Mi #1024Mi
+          cpu: 500m #1
+    worker:
+      resources:
+        requests:
+          memory: 512Mi
+          cpu: 300m #1
+        limits:
+          memory: 768Mi #1024Mi
+          cpu: 600m #1.5
+    tapagent:
+      resources:
+        requests:
+          memory: 64Mi #100Mi
+          cpu: 50m #100m
+        limits:
+          memory: 256Mi #500Mi
+          cpu: 250m #500m
+    tlskeylogagent:
+      resources:
+        requests:
+          memory: 100Mi
+          cpu: 50m #100m
+        limits:
+          memory: 500Mi
+          cpu: 250m #500m
+
+eric-bsf-diameter:
+  resources:
+    diameterproxygrpc:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+    dsl:
+      requests:
+        cpu: "50m"
+        memory: "64Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+    bsfdiameter:
+      requests:
+        cpu: "50m"
+        memory: "320Mi"
+      limits:
+        cpu: "400m"
+        memory: "1Gi"
+#  spec:
+#    cddjmxexporter:
+#      resources:
+#        requests:
+#          memory: 128Mi
+#          cpu: 50m
+#        limits:
+#          memory: 256Mi
+#          cpu: 200m
+
+eric-bsf-wcdb-cd:
+  resources:
+    cassandra:
+      requests:
+        cpu: "0.3" #4
+        memory: "2Gi" #16Gi
+      limits:
+        cpu: "1" #4
+        memory: "3Gi" #16Gi
+    brsc:
+      requests:
+        cpu: "100m" #"1"
+        memory: "256Mi"
+      limits:
+        cpu: "300m" #"4"
+        memory: "512Mi" #256Mi"
+    ecchronos:
+      requests:
+        memory: "256Mi"
+        cpu: "100m" #"200m"
+      limits:
+        memory: "256Mi"
+        cpu: "500m" #"1"
+  cassandra:
+    jvmOptions:
+      set:
+        - "Dmv_enable_coordinator_batchlog=true"
+        - "Xms1G" #8G
+        - "Xmx1G" #8G
+        - "Xmn100M" #800M
+
+eric-stm-diameter:
+  resources:
+    diameter:
+      requests:
+        memory: "64Mi" #"100Mi"
+        cpu: "30m" #"0.25"
+      limits:
+        memory: "256Mi" #"4Gi"
+        cpu: "0.2" #"4"
+    dsl:
+      requests:
+        memory: "64Mi" #"100Mi"
+        cpu: "30m" #"0.25"
+      limits:
+        memory: "256Mi" #"4Gi"
+        cpu: "0.2" #"4"
+    diametercm:
+      requests:
+        memory: "64Mi" #"100Mi"
+        cpu: "30m" #"0.25"
+      limits:
+        memory: "256Mi" #"4Gi"
+        cpu: "0.2" #"4"

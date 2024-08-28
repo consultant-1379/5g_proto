@@ -1,0 +1,62 @@
+{
+    "$id": "file://schema/monitor_schema.json",
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Monitor Counter Schema",
+    "definitions": 
+    {
+        "Instance": 
+        {
+            "$id": "#Instance",
+            "type": "object",
+            "properties": 
+            {
+                "name": 
+                {
+                    "type": "string"
+                },
+                "value": 
+                {
+                    "type": "number"
+                }
+            },
+            "additionalProperties": false,
+            "required": 
+            [
+                "name",
+                "value"
+            ]
+        },
+        "Instances": 
+        {
+            "$id": "#Instances",
+            "type": "array",
+            "items": 
+            {
+                "$ref": "#definitions/Instance"
+            }
+        }
+    },
+    "type": "object",
+    "properties": 
+    {
+        "name": 
+        {
+            "type": "string"
+        },
+        "help": 
+        {
+            "type": "string"
+        },
+        "instances": 
+        {
+            "$ref": "#definitions/Instances"
+        }
+    },
+    "additionalProperties": false,
+    "required": 
+    [
+        "name",
+        "help",
+        "instances"
+    ]
+}

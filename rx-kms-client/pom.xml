@@ -1,0 +1,189 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>com.ericsson</groupId>
+		<artifactId>esc-parent</artifactId>
+		<version>1.0.17</version>
+	</parent>
+
+	<groupId>com.ericsson.sc</groupId>
+	<artifactId>rx-kms-client</artifactId>
+	<version>0.0.5</version>
+	<description>Rxified java client for kms, used for decription</description>
+
+	<properties>
+		<maven.deploy.skip>true</maven.deploy.skip>
+	</properties>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>test-jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>${maven-surefire-plugin.version}</version>
+				<executions>
+					<execution>
+						<id>InsecureTests</id>
+						<configuration>
+							<groups>nonTls</groups>
+							<environmentVariables>
+								<GLOBAL_TLS_ENABLED>false</GLOBAL_TLS_ENABLED>
+								<SIP_TLS_TRUSTED_ROOT_CA_PATH>/tmp/unitTests/ca</SIP_TLS_TRUSTED_ROOT_CA_PATH>
+								<VAULT_HOST>localhost</VAULT_HOST>
+								<VAULT_PORT>8200</VAULT_PORT>
+								<VAULT_KEY_NAME>mykey</VAULT_KEY_NAME>
+								<ACCOUNT_TOKEN_PATH>/tmp/unitTests/accountToken</ACCOUNT_TOKEN_PATH>
+							</environmentVariables>
+						</configuration>
+					</execution>
+					<execution>
+						<id>SecureTests</id>
+						<configuration>
+							<groups>tls</groups>
+							<environmentVariables>
+								<GLOBAL_TLS_ENABLED>true</GLOBAL_TLS_ENABLED>
+								<SIP_TLS_TRUSTED_ROOT_CA_PATH>/tmp/unitTests/ca</SIP_TLS_TRUSTED_ROOT_CA_PATH>
+								<VAULT_HOST>localhost</VAULT_HOST>
+								<VAULT_PORT>8300</VAULT_PORT>
+								<VAULT_KEY_NAME>mykey</VAULT_KEY_NAME>
+								<ACCOUNT_TOKEN_PATH>/tmp/unitTests/accountToken</ACCOUNT_TOKEN_PATH>
+							</environmentVariables>
+						</configuration>
+					</execution>
+					<execution>
+						<id>StressTests</id>
+						<configuration>
+							<groups>stress</groups>
+							<environmentVariables>
+								<GLOBAL_TLS_ENABLED>true</GLOBAL_TLS_ENABLED>
+								<SIP_TLS_TRUSTED_ROOT_CA_PATH>/tmp/unitTests/ca</SIP_TLS_TRUSTED_ROOT_CA_PATH>
+								<VAULT_HOST>localhost</VAULT_HOST>
+								<VAULT_PORT>8300</VAULT_PORT>
+								<VAULT_KEY_NAME>mykey</VAULT_KEY_NAME>
+								<ACCOUNT_TOKEN_PATH>/tmp/unitTests/accountToken</ACCOUNT_TOKEN_PATH>
+							</environmentVariables>
+						</configuration>
+					</execution>
+					<execution>
+						<id>RobustnessTests</id>
+						<configuration>
+							<groups>robust</groups>
+							<environmentVariables>
+								<GLOBAL_TLS_ENABLED>true</GLOBAL_TLS_ENABLED>
+								<SIP_TLS_TRUSTED_ROOT_CA_PATH>/tmp/unitTests/ca</SIP_TLS_TRUSTED_ROOT_CA_PATH>
+								<VAULT_HOST>localhost</VAULT_HOST>
+								<VAULT_PORT>8300</VAULT_PORT>
+								<VAULT_KEY_NAME>mykey</VAULT_KEY_NAME>
+								<ACCOUNT_TOKEN_PATH>/tmp/unitTests/accountToken</ACCOUNT_TOKEN_PATH>
+							</environmentVariables>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>net.revelc.code.formatter</groupId>
+				<artifactId>formatter-maven-plugin</artifactId>
+				<version>${formatter-maven-plugin.version}</version>
+				<configuration>
+					<configFile>
+						java-formatter-linux-eclipse.xml
+					</configFile>
+				</configuration>
+				<!-- In order to format the source files during the build,
+                                                                                     include the
+                                                format goal in the plugin executions. -->
+				<executions>
+					<execution>
+						<goals>
+							<goal>format</goal>
+						</goals>
+					</execution>
+					<!-- In order to validate the source files during the
+                                                                                                     build, include
+                                                        the validate goal in the plugin
+                                                executions. -->
+					<!-- <execution> <goals> <goal>validate</goal> </goals>
+                                                                                                     </execution> -->
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.ericsson</groupId>
+			<artifactId>utilities</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>vault</artifactId>
+			<version>1.18.3</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testng</groupId>
+			<artifactId>testng</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>k3s</artifactId>
+			<version>1.18.3</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.yaml</groupId>
+			<artifactId>snakeyaml</artifactId>
+			<version>1.21</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.fabric8</groupId>
+			<artifactId>kubernetes-client</artifactId>
+			<version>6.7.2</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcprov-jdk15on</artifactId>
+			<version>1.70</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcpkix-jdk15on</artifactId>
+			<version>1.70</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcprov-ext-jdk15on</artifactId>
+			<version>1.70</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.ericsson</groupId>
+			<artifactId>supreme</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+
+</project>

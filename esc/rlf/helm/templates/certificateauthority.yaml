@@ -1,0 +1,16 @@
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalUserCA
+metadata:
+  name: {{ template "eric-sc-rlf.name" . }}-ca
+  annotations:
+{{- include "eric-sc-rlf.helm-annotations" . | indent 4 }}
+{{- include "eric-sc-rlf.config-annotations" . | indent 4 }}
+  labels:
+    {{- include "eric-sc-rlf.labels" . | indent 4 }}
+spec:
+  kubernetes:
+    generatedSecretName: {{ template "eric-sc-rlf.name" . }}-tls-client-ca-secret
+    certificateName: cacertbundle.pem
+  certificate:
+    subject:
+      cn: {{ template "eric-sc-rlf.name" . }}-ca

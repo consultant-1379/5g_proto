@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:ns2="urn:com:ericsson:ecim:1.0" xmlns:ns3="http://tail-f.com/ns/netconf/actions/1.0" xmlns:ns4="urn:ietf:params:xml:ns:yang:ietf-netconf-monitoring" xmlns:ns5="urn:ietf:params:xml:ns:netconf:notification:1.0" message-id="0">
+   <edit-config>
+      <target>
+         <running />
+      </target>
+      <config>
+         <vtap xmlns="urn:rdns:com:ericsson:oammodel:ericsson-vtap-pc5gc" operation="replace">
+            <profiles>
+               <profile>
+                  <name>MyProfile</name>
+                  <domain>
+                     <name>sc-bsf</name>
+                     <protocol>raw-sbi</protocol>
+                     <protocol>diameter</protocol>
+                  </domain>
+               </profile>
+            </profiles>
+            <stream-consumers>
+               <stream-consumer>
+                  <name>netscout</name>
+                  <address>192.168.5.1</address>
+                  <tapping-profile>MyProfile</tapping-profile>
+               </stream-consumer>
+            </stream-consumers>
+         </vtap>
+      </config>
+   </edit-config>
+</rpc>
+]]>]]>

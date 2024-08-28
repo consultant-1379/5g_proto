@@ -1,0 +1,43 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2024-01-10 09:05
+FOSS:
+    # Available in Bazaar
+    FOSSName: jopt-simple 
+    # Available in Bazaar
+    FOSSVersion: 5.0.4
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/jopt-simple/jopt-simple/archive/jopt-simple-{{FOSSVersion}}.zip
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 7/CAX1057301
+    # Not Available in Bazaar
+    Primary: N
+    # Available in Bazaar
+    STAKOCode: Not for a New Design
+    # Available in Bazaar
+    STAKOReason: Product version is older than 54 months
+    # Not Available in Bazaar
+    FunctionalityUsedInTheEricssonProduct: JOpt Simple is a Java library for parsing command line options, such as those you might pass to an invocation of javac.
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: FAL1159008 (MIT License (MIT))
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: FAL1159008 (MIT License (MIT))
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'net.sf.jopt-simple:jopt-simple:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ZSTOIOA Ioannis Stoltidis
+

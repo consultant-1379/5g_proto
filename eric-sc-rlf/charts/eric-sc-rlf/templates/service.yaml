@@ -1,0 +1,43 @@
+# Copyright 2022 Ericsson GmbH
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ template "eric-sc-rlf.name" . }}
+  labels:
+{{- include "eric-sc-rlf.labels" . | indent 4 }}
+    app: {{ template "eric-sc-rlf.name" . }}
+  annotations:
+{{- include "eric-sc-rlf.helm-annotations" . | indent 4 }}
+{{- include "eric-sc-rlf.config-annotations" . | indent 4 }}
+{{- if .Values.metrics.enabled }}
+    prometheus.io/scrape: {{ .Values.metrics.enabled | quote }}
+    prometheus.io/port: {{ .Values.service.rlf.server.oam.port | quote }}
+{{- if eq (include "eric-sc-rlf.tls" .) "true" }}
+    prometheus.io/scheme: https
+{{- else }}
+    prometheus.io/scheme: http
+{{- end }}
+{{- end }}
+spec:
+  ipFamilyPolicy: PreferDualStack
+  type: ClusterIP
+  clusterIP: None
+{{- include "eric-sc-rlf.ipfamilies" . | indent 2 }}
+  ports:
+  - name: rest-oam
+    protocol: TCP
+    port: {{ .Values.service.rlf.portRestOam }}
+    targetPort: {{ .Values.spec.rlf.portNameRestOam }}
+  - name: rest
+    protocol: TCP
+    port: {{ .Values.service.rlf.portRest }}
+    targetPort: {{ .Values.spec.rlf.portNameRest }}
+{{- if .Values.metrics.enabled }}
+  - name: oam-server
+    protocol: TCP
+    port: {{ .Values.service.rlf.server.oam.port }}
+    targetPort: {{ .Values.service.rlf.server.oam.targetPort }}
+{{- end }}
+  selector:
+    app: {{ template "eric-sc-rlf.name" . }}

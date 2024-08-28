@@ -1,0 +1,24 @@
+
+
+
+User access to docker:
+	> sudo groupadd docker
+	> sudo usermod -aG docker $USER
+	- Relogin (real logout!!!) and check docker command to see if access is granted
+
+
+
+
+no_proxy="localhost,127.0.0.1,vnssrv-001,.ericsson.se,.ericsson.com,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+
+
+
+http_proxy="http://wp.de.eld.ericsson.se:8080/"
+https_proxy="http://wp.de.eld.ericsson.se:8080/"
+no_proxy="localhost,127.0.0.1,vnssrv-001,.ericsson.se,.ericsson.com,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+
+
+
+
+git fetch ssh://eedsvs@gerrit.ericsson.se:29418/erikube/erikube refs/changes/17/3756017/3 && git checkout FETCH_HEAD
+

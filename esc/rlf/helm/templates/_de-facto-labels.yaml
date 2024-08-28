@@ -1,0 +1,5 @@
+{{- define "eric-sc-rlf.de-facto-labels" }}
+app.kubernetes.io/name: {{ template "eric-sc-rlf.name" . }}
+app.kubernetes.io/version: {{ template "eric-sc-rlf.version" . }}
+app.kubernetes.io/instance: {{ .Release.Name | quote }}
+{{- end}}

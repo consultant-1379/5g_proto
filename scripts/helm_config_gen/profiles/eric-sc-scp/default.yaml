@@ -1,0 +1,4 @@
+global:
+  registry:
+    imagePullPolicy: "Always"
+  pullSecret: regcred

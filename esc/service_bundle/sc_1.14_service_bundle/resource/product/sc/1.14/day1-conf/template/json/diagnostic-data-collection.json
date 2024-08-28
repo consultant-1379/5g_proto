@@ -1,0 +1,144 @@
+{
+  "content": {
+    "section": [
+      {
+        "hello": {
+          "capabilities": {
+            "capability": [
+              "urn:ietf:params:netconf:base:1.0"
+            ]
+          }
+        }
+      },
+      {
+        "rpc": {
+          "edit-config": {
+            "target": {
+              "running": ""
+            },
+            "config": {
+              "diagnostic-data-collection": {
+                "collector-profile": [
+                  {
+                    "profile-id": "defaultProfileForCollectionActionWhenTrOrCsr",
+                    "profile-type": "action-profile",
+                    "data-to-collect": [
+                      "logs",
+                      "metrics",
+                      "software-information",
+                      "kubernetes-information",
+                      "files"
+                    ],
+                    "files-to-collect": [
+                      "eric-pcf-nrf-registration",
+                      "eric-pcf-license-handler",
+                      "eric-pcf-peer-discoverer",
+                      "eric-ccpc-provisioning",
+                      "eric-pcf-session-management-policy-control",
+                      "eric-pcf-ue-policy-control",
+                      "eric-ccpc-data-access",
+                      "eric-pcf-envoy-manager"
+                    ],
+                    "export-ddb-to": [
+                      "sftp"
+                    ],
+                    "log-plane": [
+                      "adp-app-logs*",
+                      "adp-audit-logs*",
+                      "adp-debug-logs*",
+                      "adp-app-asi-logs*"
+                    ],
+                    "sftp": "sftpServerForDDC",
+                    "collection-window": 60
+                  },
+                  {
+                    "profile-id": "defaultProfileForPeriodicTriggerDDC",
+                    "profile-type": "collection-profile",
+                    "data-to-collect": [
+                      "logs",
+                      "metrics",
+                      "software-information",
+                      "kubernetes-information",
+                      "files"
+                    ],
+                    "files-to-collect": [
+                      "eric-pcf-nrf-registration",
+                      "eric-pcf-license-handler",
+                      "eric-pcf-peer-discoverer",
+                      "eric-ccpc-provisioning",
+                      "eric-pcf-session-management-policy-control",
+                      "eric-pcf-ue-policy-control",
+                      "eric-ccpc-data-access",
+                      "eric-pcf-envoy-manager"
+                    ],
+                    "export-ddb-to": [
+                      "sftp"
+                    ],
+                    "log-plane": [
+                      "adp-app-logs*",
+                      "adp-audit-logs*",
+                      "adp-debug-logs*",
+                      "adp-app-asi-logs*"
+                    ],
+                    "sftp": "sftpServerForDDC",
+                    "collection-window": 15
+                  },
+                  {
+                    "profile-id": "defaultProfileForPeriodicalLogExport",
+                    "profile-type": "collection-profile",
+                    "data-to-collect": [
+                      "logs",
+                      "software-information"
+                    ],
+                    "export-ddb-to": [
+                      "sftp"
+                    ],
+                    "log-plane": [
+                      "adp-app-logs*"
+                    ],
+                    "sftp": "sftpServerForDDC",
+                    "collection-window": 15
+                  }
+                ],
+                "sftp-server": [
+                  {
+                    "name": "sftpServerForDDC",
+                    "endpoints": {
+                      "endpoint": [
+                        {
+                          "name": "sftpServerForDDC",
+                          "remote-address": "sftp.sftpns.svc.cluster.local",
+                          "remote-port": 22,
+                          "remote-path": "upload",
+                          "client-identity": {
+                            "username": "foo",
+                            "password": "YmFy"
+                          },
+                          "server-authentication": {
+                            "ssh-host-keys": {
+                              "local-definition": {
+                                "host-key": [
+                                  "c3NoLXJzYSBBQUFBQjNOemFDMXljMkVBQUFBREFRQUJBQUFCQVFEdHBxaTV0NDUvRXMrTVNpdkc3UEdhY0VreTcxRFJKdis5SVh4TlY0aUR6SkJUNVd2eWh3azZPOVlSWjdoRU91WDFUTVNMRG5jNzVXbHEyOWc5aVRaN1ZrczdjVlZHZzFISCtSUjZCdXZTTk5YN1ZMckJkMXNDVnpZb0NoYjNaMDZQNG8vOVYxcCtMUmtLQndtQU00WTAvNmtianlqK0s3TnlvWDJvT0kvdFU5OXNBa0VSRHkvRzFFMzVxSGgzak13VUVVdkcyRE5NdEF1dmQreUlMemMvM2pkNzFySk1yeEFmd1dPVnNBYnBHZVQ5UEkzdDhvMTNjVEFUWTQyajZwZHpoYnV6UlBzTVAwWkpXT2gzZlZJbC9WSkhCWDFXZ3FWaUNYMGhDeFV3RHNMLytRREVCVS9WOHY2YkM0MWRtOWQza3hib2JhVFNveEtyQWszcWlJUk4gZXBlcmVmckBzZWxpaXV2ZDAwNzc3"
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "data-collector": {
+                  "profile": "defaultProfileForPeriodicalLogExport",
+                  "collection-interval": 10,
+                  "administrative-state": "locked"
+                }
+              }
+            }
+          },
+          "@message-id": 1
+        }
+      }
+    ]
+  }
+}

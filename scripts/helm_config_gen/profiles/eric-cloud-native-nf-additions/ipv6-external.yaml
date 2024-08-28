@@ -1,0 +1,20 @@
+global:
+  externalIPv4:
+    enabled: false
+  externalIPv6:
+    enabled: true
+
+eric-cm-yang-provider:
+  service:
+    externalIPv6:
+      enabled: false
+
+eric-data-sftp-server:
+  service:
+    externalIPv6:
+      enabled: false
+
+eric-pm-bulk-reporter:
+  service:
+    externalIPv6:
+      enabled: false

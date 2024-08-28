@@ -1,0 +1,13 @@
+global:
+  registry:
+    imagePullPolicy: "Always"
+  pullSecret: regcred
+
+eric-cnom-server:
+  imageCredentials:
+    server:
+      registry:
+        url: serodocker.sero.gic.ericsson.se
+    hooklauncher:
+      registry:
+        url: serodocker.sero.gic.ericsson.se

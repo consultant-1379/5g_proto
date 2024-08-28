@@ -1,0 +1,61 @@
+[
+  {
+    "granularity-period": "five-min",
+    "reporting-period": "five-min",
+    "name": "nlf_service_job",
+    "type": "measurement-job",
+    "measurement-reader": [
+      {
+        "group-ref": "nlf_service",
+        "name": "nlf_service_reader"
+      }
+    ],
+    "requested-job-state": "active"
+  },
+  {
+    "granularity-period": "five-min",
+    "reporting-period": "five-min",
+    "name": "nlf_system_job",
+    "type": "measurement-job",
+    "measurement-reader": [
+      {
+        "group-ref": "nlf_system_metrics",
+        "name": "nlf_system_metrics_reader"
+      },
+      {
+        "group-ref": "nlf_nrf",
+        "name": "nlf_nrf_reader"
+      }      
+    ],
+    "requested-job-state": "active"
+  },
+  {
+    "granularity-period": "one-min",
+    "reporting-period": "one-min",
+    "name": "nlf_overload_job",
+    "type": "threshold-job",
+    "measurement-reader": [
+      {
+        "name": "nlf_overload_reader",
+        "measurement-type-ref": "nlf_cpu_load",
+        "group-ref": "nlf_system_metrics",
+        "threshold-direction": "increasing",
+        "threshold-monitoring": [
+          {
+            "name": "nlf_overload_threshold_monitoring",
+            "threshold-high": "70",
+            "threshold-low": "60",
+            "threshold-severity": "major"
+          },
+          {
+            "name": "nlf_overload_threshold_escalation",
+            "threshold-high": "80",
+            "threshold-low": "75",
+            "threshold-severity": "critical"
+          }
+        ]
+      }
+    ],
+    "requested-job-state": "active"
+  }
+]

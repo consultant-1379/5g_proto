@@ -1,0 +1,32 @@
+URI: ldap://eric-referral-ldap:389 ldaps://eric-referral-ldap:636
+bindDN: cn=admin,{{ .Values.baseDN }}
+bindPWD: {{ .Values.adminPassword }}
+userBaseDN: ou=people,{{ .Values.baseDN }}
+{{ if .Values.tls.enabled }}
+Referral LDAP server started with TLS.
+{{- if .Values.tls.useCr.enabled }}
+For certificates please add in CMYP the following
+- keystore certificate: sc-referral-ldap-default-cert
+           key: sc-referral-ldap-default-key
+- truststore certificate: sc-trusted-default-cas
+{{- else }}
+For certificates please generate the following secrets:
+- eric-referral-ldap-trusted-cert-secret with data:
+  > ca-certs-SC.pem: the CA
+- eric-referral-ldap-asymmetric-key-cert-secret
+  > tls.crt: the server certificate
+  > tls.key: the server private key
+{{- end }}
+{{- else }}
+Referral LDAP server started without TLS.
+{{- end }}
+
+Referral LDAP users
+-------------------
+user		user group				password
+bob		system-admin				bob_pw
+alice		system-security-admin			alice_pw
+guest		system-read-only			guest_pw
+scpAdmin	scp-admin				scpscp
+bsfAdmin	bsf-admin				bsfbsf
+seppAdmin	sepp-admin				seppsepp

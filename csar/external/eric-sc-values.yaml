@@ -1,0 +1,6512 @@
+## Set multiple parameter values at once ##
+definitions:
+  ## name of local WCDB datacenter
+  # wcdb_datacenter_name: &wcdb_datacenter_name "datacenter1"
+  ## VIP_OAM: the virtual IP address for OAM traffic
+  VIP_OAM: &VIP_OAM ""
+  ## VIP_SIG_SCP: the virtual IP address(es) for signaling traffic of SCP provided as comma separated list of IPs
+  ## For example, "10.244.1.4,2001:db8::4"
+  VIP_SIG_SCP: &VIP_SIG_SCP ""
+  VIP_SIG2_SCP: &VIP_SIG2_SCP ""
+  ## VIP_SIG_SEPP: the virtual IP address(es) for signaling traffic of SEPP provided as comma separated list of IPs
+  ## For example, "10.244.1.4,2001:db8::4"
+  VIP_SIG_SEPP: &VIP_SIG_SEPP ""
+  VIP_SIG2_SEPP: &VIP_SIG2_SEPP ""
+  ## VIP_SIG_BSF: the virtual IP address(es) for signaling traffic of BSF provided as comma separated list of IPs
+  ## For example, "10.244.1.4,2001:db8::4"
+  VIP_SIG_BSF: &VIP_SIG_BSF ""
+  ## VIP_SIG_BSF_Diameter: the virtual IP address for signaling traffic of BSF over the diameter interface
+  VIP_SIG_BSF_Diameter: &VIP_SIG_BSF_Diameter ""
+  ## VIP_SIG_Diameter: the virtual IP address for signaling traffic of Diameter NF over the diameter interface
+  VIP_SIG_Diameter: &VIP_SIG_Diameter ""
+  ## VIP_SIG_SCTP: the virtual IP address for signaling traffic of Diameter NF over the SCTP interface
+  VIP_SIG_SCTP: &VIP_SIG_SCTP ""
+  ## storage class for all OAM state
+  oam_storage_class: &oam_storage_class "network-block"
+  ## shared VIP label for OAM
+  shared_vip_oam_label: &shared_vip_oam_label "shared-vip-oam"
+  ## name of WCDB StatefulSet for SC Diameter NF
+  dsc_wcdb_statefulset_name: &dsc_wcdb_statefulset_name "eric-dsc-wcdb-cd"
+  ## name of local WCDB datacenter for SC Diameter NF
+  dsc_wcdb_datacenter_name: &dsc_wcdb_datacenter_name "datacenter1"
+  ## name of local WCDB datacenter for BSF NF
+  bsf_wcdb_datacenter_name: &bsf_wcdb_datacenter_name "datacenter1"
+
+# global:
+  ## Sets the timezone for all containers in the helm chart(s)
+  # timezone: UTC
+  ## Set the Kubernetes nodeSelector for all containers in the helm chart(s)
+  # nodeSelector: {}
+  ## Secret containing credentials an application's image registries
+  # pullSecret: ""
+  # registry:
+    ## The default container image registry
+    # url: "armdocker.rnd.ericsson.se"
+  # externalIPv4:
+     # enabled: false
+  # externalIPv6:
+     # enabled: false
+  # ipFamilyPolicy: SingleStack ## SingleStack or PreferDualStack or RequireDualStack
+  # annotations: {}
+  # labels: {}
+  # licensing:
+    ## The site information for each cNeLS instance, formatted as entries in an array
+    # sites:
+    # - hostname: ""
+      # ip: ""
+      # priority: 10
+  # ericsson:
+    # licensing:
+      ## The mandatory parameter for the licensing domain information for each product type used by ADP LM, formatted as entries in an array
+      # licenseDomains:
+        # - productType: "SIGNALING_CONTROLLER" ## DO NOT CHANGE THIS VALUE
+          # customerId: ""
+          # swltId: ""
+  ## Enable or disable the network policy globally
+  # networkPolicy:
+    # enabled: true
+  # log:
+    # streamingMethod: "indirect" Supported values: "indirect", "direct", "dual" and null
+  # logShipper:
+    # deployment:
+      # type: "" ## sidercar or empty
+
+## ERIC-SC-SEPP IHC parameters
+eric-sepp:
+  # egress:
+    # nrf:
+      ## default 0, the value range 0..63, 0 is the lowest priority, 63 is the highest priority.
+      ## Any other value is invalid.
+      # dscp: 0
+  service:
+    worker:
+      # ipFamilyPolicy: SingleStack ## SingleStack or PreferDualStack or RequireDualStack
+      # loadBalancerIP: *VIP_SIG_SEPP
+      annotations:
+        # cloudProviderLB: {}
+        loadBalancerIPs: *VIP_SIG_SEPP
+      # externalTrafficPolicy: Local
+      # port: 80
+      # tlsport: 443
+      # externalIPv4:
+        # enabled: false
+      # externalIPv6:
+        # enabled: false
+      multiVpn:
+        # ipFamilyPolicy: SingleStack ## SingleStack or PreferDualStack or RequireDualStack
+        # enabled: true
+        # loadBalancerIP: *VIP_SIG2_SEPP
+        annotations:
+          # cloudProviderLB: {}
+          loadBalancerIPs: *VIP_SIG2_SEPP
+        # externalTrafficPolicy: Local
+        # port: 80
+        # tlsport: 443
+        # externalIPv4:
+          # enabled: false
+        # externalIPv6:
+           # enabled: false
+  # spec:
+    # manager:
+      # replicaCount: 2
+      # affinity:
+        # podAntiAffinity: "soft"
+      # tolerations:
+        # - key: node.kubernetes.io/not-ready
+          # operator: Exists
+          # effect: NoExecute
+          # tolerationSeconds: 0
+        # - key: node.kubernetes.io/unreachable
+          # operator: Exists
+          # effect: NoExecute
+          # tolerationSeconds: 0
+      # podDisruptionBudget:
+        # minAvailable: 1
+      # resources:
+        # requests:
+          # memory: 512Mi
+          # cpu: 0.5
+          # ephemeral-storage:
+        # limits:
+          # memory: 1024Mi
+          # cpu: 1
+          # ephemeral-storage:
+    # worker:
+      # resources:
+        # requests:
+          # memory: 512Mi
+          # cpu: 1
+          # ephemeral-storage:
+        # limits:
+          # memory: 1024Mi
+          # cpu: 1.5
+          # ephemeral-storage:
+      # replicaCount: 2
+      # max_active_tcp_connections: "500"
+      # concurrency: "2"
+      # send_goaway_for_premature_rst_streams: true
+      # premature_reset_total_stream_count: "500"
+      # premature_reset_min_stream_lifetime_seconds: "1"
+      # max_requests_per_io_cycle: "0"
+      # affinity:
+        # podAntiAffinity: "soft"
+      # tolerations:
+        # - key: node.kubernetes.io/not-ready
+          # operator: Exists
+          # effect: NoExecute
+          # tolerationSeconds: 0
+        # - key: node.kubernetes.io/unreachable
+          # operator: Exists
+          # effect: NoExecute
+          # tolerationSeconds: 0
+      # podDisruptionBudget:
+        # minAvailable: 1
+    # logfwdr:
+      # resources:
+        # requests:
+          # memory: 32Mi
+          # cpu: 50m
+          # ephemeral-storage:
+        # limits:
+          # memory: 64Mi
+          # cpu: 100m
+          # ephemeral-storage:
+    # sds:
+      # resources:
+        # requests:
+          # memory: 512Mi
+          # cpu: 100m
+          # ephemeral-storage:
+        # limits:
+          # memory: 1024Mi
+          # cpu: 200m
+          # ephemeral-storage:
+    # certnotifier:
+      # resources:
+        # requests:
+          # memory: 128Mi
+          # cpu: 80m
+          # ephemeral-storage:
+        # limits:
+          # memory: 256Mi
+          # cpu: 160m
+          # ephemeral-storage:
+    # tapagent:
+      # resources:
+        # requests:
+          # memory: 100Mi
+          # cpu: 100m
+          # ephemeral-storage:
+        # limits:
+          # memory: 500Mi
+          # cpu: 500m
+          # ephemeral-storage:
+    # tlskeylogagent:
+      # resources:
+        # requests:
+          # memory: 100Mi
+          # cpu: 100m
+          # ephemeral-storage:
+        # limits:
+          # memory: 500Mi
+          # cpu: 500m
+          # ephemeral-storage:
+    # tapcollector:
+      # resources:
+        # requests:
+          # memory: 256Mi
+          # cpu: 100m
+          # ephemeral-storage:
+        # limits:
+          # memory: 2560Mi
+          # cpu: 1
+          # ephemeral-storage:
+  # probes:
+    # manager:
+      # livenessProbe:
+        # initialDelaySeconds: 180
+        # periodSeconds: 10
+        # timeoutSeconds: 1
+        # successThreshold: 1
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 10
+        # periodSeconds: 10
+        # timeoutSeconds: 1
+        # successThreshold: 1
+        # failureThreshold: 3
+    # worker:
+      # livenessProbe:
+        # initialDelaySeconds: 30
+        # periodSeconds: 3
+        # timeoutSeconds: 2
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # timeoutSeconds: 4
+        # successThreshold: 1
+        # failureThreshold: 3
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # timeoutSeconds: 1
+        # failureThreshold: 30
+  # maxRequestBytes: "65535"
+  # certificates:
+    # traf:
+      # asymmetric:
+      # - key: sc-traf-default-key1
+        # certificate: sc-traf-default-cert1
+      # - key: sc-traf-default-key2
+        # certificate: sc-traf-default-cert2
+      # trustedAuthority:
+      # - caList: sc-traf-root-ca-list1
+      # - caList: sc-traf-root-ca-list2
+    # nrf:
+      # key: sc-nrf-default-key
+      # certificate: sc-nrf-default-cert
+  # manager:
+    # leaderElection:
+      # enabled: true
+  # tapagent:
+    # manager:
+      # enabled: false
+    # worker:
+      # enabled: false
+  # tapcollector:
+    # worker:
+      # enabled: false
+      # replaceLocalSocketAddress: true
+    # tappedData:
+      # divisionMethod: truncate
+      # chunkSizeLimit: "61440"
+  # rlf:
+    # enabled: false
+  # vtap:
+    #  enabled: false
+  # nodeSelector:
+    # worker: {}
+    # manager: {}
+  # annotations: {}
+  # labels: {}
+  # resources:
+    # logshipper:
+      # requests:
+        # memory: "20Mi"
+        # cpu: "33m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "30Mi"
+        # cpu: "40m"
+        # ephemeral-storage:
+    # licenseConsumer:
+      # requests:
+        # cpu: "50m"
+        # memory: "100Mi"
+        # ephemeral-storage: ""
+      # limits:
+        # cpu: "250m"
+        # memory: "500Mi"
+        # ephemeral-storage: ""
+
+# eric-sc-sepp-log-shipper:
+  # enabled: false
+
+## ERIC-SC-SCP IHC parameters
+
+eric-scp:
+  # egress:
+    # nrf:
+      ## default 0, the value range 0..63, 0 is the lowest priority, 63 is the highest priority.
+      ## Any other value is invalid.
+      # dscp: 0
+  service:
+    worker:
+      # ipFamilyPolicy: SingleStack ## SingleStack or PreferDualStack or RequireDualStack
+      # loadBalancerIP: *VIP_SIG_SCP
+      annotations:
+        # cloudProviderLB: {}
+        loadBalancerIPs: *VIP_SIG_SCP
+      # externalTrafficPolicy: Local
+      # port: 80
+      # tlsport: 443
+      # externalIPv4:
+        # enabled: false
+      # externalIPv6:
+        # enabled: false
+      multiVpn:
+        # ipFamilyPolicy: SingleStack ## SingleStack or PreferDualStack or RequireDualStack
+        # enabled: false
+        # loadBalancerIP: *VIP_SIG2_SCP
+        annotations:
+           # cloudProviderLB: {}
+           loadBalancerIPs: *VIP_SIG2_SCP
+        # externalTrafficPolicy: Local
+        # port: 80
+        # tlsport: 443
+        # externalIPv4:
+          # enabled: false
+        # externalIPv6:
+          # enabled: false
+  # spec:
+    # setup:
+      # resources:
+        # requests:
+          # memory: 128Mi
+          # cpu: 0.2
+          # ephemeral-storage: ""
+        # limits:
+          # memory: 256Mi
+          # cpu: 0.4
+          # ephemeral-storage: ""
+    # manager:
+      # replicaCount: 2
+      # affinity:
+        # podAntiAffinity: "soft"
+      # resources:
+        # requests:
+          # memory: 512Mi
+          # cpu: 0.5
+          # ephemeral-storage: ""
+        # limits:
+          # memory: 1024Mi
+          # cpu: 1
+          # ephemeral-storage: ""
+      # tolerations:
+        # - key: node.kubernetes.io/not-ready
+          # operator: Exists
+          # effect: NoExecute
+          # tolerationSeconds: 0
+        # - key: node.kubernetes.io/unreachable
+          # operator: Exists
+          # effect: NoExecute
+          # tolerationSeconds: 0
+      # podDisruptionBudget:
+        # minAvailable: 0
+    # worker:
+      # replicaCount: 2
+      # max_active_tcp_connections: "500"
+      # concurrency: "2"
+      # send_goaway_for_premature_rst_streams: true
+      # premature_reset_total_stream_count: "500"
+      # premature_reset_min_stream_lifetime_seconds: "1"
+      # max_requests_per_io_cycle: "0"
+      # affinity:
+        # podAntiAffinity: "soft"
+      # tolerations:
+        # - key: node.kubernetes.io/not-ready
+          # operator: Exists
+          # effect: NoExecute
+          # tolerationSeconds: 0
+        # - key: node.kubernetes.io/unreachable
+          # operator: Exists
+          # effect: NoExecute
+          # tolerationSeconds: 0
+      # podDisruptionBudget:
+        # minAvailable: 1
+      # resources:
+        # requests:
+          # memory: 512Mi
+          # cpu: 1
+          # ephemeral-storage: ""
+        # limits:
+          # memory: 1024Mi
+          # cpu: 1.5
+          # ephemeral-storage: ""
+    # logfwdr:
+      # resources:
+        # requests:
+          # memory: 32Mi
+          # cpu: 50m
+          # ephemeral-storage: ""
+        # limits:
+          # memory: 64Mi
+          # cpu: 100m
+          # ephemeral-storage: ""
+    # sds:
+      # resources:
+        # requests:
+          # memory: 256Mi
+          # cpu: 100m
+          # ephemeral-storage: ""
+        # limits:
+          # memory: 512Mi
+          # cpu: 200m
+          # ephemeral-storage: ""
+    # certnotifier:
+      # resources:
+        # requests:
+          # memory: 128Mi
+          # cpu: 80m
+          # ephemeral-storage: ""
+        # limits:
+          # memory: 256Mi
+          # cpu: 160m
+          # ephemeral-storage: ""
+    # tapagent:
+      # resources:
+        # requests:
+          # memory: 100Mi
+          # cpu: 100m
+          # ephemeral-storage: ""
+        # limits:
+          # memory: 500Mi
+          # cpu: 500m
+          # ephemeral-storage: ""
+    # tlskeylogagent:
+      # resources:
+        # requests:
+          # memory: 100Mi
+          # cpu: 100m
+          # ephemeral-storage: ""
+        # limits:
+          # memory: 500Mi
+          # cpu: 500m
+          # ephemeral-storage: ""
+    # tapcollector:
+      # resources:
+        # requests:
+          # memory: 256Mi
+          # cpu: 100m
+          # ephemeral-storage: ""
+        # limits:
+          # memory: 2560Mi
+          # cpu: 1
+          # ephemeral-storage: ""
+  # probes:
+    # manager:
+      # livenessProbe:
+        # initialDelaySeconds: 180
+        # periodSeconds: 10
+        # timeoutSeconds: 1
+        # successThreshold: 1
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 10
+        # periodSeconds: 10
+        # timeoutSeconds: 1
+        # successThreshold: 1
+        # failureThreshold: 3
+    # worker:
+      # livenessProbe:
+        # initialDelaySeconds: 30
+        # periodSeconds: 3
+        # timeoutSeconds: 2
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # timeoutSeconds: 4
+        # successThreshold: 1
+        # failureThreshold: 3
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # timeoutSeconds: 1
+        # failureThreshold: 30
+  # maxRequestBytes: "65535"
+  # applicationId: "sc-testnode"
+  # certificates:
+    # traf:
+      # caCertificate: sc-trusted-default-cas
+      # key: sc-traf-default-key
+      # certificate: sc-traf-default-cert
+    # nrf:
+      # caCertificate: sc-trusted-default-cas
+      # key: sc-nrf-default-key
+      # certificate: sc-nrf-default-cert
+  # manager:
+    # leaderElection:
+      # enabled: true
+  # tapagent:
+    # manager:
+      # enabled: false
+    # worker:
+      # enabled: false
+  # tapcollector:
+    # worker:
+      # enabled: false
+      # replaceLocalSocketAddress: true
+    # tappedData:
+      # divisionMethod: truncate
+      # chunkSizeLimit: "61440"
+  # rlf:
+    # enabled: false
+  # vtap:
+    # enabled: false
+  # nlf:
+    # enabled: false
+  # slf:
+    # enabled: false
+  # nodeSelector:
+    # worker: {}
+    # manager: {}
+  # annotations: {}
+  # labels: {}
+  # resources:
+    # logshipper:
+      # requests:
+        # memory: "20Mi"
+        # cpu: "33m"
+        # ephemeral-storage: ""
+      # limits:
+        # memory: "37Mi"
+        # cpu: "40m"
+        # ephemeral-storage: ""
+    # licenseConsumer:
+      # requests:
+        # cpu: "50m"
+        # memory: "100Mi"
+        # ephemeral-storage: ""
+      # limits:
+        # cpu: "250m"
+        # memory: "500Mi"
+        # ephemeral-storage: ""
+
+# eric-sc-slf:
+  # enabled: false
+  # egress:
+    # nrf:
+      ## default 0, the value range 0..63, 0 is the lowest priority, 63 is the highest priority.
+      ## Any other value is invalid.
+      # dscp: 0
+  # spec:
+    # slf:
+      # replicaCount: 2
+      # resources:
+        # requests:
+          # memory: 256Mi
+          # cpu: 100m
+          # ephemeral-storage: ""
+        # limits:
+          # memory: 4Gi
+          # cpu: 1500m
+          # ephemeral-storage: ""
+      # affinity:
+        # podAntiAffinity: "soft"
+      # tolerations:
+        # - key: node.kubernetes.io/not-ready
+          # operator: Exists
+          # effect: NoExecute
+          # tolerationSeconds: 0
+        # - key: node.kubernetes.io/unreachable
+          # operator: Exists
+          # effect: NoExecute
+          # tolerationSeconds: 0
+      # podDisruptionBudget:
+        # minAvailable: 1
+    # tapagent:
+      # resources:
+        # requests:
+          # memory: 100Mi
+          # cpu: 100m
+          # ephemeral-storage: ""
+        # limits:
+          # memory: 500Mi
+          # cpu: 500m
+          # ephemeral-storage: ""
+    # tlskeylogagent:
+      # resources:
+        # requests:
+          # memory: 100Mi
+          # cpu: 100m
+          # ephemeral-storage: ""
+        # limits:
+          # memory: 500Mi
+          # cpu: 500m
+          # ephemeral-storage: ""
+  # probes:
+    # slf:
+      # livenessProbe:
+        # initialDelaySeconds: 30
+        # periodSeconds: 10
+        # timeoutSeconds: 10
+        # successThreshold: 1
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 10
+        # periodSeconds: 10
+        # timeoutSeconds: 1
+        # successThreshold: 1
+        # failureThreshold: 3
+  # leaderElection:
+    # enabled: true
+  # certificates:
+    # nrf:
+      # caCertificate: sc-trusted-default-cas
+      # key: sc-nrf-default-key
+      # certificate: sc-nrf-default-cert
+  # tapagent:
+    # enabled: false
+  # nodeSelector: {}
+  # annotations: {}
+  # labels: {}
+  # resources:
+    # logshipper:
+      # requests:
+        # memory: "20Mi"
+        # cpu: "33m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "30Mi"
+        # cpu: "40m"
+        # ephemeral-storage:
+
+# eric-sc-scp-log-shipper:
+  # enabled: false
+
+## ERIC-SC-BSF IHC parameters
+
+eric-bsf:
+  # adp:
+    # data:
+      # wcdbcd:
+        # hostname: "eric-bsf-wcdb-cd"
+  # egress:
+    # nrf:
+      ## default 0, the value range 0..63, 0 is the lowest priority, 63 is the highest priority.
+      ## Any other value is invalid.
+      # dscp: 0
+  service:
+    worker:
+      # ipFamilyPolicy: SingleStack ## SingleStack or PreferDualStack or RequireDualStack
+      # loadBalancerIP: *VIP_SIG_BSF
+      annotations:
+        # cloudProviderLB: {}
+        loadBalancerIPs: *VIP_SIG_BSF
+      # externalTrafficPolicy: "Local"
+      # port: "80"
+      # tlsport: "443"
+      # externalIPv4:
+        # enabled: false ## <empty>/true/false
+      # externalIPv6:
+        # enabled: false ## <empty>/true/false
+  # spec:
+    # setup:
+      # resources:
+        # requests:
+          # memory: 128Mi
+          # cpu: 0.2
+          # ephemeral-storage: ""
+        # limits:
+          # memory: 256Mi
+          # cpu: 0.4
+          # ephemeral-storage: ""
+    # manager:
+      # replicaCount: 2
+      # resources:
+        # requests:
+          # memory: 512Mi
+          # cpu: 0.5
+          # ephemeral-storage: ""
+        # limits:
+          # memory: 1024Mi
+          # cpu: 1
+          # ephemeral-storage: ""
+      # affinity:
+        # podAntiAffinity: "soft"
+      # tolerations:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+    # worker:
+      # replicaCount: 2
+      # resources:
+        # requests:
+          # memory: 512Mi
+          # cpu: 1
+          # ephemeral-storage: ""
+        # limits:
+          # memory: 1024Mi
+          # cpu: 1.5
+          # ephemeral-storage: ""
+      # affinity:
+        # podAntiAffinity: "soft"
+      # tolerations:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # podDisruptionBudget:
+        # minAvailable: 1
+    # cddjmxexporter:
+      # resources:
+        # requests:
+          # memory: 128Mi
+          # cpu: 50m
+          # ephemeral-storage: ""
+        # limits:
+          # memory: 256Mi
+          # cpu: 200m
+          # ephemeral-storage: ""
+    # certnotifier:
+      # resources:
+        # requests:
+          # memory: 128Mi
+          # cpu: 80m
+          # ephemeral-storage: ""
+        # limits:
+          # memory: 256Mi
+          # cpu: 160m
+          # ephemeral-storage: ""
+    # tapagent:
+      # resources:
+        # requests:
+          # memory: 100Mi
+          # cpu: 100m
+          # ephemeral-storage: ""
+        # limits:
+          # memory: 500Mi
+          # cpu: 500m
+          # ephemeral-storage: ""
+    # tlskeylogagent:
+      # resources:
+        # requests:
+          # memory: 100Mi
+          # cpu: 100m
+          # ephemeral-storage: ""
+        # limits:
+          # memory: 500Mi
+          # cpu: 500m
+          # ephemeral-storage: ""
+    # tapcollector:
+      # resources:
+        # requests:
+          # memory: 256Mi
+          # cpu: 100m
+          # ephemeral-storage: ""
+        # limits:
+          # memory: 2560Mi
+          # cpu: 1
+          # ephemeral-storage: ""
+  # probes:
+    # manager:
+      # livenessProbe:
+        # initialDelaySeconds: 10
+        # periodSeconds: 10
+        # timeoutSeconds: 1
+        # successThreshold: 1
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 10
+        # periodSeconds: 10
+        # timeoutSeconds: 1
+        # successThreshold: 1
+        # failureThreshold: 3
+    # worker:
+      # livenessProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 3
+        # timeoutSeconds: 3
+        # successThreshold: 1
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 3
+        # timeoutSeconds: 1
+        # successThreshold: 1
+        # failureThreshold: 3
+  # cassandra:
+    # datacenter: *bsf_wcdb_datacenter_name
+    # throttler:
+      # class: "ConcurrencyLimitingRequestThrottler"
+      # max_queue_size: "1000"
+      # max_concurrent_requests: "50"
+    # consistency: "ONE"
+    # auth:
+      # adminSecret: eric-bsf-wcdb-cd-day0-creds
+  # worker:
+    # pcfRecoveryTimeTTL: "2592000"
+  # manager:
+    # leaderElection:
+      # enabled: true
+    # pcfRecoveryTimeTTL: "2592000"
+  # certificates:
+    # nrf:
+      # caCertificate: sc-trusted-default-cas
+      # key: sc-nrf-default-key
+      # certificate: sc-nrf-default-cert
+    # traf:
+      # caCertificate: sc-trusted-default-cas
+      # key: sc-traf-default-key
+      # certificate: sc-traf-default-cert
+  # tapagent:
+    # manager:
+      # enabled: false
+    # worker:
+      # enabled: false
+  # tapcollector:
+    # worker:
+      # enabled: false
+      # replaceLocalSocketAddress: true
+    # tappedData:
+      # divisionMethod: truncate
+      # chunkSizeLimit: "61440"
+  # vtap:
+    # enabled: false
+  # bsfdiameter:
+    # enabled: false
+  # nodeSelector:
+    # worker: {}
+    # manager: {}
+  # annotations: {}
+  # labels: {}
+  # resources:
+    # logshipper:
+      # requests:
+        # memory: "20Mi"
+        # cpu: "33m"
+        # ephemeral-storage: ""
+      # limits:
+        # memory: "30Mi"
+        # cpu: "40m"
+        # ephemeral-storage: ""
+    # licenseConsumer:
+      # requests:
+        # cpu: "50m"
+        # memory: "100Mi"
+        # ephemeral-storage: ""
+      # limits:
+        # cpu: "250m"
+        # memory: "500Mi"
+        # ephemeral-storage: ""
+
+# eric-bsf-diameter:
+  # enabled: false
+  # adp:
+    # data:
+      # wcdbcd:
+        # hostname: "eric-bsf-wcdb-cd"
+  # resources:
+    # diameterproxygrpc:
+      # limits:
+        # cpu: "4"
+        # ephemeral-storage:
+        # memory: "4Gi"
+      # requests:
+        # cpu: '0.3'
+        # ephemeral-storage:
+        # memory: 384Mi
+    # dsl:
+      # limits:
+        # cpu: "2"
+        # ephemeral-storage:
+        # memory: "4Gi"
+      # requests:
+        # cpu: '0.25'
+        # ephemeral-storage: ""
+        # memory: 100Mi
+    # bsfdiameter:
+      # requests:
+        # cpu: '0.35'
+        # memory: 320Mi
+      # limits:
+        # cpu: '2'
+        # memory: 3Gi
+    # hooklauncher:
+      # limits:
+        # cpu: "100m"
+        # ephemeral-storage:
+        # memory: "100Mi"
+      # requests:
+        # cpu: "50m"
+        # ephemeral-storage:
+        # memory: "50Mi"
+    # logshipper:
+      # requests:
+        # memory: "20Mi"
+        # cpu: "33m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "30Mi"
+        # cpu: "40m"
+        # ephemeral-storage:
+  # probes:
+    # diameterproxygrpc:
+      # livenessProbe:
+        # failureThreshold: 3
+        # initialDelaySeconds: 1
+        # periodSeconds: 5
+        # timeoutSeconds: 4
+      # startupProbe:
+        # failureThreshold: 60
+        # initialDelaySeconds: 2
+        # periodSeconds: 5
+        # timeoutSeconds: 4
+    # dsl:
+      # livenessProbe:
+        # failureThreshold: 3
+        # initialDelaySeconds: 1
+        # periodSeconds: 5
+        # timeoutSeconds: 4
+      # startupProbe:
+        # failureThreshold: 60
+        # initialDelaySeconds: 2
+        # periodSeconds: 5
+        # timeoutSeconds: 4
+    # bsfdiameter:
+      # livenessProbe:
+        # initialDelaySeconds: 2
+        # periodSeconds: 10
+        # timeoutSeconds: 10
+        # successThreshold: 1
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 2
+        # periodSeconds: 10
+        # timeoutSeconds: 1
+        # successThreshold: 1
+        # failureThreshold: 3
+  # initialConfig:
+    # dsl:
+      # enableIPv6: false
+  # replicaCount: 2
+  # cassandra:
+    # datacenter: *bsf_wcdb_datacenter_name
+    # throttler:
+      # class: "ConcurrencyLimitingRequestThrottler"
+      # max_queue_size: "1000"
+      # max_concurrent_requests: "50"
+    # consistency: "ONE"
+  # affinity:
+    # podAntiAffinity: "soft"
+  # nodeSelector: {}
+  # tolerations:
+  # - key: "node.kubernetes.io/unreachable"
+    # operator: "Exists"
+    # effect: "NoExecute"
+    # tolerationSeconds: 30
+  # podDisruptionBudget:
+    # minAvailable: 1
+  # annotations: {}
+  # labels: {}
+  # spec:
+    # pcfRecoveryTimeTTL: "2592000"
+
+eric-stm-diameter:
+  # enabled: false
+  # replicaCount: 2
+  service:
+    loadBalancerIP: *VIP_SIG_BSF_Diameter
+    # externalIPv4:
+    #   enabled: true
+    #   loadBalancerIPDiameterOverTCP: *VIP_SIG_BSF_Diameter
+    # externalIPv6:
+    #   enabled: true
+    #   loadBalancerIPDiameterOverTCP: *VIP_SIG_BSF_Diameter
+    # externalTrafficPolicy:
+      # tcp: Cluster
+    # certificates:
+      # asymmetricKeyCertificateName: "diameter-key-cert"
+      # trustedCertificateListName: "sc-trusted-default-cas"
+    # diameter:
+      # ports:
+        # tcp:
+          # - port: 3868
+            # targetPort: 3868 ## DO NOT CHANGE THIS VALUE
+  # nodeSelector: {}
+  # affinity:
+    # podAntiAffinity: "soft"
+  # tolerations: []
+  # initialConfig:
+     # dsl:
+       # enableIPv6: false
+       # pvtbClient:
+         # enabled: true
+     # dsl-pvtb-client:
+       # filePath: "/tmp/diameter.pcap"
+  # resources:
+    # diameter:
+      # requests:
+        # memory: "100Mi"
+        # cpu: "0.25"
+      # limits:
+        # memory: "4Gi"
+        # cpu: "2"
+    # dsl:
+      # requests:
+        # memory: "100Mi"
+        # cpu: "0.25"
+      # limits:
+        # memory: "4Gi"
+        # cpu: "2"
+     # dsl-pvtb-client:
+       # limits:
+         # cpu: "4"
+         # memory: "4Gi"
+       # requests:
+         # cpu: "0.25"
+         # memory: "100Mi"
+  # probes:
+    # diameter:
+      # livenessProbe:
+        # failureThreshold: 3
+        # initialDelaySeconds: 1
+        # periodSeconds: 5
+        # timeoutSeconds: 4
+      # startupProbe:
+        # failureThreshold: 60
+        # initialDelaySeconds: 2
+        # periodSeconds: 5
+        # timeoutSeconds: 4
+    # dsl:
+      # livenessProbe:
+        # failureThreshold: 3
+        # initialDelaySeconds: 1
+        # periodSeconds: 5
+        # timeoutSeconds: 4
+      # startupProbe:
+        # failureThreshold: 60
+        # initialDelaySeconds: 2
+        # periodSeconds: 5
+        # timeoutSeconds: 4
+  # annotations: {}
+  # labels: {}
+
+eric-bsf-wcdb-cd:
+  # nameOverride: ""
+  # metrics:
+    # cassandra:
+      # enabled: true
+      # excluded:
+  # sysctls:
+     # cassandra: []
+  persistence:
+    dataVolume:
+      persistentVolumeClaim:
+        storageClassName: *oam_storage_class
+        # size: 100Gi
+  # replicaCount: 2
+  # resources:
+    # cassandra:
+      # limits:
+        # cpu: "4"
+        # memory: 16Gi
+      # requests:
+        # cpu: "4"
+        # memory: 16Gi
+      # jvm:
+        # initialMemoryAllocationPercentage: 50
+        # smallMemoryAllocationMaxPercentage: 50
+        # largeMemoryAllocationMaxPercentage: 50
+    # brsc:
+      # requests:
+        # memory: "512Mi"
+        # cpu: "0.2"
+      # limits:
+        # memory: "512Mi"
+        # cpu: "0.5"
+    # ecchronos:
+      # requests:
+        # memory: "512Mi"
+        # cpu: "200m"
+      # limits:
+        # memory: "512Mi"
+        # cpu: "1"
+  # probes:
+    # brsc:
+      # livenessProbe:
+        # initialDelaySeconds: 60
+        # periodSeconds: 20
+        # timeoutSeconds: 10
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 10
+        # timeoutSeconds: 10
+        # successThreshold:
+        # failureThreshold: 6
+    # cassandra:
+      # livenessProbe:
+        # initialDelaySeconds: 120
+        # periodSeconds: 20
+        # timeoutSeconds: 10
+        # failureThreshold: 6
+      # readinessProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 10
+        # timeoutSeconds: 10
+        # successThreshold:
+        # failureThreshold: 6
+    # ecchronos:
+      # livenessProbe:
+        # initialDelaySeconds: 7200
+        # periodSeconds: 20
+        # timeoutSeconds: 10
+        # failureThreshold: 3
+  # affinity:
+    # podAntiAffinity: "hard"
+  # nodeSelector:
+    # cassandra: {}
+    # configureKeyspacesJob: {}
+    # tlsRestarter: {}
+    # annotator: {}
+    # operator: {}
+  # tolerations:
+    # cassandra: {}
+    # configureKeyspacesJob: {}
+    # tlsRestarter: {}
+    # annotator: {}
+    # operator: {}
+  # cassandra:
+    # remoteSeedNodes:
+    # jvmOptions:
+      # set:
+        # - "Dmv_enable_coordinator_batchlog=true"
+        # - "XX:+UseG1GC"
+        # - "XX:InitialRAMPercentage=50.0"
+        # - "XX:MaxRAMPercentage=50.0"
+        # - "XX:MaxGCPauseMillis=200"
+        # - "XX:InitiatingHeapOccupancyPercent=70"
+      # unset:
+        # - "Xmn800M"
+        # - "Xmn100M"
+        # - "Xmn400M"
+        # - "XX:+HeapDumpOnOutOfMemoryError"
+        # - "XX:+UseParNewGC"
+        # - "XX:+UseConcMarkSweepGC"
+        # - "XX:+CMSParallelRemarkEnabled"
+        # - "XX:SurvivorRatio=8"
+        # - "XX:MaxTenuringThreshold=1"
+        # - "XX:CMSInitiatingOccupancyFraction=75"
+        # - "XX:+UseCMSInitiatingOccupancyOnly"
+        # - "XX:CMSWaitDuration=10000"
+        # - "XX:+CMSParallelInitialMarkEnabled"
+        # - "XX:+CMSEdenChunksRecordAlways"
+        # - "XX:+CMSClassUnloadingEnabled"
+  # dataCenters:
+    # - name: *bsf_wcdb_datacenter_name
+      # service:
+        # externalIP:
+          # annotations:
+            # addressPoolName:
+  # georeplication:
+    # certificates:
+      # asymmetricKeyCertificateName: "bsf-internode-external-key/bsf-internode-external-cert"
+      # trustedCertificateListName: "sc-trusted-default-cas"
+  # egress:
+    # certificates:
+      # asymmetricKeyCertificateName: "bsf-cql-client-external-key/bsf-cql-client-external-cert"
+      # trustedCertificateListName: "sc-trusted-default-cas"
+  # service:
+    # certificates:
+      # asymmetricKeyCertificateName: "bsf-cql-server-external-key/bsf-cql-server-external-cert"
+      # trustedCertificateListName: "sc-trusted-default-cas"
+      # internal:
+        # timeToLive: "15778800"
+        # renewalLeadTime: "15692400"
+    # externalTrafficPolicy: Local
+    # externalIP:
+      # enabled: false
+  # security:
+    # auth:
+      # cql:
+        # wcdbcdAdminSecret: eric-bsf-wcdb-cd-admin-creds
+        # adminSecret: eric-bsf-wcdb-cd-day0-creds
+  # annotations: {}
+  # labels: {}
+  # repairAgent:
+    # enabled: true
+    # ecchronos:
+      # yaml:
+        # statistics:
+          # enabled: false
+        # repair:
+          # unwind_ratio: 0.5
+          # interval:
+            # time: 7
+            # unit: days
+          # alarm:
+            # warn:
+              # time: 8
+              # unit: days
+            # error:
+              # time: 10
+              # unit: days
+      # jvmOptions:
+        # set:
+          # - "XX:ParallelGCThreads=1"
+
+# eric-sc-bsf-log-shipper:
+  # enabled: false
+  
+## ERIC-SC-CS IHC parameters
+
+# ingress:
+  # nbi:
+    # fqdn: "nbi.ericsson.se"
+    # ingressClass: "sc"
+    # tls:
+      # verifyClientCertificate: true
+    # certificates:
+      # asymmetricKeyName: sc-nbi-default-key
+      # asymmetricCertificateName: sc-nbi-default-cert
+      # trustedCertificateListName: sc-trusted-default-cas
+      
+## Create service account for the cAdvisor job
+# rbac:
+  # createServiceAccount: true
+  
+## Set the external pm-remote-write endpoints
+# config:
+  # remote_write: []
+  
+# server:
+  # extraConfigmapMounts: []
+
+# Secondary NW Provider nVIP
+eric-tm-senp-nvip:
+  # enabled: false
+  # config:
+    # nsmNamespace: infra
+  # probes:
+    # operator:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # failureThreshold: 3
+        # periodSeconds: 20
+        # successThreshold: 1
+        # timeoutSeconds: 2
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # failureThreshold: 3
+        # periodSeconds: 10
+        # successThreshold: 1
+        # timeoutSeconds: 2
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # failureThreshold: 100
+        # periodSeconds: 3
+        # successThreshold: 1
+        # timeoutSeconds: 2
+    # ipam:
+      # livenessProbe:
+        # failureThreshold: 5
+        # initialDelaySeconds: 2
+        # periodSeconds: 10
+        # timeoutSeconds: 3
+        # successThreshold: 1
+      # readinessProbe:
+        # failureThreshold: 5
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 3
+        # successThreshold: 1
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 2
+        # timeoutSeconds: 2
+        # failureThreshold: 30
+        # successThreshold: 1
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 3
+        # failureThreshold: 5
+        # successThreshold: 1
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 2
+        # timeoutSeconds: 2
+        # failureThreshold: 30
+        # successThreshold: 1
+    # nsp:
+      # livenessProbe:
+        # failureThreshold: 5
+        # initialDelaySeconds: 2
+        # periodSeconds: 10
+        # timeoutSeconds: 3
+        # successThreshold: 1
+      # readinessProbe:
+        # failureThreshold: 5
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 3
+        # successThreshold: 1
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 2
+        # timeoutSeconds: 2
+        # failureThreshold: 30
+        # successThreshold: 1
+    # proxy:
+      # livenessProbe:
+        # failureThreshold: 5
+        # initialDelaySeconds: 2
+        # periodSeconds: 20
+        # timeoutSeconds: 3
+        # successThreshold: 1
+      # readinessProbe:
+        # failureThreshold: 5
+        # initialDelaySeconds: 0
+        # periodSeconds: 20
+        # timeoutSeconds: 3
+        # successThreshold: 1
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 2
+        # timeoutSeconds: 2
+        # failureThreshold: 30
+        # successThreshold: 1
+    # statelessLB:
+      # livenessProbe:
+        # failureThreshold: 5
+        # initialDelaySeconds: 2
+        # periodSeconds: 10
+        # timeoutSeconds: 3
+        # successThreshold: 1
+      # readinessProbe:
+        # failureThreshold: 5
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 3
+        # successThreshold: 1
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 2
+        # timeoutSeconds: 2
+        # failureThreshold: 30
+        # successThreshold: 1
+    # frontend:
+      # livenessProbe:
+        # initialDelaySeconds: 2
+        # periodSeconds: 10
+        # timeoutSeconds: 3
+        # failureThreshold: 5
+        # successThreshold: 1
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 3
+        # failureThreshold: 5
+        # successThreshold: 1
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 2
+        # timeoutSeconds: 2
+        # failureThreshold: 30
+        # successThreshold: 1
+  # terminationGracePeriodSeconds: 30
+  # tolerations:
+    # operator: []
+    # statelessLBFrontend: []
+    # ipam: []
+    # nsp: []
+    # proxy: []
+  # resources:
+    # operator:
+      # requests:
+        # cpu: "100m"
+        # memory: "20Mi"
+        # ephemeral-storage: ""
+      # limits:
+        # cpu: "1000m"
+        # memory: "1024Mi"
+        # ephemeral-storage: ""
+    # frontend:
+      # requests:
+        # cpu: ""
+        # memory: ""
+        # ephemeral-storage: ""
+      # limits:
+        # cpu: ""
+        # memory: ""
+        # ephemeral-storage: ""
+      # limits:
+        # cpu: ""
+        # memory: ""
+        # ephemeral-storage: ""
+    # nsp:
+      # requests:
+        # cpu: ""
+        # memory: ""
+        # ephemeral-storage: ""
+      # limits:
+        # cpu: ""
+        # memory: ""
+        # ephemeral-storage: ""
+    # ipam:
+      # requests:
+        # cpu: ""
+        # memory: ""
+        # ephemeral-storage: ""
+      # limits:
+        # cpu: ""
+        # memory: ""
+        # ephemeral-storage: ""
+    # proxy:
+      # requests:
+        # cpu: ""
+        # memory: ""
+        # ephemeral-storage: ""
+      # limits:
+        # cpu: ""
+        # memory: ""
+        # ephemeral-storage: ""
+      # limits:
+        # cpu: ""
+        # memory: ""
+        # ephemeral-storage: ""
+    # statelessLB:
+      # requests:
+        # cpu: ""
+        # memory: ""
+        # ephemeral-storage: ""
+      # limits:
+        # cpu: ""
+        # memory: ""
+        # ephemeral-storage: ""
+      ## K8s default value
+      # sharedMemorySize: "64Mi"
+  persistence:
+    data:
+      persistentVolumeClaim:
+        # size: 1Gi
+        storageClassName: *oam_storage_class
+  # podDisruptionBudget:
+    # statelessLBFrontend:
+      # minAvailable: 75%
+      # maxUnavailable:
+  # affinity:
+    # statelessLBFrontend:
+      # podAntiAffinity: "hard"
+  # topologySpreadConstraints:
+    # operator: []
+    # statelessLBFrontend: []
+    # ipam: []
+    # nsp: []
+    # proxy: []
+  # nodeSelector:
+    # operator: {}
+    # statelessLBFrontend: {}
+    # ipam: {}
+    # nsp: {}
+    # proxy: {}
+  # annotations: {}
+  # labels: {}
+
+# eric-sc-rlf:
+  # enabled: false
+  # spec:
+    # rlf:
+      # replicaCount: 2
+      # resources:
+        # requests:
+          # memory: 1Gi
+          # cpu: 1500m
+          # ephemeral-storage: ""
+        # limits:
+          # memory: 2Gi
+          # cpu: 3
+          # ephemeral-storage: ""
+      # affinity:
+        # podAntiAffinity: "soft"
+      # tolerations:
+        # - key: node.kubernetes.io/not-ready
+          # operator: Exists
+          # effect: NoExecute
+          # tolerationSeconds: 0
+        # - key: node.kubernetes.io/unreachable
+          # operator: Exists
+          # effect: NoExecute
+          # tolerationSeconds: 0
+      # podDisruptionBudget:
+        # minAvailable: 1
+  # probes:
+    # rlf:
+      # livenessProbe:
+        # initialDelaySeconds: 30
+        # periodSeconds: 10
+        # timeoutSeconds: 10
+        # successThreshold: 1
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 10
+        # periodSeconds: 10
+        # timeoutSeconds: 1
+        # successThreshold: 1
+        # failureThreshold: 3
+  # leaderElection:
+    # enabled: true
+  # nodeSelector: {}
+  # annotations: {}
+  # labels: {}
+  # resources:
+    # logshipper:
+      # requests:
+        # memory: "20Mi"
+        # cpu: "33m"
+        # ephemeral-storage: ""
+      # limits:
+        # memory: "30Mi"
+        # cpu: "40m"
+        # ephemeral-storage: ""
+  # rbac:
+    ## createServiceAccount controls the creation of ServiceAccount, ClusterRole and ClusterRoleBinding.
+    ## If set to false, the cluster administrator is responsible for creating those entities.
+    ## If set to false, the serviceAccountName field is Mandatory.
+    # createServiceAccount: true
+    ## serviceAccountName contains the service account name to use.
+    ## Mandatory, if createServiceAccount is set to false
+    # serviceAccountName:
+
+# eric-sc-nlf:
+  # enabled: false
+  # replicaCount: 2
+  # egress:
+    # nrf:
+      ## default 0, the value range 0..63, 0 is the lowest priority, 63 is the highest priority.
+      ## Any other value is invalid.
+      # dscp: 0
+  # resources:
+    # nlf:
+      # requests:
+        # memory: "1Gi"
+        # cpu: "1500m"
+        # ephemeral-storage: ""
+      # limits:
+        # memory: "2Gi"
+        # cpu: "3"
+        # ephemeral-storage: ""
+    # tapagent:
+      # requests:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage: ""
+      # limits:
+        # memory: "500Mi"
+        # cpu: "500m"
+        # ephemeral-storage: ""
+    # tlskeylogagent:
+      # requests:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage: ""
+      # limits:
+        # memory: "500Mi"
+        # cpu: "500m"
+    # logshipper:
+      # requests:
+        # memory: "20Mi"
+        # cpu: "33m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "30Mi"
+        # cpu: "40m"
+        # ephemeral-storage:
+  # affinity:
+    # podAntiAffinity: "soft"
+  # tolerations:
+    # - key: node.kubernetes.io/not-ready
+      # operator: Exists
+      # effect: NoExecute
+      # tolerationSeconds: 0
+    # - key: node.kubernetes.io/unreachable
+      # operator: Exists
+      # effect: NoExecute
+      # tolerationSeconds: 0
+  # podDisruptionBudget:
+    # minAvailable: 1
+  # probes:
+    # nlf:
+      # livenessProbe:
+        # initialDelaySeconds: 30
+        # periodSeconds: 10
+        # timeoutSeconds: 10
+        # successThreshold: 1
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 10
+        # periodSeconds: 10
+        # timeoutSeconds: 1
+        # successThreshold: 1
+        # failureThreshold: 3
+  # certificates:
+    # nrf:
+      # caCertificate: sc-trusted-default-cas
+      # key: sc-nrf-default-key
+      # certificate: sc-nrf-default-cert
+  # tapagent:
+    # enabled: false
+  # leaderElection:
+    # enabled: true
+  # nodeSelector: {}
+  # annotations: {}
+  # labels: {}
+  # rbac:
+    ## createServiceAccount controls the creation of ServiceAccount, ClusterRole and ClusterRoleBinding.
+    ## If set to false, the cluster administrator is responsible for creating those entities.
+    ## If set to false, the serviceAccountName field is Mandatory.
+    # createServiceAccount: true
+    ## serviceAccountName contains the service account name to use.
+    ## Mandatory, if createServiceAccount is set to false
+    # serviceAccountName:
+
+# eric-sc-monitor:
+  # replicaCount: 0
+  # resources:
+    # monitor:
+      # requests:
+        # memory: 100Mi
+        # cpu: 100m
+        # ephemeral-storage: ""
+      # limits:
+        # memory: 256Mi
+        # cpu: 200m
+        # ephemeral-storage: ""
+    # logshipper:
+      # requests:
+        # memory: "20Mi"
+        # cpu: "33m"
+        # ephemeral-storage: ""
+      # limits:
+        # memory: "30Mi"
+        # cpu: "40m"
+        # ephemeral-storage: ""
+  # tolerations:
+    # monitor:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+  # nodeSelector: {}
+  # annotations: {}
+  # labels: {}
+  
+# eric-sc-hcagent:
+  # severities:
+    # configmaps: []
+  # resources:
+    # hcagent:
+      # requests:
+        # cpu: "50m"
+        # memory: "300Mi"
+        # ephemeral-storage: ""
+      # limits:
+        # cpu: "250m"
+        # memory: "1Gi"
+        # ephemeral-storage: ""
+    # logshipper:
+      # requests:
+        # memory: "20Mi"
+        # cpu: "33m"
+        # ephemeral-storage: ""
+      # limits:
+        # memory: "100Mi"
+        # cpu: "50m"
+        # ephemeral-storage: ""
+  # export:
+    # alarmExpirationTimer: 60
+  # spec:
+    # hcagent:
+      # tolerations:
+        # - key: node.kubernetes.io/not-ready
+          # operator: Exists
+          # effect: NoExecute
+          # tolerationSeconds: 0
+        # - key: node.kubernetes.io/unreachable
+          # operator: Exists
+          # effect: NoExecute
+          # tolerationSeconds: 0
+  # nodeSelector: {}
+  # annotations: {}
+  # labels: {}
+
+# eric-sc-manager:
+  # enabled: false
+  # features:
+    # monitoring:
+      ## Monitor NF traffic certificates
+      # certificates:
+        # functions:
+          # scp: true
+          # sepp: true
+          # bsf: true
+  # spec:
+    # scmanager:
+      # resources:
+        # requests:
+          # memory: 100Mi
+          # cpu: 100m
+          # ephemeral-storage: ""
+        # limits:
+          # memory: 512Mi
+          # cpu: 300m
+          # ephemeral-storage: ""
+  # nodeSelector: {}
+  # tolerations:
+    # - key: node.kubernetes.io/not-ready
+      # operator: Exists
+      # effect: NoExecute
+      # tolerationSeconds: 0
+    # - key: node.kubernetes.io/unreachable
+      # operator: Exists
+      # effect: NoExecute
+      # tolerationSeconds: 0
+  # annotations: {}
+  # labels: {}
+  # resources:
+    # logshipper:
+      # requests:
+        # memory: "20Mi"
+        # cpu: "33m"
+        # ephemeral-storage: ""
+      # limits:
+        # memory: "30Mi"
+        # cpu: "40m"
+        # ephemeral-storage: ""
+  
+eric-data-distributed-coordinator-ed-sc:
+  # enabled: true
+  ## Additional labels allow a list of key/values to be appended to the list of labels of the resource object.
+  # labels: {}
+  ## A list of key/values to be appended to the list of user defined annotations
+  # annotations: {}
+  ## Tolerations to influence scheduling decisions made by Kubernetes scheduler
+  # tolerations:
+    # dced: []
+    # hooklauncher: []
+  # terminationGracePeriodSeconds:
+    # dced: 30
+  # pods:
+    # dced:
+      ## The number of pods in the Data Distributed Coordinator-ED ensemble
+      ## Recommended instances 3 (minimum), 7 (maximum)
+      # replicaCount: 3
+  # resources:
+    # init:
+      # requests:
+        # cpu: "200m"
+        # memory: "200Mi"
+        # ephemeral-storage:
+      # limits:
+        # cpu: "500m"
+        # memory: "500Mi"
+        # ephemeral-storage:
+    # dced:
+      # requests:
+        ## This is the min CPU setting at startup
+        # cpu: "400m"
+        ## This is the min Memory setting at startup
+        # memory: "400Mi"
+        # ephemeral-storage:
+      # limits:
+        ## This the maximum cpu setting that can be requested
+        # cpu: "1"
+        ## This is the max memory setting that can be requested
+        # memory: "1Gi"
+        # ephemeral-storage:
+    # logshipper:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "50m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage:
+    # metricsexporter:
+      # requests:
+        # cpu: "100m"
+        # memory: "8Mi"
+        # ephemeral-storage:
+      # limits:
+        # cpu: "200m"
+        # memory: "64Mi"
+        # ephemeral-storage:
+    # hooklauncher:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "100Mi"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "100Mi"
+  # probes:
+    # dced:
+      # readinessProbe:
+        # failureThreshold: 3
+        # initialDelaySeconds: 15
+        # periodSeconds: 10
+        # successThreshold: 1
+        # timeoutSeconds: 15
+      # livenessProbe:
+        # failureThreshold: 3
+        # initialDelaySeconds: 15
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        ## Number of time entrypoint.sh will check for etcd process
+        # EntrypointChecksNumber: 60
+        ## True to restart etcd each time it dies
+        # EntrypointRestartEtcd: "true"
+        ## Timeout (seconds) for read function while reading the pipe
+        # EntrypointPipeTimeout: 5
+        ## Min time (seconds) before checking for etcd process
+        # EntrypointEctdProcessInterval: 5
+      ##StartupProbe feature is stable from k8 v.1.20.x onwards, in case deployed in a cluster below that version, readiness Probe's InitialDelaySeconds: 0
+      # startupProbe:
+        ## The number of seconds that kubelet waits before performing the first health check probe
+        # initialDelaySeconds: 5
+        ## The timeout for the health check
+        # timeoutSeconds: 15
+        ## When a probe fails, no of times before giving up.
+        # failureThreshold: 12
+        ## How often (in seconds) to perform the probe.
+        # periodSeconds: 10
+    # metricsexporter:
+      # livenessProbe:
+        # failureThreshold: 3
+        # initialDelaySeconds: 15
+        # periodSeconds: 15
+        # timeoutSeconds: 15
+      # readinessProbe:
+        # failureThreshold: 3
+        # initialDelaySeconds: 5
+        # periodSeconds: 15
+        # successThreshold: 1
+        # timeoutSeconds: 15
+  ## Can specify labels for directing node assignment. Format - label: value
+  # nodeSelector:
+    # dced: {}
+    # hooklauncher: {}
+  ## sets inter-pod anti-affinity , values supported 'Soft/Hard'.
+  # affinity:
+    # podAntiAffinity: "hard"
+    # topologyKey: "kubernetes.io/hostname"
+  # topologySpreadConstraints:
+    # dced: []
+  # env:
+    # dced:
+      ## The frequency in milliseconds with which the leader will notify followers that it is still the leader (For best practices should be set around round-trip time between members)
+      # ETCD_HEARTBEAT_INTERVAL: 100
+      ## How long in milliseconds a follower node will go without hearing a heartbeat before attempting to become leader itself.
+      # ETCD_ELECTION_TIMEOUT: 1000
+  ## The minimum available Distributed Coordinator-EDs required during voluntary disruption.
+  # podDisruptionBudget: {}
+    ## Select either one of the below parameters with your expected values.
+    ## maxUnavailable: 1
+    ## minAvailable: "51%"
+  persistence:
+    persistentVolumeClaim:
+      storageClassName: *oam_storage_class
+      # size: 1Gi
+
+# eric-probe-virtual-tap-broker:
+  # enabled: false
+  # replicaCount: 1
+  # dtls:
+    # enabled: false
+  # egress:
+    # VirtualTapBroker:
+      # dscp: 0
+    # probeVtapUDPClient:
+      # certificates:
+        # asymmetricKeyCertificateName: probe-vtap-udp-client
+        # trustedCertificateListName: probe-vtap-udp-client
+  # resources:
+    # VirtualTapBroker:
+      # limits:
+        # cpu: 4000m
+        # memory: 512Mi
+        # ephemeral-storage:
+      # requests:
+        # cpu: 4000m
+        # memory: 512Mi
+        # ephemeral-storage:
+  # tolerations: []
+  # labels: {}
+  # timeorder:
+    # enabled: false
+    # maxWaitTime: 25
+    
+# eric-sc-cs-log-shipper:
+  # enabled: false
+    
+## ERIC-CLOUD-NATIVE-BASE IHC parameters
+
+## Backup and Restore Orchestrator
+eric-ctrl-bro:
+  # tolerations:
+    # backupAndRestore: []
+    # hooklauncher: []
+  # nodeSelector:
+    # backupAndRestore: {}
+    # hooklauncher: {}
+  # terminationGracePeriodSeconds: 30
+  # probes:
+    # backupAndRestore:
+      # startupProbe:
+        # failureThreshold: 30
+        # periodSeconds: 10
+        # initialDelaySeconds: 0
+        # timeoutSeconds: 15
+      # livenessProbe:
+        # failureThreshold: 3
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+      # readinessProbe:
+        # failureThreshold: 3
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # successThreshold: 1
+        # timeoutSeconds: 15
+  persistence:
+    persistentVolumeClaim:
+      storageClassName: *oam_storage_class
+      ## minimum supported volume size is 500Mi
+      # size: 15Gi
+  # resources:
+    # backupAndRestore:
+      # limits:
+        # cpu: "2"
+        # memory: "4Gi"
+        # ephemeral-storage: "250Mi"
+      # requests:
+        # cpu: "1"
+        # memory: "2Gi"
+        # ephemeral-storage: "100Mi"
+      # jvm:
+        # initialMemoryAllocationPercentage: 50
+        # smallMemoryAllocationMaxPercentage: 80
+        # largeMemoryAllocationMaxPercentage: 90
+    # hooklauncher:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "100Mi"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "100Mi"
+  # labels: {}
+  ## The Differentiated Services Code Point (DSCP) value used to indicate
+  ## the level of service or priority given to the outgoing traffic from the BRO
+  ## pod to the SFTP Server. The allowed range is 0 to 63 inclusive,
+  ## with the default being 0, signifying "Best Effort" or lowest priority.
+  # egress:
+    # backupStorageSvr:
+      # dscp: 0
+  # annotations: {}
+  
+## Ingress Controller CR
+eric-tm-ingress-controller-cr:
+  # rbac:
+    # create: true
+  # serviceAccount:
+  ## Specifies whether ServiceAccounts should be created
+    # create: true
+    # contour:
+      ## The name of the ServiceAccount for contour to use. If not set and create is
+      ## true, a name is generated using the fullname template
+      # name: ""
+    # envoy:
+      ## The name of the ServiceAccount for envoy to use. If not set and create is
+      ## true, a name is generated using the fullname-envoy template
+      # name: ""
+  # nodeSelector:
+    # contour: {}
+    # envoy: {}
+    # hooklauncher: {}
+    # typedconfighook: {}
+  # resources:
+    # contour:
+      # requests:
+        # cpu: "50m"
+        # memory: "250Mi"
+        # ephemeral-storage:
+      # limits:
+        # cpu: "100m"
+        # memory: "300Mi"
+        # ephemeral-storage:
+    # logshipper:
+      # requests:
+        # cpu: "50m"
+        # memory: "25Mi"
+        # ephemeral-storage:
+      # limits:
+        # cpu: "100m"
+        # memory: "50Mi"
+        # ephemeral-storage:
+    # envoy:
+      # requests:
+        # cpu: "100m"
+        # memory: "250Mi"
+        # ephemeral-storage:
+      # limits:
+        # cpu: "1"
+        # memory: "300Mi"
+        # ephemeral-storage:
+    # initconfig:
+      # requests:
+        # cpu: "300m"
+        # memory: "250Mi"
+        # ephemeral-storage:
+      # limits:
+        # cpu: "500m"
+        # memory: "350Mi"
+        # ephemeral-storage:
+    # contourinit:
+      # requests:
+        # cpu: "50m"
+        # memory: "250Mi"
+        # ephemeral-storage:
+      # limits:
+        # cpu: "75m"
+        # memory: "300Mi"
+        # ephemeral-storage:
+    # hooklauncher:
+      # requests:
+        # cpu: "20m"
+        # memory: "50Mi"
+        # ephemeral-storage:
+      # limits:
+        # cpu: "50m"
+        # memory: "100Mi"
+        # ephemeral-storage:
+    # typedconfighook:
+      # requests:
+        # cpu: "100m"
+        # memory: "50Mi"
+        # ephemeral-storage:
+      # limits:
+        # cpu: "150m"
+        # memory: "100Mi"
+        # ephemeral-storage:
+  # probes:
+    # contour:
+      # livenessProbe:
+        # failureThreshold: 3
+        # initialDelaySeconds: 20
+        # periodSeconds: 10
+        # timeoutSeconds: 2
+      # readinessProbe:
+        # failureThreshold: 3
+        # initialDelaySeconds: 20
+        # periodSeconds: 10
+        # successThreshold: 1
+        # timeoutSeconds: 2
+    # envoy:
+      # readinessProbe:
+        # failureThreshold: 3
+        # initialDelaySeconds: 3
+        # periodSeconds: 3
+        # successThreshold: 1
+        # timeoutSeconds: 1
+  # envoyWorkloadMode:
+    # daemonset:
+      # enabled: false
+    # deployment:
+      # enabled: true
+  # replicaCount:
+    # contour: 2
+    # envoy: 2
+  # affinity:
+    # contour:
+      # podAntiAffinity: "soft"
+      # topologyKey: "kubernetes.io/hostname"
+    # envoy:
+      # podAntiAffinity: "soft"
+      # topologyKey: "kubernetes.io/hostname"
+  ## Additional Pod Topology Spread Constraints values to be attached by an Application Design Engineer
+  ## or an Application Deployment Engineer
+  # topologySpreadConstraints:
+    # contour: []
+    # envoy: []
+  ## podDisruptionBudget, enables workload to be able to properly deal with voluntary disruptions
+  ## applicable when replicas greater than 1, parameters are mutually exclusive
+  # podDisruptionBudget:
+    # contour:
+      # minAvailable: 1
+    # envoy:
+      # minAvailable: 1
+  ## Configuration specific to the Service
+  ## loadBalancerIP sets a specific VIP from address pool
+  ## externalTrafficPolicy sets the internal routing in kubernetes for the service
+  ## sharedVIPLabel enables sharing VIP with other services with same label
+  ## addressPoolName sets a specific address pool when VIP is assigned
+  service:
+    # type: LoadBalancer
+    loadBalancerIP: *VIP_OAM
+    # externalTrafficPolicy: Cluster
+    # dscp: 0
+    annotations:
+      sharedVIPLabel: *shared_vip_oam_label
+      # addressPoolName:
+      # loadBalancerIPs:
+      # cloudProviderLB: {}
+    # externalIPv4:
+      # enabled: false
+      # loadBalancerIP:
+      # annotations:
+        # sharedVIPLabel: *shared_vip_oam_label
+        # addressPoolName:
+    # externalIPv6:
+      # enabled: false
+      # loadBalancerIP:
+      # annotations:
+        # sharedVIPLabel: *shared_vip_oam_label
+        # addressPoolName:
+  # ingressClass: "sc"
+  ## The grace period is the duration in seconds after the processes running in the
+  ## pod are sent a termination signal and the time when the processes are forcibly
+  ## halted with a kill signal.
+  # terminationGracePeriodSeconds:
+    # contour: 30
+    # envoy: 30
+  # tolerations:
+    # contour: []
+    # envoy: []
+    # hooklauncher: []
+    # typedconfighook: []
+  # annotations: {}
+  # podAnnotations:
+    # envoy: {}
+  # labels: {}
+
+## Certificate Management
+# eric-sec-certm:
+  # annotations: {}
+  # labels: {}
+  # nodeSelector:
+    # eric-sec-certm: {}
+    # hooklauncher: {}
+  # affinity:
+    # podAntiAffinity: "soft"
+  # resources:
+    # certm:
+      # limits:
+        # cpu: "1000m"
+        # memory: "2Gi"
+        # ephemeral-storage:
+      # requests:
+        # cpu: "500m"
+        # memory: "1Gi"
+        # ephemeral-storage:
+      # jvm:
+        # initialMemoryAllocationPercentage: 25
+        # smallMemoryAllocationMaxPercentage: 50
+        # largeMemoryAllocationMaxPercentage: 50
+    # hooklauncher:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "100Mi"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "100Mi"
+  # probes:
+    # certm:
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # timeoutSeconds: 5
+        # periodSeconds: 2
+        # failureThreshold: 150
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # timeoutSeconds: 4
+        # periodSeconds: 5
+        # failureThreshold: 6
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # timeoutSeconds: 3
+        # periodSeconds: 4
+        # successThreshold: 1
+        # failureThreshold: 5
+  # tolerations:
+    # eric-sec-certm:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+    # hooklauncher: []
+  # terminationGracePeriodSeconds:
+    # eric-sec-certm: 30
+  ## QoS DSCP marking to the outbound egress network traffic.
+  ## The value must be in the range [0, 63] where 0 is the lowest priority and
+  ## 63 is the highest priority. For example, DSCP is marked for CMP online
+  ## enrollment and online CRLs download
+  # egress:
+    # caServer:
+      # dscp: 0
+
+## Key Management
+# eric-sec-key-management:
+  # resources:
+    # ca:
+      # requests:
+        # memory: "400Mi"
+        # cpu: "100m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "400Mi"
+        # cpu: "100m"
+        # ephemeral-storage:
+    # unsealer:
+      # requests:
+        # memory: "400Mi"
+        # cpu: "100m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "400Mi"
+        # cpu: "100m"
+        # ephemeral-storage:
+    # shelter:
+      # requests:
+        # memory: "400Mi"
+        # cpu: "100m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "1200Mi"
+        # cpu: "300m"
+        # ephemeral-storage:
+    # vault:
+      # requests:
+        # memory: "400Mi"
+        # cpu: "100m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "1200Mi"
+        # cpu: "300m"
+        # ephemeral-storage:
+    # metrics:
+      # requests:
+        # memory: "10Mi"
+        # cpu: "10m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "50Mi"
+        # cpu: "50m"
+        # ephemeral-storage:
+    # logshipper:
+      # requests:
+        # memory: "20Mi"
+        # cpu: "46m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "30Mi"
+        # cpu: "60m"
+        # ephemeral-storage:
+    # bootstrapJob:
+      # requests:
+        # memory: "400Mi"
+        # cpu: "100m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "400Mi"
+        # cpu: "100m"
+        # ephemeral-storage:
+    # hooklauncher:
+      # requests:
+        # memory: "100Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "100Mi"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "100Mi"
+  # probes:
+    # shelter:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # failureThreshold: 3
+        # periodSeconds: 10
+        # timeoutSeconds: 5
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # failureThreshold: 3
+        # periodSeconds: 5
+        # successThreshold: 1
+        # timeoutSeconds: 4
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # failureThreshold: 30
+        # periodSeconds: 10
+        # timeoutSeconds: 1
+    # vault:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # failureThreshold: 3
+        # periodSeconds: 10
+        # timeoutSeconds: 5
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # failureThreshold: 3
+        # periodSeconds: 5
+        # successThreshold: 1
+        # timeoutSeconds: 4
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # failureThreshold: 30
+        # periodSeconds: 10
+        # timeoutSeconds: 1
+    # metrics:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # failureThreshold: 3
+        # periodSeconds: 10
+        # timeoutSeconds: 4
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # failureThreshold: 3
+        # periodSeconds: 10
+        # successThreshold: 1
+        # timeoutSeconds: 4
+  ## replicaCount, number of KMS pod instances. Only one of them is active. Max value is 2.
+  # replicaCount:
+    # kms: 2
+  ## podDisruptionBudget, enables workload to be able to properly deal with voluntary disruptions
+  ## applicable when replicas is 2
+  # podDisruptionBudget:
+    # minAvailable: 1
+  ## nodeSelector, node labels for pod assignment
+  # nodeSelector:
+    # kms: {}
+    # bootstrapJob: {}
+    # hooklauncher: {}
+  ## tolerations, node tolerations for the pod(s)
+  # tolerations:
+    # kms: []
+    # bootstrapJob: []
+    # hooklauncher: []
+  ## topologySpreadConstraints, specifies how to spread matching pods among the given topology
+  # topologySpreadConstraints: []
+  ## affinity, purpose is to spread pod replicas evenly among failure domains
+  # affinity:
+    ## podAntiAffinity, strictness of anti affinity, values: soft, hard
+    # podAntiAffinity: "hard"
+    ## topologyKey, use as the failure domain, default value "kubernetes.io/hostname"
+    # topologyKey: "kubernetes.io/hostname"
+  ## terminationGracePeriodSeconds, time duration after process termination before
+  ## they are forcibly killed
+  # terminationGracePeriodSeconds: 30
+  ## labels, application specific labels
+  # labels: {}
+  ## annotations, application specific annotations
+  # annotations: {}
+
+## Service Identity Provider for TLS
+# eric-sec-sip-tls:
+  ## replicas, number of SIP-TLS pod instances. Only one of them is processing and watching CRs.
+  # replicaCount: 2
+  # affinity:
+    # podAntiAffinity: "soft"
+    # topologyKey: "kubernetes.io/hostname"
+  ## podDisruptionBudget, enables workload to be able to properly deal with voluntary disruptions
+  ## applicable when replicas greater than 1, parameters are mutually exclusive
+  # podDisruptionBudget:
+    # minAvailable: 1
+  # resources:
+    # sip-tls:
+      # requests:
+        # memory: "200Mi"
+        # cpu: "100m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "400Mi"
+        # cpu: "1000m"
+        # ephemeral-storage:
+    # sip-tls-supervisor:
+      # requests:
+        # memory: "200Mi"
+        # cpu: "100m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "400Mi"
+        # cpu: "300m"
+        # ephemeral-storage:
+    ## Logshipper resource values are based on a measurement.
+    ## Please check SIP-TLS User Guide, section Configuration Parameters, for more information.
+    # logshipper:
+      # requests:
+        # memory: "20Mi"
+        # cpu: "14m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "30Mi"
+        # cpu: "20m"
+        # ephemeral-storage:
+    # hooklauncher:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "100m"  # higher than hard coded defaults in hooklauncher templates
+        # ephemeral-storage: "100Mi"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "300m"  # higher than hard coded defaults in hooklauncher templates
+        # ephemeral-storage: "100Mi"
+  # probes:
+    # sip-tls:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # timeoutSeconds: 5
+        # periodSeconds: 10
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # timeoutSeconds: 5
+        # periodSeconds: 10
+        # successThreshold: 1
+        # failureThreshold: 3
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # timeoutSeconds: 5
+        # periodSeconds: 10
+        # failureThreshold: 3
+    # sip-tls-supervisor:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # timeoutSeconds: 5
+        # periodSeconds: 10
+        # failureThreshold: 5
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # timeoutSeconds: 5
+        # periodSeconds: 10
+        # successThreshold: 1
+        # failureThreshold: 3
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # timeoutSeconds: 5
+        # periodSeconds: 10
+        # failureThreshold: 3
+  # tolerations:
+    # sip-tls: []
+    # hooklauncher: []
+  ## Additional labels to be attached by an Application Design Engineer or an Application Deployment Engineer
+  # labels: {}
+  ## Additional annotations to be attached by an Application Design Engineer or an Application Deployment Engineer
+  # annotations: {}
+  # nodeSelector:
+    # sip-tls: {}
+    # hooklauncher: {}
+  ## Additional Pod Topology Spread Constraints values to be attached by an Application Design Engineer or an Application Deployment Engineer
+  # topologySpreadConstraints: []
+
+## Distributed Coordinator ED
+eric-data-distributed-coordinator-ed:
+  ## Additional labels allow a list of key/values to be appended to the list of labels of the resource object.
+  # labels: {}
+  ## A list of key/values to be appended to the list of user defined annotations
+  # annotations: {}
+  ## Tolerations to influence scheduling decisions made by Kubernetes scheduler
+  # tolerations:
+    # dced: []
+    # brAgent:
+    # - key: node.kubernetes.io/not-ready
+      # operator: Exists
+      # effect: NoExecute
+      # tolerationSeconds: 0
+    # - key: node.kubernetes.io/unreachable
+      # operator: Exists
+      # effect: NoExecute
+      # tolerationSeconds: 0
+    # hooklauncher: []
+  # terminationGracePeriodSeconds:
+    # dced: 30
+    # brAgent: 30
+  # pods:
+    # dced:
+      ## The number of pods in the Data Distributed Coordinator-ED ensemble
+      ## Recommended instances 3 (minimum), 7 (maximum)
+      # replicaCount: 3
+  # resources:
+    # init:
+      # requests:
+        # cpu: "200m"
+        # memory: "200Mi"
+        # ephemeral-storage:
+      # limits:
+        # cpu: "500m"
+        # memory: "500Mi"
+        # ephemeral-storage:
+    # dced:
+      # requests:
+        ## This is the min CPU setting at startup
+        # cpu: "400m"
+        ## This is the min Memory setting at startup
+        # memory: "400Mi"
+        # ephemeral-storage:
+      # limits:
+        ## This the maximum cpu setting that can be requested
+        # cpu: "1"
+        ## This is the max memory setting that can be requested
+        # memory: "1Gi"
+        # ephemeral-storage:
+    # brAgent:
+      # requests:
+        # cpu: "400m"
+        # memory: "400Mi"
+        # ephemeral-storage:
+      # limits:
+        # cpu: "1"
+        # memory: "2Gi"
+        # ephemeral-storage:
+      # jvm:
+       # initialMemoryAllocationPercentage: 50
+       # smallMemoryAllocationMaxPercentage: 70
+       # largeMemoryAllocationMaxPercentage: 50
+    # logshipper:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "50m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage:
+    # metricsexporter:
+      # requests:
+        # cpu: "100m"
+        # memory: "8Mi"
+        # ephemeral-storage:
+      # limits:
+        # cpu: "200m"
+        # memory: "64Mi"
+        # ephemeral-storage:
+    # hooklauncher:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "100Mi"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "100Mi"
+  # probes:
+    # dced:
+      # readinessProbe:
+        # failureThreshold: 3
+        # initialDelaySeconds: 15
+        # periodSeconds: 10
+        # successThreshold: 1
+        # timeoutSeconds: 15
+      # livenessProbe:
+        # failureThreshold: 3
+        # initialDelaySeconds: 15
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        ## Number of time entrypoint.sh will check for etcd process
+        # EntrypointChecksNumber: 60
+        ## True to restart etcd each time it dies
+        # EntrypointRestartEtcd: "true"
+        ## Timeout (seconds) for read function while reading the pipe
+        # EntrypointPipeTimeout: 5
+        ## Min time (seconds) before checking for etcd process
+        # EntrypointEctdProcessInterval: 5
+      ##StartupProbe feature is stable from k8 v.1.20.x onwards, in case deployed in a cluster below that version, readiness Probe's InitialDelaySeconds: 0
+      # startupProbe:
+        ## The number of seconds that kubelet waits before performing the first health check probe
+        # initialDelaySeconds: 5
+        ## The timeout for the health check
+        # timeoutSeconds: 15
+        ## When a probe fails, no of times before giving up.
+        # failureThreshold: 12
+        ## How often (in seconds) to perform the probe.
+        # periodSeconds: 10
+    # brAgent:
+      # livenessProbe:
+        # failureThreshold: 3
+        # initialDelaySeconds: 15
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+    # metricsexporter:
+      # livenessProbe:
+        # failureThreshold: 3
+        # initialDelaySeconds: 15
+        # periodSeconds: 15
+        # timeoutSeconds: 15
+  ## Can specify labels for directing node assignment. Format - label: value
+  # nodeSelector:
+    # dced: {}
+    # brAgent: {}
+  ## sets inter-pod anti-affinity , values supported 'Soft/Hard'.
+  # affinity:
+    # podAntiAffinity: "hard"
+    # topologyKey: "kubernetes.io/hostname"
+  # topologySpreadConstraints:
+    # dced: []
+  # env:
+    # dced:
+      ## The frequency in milliseconds with which the leader will notify followers that it is still the leader (For best practices should be set around round-trip time between members)
+      # ETCD_HEARTBEAT_INTERVAL: 100
+      ## How long in milliseconds a follower node will go without hearing a heartbeat before attempting to become leader itself.
+      # ETCD_ELECTION_TIMEOUT: 1000
+  ## The minimum available Distributed Coordinator-EDs required during voluntary disruption.
+  # podDisruptionBudget: {}
+    ## Select either one of the below parameters with your expected values.
+    ## maxUnavailable: 1
+    ## minAvailable: "51%"
+  persistence:
+    persistentVolumeClaim:
+      storageClassName: *oam_storage_class
+      # size: 1Gi
+
+## Configuration Management Mediator
+# eric-cm-mediator:
+  # backend:
+    # hostname: eric-cm-mediator-db-pg
+    # dbname: adp_gs_cm
+    # dbuser: cm
+  # replicaCount: 2
+  # annotations: {}
+  # affinity:
+    # podAntiAffinity: "soft"
+    # topologyKey: "kubernetes.io/hostname"
+  # labels: {}
+  # nodeSelector:
+    # eric-cm-mediator: {}
+    # eric-cm-mediator-notifier: {}
+    # eric-cm-key-init: {}
+    # hooklauncher: {}
+  # podDisruptionBudget:
+    # eric-cm-mediator:
+      # minAvailable: 50%
+  # probes:
+    # eric-cm-mediator:
+      # livenessProbe:
+        # initialDelaySeconds: 7
+        # periodSeconds: 17
+        # timeoutSeconds: 10
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 5
+        # timeoutSeconds: 5
+        # successThreshold: 1
+        # failureThreshold: 2
+    # eric-cm-mediator-notifier:
+      # livenessProbe:
+        # initialDelaySeconds: 7
+        # periodSeconds: 17
+        # timeoutSeconds: 10
+        # failureThreshold: 3
+  # resources:
+    # eric-cm-mediator:
+      # requests:
+        # memory: "256Mi"
+        # cpu: "500m"
+        # ephemeral-storage: "200Mi"
+      # limits:
+        # memory: "512Mi"
+        # cpu: "2000m"
+        # ephemeral-storage: "350Mi"
+    # eric-cm-mediator-notifier:
+      # requests:
+        # memory: "256Mi"
+        # cpu: "250m"
+        # ephemeral-storage: "200Mi"
+      # limits:
+        # memory: "512Mi"
+        # cpu: "2000m"
+        # ephemeral-storage: "350Mi"
+    # eric-cm-key-init:
+      # requests:
+        # memory: "24Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "10Mi"
+      # limits:
+        # memory: "64Mi"
+        # cpu: "200m"
+        # ephemeral-storage: "10Mi"
+    # eric-cm-mediator-init-container:
+      # requests:
+        # memory: "24Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "10Mi"
+      # limits:
+        # memory: "48Mi"
+        # cpu: "200m"
+        # ephemeral-storage: "10Mi"
+    # hooklauncher:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "100Mi"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "100Mi"
+  # terminationGracePeriodSeconds:
+    # eric-cm-mediator: 30
+    # eric-cm-mediator-notifier: 30
+  # tolerations:
+    # eric-cm-mediator: []
+    # eric-cm-mediator-notifier:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+    # eric-cm-key-init: []
+    # hooklauncher: []
+  # topologySpreadConstraints: []
+
+  ## Document Database PG
+eric-data-document-database-pg:
+  # enabled: false
+  # highAvailability:
+    # replicaCount: 3
+  # podDisruptionBudget:
+    # minAvailable: "50%"
+  persistentVolumeClaim:
+    storageClassName: *oam_storage_class
+    # size: 8Gi
+  # resources:
+    # logshipper:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "320Mi"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "320Mi"
+    # postgres:
+      # requests:
+        # memory: "256Mi"
+        # cpu: "100m"
+        # hugepages-2Mi:
+        # hugepages-1Gi:
+        # ephemeral-storage: "10Gi"
+      # limits:
+        # cpu: "1"
+        # memory: "2560Mi"
+        # hugepages-2Mi:
+        # hugepages-1Gi:
+        # ephemeral-storage: "12Gi"
+    # metrics:
+      # requests:
+        # memory: "128Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "300Mi"
+      # limits:
+        # cpu: "200m"
+        # memory: "256Mi"
+        # ephemeral-storage: "320Mi"
+    # kube_client:
+      # requests:
+        # memory: "256Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "300Mi"
+      # limits:
+        # cpu: "200m"
+        # memory: "512Mi"
+        # ephemeral-storage: "320Mi"
+    # brm:
+      # requests:
+        # memory: "256Mi"
+        # cpu: "300m"
+        # ephemeral-storage: "300Mi"
+      # limits:
+        # cpu: "1"
+        # memory: "512Mi"
+        # ephemeral-storage: "320Mi"
+    # bra:
+      # requests:
+        # memory: "1Gi"
+        # cpu: "500m"
+        # ephemeral-storage: "10Gi"
+      # limits:
+        # cpu: "1"
+        # memory: "2Gi"
+        # ephemeral-storage: "12Gi"
+      # jvm:
+        # initialMemoryAllocationPercentage: 50
+        # smallMemoryAllocationMaxPercentage: 70
+        # largeMemoryAllocationMaxPercentage: 50
+    # hooklauncher:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "300Mi"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "320Mi"
+  # nodeSelector:
+    # postgres: {}
+    # brAgent: {}
+    # cleanuphook: {}
+    # hooklauncher: {}
+  # terminationGracePeriodSeconds:
+    # postgres: 30
+    # brAgent: 30
+  ## Interface for setting Node labels and tolerations for pod assignment
+  # tolerations:
+    # postgres: []
+    # brAgent:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+    # cleanuphook:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+    # hooklauncher:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+  ## affinity.podAntiAffinity , valid value are "soft" or "hard".
+  # affinity:
+    # podAntiAffinity: soft
+    # topologyKey: "kubernetes.io/hostname"
+  # probes:
+    # postgres:
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # failureThreshold: 70
+        # timeoutSeconds: 25
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 15
+        # failureThreshold: 10
+        # timeoutSeconds: 15
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 10
+        # failureThreshold: 6
+        # successThreshold: 1
+    # metrics:
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # failureThreshold: 70
+        # timeoutSeconds: 5
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # failureThreshold: 20
+        # timeoutSeconds: 10
+    # brm:
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # failureThreshold: 50
+        # timeoutSeconds: 10
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # failureThreshold: 40
+        # timeoutSeconds: 5
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # timeoutSeconds: 5
+        # failureThreshold: 10
+        # successThreshold: 1
+    # bra:
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # failureThreshold: 70
+        # timeoutSeconds: 5
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # failureThreshold: 40
+        # timeoutSeconds: 5
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # timeoutSeconds: 5
+        # failureThreshold: 6
+        # successThreshold: 1
+  # topologySpreadConstraints:
+    # postgres: []
+  # labels: {}
+  # annotations: {}
+
+eric-cm-mediator-db-pg:
+  # enabled: true
+  # highAvailability:
+    # replicaCount: 3
+  # podDisruptionBudget:
+    # minAvailable: "50%"
+  persistentVolumeClaim:
+    storageClassName: *oam_storage_class
+    # size: 4Gi
+  # resources:
+    # logshipper:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "320Mi"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "320Mi"
+    # postgres:
+      # requests:
+        # memory: "256Mi"
+        # cpu: "100m"
+        # hugepages-2Mi:
+        # hugepages-1Gi:
+        # ephemeral-storage: "10Gi"
+      # limits:
+        # cpu: "1"
+        # memory: "2560Mi"
+        # hugepages-2Mi:
+        # hugepages-1Gi:
+        # ephemeral-storage: "12Gi"
+    # metrics:
+      # requests:
+        # memory: "128Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "300Mi"
+      # limits:
+        # cpu: "200m"
+        # memory: "256Mi"
+        # ephemeral-storage: "320Mi"
+    # kube_client:
+      # requests:
+        # memory: "256Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "300Mi"
+      # limits:
+        # cpu: "200m"
+        # memory: "512Mi"
+        # ephemeral-storage: "320Mi"
+    # brm:
+      # requests:
+        # memory: "256Mi"
+        # cpu: "300m"
+        # ephemeral-storage: "300Mi"
+      # limits:
+        # cpu: "1"
+        # memory: "512Mi"
+        # ephemeral-storage: "320Mi"
+    # bra:
+      # requests:
+        # memory: "1Gi"
+        # cpu: "500m"
+        # ephemeral-storage: "10Gi"
+      # limits:
+        # cpu: "1"
+        # memory: "2Gi"
+        # ephemeral-storage: "12Gi"
+      # jvm:
+        # initialMemoryAllocationPercentage: 50
+        # smallMemoryAllocationMaxPercentage: 70
+        # largeMemoryAllocationMaxPercentage: 50
+    # hooklauncher:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "300Mi"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "320Mi"
+  # nodeSelector:
+    # postgres: {}
+    # brAgent: {}
+    # cleanuphook: {}
+    # hooklauncher: {}
+  # terminationGracePeriodSeconds:
+    # postgres: 30
+    # brAgent: 30
+  ## Interface for setting Node labels and tolerations for pod assignment
+  # tolerations:
+    # postgres: []
+    # brAgent:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+    # cleanuphook:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+    # hooklauncher:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+  ## affinity.podAntiAffinity , valid value are "soft" or "hard".
+  # affinity:
+    # podAntiAffinity: soft
+    # topologyKey: "kubernetes.io/hostname"
+  # probes:
+    # postgres:
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # failureThreshold: 70
+        # timeoutSeconds: 25
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 15
+        # failureThreshold: 10
+        # timeoutSeconds: 15
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 10
+        # failureThreshold: 6
+        # successThreshold: 1
+    # metrics:
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # failureThreshold: 70
+        # timeoutSeconds: 5
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # failureThreshold: 20
+        # timeoutSeconds: 10
+    # brm:
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # failureThreshold: 50
+        # timeoutSeconds: 10
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # failureThreshold: 40
+        # timeoutSeconds: 5
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # timeoutSeconds: 5
+        # failureThreshold: 10
+        # successThreshold: 1
+    # bra:
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # failureThreshold: 70
+        # timeoutSeconds: 5
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # failureThreshold: 40
+        # timeoutSeconds: 5
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # timeoutSeconds: 5
+        # failureThreshold: 6
+        # successThreshold: 1
+  # topologySpreadConstraints:
+    # postgres: []
+  # labels: {}
+  # annotations: {}
+
+## Alarm Handler
+# eric-fh-alarm-handler:
+  # replicaCount: 2
+  # probes:
+    # alarmHandler:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 17
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 10
+        # successThreshold: 1
+        # failureThreshold: 5
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # failureThreshold: 30
+        # periodSeconds: 5
+        # timeoutSeconds: 5
+    # logshipper:
+      # livenessProbe:
+        # timeoutSeconds: 10
+        # periodSeconds: 10
+        # failureThreshold: 3
+        # initialDelaySeconds: 1
+  # alarmhandler:
+    # alarmExpirationTimer: 30
+    # alarmHistorySize: "10"
+  # backend:
+    # hostname: eric-fh-alarm-handler-db-pg
+    # dbname: adp_gs_ah
+    # dbuser: ah
+  # resources:
+    # alarmhandler:
+      # requests:
+        # memory: "384Mi"
+        # cpu: "500m"
+        # ephemeral-storage: "2Gi"
+      # limits:
+        # memory: "512Mi"
+        # cpu: "1000m"
+        # ephemeral-storage: "4Gi"
+    # topiccreator:
+      # requests:
+        # memory: "384Mi"
+        # cpu: "500m"
+        # ephemeral-storage: "1Gi"
+      # limits:
+        # memory: "512Mi"
+        # cpu: "1000m"
+        # ephemeral-storage: "2Gi"
+    # logshipper:
+      # requests:
+        # cpu: "20m"
+        # memory: "30Mi"
+      # limits:
+        # cpu: "50m"
+        # memory: "50Mi"
+  # nodeSelector:
+    # alarmhandler: {}
+    # hooklauncher: {}
+  # tolerations:
+    # alarmhandler: []
+    # hooklauncher: []
+  # terminationGracePeriodSeconds: 30
+  # topologySpreadConstraints: []
+  # labels: {}
+  # annotations: {}
+  # podDisruptionBudget:
+    # minAvailable: 50%
+  # affinity:
+    # podAntiAffinity: "hard"
+    # topologyKey: "kubernetes.io/hostname"
+
+eric-fh-alarm-handler-db-pg:
+  # enabled: true
+  # highAvailability:
+    # replicaCount: 3
+  # podDisruptionBudget:
+    # minAvailable: "50%"
+  persistentVolumeClaim:
+    storageClassName: *oam_storage_class
+    # size: 4Gi
+  # resources:
+    # logshipper:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "320Mi"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "320Mi"
+    # postgres:
+      # requests:
+        # memory: "256Mi"
+        # cpu: "100m"
+        # hugepages-2Mi:
+        # hugepages-1Gi:
+        # ephemeral-storage: "10Gi"
+      # limits:
+        # cpu: "1"
+        # memory: "2560Mi"
+        # hugepages-2Mi:
+        # hugepages-1Gi:
+        # ephemeral-storage: "12Gi"
+    # metrics:
+      # requests:
+        # memory: "128Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "300Mi"
+      # limits:
+        # cpu: "200m"
+        # memory: "256Mi"
+        # ephemeral-storage: "320Mi"
+    # kube_client:
+      # requests:
+        # memory: "256Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "300Mi"
+      # limits:
+        # cpu: "200m"
+        # memory: "512Mi"
+        # ephemeral-storage: "320Mi"
+    # hooklauncher:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "300Mi"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "320Mi"
+  # nodeSelector:
+    # postgres: {}
+    # cleanuphook: {}
+    # hooklauncher: {}
+  # terminationGracePeriodSeconds:
+    # postgres: 30
+  ## Interface for setting Node labels and tolerations for pod assignment
+  # tolerations:
+    # postgres: []
+    # cleanuphook:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+    # hooklauncher:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+  ## affinity.podAntiAffinity , valid value are "soft" or "hard".
+  # affinity:
+    # podAntiAffinity: soft
+    # topologyKey: "kubernetes.io/hostname"
+  # probes:
+    # postgres:
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # failureThreshold: 70
+        # timeoutSeconds: 25
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 15
+        # failureThreshold: 10
+        # timeoutSeconds: 15
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 10
+        # failureThreshold: 6
+        # successThreshold: 1
+    # metrics:
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # failureThreshold: 70
+        # timeoutSeconds: 5
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # failureThreshold: 20
+        # timeoutSeconds: 10
+  # topologySpreadConstraints:
+    # postgres: []
+  # labels: {}
+  # annotations: {}
+
+## SNMP Alarm Provider
+eric-fh-snmp-alarm-provider:
+  service:
+    # externalIPv4:
+      # enabled:
+      # loadBalancerIP:
+      # annotations:
+        # cloudProviderLB: {}
+        # sharedVIPLabel: *shared_vip_oam_label
+        # addressPoolName: ""
+    # externalIPv6:
+      # enabled:
+      # loadBalancerIP:
+      # annotations:
+        # cloudProviderLB: {}
+        # sharedVIPLabel: *shared_vip_oam_label
+        # addressPoolName: ""
+    loadBalancerIP: *VIP_OAM
+    # type: LoadBalancer
+    # snmpPort:
+      # dscp: 0
+    ## The mandatory secret resource name to use for configuring the service
+    # secretName: ""
+    annotations:
+      # cloudProviderLB: {}
+      sharedVIPLabel: *shared_vip_oam_label
+      # loadBalancerIPs: ""
+      # addressPoolName: ""
+  # annotations: {}
+  # probes:
+    # snmpAP:
+      # livenessProbe:
+        # initialDelaySeconds: 120
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        # failureThreshold: 6
+      # readinessProbe:
+        # initialDelaySeconds: 120
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 6
+    # logshipper:
+      # livenessProbe:
+        # initialDelaySeconds: 1
+        # timeoutSeconds: 10
+        # periodSeconds: 10
+        # failureThreshold: 3
+  ## SNMP protocol releted values
+  ## MR: Support for new SNMP_v2c varbinds, ADPPRG-55306.
+  ## Possible values are 0(Unknown), 1(IPV4), 2(IPV6)
+  # sourceIdentifierType: 1
+  ## MR: Support for new SNMP_v2c varbinds, ADPPRG-55306.
+  ## Should be in IPv4 or IPv6 format, depends on SourceIdentifierType
+  # sourceIdentifier: 127.0.0.1
+  # resources:
+    # alarmprovider:
+      # requests:
+        # memory: "384Mi"
+        # cpu: "0.1"
+        # ephemeral-storage: 2Gi
+      # limits:
+        # memory: "1.5Gi"
+        # cpu: "0.5"
+        # ephemeral-storage: 4Gi
+      # jvm:
+        # initialMemoryAllocationPercentage: 50
+        # smallMemoryAllocationMaxPercentage: 70
+        # largeMemoryAllocationMaxPercentage: 50
+    # logshipper:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "20m"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "50m"
+    # cmmJob:
+      # requests:
+        # memory: "100Mi"
+        # cpu: "0.1"
+        # ephemeral-storage: 10Mi
+      # limits:
+        # memory: "200Mi"
+        # cpu: "0.2"
+        # ephemeral-storage: 20Mi
+      # jvm:
+        # initialMemoryAllocationPercentage: 50
+        # smallMemoryAllocationMaxPercentage: 70
+        # largeMemoryAllocationMaxPercentage: 50
+    # hooklauncher:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "100Mi"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "100Mi"
+  # nodeSelector:
+    # snmpAP: {}
+    # hooklauncher: {}
+  # labels: {}
+  # tolerations:
+    # snmpAP:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+    # cmmJob:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+    # hooklauncher: []
+  # terminationGracePeriodSeconds: 30
+
+## PM Server
+eric-pm-server:
+  # resources:
+    # eric-pm-initcontainer:
+      # limits:
+        # cpu: "1"
+        # memory: "200Mi"
+        # ephemeral-storage:
+      # requests:
+        # cpu: "50m"
+        # memory: "50Mi"
+        # ephemeral-storage:
+    # eric-pm-server:
+      # limits:
+        # cpu: '2'
+        # memory: 8Gi
+        # ephemeral-storage:
+      # requests:
+        # cpu: 250m
+        # memory: 4Gi
+        # ephemeral-storage:
+    # eric-pm-configmap-reload:
+      # limits:
+        # cpu: 200m
+        # memory: 32Mi
+        # ephemeral-storage:
+      # requests:
+        # cpu: 100m
+        # memory: 8Mi
+        # ephemeral-storage:
+    # eric-pm-exporter:
+      # limits:
+        # cpu: 200m
+        # memory: 32Mi
+        # ephemeral-storage:
+      # requests:
+        # cpu: 100m
+        # memory: 8Mi
+        # ephemeral-storage:
+    # eric-pm-reverseproxy:
+      # limits:
+        # cpu: '2'
+        # memory: 128Mi
+        # ephemeral-storage:
+      # requests:
+        # cpu: 100m
+        # memory: 32Mi
+        # ephemeral-storage:
+    # logshipper:
+      # limits:
+        # cpu: "100m"
+        # memory: "100Mi"
+        # ephemeral-storage:
+      # requests:
+        # cpu: "50m"
+        # memory: "50Mi"
+        # ephemeral-storage:
+    # hooklauncher:
+      # limits:
+        # memory: "100Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "100Mi"
+      # requests:
+        # memory: "50Mi"
+        # cpu: "20m"
+        # ephemeral-storage: "100Mi"
+  # probes:
+    # server:
+      # readinessProbe:
+        # initialDelaySeconds: 30
+        # periodSeconds: 10
+        # timeoutSeconds: 30
+        # failureThreshold: 3
+        # successThreshold: 1
+      # livenessProbe:
+        # initialDelaySeconds: 30
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        # failureThreshold: 3
+        # successThreshold: 1
+    # reverseproxy:
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        # failureThreshold: 5
+        # successThreshold: 1
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 15
+        # timeoutSeconds: 15
+        # failureThreshold: 3
+        # successThreshold: 1
+    # exporter:
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        # failureThreshold: 5
+        # successThreshold: 1
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 15
+        # timeoutSeconds: 15
+        # failureThreshold: 3
+        # successThreshold: 1
+    # configmapreload:
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        # failureThreshold: 5
+        # successThreshold: 1
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        # failureThreshold: 3
+        # successThreshold: 1
+  server:
+    persistentVolume:
+      storageClass: *oam_storage_class
+      # size: 80Gi
+    # extraConfigmapMounts: []
+    # replicaCount: 1
+  # tolerations:
+    # eric-pm-server: []
+    # hooklauncher: []
+  # nodeSelector:
+    # eric-pm-server: {}
+    # hooklauncher: {}
+  # annotations: {}
+  # labels: {}
+  # podDisruptionBudget:
+    # minAvailable: 0
+  # topologySpreadConstraints:
+    # eric-pm-server: []
+  # config:
+    # certm_tls: []
+    # remote_write: []
+  # terminationGracePeriodSeconds:
+    # server: 300
+  # affinity:
+    # podAntiAffinity: "hard"
+    # topologyKey: "kubernetes.io/hostname"
+
+## Log Transformer
+# eric-log-transformer:
+  # affinity:
+    # podAntiAffinity: "soft"
+    # topologyKey: "kubernetes.io/hostname"
+  # replicaCount: 2
+  # tolerations:
+    # logtransformer: []
+    # hooklauncher: []
+  # topologySpreadConstraints: []
+  # terminationGracePeriodSeconds: 30
+  # nodeSelector:
+    # logtransformer: {}
+    # hooklauncher: {}
+  # annotations: {}
+  # labels: {}
+  # probes:
+    # logtransformer:
+      # startupProbe:
+        # failureThreshold: 40
+        # initialDelaySeconds: 0
+        # periodSeconds: 30
+        # timeoutSeconds: 15
+      # livenessProbe:
+        # timeoutSeconds: 15
+        # periodSeconds: 30
+        # failureThreshold: 3
+      # readinessProbe:
+        # timeoutSeconds: 10
+        # periodSeconds: 10
+        # successThreshold: 1
+        # failureThreshold: 3
+    # metrics:
+      # startupProbe:
+        # failureThreshold: 40
+        # initialDelaySeconds: 0
+        # periodSeconds: 30
+        # timeoutSeconds: 15
+      # livenessProbe:
+        # timeoutSeconds: 15
+        # periodSeconds: 30
+        # failureThreshold: 3
+      # readinessProbe:
+        # timeoutSeconds: 15
+        # periodSeconds: 30
+        # successThreshold: 1
+        # failureThreshold: 3
+    # tlsproxy:
+      # startupProbe:
+        # failureThreshold: 40
+        # initialDelaySeconds: 0
+        # periodSeconds: 30
+        # timeoutSeconds: 15
+      # livenessProbe:
+        # timeoutSeconds: 15
+        # periodSeconds: 5
+        # failureThreshold: 3
+  # resources:
+    # logtransformer:
+      # requests:
+        # cpu: 250m
+        # memory: 8Gi
+        # ephemeral-storage:
+      # limits:
+        # cpu: 2000m
+        # memory: 8Gi
+        # ephemeral-storage:
+      # jvm:
+        # initialMemoryAllocationPercentage: 67
+        # smallMemoryAllocationMaxPercentage: 50
+        # largeMemoryAllocationMaxPercentage: 67
+    # metrics:
+      # limits:
+        # cpu: "100m"
+        # memory: "256Mi"
+        # ephemeral-storage:
+      # requests:
+        # cpu: "25m"
+        # memory: "64Mi"
+        # ephemeral-storage:
+      # jvm:
+        # initialMemoryAllocationPercentage: 15
+        # smallMemoryAllocationMaxPercentage: 30
+        # largeMemoryAllocationMaxPercentage: 30
+    # tlsproxy:
+      # limits:
+        # cpu: "100m"
+        # memory: "128Mi"
+        # ephemeral-storage:
+      # requests:
+        # cpu: "25m"
+        # memory: "64Mi"
+        # ephemeral-storage:
+    # hooklauncher:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "20m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "100Mi"
+        # cpu: "50m"
+        # ephemeral-storage:
+  # egress:
+    # lumberjack:
+      # enabled: false
+      # remoteHosts: []
+      # certificates:
+        # trustedCertificateListName: "sc-trusted-default-cas"
+    # syslog:
+      # enabled: false
+      # tls:
+        # enabled: false
+      # certificates:
+        # asymmetricKeyCertificateName: "syslog-default-key-cert"
+        # trustedCertificateListName: "sc-trusted-default-cas"
+      # remoteHosts: []
+      # inclusions:
+        # - field: "[facility]"
+          # value: "log audit"
+        # - field: "[facility]"
+          # value: "security/authorization messages"
+        # - field: "[metadata][category]"
+          # contains: "-privacy-"
+      # exclusions:
+        # - logplane:
+          # rules:
+            # - field: "[extra_data][asi][log_plane]"
+              # value: "alarm"
+      # filter: ""
+  # podDisruptionBudget:
+    # maxUnavailable: 1
+
+## Log Shipper
+# eric-log-shipper:
+  # annotations: {}
+  # labels: {}
+  # tolerations:
+    # logshipper: []
+    # hooklauncher: []
+  # nodeSelector:
+    # logshipper: {}
+    # hooklauncher: {}
+  # terminationGracePeriodSeconds: 30
+  # probes:
+    # metrics:
+      # startupProbe:
+        # failureThreshold: 30
+        # initialDelaySeconds: 0
+        # periodSeconds: 30
+        # timeoutSeconds: 15
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # timeoutSeconds: 15
+        # periodSeconds: 10
+        # successThreshold: 1
+        # failureThreshold: 6
+  # resources:
+    # logshipper:
+      # requests:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "500Mi"
+        # cpu: "250m"
+        # ephemeral-storage:
+    # hooklauncher:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "20m"
+          # # ephemeral-storage:
+      # limits:
+        # memory: "100Mi"
+        # cpu: "50m"
+        # ephemeral-storage:
+    # metrics:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "20m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "100Mi"
+        # cpu: "50m"
+        # ephemeral-storage:
+
+## Search Engine
+eric-data-search-engine:
+  # affinity:
+    # podAntiAffinity: "soft"
+    # topologyKey: "kubernetes.io/hostname"
+  # labels: {}
+  # annotations: {}
+  # service:
+    # network:
+      # protocol:
+        # IPv6: false
+  # terminationGracePeriodSeconds:
+    # data: 480
+    # ingest: 30
+    # master: 30
+  # tolerations:
+    # data: []
+    # ingest: []
+    # master: []
+    # preupgradehook: []
+    # hooklauncher: []
+    # downgradeCleanPreUpgradeHook: []
+  # topologySpreadConstraints:
+    # master: []
+    # ingest: []
+    # data: []
+  # replicaCount:
+    # ingest: 1
+    # master: 3
+    # data: 2
+  # nodeSelector:
+    # ingest: {}
+    # master: {}
+    # data: {}
+    # preupgradehook: {}
+    # hooklauncher: {}
+    # downgradeCleanPreUpgradeHook: {}
+  # probes:
+    # ingest:
+      # livenessProbe:
+        # periodSeconds: 30
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 3
+      # startupProbe:
+        # initialDelaySeconds: 10
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 100
+    # master:
+      # livenessProbe:
+        # periodSeconds: 30
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 3
+      # startupProbe:
+        # initialDelaySeconds: 10
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 100
+    # data:
+      # livenessProbe:
+        # periodSeconds: 30
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 3
+      # startupProbe:
+        # initialDelaySeconds: 10
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 3000
+    # metrics:
+      # livenessProbe:
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 3
+      # startupProbe:
+        # initialDelaySeconds: 20
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 300
+    # tlsproxy:
+      # livenessProbe:
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 3
+      # startupProbe:
+        # initialDelaySeconds: 10
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 300
+  # jvmHeap:
+    # ingest: "1024m"
+    # master: "512m"
+    # data: "2048m"
+  # resources:
+    # ingest:
+      # limits:
+        # cpu: "500m"
+        # memory: "2Gi"
+        # ephemeral-storage: ""
+      # requests:
+        # cpu: "500m"
+        # memory: "2Gi"
+        # ephemeral-storage: ""
+    # master:
+      # limits:
+        # cpu: "500m"
+        # memory: "1.5Gi"
+        # ephemeral-storage: ""
+      # requests:
+        # cpu: "500m"
+        # memory: "1.5Gi"
+        # ephemeral-storage: ""
+    # data:
+      # limits:
+        # cpu: "1000m"
+        # memory: "4Gi"
+        # ephemeral-storage: ""
+      # requests:
+        # cpu: "1000m"
+        # memory: "4Gi"
+        # ephemeral-storage: ""
+    # metrics:
+      # limits:
+        # cpu: "100m"
+        # memory: "128Mi"
+        # ephemeral-storage: ""
+      # requests:
+        # cpu: "25m"
+        # memory: "64Mi"
+        # ephemeral-storage: ""
+    # tlsproxy:
+      # limits:
+        # cpu: "100m"
+        # memory: "128Mi"
+        # ephemeral-storage: ""
+      # requests:
+        # cpu: "25m"
+        # memory: "64Mi"
+        # ephemeral-storage: ""
+    # logshipper:
+      # limits:
+        # memory: "100Mi"
+        # cpu: "80m"
+        # ephemeral-storage: ""
+      # requests:
+        # memory: "50Mi"
+        # cpu: "30m"
+        # ephemeral-storage: ""
+    # sysctl:
+      # limits:
+        # cpu: "100m"
+        # memory: "128Mi"
+        # ephemeral-storage: ""
+      # requests:
+        # cpu: "25m"
+        # memory: "64Mi"
+        # ephemeral-storage: ""
+    # preupgradehook:
+      # limits:
+        # cpu: "100m"
+        # memory: "128Mi"
+        # ephemeral-storage: ""
+      # requests:
+        # cpu: "25m"
+        # memory: "64Mi"
+        # ephemeral-storage:
+    # hooklauncher:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "50m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage:
+    # downgradeCleanPreUpgradeHook:
+      # limits:
+        # cpu: "100m"
+        # memory: "128Mi"
+        # ephemeral-storage:
+      # requests:
+        # cpu: "25m"
+        # memory: "64Mi"
+        # ephemeral-storage:
+  persistence:
+    data:
+      persistentVolumeClaim:
+        # size: "100Gi"
+        storageClassName: *oam_storage_class
+    master:
+      persistentVolumeClaim:
+        # size: "64Mi"
+        storageClassName: *oam_storage_class
+  # podDisruptionBudget:
+    # data:
+      # maxUnavailable: 1
+    # ingest:
+      # maxUnavailable: 1
+    # master:
+      # maxUnavailable: 1
+  # index_management:
+    # policies:
+      # - description: "Delete adp-app-logs after 15 days"
+        # indices:
+        # - adp-app-logs*
+        # priority: 1
+        # states:
+        # - name: init
+          # transitions:
+          # - condition: min_index_age=15d
+            # destination_state: delete
+        # - name: delete
+          # actions:
+          # - delete
+      # - description: "Delete adp-app-audit-logs and adp-app-asi-logs after 30 days"
+        # indices:
+        # - adp-app-audit-logs*
+        # - adp-app-asi-logs*
+        # priority: 1
+        # states:
+        # - name: init
+          # transitions:
+          # - condition: min_index_age=30d
+            # destination_state: delete
+        # - name: delete
+          # actions:
+          # - delete
+      # - description: "Delete adp-app-debug-logs after 3 days"
+        # indices:
+        # - adp-app-debug-logs*
+        # priority: 1
+        # states:
+        # - name: init
+          # transitions:
+          # - condition: min_index_age=3d
+            # destination_state: delete
+        # - name: delete
+          # actions:
+          # - delete
+      # - description: "Delete SC logs after 7 days"
+        # indices:
+        # - sc-bsf-logs*
+        # - sc-scp-logs*
+        # - sc-sepp-logs*
+        # - sc-diameter-logs*
+        # - sc-logs*
+        # - sc-events*
+        # priority: 1
+        # states:
+        # - name: init
+          # transitions:
+          # - condition: min_index_age=7d
+            # destination_state: delete
+        # - name: delete
+          # actions:
+          # - delete
+    # delete_indices_by_diskspace:
+      # - index: adp-app-logs*
+        # size: 15gb
+      # - index: adp-app-audit-logs*
+        # size: 1gb
+      # - index: adp-app-asi-logs*
+        # size: 1gb
+      # - index: adp-app-debug-logs*
+        # size: 8gb
+      # - index: sc-bsf-logs*
+        # size: 12gb
+      # - index: sc-scp-logs*
+        # size: 12gb
+      # - index: sc-sepp-logs*
+        # size: 12gb
+      # - index: sc-diameter-logs-*
+        # size: 12gb
+      # - index: sc-logs-*
+        # size: 12gb
+      # - index: sc-events*
+        # size: 1gb
+
+## License Manager
+# eric-lm-combined-server:
+  # database:
+    # host: eric-lm-combined-server-db-pg
+    # name: licensemanager_db
+    # userName: lmuser
+  ## Additional annotations to be attached to all resource objects created by the License Manager service
+  # annotations: {}
+  ## Additional labels to be attached to all resource objects created by the License Manager service
+  # labels: {}
+  # terminationGracePeriodSeconds:
+    ## termination grace period for the Pod License Consumer Handler
+    # eric-lm-combined-server-license-consumer-handler: 30
+    ## termination grace period for the Pod License Server Client
+    # eric-lm-combined-server-license-server-client: 30
+  # affinity:
+    ## affinity.podAntiAffinity - hard|soft inter-pod anti-affinity policy
+    # podAntiAffinity: "hard"
+    # topologyKey: "kubernetes.io/hostname"
+  # tolerations:
+    ## Kubernetes tolerations for the License Consumer Handler
+    # licenseConsumerHandler: []
+    ## Kubernetes tolerations for the License Server Client
+    # licenseServerClient:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+    ## Kubernetes tolerations for the hooklauncher
+    # hooklauncher: []
+  # topologySpreadConstraints:
+    ## Kubernetes topology spread constraints for the License Consumer Handler
+    # licenseConsumerHandler: []
+  # podDisruptionBudget:
+    # licenseConsumerHandler:
+      ## minimum number of available instances allowed during voluntary disruptions
+      # minAvailable: 1
+  # replicaCount:
+    ## number of License Consumer Handler pod replicas
+    # licenseConsumerHandler: 2
+    ## number of License Server Client pod replicas
+    # licenseServerClient: 1
+  # licenseConsumerHandler:
+    # affinity: {}
+  # licenseServerClient:
+    # affinity: {}
+  # nodeSelector:
+    ## Kubernetes nodeSelector for the License Consumer Handler
+    # licenseConsumerHandler: {}
+    ## Kubernetes nodeSelector for the License Server Client
+    # licenseServerClient: {}
+    ## Kubernetes nodeSelector for the hooklauncher
+    # hooklauncher: {}
+  # resources:
+    # eric-lm-license-consumer-handler:
+      # limits:
+        # cpu: 200m
+        # memory: 256Mi
+        # ephemeral-storage: 256Mi
+      # requests:
+        # cpu: 100m
+        # memory: 128Mi
+        # ephemeral-storage: 128Mi
+    # eric-lm-license-server-client:
+      # limits:
+        # cpu: 1000m
+        # memory: 2048Mi
+        # ephemeral-storage: 256Mi
+      # requests:
+        # cpu: 100m
+        # memory: 512Mi
+        # ephemeral-storage: 128Mi
+      # jvm:
+        # initialMemoryAllocationPercentage: 50%
+        # smallMemoryAllocationMaxPercentage: 50%
+        # largeMemoryAllocationMaxPercentage: 50%
+    # eric-lm-database-migration:
+      # limits:
+        # cpu: "2000m"
+        # memory: "2048Mi"
+        # ephemeral-storage: "256Mi"
+      # requests:
+        # cpu: "500m"
+        # memory: "128Mi"
+        # ephemeral-storage: "128Mi"
+    # eric-lm-model-upload:
+      # limits:
+        # cpu: "100m"
+        # memory: "256Mi"
+        # ephemeral-storage:
+      # requests:
+        # cpu: "50m"
+        # memory: "128Mi"
+        # ephemeral-storage:
+    # eric-lm-shh-job:
+      # limits:
+        # cpu: "100m"
+        # memory: "256Mi"
+        # ephemeral-storage:
+      # requests:
+        # cpu: "50m"
+        # memory: "128Mi"
+        # ephemeral-storage:
+    # logshipper:
+      # limits:
+        # cpu: "100m"
+        # memory: "100Mi"
+        # ephemeral-storage:
+      # requests:
+        # cpu: "50m"
+        # memory: "50Mi"
+        # ephemeral-storage:
+    # hooklauncher:
+      # limits:
+        # cpu: "50m"
+        # memory: "100Mi"
+        # ephemeral-storage:
+      # requests:
+        # cpu: "20m"
+        # memory: "50Mi"
+        # ephemeral-storage:
+  # probes:
+    # eric-lm-license-consumer-handler:
+      # startupProbe:
+        # failureThreshold: 300
+        # initialDelaySeconds: 0
+        # periodSeconds: 2
+        # timeoutSeconds: 2
+      # livenessProbe:
+        # failureThreshold: 2
+        # initialDelaySeconds: 0
+        # periodSeconds: 40
+        # timeoutSeconds: 20
+      # readinessProbe:
+        # failureThreshold: 2
+        # initialDelaySeconds: 0
+        # periodSeconds: 30
+        # successThreshold: 1
+        # timeoutSeconds: 20
+    # eric-lm-license-server-client:
+      # startupProbe:
+        # failureThreshold: 300
+        # initialDelaySeconds: 0
+        # periodSeconds: 1
+        # timeoutSeconds: 1
+      # livenessProbe:
+        # failureThreshold: 2
+        # initialDelaySeconds: 0
+        # periodSeconds: 40
+        # timeoutSeconds: 20
+      # readinessProbe:
+        # failureThreshold: 2
+        # initialDelaySeconds: 0
+        # periodSeconds: 30
+        # successThreshold: 1
+        # timeoutSeconds: 20
+  # egress:
+    ## The name will show the traffic type or remote peer name which can be used to separate the egress traffic.
+    # licenseServer:
+      ## DSCP value for socket connections towards License Server
+      ## default 0, the value range 0..63, 0 is the lowest priority, 63 is the highest priority.
+      ## Any other value is invalid.
+      # dscp: 0
+
+eric-lm-combined-server-db-pg:
+  # enabled: true
+  # highAvailability:
+    # replicaCount: 3
+  # podDisruptionBudget:
+    # minAvailable: "50%"
+  persistentVolumeClaim:
+    storageClassName: *oam_storage_class
+    # size: 4Gi
+  # resources:
+    # logshipper:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "320Mi"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "320Mi"
+    # postgres:
+      # requests:
+        # memory: "256Mi"
+        # cpu: "100m"
+        # hugepages-2Mi:
+        # hugepages-1Gi:
+        # ephemeral-storage: "10Gi"
+      # limits:
+        # cpu: "1"
+        # memory: "2560Mi"
+        # hugepages-2Mi:
+        # hugepages-1Gi:
+        # ephemeral-storage: "12Gi"
+    # metrics:
+      # requests:
+        # memory: "128Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "300Mi"
+      # limits:
+        # cpu: "200m"
+        # memory: "256Mi"
+        # ephemeral-storage: "320Mi"
+    # kube_client:
+      # requests:
+        # memory: "256Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "300Mi"
+      # limits:
+        # cpu: "200m"
+        # memory: "512Mi"
+        # ephemeral-storage: "320Mi"
+    # hooklauncher:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "300Mi"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "320Mi"
+  # nodeSelector:
+    # postgres: {}
+    # cleanuphook: {}
+    # hooklauncher: {}
+  # terminationGracePeriodSeconds:
+    # postgres: 30
+  ## Interface for setting Node labels and tolerations for pod assignment
+  # tolerations:
+    # postgres: []
+    # cleanuphook:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+    # hooklauncher:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+  ## affinity.podAntiAffinity , valid value are "soft" or "hard".
+  # affinity:
+    # podAntiAffinity: soft
+    # topologyKey: "kubernetes.io/hostname"
+  # probes:
+    # postgres:
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # failureThreshold: 70
+        # timeoutSeconds: 25
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 15
+        # failureThreshold: 10
+        # timeoutSeconds: 15
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 10
+        # failureThreshold: 6
+        # successThreshold: 1
+    # metrics:
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # failureThreshold: 70
+        # timeoutSeconds: 5
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # failureThreshold: 20
+        # timeoutSeconds: 10
+  # topologySpreadConstraints:
+    # postgres: []
+  # labels: {}
+  # annotations: {}
+
+## Diagnostic Data Collector
+# eric-odca-diagnostic-data-collector:
+  # resources:
+    # diagnostic-data-collector:
+      # requests:
+        # memory: 100M
+        # cpu: 100m
+        # ephemeral-storage: 1Gi
+      # limits:
+        # memory: 1.5G
+        # cpu: 1.5
+        # ephemeral-storage: 10Gi
+    # diagnostic-data-collector-manual:
+      # requests:
+        # memory: 100M
+        # cpu: 100m
+        # ephemeral-storage: 1Gi
+      # limits:
+        # memory: 250M
+        # cpu: 500m
+        # ephemeral-storage: 10Gi
+    # diagnostic-data-collector-lcm:
+      # requests:
+        # memory: 100M
+        # cpu: 100m
+        # ephemeral-storage: 1Gi
+      # limits:
+        # memory: 250M
+        # cpu: 500m
+        # ephemeral-storage: 1Gi
+    # hooklauncher:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "20m"
+        # ephemeral-storage: "100Mi"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "100Mi"
+  # annotations: {}
+  # labels: {}
+  # nodeSelector:
+    # interval: {}
+    # manual: {}
+    # hooklauncher: {}
+  # affinity:
+    ## Pod Anti Affinity - "hard" or "soft"
+    # podAntiAffinity: "soft"
+    # topologyKey: "kubernetes.io/hostname"
+  # topologySpreadConstraints: []
+  # tolerations:
+    # interval:
+    # - key: node.kubernetes.io/not-ready
+      # operator: Exists
+      # effect: NoExecute
+      # tolerationSeconds: 0
+    # - key: node.kubernetes.io/unreachable
+      # operator: Exists
+      # effect: NoExecute
+      # tolerationSeconds: 0
+    # manual:
+    # - key: node.kubernetes.io/not-ready
+      # operator: Exists
+      # effect: NoExecute
+      # tolerationSeconds: 0
+    # - key: node.kubernetes.io/unreachable
+      # operator: Exists
+      # effect: NoExecute
+      # tolerationSeconds: 0
+    # lcm:
+    # - key: node.kubernetes.io/not-ready
+      # operator: Exists
+      # effect: NoExecute
+      # tolerationSeconds: 0
+    # - key: node.kubernetes.io/unreachable
+      # operator: Exists
+      # effect: NoExecute
+      # tolerationSeconds: 0
+    # hooklauncher:
+    # - key: node.kubernetes.io/not-ready
+      # operator: Exists
+      # effect: NoExecute
+      # tolerationSeconds: 0
+    # - key: node.kubernetes.io/unreachable
+      # operator: Exists
+      # effect: NoExecute
+      # tolerationSeconds: 0
+  # probes:
+    # interval:
+      # startupProbe:
+        # failureThreshold: 480
+        # initialDelaySeconds: 0
+        # periodSeconds: 1
+        # timeoutSeconds: 1
+      # livenessProbe:
+        # failureThreshold: 3
+        # successThreshold: 1
+        # initialDelaySeconds: 0
+        # periodSeconds: 3
+        # timeoutSeconds: 15
+      # readinessProbe:
+        # failureThreshold: 3
+        # successThreshold: 1
+        # initialDelaySeconds: 0
+        # periodSeconds: 3
+        # timeoutSeconds: 15
+    # manual:
+      # startupProbe:
+        # failureThreshold: 480
+        # initialDelaySeconds: 0
+        # periodSeconds: 1
+        # timeoutSeconds: 1
+      # livenessProbe:
+        # failureThreshold: 3
+        # successThreshold: 1
+        # initialDelaySeconds: 0
+        # periodSeconds: 3
+        # timeoutSeconds: 15
+      # readinessProbe:
+        # failureThreshold: 3
+        # successThreshold: 1
+        # initialDelaySeconds: 0
+        # periodSeconds: 3
+        # timeoutSeconds: 15
+  # terminationGracePeriodSeconds:
+    # interval: 30
+    # manual: 30
+
+## Object Staorage MN
+eric-data-object-storage-mn:
+  # enabled: false
+  # replicaCount: 4
+  persistence:
+    persistentVolumeClaim:
+    ## The storage class name for persistent volume,
+      storageClassName: *oam_storage_class
+      # size: 10Gi
+  # annotations: {}
+  # nodeSelector:
+    # eric_data_object_storage_mn: {}
+    # eric_data_object_storage_mn_mgt: {}
+    # eric_data_object_storage_mn_transient: {}
+    # hooklauncher: {}
+    # hookjob: {}
+  # tolerations:
+    # eric_data_object_storage_mn_mgt: []
+    # eric_data_object_storage_mn: []
+    # eric_data_object_storage_mn_transient: []
+    # hooklauncher: []
+    # hookjob: []
+  ## "soft" - It prefers to schedule pods to nodes that satisfy the anti-affinity but will not guarantee.
+  ## "hard" - Hard requirement that server pods must be scheduled on defferent nodes. The pods won't be scheduled if requirement not fulfilled.
+  # affinity:
+    # podAntiAffinity: "hard"
+    ## Define failure domain with topolgyKey. Note: this label must be present on all workers, otherwise it can lead to unintended behavior.
+    # topologyKey: "kubernetes.io/hostname"
+  # resources:
+    # server:
+      # requests:
+        # memory: 2Gi
+        # cpu: 1000m
+        # ephemeral-storage: 256Mi
+      # limits:
+        # memory: 7900Mi
+        # cpu: 1000m
+        # ephemeral-storage: 4Gi
+    # mgt:
+      # requests:
+        # memory: 256Mi
+        # cpu: 250m
+        # ephemeral-storage: 256Mi
+      # limits:
+        # memory: 512Mi
+        # cpu: 1
+        # ephemeral-storage: 8Gi
+    # brAgent:
+      # requests:
+        # memory: 16Mi
+        # cpu: 200m
+        # ephemeral-storage: 256Mi
+      # limits:
+        # memory: 1Gi
+        # cpu: '2'
+        # ephemeral-storage: 4Gi
+    # kes:
+      # requests:
+        # memory: 50Mi
+        # cpu: 50m
+        # ephemeral-storage: 256Mi
+      # limits:
+        # memory: 150Mi
+        # cpu: 150m
+        # ephemeral-storage: 4Gi
+    # logshipper:
+      # requests:
+        # memory: 50Mi
+        # cpu: 100m
+        # ephemeral-storage: 256Mi
+      # limits:
+        # memory: 200Mi
+        # cpu: 250m
+        # ephemeral-storage: 4Gi
+    # hooklauncher:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "100Mi"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "100Mi"
+    # hookjob:
+      # requests:
+        # memory: "256Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "100Mi"
+      # limits:
+        # memory: "256Mi"
+        # cpu: "250m"
+        # ephemeral-storage: "100Mi"
+    ## Override server parameters for transient pod
+    ## Keep values >= server resources
+    # transient:
+      # requests:
+        # memory: 2Gi
+        # cpu: 1100m
+        # ephemeral-storage: 256Mi
+      # limits:
+        # memory: 10Gi
+        # cpu: 3
+        # ephemeral-storage: 256Mi
+  # podDisruptionBudget:
+    # maxUnavailable: 1
+  # terminationGracePeriodSeconds:
+    # osmn: 30
+    # mgt: 30
+    # kes: 30
+  ## Pod Topology Spread Constraints, specifies how to spread matching pods
+  ## among the given topology.
+  # topologySpreadConstraints:
+    # osmn: []
+    # mgt: []
+  # probes:
+    # server:
+      # startupProbe:
+        # periodSeconds: 5
+        # timeoutSeconds: 3
+        # failureThreshold: 120
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 3
+        # successThreshold: 1
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # timeoutSeconds: 3
+        # successThreshold: 1
+        # failureThreshold: 1
+    # mgt:
+      # startupProbe:
+        # periodSeconds: 5
+        # timeoutSeconds: 15
+        # failureThreshold: 180
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 3
+    # brAgent:
+      # startupProbe:
+        # periodSeconds: 5
+        # timeoutSeconds: 15
+        # failureThreshold: 30
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 1
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 60
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 3
+    # kes:
+      # startupProbe:
+        # periodSeconds: 5
+        # timeoutSeconds: 3
+        # failureThreshold: 120
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # timeoutSeconds: 3
+        # successThreshold: 1
+        # failureThreshold: 1
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 3
+        # successThreshold: 1
+        # failureThreshold: 3
+  # labels: {}
+
+## Application Sys Info Handler
+# eric-si-application-sys-info-handler:
+  # replicaCount: 1
+  # asih:
+    # applicationId:
+  # applicationInfoService:
+    # scheme: https
+    # port: 9095
+  # probes:
+    # eric-si-application-sys-info-handler:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 40
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 3 
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 30
+        # timeoutSeconds: 10
+        # successThreshold: 1
+        # failureThreshold: 5
+      # startupProbe:
+        # initialDelaySeconds: 10
+        # failureThreshold: 30
+        # periodSeconds: 10
+        # timeoutSeconds: 10
+  # resources:
+    # eric-si-application-sys-info-handler:
+      # limits:
+        # cpu: "100m"
+        # memory: 100Mi
+        # ephemeral-storage: ""
+      # requests:
+        # cpu: "50m"
+        # memory: 50Mi
+        # ephemeral-storage: ""
+    # hooklauncher:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "20m"
+        # ephemeral-storage: "100Mi"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "100Mi"
+  # nodeSelector:
+    # eric-si-application-sys-info-handler: {}
+    # hooklauncher: {}
+  # tolerations:
+    # eric-si-application-sys-info-handler:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+    # hooklauncher: []
+  # affinity: {}
+  # annotations: {}
+  # labels: {}
+  # terminationGracePeriodSeconds: 30
+  # egress:
+    # applicationInfoSvr:
+      # dscp: 0
+
+## Key Value Database RD
+# eric-data-key-value-database-rd:
+  # resources:
+    # kvdbOperator:
+      # limits:
+        # cpu: 100m
+        # memory: 50Mi
+        # ephemeral-storage: 2Gi
+      # requests:
+        # cpu: 10m
+        # memory: 30Mi
+        # ephemeral-storage: 2Gi
+    # hooklauncher:
+      # limits:
+        # cpu: "200m"
+        # memory: "100Mi"
+        # ephemeral-storage: "100Mi"
+      # requests:
+        # cpu: "50m"
+        # memory: "50Mi"
+        # ephemeral-storage: "100Mi"
+  # nodeSelector:
+    # kvdbOperator: {}
+    # hooklauncher: {}
+  # tolerations:
+    # kvdbOperator:
+     # - key: node.kubernetes.io/not-ready
+       # operator: Exists
+       # effect: NoExecute
+       # tolerationSeconds: 0
+     # - key: node.kubernetes.io/unreachable
+       # operator: Exists
+       # effect: NoExecute
+       # tolerationSeconds: 0
+    # hooklauncher: []
+  # terminationGracePeriodSeconds: 30
+  # probes:
+    # kvdbOperator:
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # failureThreshold: 60
+        # periodSeconds: 1
+        # timeoutSeconds: 2
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # failureThreshold: 3
+        # periodSeconds: 5
+        # successThreshold: 1
+        # timeoutSeconds: 1
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # failureThreshold: 3
+        # periodSeconds: 5
+        # successThreshold: 1
+        # timeoutSeconds: 1
+  # annotations: {}
+  # labels: {}
+
+## ERIC-CLOUD-NATIVE-NF-ADDITIONS IHC parameters
+
+## Admin User Management
+# eric-sec-admin-user-management:
+  # replicaCount: 1
+  # nodeSelector:
+    # aum: {}
+    # hooklauncher: {}
+  ## tolerations, node tolerations for the pod(s)
+  ## The structure of the tolerations parameter will change in the future (deprecation).
+  ## The new structure can already be used, see the tolerations parameter in comments below.
+  # tolerations:
+    # aum: []
+    # hooklauncher: []
+  ## terminationGracePeriodSeconds, time duration after process termination before
+  ## they are forcibly killed
+  # terminationGracePeriodSeconds: 30
+  # resources:
+    # aum:
+      # requests:
+        # memory: "256Mi"
+        # cpu: "250m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "512Mi"
+        # cpu: "500m"
+        # ephemeral-storage:
+    # hooklauncher:
+      # requests:
+        # memory: "100Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "100Mi"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "100Mi"
+  # probes:
+    # aum:
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # failureThreshold: 180
+        # periodSeconds: 5
+        # timeoutSeconds: 2
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # failureThreshold: 3
+        # periodSeconds: 5
+        # timeoutSeconds: 2
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # failureThreshold: 3
+        # periodSeconds: 5
+        # successThreshold: 1
+        # timeoutSeconds: 2
+  # egress:
+   # iamAuthenticationLdapClient:
+    # certificates:
+     #  asymmetricKeyCertificateName: "sc-ldap-default-cert"
+     #  trustedCertificateListName: "sc-trusted-default-cas"
+  # labels: {}
+  # annotations: {}
+
+## LDAP Server
+eric-sec-ldap-server:
+  # annotations: {}
+  # labels: {}
+  # resources:
+    # preupgrade:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "500Mi"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "1Gi"
+    # ldap:
+      # requests:
+        # memory: "512Mi"
+        # cpu: "300m"
+        # ephemeral-storage: "1Gi"
+      # limits:
+        # memory: "2036Mi"
+        # cpu: "1000m"
+        # ephemeral-storage: "2Gi"
+    # ldapagent:
+      # requests:
+        # memory: "512Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "512Mi"
+      # limits:
+        # memory: "1024Mi"
+        # cpu: "300m"
+        # ephemeral-storage: "1Gi"
+      # jvm:
+        # initialMemoryAllocationPercentage: 50
+        # smallMemoryAllocationMaxPercentage: 70
+        # largeMemoryAllocationMaxPercentage: 50
+    # ldapproxy:
+      # requests:
+        # memory: "512Mi"
+        # cpu: "500m"
+        # ephemeral-storage: "512Mi"
+      # limits:
+        # memory: "2036Mi"
+        # cpu: "1000m"
+        # ephemeral-storage: "1Gi"
+    # logshipper:
+      # requests:
+        # memory: "20Mi"
+        # cpu: "23m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "60Mi"
+        # cpu: "60m"
+        # ephemeral-storage:
+    # ldapinit:
+      # requests:
+        # memory: "512Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "1Gi"
+      # limits:
+        # memory: "2036Mi"
+        # cpu: "500m"
+        # ephemeral-storage: "2Gi"
+    # metricsExporter:
+      # requests:
+        # memory: "96Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "196Mi"
+      # limits:
+        # memory: "128Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "256Mi"
+    # hooklauncher:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "100Mi"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "100Mi"
+  # terminationGracePeriodSeconds:
+    # ldap: 30
+    # ldapproxy: 30
+  # tolerations:
+    # ldap: []
+    # ldapproxy:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+    # preupgrade: []
+    # hooklauncher: []
+  # topologySpreadConstraints:
+    # ldap: []
+    # ldapproxy: []
+  persistence:
+    persistentVolumeClaim:
+      storageClassName: *oam_storage_class
+      # size: "8Gi"
+  ## Number of replicas to run and Mirror each other
+  ## WARNING: Higher number of replicas DO NOT increase performance. All requests
+  ## are directed to a single replica ALWAYS. Consider the replicas only for resilience
+  ## WARNING: A too high a number will lead to high horizontal traffic and reduce performance
+  ## Recommended value is 2, to achieve acceptable resilience. Maximum supported count is 3.
+  # replicaCount: 2
+  # affinity:
+    # ldapproxy:
+      # podAntiAffinity: "soft"
+      # topologyKey: "kubernetes.io/hostname"
+    # ldap:
+      # podAntiAffinity: "soft"
+      # topologyKey: "kubernetes.io/hostname"
+  # nodeSelector:
+    # ldap: {}
+    # ldapProxy: {}
+    # hooklauncher: {}
+  # podDisruptionBudget:
+    # minAvailable: 50%
+
+## Configuration Management Yang Provider
+eric-cm-yang-provider:
+  # externaldb:
+    # host: "eric-cm-mediator-db-pg"
+    # dbname: adp_gs_cm
+    # dbuser: cm
+  ## NBI notification behavior
+  # nbiNotifications:
+    ## Whether to trigger NBI notifications for configuration changes made
+    ## by internal applications.
+    # notifyInternalChanges: true
+  ## terminationGracePeriodSeconds, The duration in seconds after the processes running in the
+  ## pod are sent a termination signal and the time when the processes are
+  ## forcibly halted with a kill signal.
+  # terminationGracePeriodSeconds: 30
+  ## enableCliCommandAuditLogs: Enable or disable CLI command, including read commands, audit logs 
+  # enableCliCommandAuditLogs: true
+  # annotations: {}
+  # labels: {}
+  service:
+    annotations:
+      # cloudProviderLB:
+      sharedVIPLabel: *shared_vip_oam_label
+      # addressPoolName: ""
+      # loadBalancerIPs: ""
+    loadBalancerIP: *VIP_OAM
+    # externalTrafficPolicy: Cluster
+    # externalIPv4:
+      # enabled:
+      # loadBalancerIP:
+      # annotations:
+        # sharedVIPLabel: *shared_vip_oam_label
+        # addressPoolName:
+    # externalIPv6:
+      # enabled:
+      # loadBalancerIP:
+      # annotations:
+        # sharedVIPLabel: *shared_vip_oam_label
+        # addressPoolName:
+    ## Certificates used for NETCONF over TLS external interface communication
+    # certificates:
+      # asymmetricKeyCertificateName: netconf-default-key-cert
+      # trustedCertificateListName: sc-trusted-default-cas
+    ## AsymmetricKey name used for secure external interface communication
+    # sshHostKeys:
+      # name: cm-cliNetconf-ssh-server
+    ## DSCP value for outbound traffic for CLI and NETCONF
+    # cmNbiPorts:
+      # dscp: 0
+  # probes:
+    # yangEngine:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # timeoutSeconds: 15
+      # startupProbe:
+        # initialDelaySeconds: 10
+        # failureThreshold: 30
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+    # yangDbAdapter:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+      # startupProbe:
+        # initialDelaySeconds: 10
+        # failureThreshold: 30
+        # periodSeconds: 10
+    # schemaSynchronizer:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 60
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 2
+        # failureThreshold: 3
+      # startupProbe:
+        # initialDelaySeconds: 5
+        # failureThreshold: 30
+        # periodSeconds: 10
+    # sshd:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+      # startupProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 10
+        # failureThreshold: 30
+    # objectStorageAdapter:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+      # startupProbe:
+        # initialDelaySeconds: 5
+        # failureThreshold: 30
+        # periodSeconds: 10
+    # pmMetrics:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+      # startupProbe:
+        # initialDelaySeconds: 5
+        # failureThreshold: 30
+        # periodSeconds: 10
+    # cliExtensionCmds:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+      # startupProbe:
+        # initialDelaySeconds: 5
+        # failureThreshold: 30
+        # periodSeconds: 10
+    # notificationController:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 2
+        # failureThreshold: 3
+      # startupProbe:
+        # initialDelaySeconds: 5
+        # failureThreshold: 30
+        # periodSeconds: 10
+    # apiServer:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 2
+        # failureThreshold: 3
+      # startupProbe:
+        # initialDelaySeconds: 5
+        # failureThreshold: 30
+        # periodSeconds: 10
+    # dataAdapter:
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 2
+        # failureThreshold: 3
+      # startupProbe:
+        # initialDelaySeconds: 5
+        # failureThreshold: 30
+        # periodSeconds: 10
+  # resources:
+    # initContainer:
+      # limits:
+        # cpu: 500m
+        # memory: 250Mi
+        # ephemeral-storage: 100Mi
+      # requests:
+        # cpu: 50m
+        # memory: 50Mi
+        # ephemeral-storage: 10Mi
+    # yangEngine:
+      # limits:
+        # cpu: 4000m
+        # memory: 2Gi
+        # ephemeral-storage: 500Mi
+      # requests:
+        # cpu: 250m
+        # memory: 500Mi
+        # ephemeral-storage: 100Mi
+    # yangDbAdapter:
+      # limits:
+        # cpu: 2000m
+        # memory: 250Mi
+        # ephemeral-storage: 500Mi
+      # requests:
+        # cpu: 100m
+        # memory: 100Mi
+        # ephemeral-storage: 100Mi
+    # sshd:
+      # limits:
+        # cpu: 1000m
+        # memory: 1200Mi
+        # ephemeral-storage: 500Mi
+      # requests:
+        # cpu: 50m
+        # memory: 50Mi
+        # ephemeral-storage: 100Mi
+    # schemaSynchronizer:
+      # limits:
+        # cpu: 4000m
+        # memory: 2Gi
+        # ephemeral-storage: 300Mi
+      # requests:
+        # cpu: 100m
+        # memory: 50Mi
+        # ephemeral-storage: 100Mi
+    # notificationController:
+      # limits:
+        # cpu: 1000m
+        # memory: 250Mi
+        # ephemeral-storage: 500Mi
+      # requests:
+        # cpu: 50m
+        # memory: 50Mi
+        # ephemeral-storage: 100Mi
+    # objectStorageAdapter:
+      # limits:
+        # cpu: 1000m
+        # memory: 250Mi
+        # ephemeral-storage: 300Mi
+      # requests:
+        # cpu: 50m
+        # memory: 50Mi
+        # ephemeral-storage: 100Mi
+    # pmMetrics:
+      # limits:
+        # cpu: 1000m
+        # memory: 250Mi
+        # ephemeral-storage: 300Mi
+      # requests:
+        # cpu: 50m
+        # memory: 50Mi
+        # ephemeral-storage: 100Mi
+    # cliExtensionCmds:
+      # limits:
+        # cpu: 500m
+        # memory: 128Mi
+        # ephemeral-storage: 300Mi
+      # requests:
+        # cpu: 50m
+        # memory: 50Mi
+        # ephemeral-storage: 100Mi
+    # logshipper:
+      # limits:
+        # cpu: 100m
+        # memory: 100Mi
+        # ephemeral-storage: 300Mi
+      # requests:
+        # cpu: 50m
+        # memory: 50Mi
+        # ephemeral-storage: 100Mi
+    # hooklauncher:
+      # limits:
+        # cpu: 100m
+        # memory: 50Mi
+        # ephemeral-storage: 100Mi
+      # requests:
+        # cpu: 50m
+        # memory: 20Mi
+        # ephemeral-storage: 100Mi
+    # apiServer:
+      # limits:
+        # cpu: 2000m
+        # memory: 250Mi
+        # ephemeral-storage: 500Mi
+      # requests:
+        # cpu: 100m
+        # memory: 100Mi
+        # ephemeral-storage: 100Mi
+    # dataAdapter:
+      # limits:
+        # cpu: 2000m
+        # memory: 600Mi
+        # ephemeral-storage: 500Mi
+      # requests:
+        # cpu: 100m
+        # memory: 100Mi
+        # ephemeral-storage: 100Mi
+  # certManagement:
+    # sshKeys:
+      # enabled: false
+  # tolerations:
+    # eric-cm-yang-provider:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 30
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+    # hooklauncher: []
+  # podDisruptionBudget:
+    # minAvailable: 0
+  # affinity:
+    # podAntiAffinity: "soft"
+    # topologyKey: "kubernetes.io/hostname"
+  # nodeSelector:
+    # eric-cm-yang-provider: {}
+  # ldap:
+    # ipv6Enabled: false
+
+## CNOM Server
+# eric-cnom-server:
+  # documentDatabasePg:
+    # host: eric-cnom-server-db-pg
+    # database: eric-cnom-server
+    # user: cnom
+  # replicaCount: 1
+  # nodeSelector:
+    ## A map of key-value pairs of node selectors. Merges with what is specified in
+    # # global.nodeSelector.
+    # server: {}
+    ## A map of key-value pairs of node selectors. Merges with what is specified in
+    ## global.nodeSelector.
+    # hooklauncher: {}
+  ## A map of key-value pairs of additional annotations added to all Kubernetes resources created
+  ## by the Helm chart. Merges with what is specified in global.annotations.
+  # annotations: {}
+  ## A map of key-value pairs of additional labels added to all Kubernetes resources created
+  ## by the Helm chart. Merges with what is specified in global.labels.
+  # labels: {}
+  # affinity:
+    ## Inter-pod anti-affinity policy.
+    ## Options are: 'soft', 'hard'.
+    ## 'soft' tells Kubernetes to not deploy CNOM Server replicas of the Pod on the same
+    ## Kubernetes worker node if possible, but will still deploy them on the same worker
+    ## if no other eligible workers are available.
+    ## 'hard' tells Kubernetes to not deploy CNOM Server replicas of the same Pod on the
+    ## same Kubernetes worker node and an application must ensure that enough eligible
+    ## workers exist for any deployment.
+    ## WARNING! Changing it to 'hard' during an upgrade may cause that upgrade to fail if the
+    ## prior deployment had multiple CNOM Server Pod replicas deployed on the same workers.
+    ## This could happen if deployed in an under-dimensioned Kubernetes cluster.
+    # podAntiAffinity: soft
+    ## The topology key to use as the failure domain
+    # topologyKey: kubernetes.io/hostname
+  # tolerations:
+    # server: []
+    # hooklauncher: []
+  ## The grace period is the duration in seconds after the processes running in the Pod are sent
+  ## a termination signal and the time when the processes are forcibly halted with a kill signal
+  # terminationGracePeriodSeconds: 30
+  # topologySpreadConstraints:
+    ## Control how Pods are spread across your cluster among failure-domains such as regions, zones,
+    ## nodes, and other user-defined topology domains e.g. to achieve high availability.
+    # server: []
+    ## Control how Pods are spread across your cluster among failure-domains such as regions, zones,
+    ## nodes, and other user-defined topology domains e.g. to achieve high availability.
+    # hooklauncher: []
+  # resources:
+    # server:
+      # requests:
+        # memory: 400Mi
+        # cpu: 500m
+        # ephemeral-storage: 500Mi
+      # limits:
+        # memory: 400Mi
+        # cpu: 500m
+        # ephemeral-storage: 750Mi
+    # init:
+      # requests:
+        # memory: 50Mi
+        # cpu: 50m
+        # ephemeral-storage: 300Mi
+      # limits:
+        # memory: 100Mi
+        # cpu: 100m
+        # ephemeral-storage: 300Mi
+    # logshipper:
+      # requests:
+        # memory: 35Mi
+        # cpu: 25m
+        # ephemeral-storage: 220Mi
+      # limits:
+        # memory: 45Mi
+        # cpu: 30m
+        # ephemeral-storage: 240Mi
+    # hooklauncher:
+      # requests:
+        # memory: 50Mi
+        # cpu: 50m
+        # ephemeral-storage: 100Mi
+      # limits:
+        # memory: 100Mi
+        # cpu: 100m
+        # ephemeral-storage: 100Mi
+  # probes:
+    # server:
+      # startupProbe:
+        ## Number of seconds after the container has started before the probe is initiated
+        # initialDelaySeconds: 0
+        ## How often (in seconds) to perform the probe
+        # periodSeconds: 10
+        ## Number of seconds after which the probe times out
+        # timeoutSeconds: 1
+        ## When the probe fails, Kubernetes will try failureThreshold times before restarting the container
+        # failureThreshold: 180
+      # livenessProbe:
+        ## Number of seconds after the startup probe has succeeded before the probe is initiated
+        # initialDelaySeconds: 0
+        ## How often (in seconds) to perform the probe
+        #periodSeconds: 10
+        ## Number of seconds after which the probe times out
+        #timeoutSeconds: 5
+        ## When the probe fails, Kubernetes will try failureThreshold times before restarting the
+        ## container
+        #failureThreshold: 10
+      # readinessProbe:
+        ## Number of seconds after the startup probe has succeeded before the probe is initiated
+        #initialDelaySeconds: 0
+        ## How often (in seconds) to perform the probe
+        #periodSeconds: 10
+        ## Number of seconds after which the probe times out
+        #timeoutSeconds: 1
+        ## When the probe fails, Kubernetes will try failureThreshold times before the Pod will be
+        ## marked Unready
+        #failureThreshold: 3
+        ## Minimum consecutive successes for the probe to be considered successful after having failed
+        #successThreshold: 1
+  # features:
+    ## Service Communication Proxy (SCP) configuration management application
+    # serviceCommunicationProxy: false
+
+eric-cnom-server-db-pg:
+  # enabled: true
+  # highAvailability:
+    # replicaCount: 3
+  # podDisruptionBudget:
+    # minAvailable: "50%"
+  persistentVolumeClaim:
+    storageClassName: *oam_storage_class
+    # size: 4Gi
+  # resources:
+    # logshipper:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "320Mi"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "320Mi"
+    # postgres:
+      # requests:
+        # memory: "256Mi"
+        # cpu: "100m"
+        # hugepages-2Mi:
+        # hugepages-1Gi:
+        # ephemeral-storage: "10Gi"
+      # limits:
+        # cpu: "1"
+        # memory: "2560Mi"
+        # hugepages-2Mi:
+        # hugepages-1Gi:
+        # ephemeral-storage: "12Gi"
+    # metrics:
+      # requests:
+        # memory: "128Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "300Mi"
+      # limits:
+        # cpu: "200m"
+        # memory: "256Mi"
+        # ephemeral-storage: "320Mi"
+    # kube_client:
+      # requests:
+        # memory: "256Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "300Mi"
+      # limits:
+        # cpu: "200m"
+        # memory: "512Mi"
+        # ephemeral-storage: "320Mi"
+    # hooklauncher:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "300Mi"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage: "320Mi"
+  # nodeSelector:
+    # postgres: {}
+    # cleanuphook: {}
+    # hooklauncher: {}
+  # terminationGracePeriodSeconds:
+    # postgres: 30
+  ## Interface for setting Node labels and tolerations for pod assignment
+  # tolerations:
+    # postgres: []
+    # cleanuphook:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+    # hooklauncher:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+  ## affinity.podAntiAffinity , valid value are "soft" or "hard".
+  # affinity:
+    # podAntiAffinity: soft
+    # topologyKey: "kubernetes.io/hostname"
+  # probes:
+    # postgres:
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # failureThreshold: 70
+        # timeoutSeconds: 25
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 15
+        # failureThreshold: 10
+        # timeoutSeconds: 15
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # timeoutSeconds: 10
+        # failureThreshold: 6
+        # successThreshold: 1
+    # metrics:
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # failureThreshold: 70
+        # timeoutSeconds: 5
+      # livenessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # failureThreshold: 20
+        # timeoutSeconds: 10
+  # topologySpreadConstraints:
+    # postgres: []
+  # labels: {}
+  # annotations: {}
+
+## PM Bulk Reporter
+eric-pm-bulk-reporter:
+  # terminationGracePeriodSeconds: 30
+  service:
+    # externalIPv4:
+      # enabled:
+      # loadBalancerIP:
+      # externalTrafficPolicy: Cluster
+      # annotations:
+        # cloudProviderLB: {}
+        # sharedVIPLabel: *shared_vip_oam_label
+        # addressPoolName:
+    # externalIPv6:
+      # enabled:
+      # loadBalancerIP:
+      # externalTrafficPolicy: Cluster
+      # annotations:
+        # cloudProviderLB: {}
+        # sharedVIPLabel: *shared_vip_oam_label
+        # addressPoolName:
+    annotations:
+      # cloudProviderLB: {}
+      sharedVIPLabel: *shared_vip_oam_label
+      # addressPoolName: ""
+      # loadBalancerIPs: ""
+    loadBalancerIP: *VIP_OAM
+    # externalTrafficPolicy: Cluster
+    # sshHostKeys:
+      # name: pm-rop-sftp-server
+    ## DSCP value for specifies the type-of-service or DSCP class for sftp connections (ingress).
+    # pmBulksftpPort:
+      # dscp: 0
+  # env:
+    # nodeType: "Signaling_Controller"
+    # iscompressed: true
+    # maxNoOfPmFiles: 1000
+    # sshdMACSOverride: "-hmac-sha1:hmac-sha2-256:hmac-sha2-512:umac-64@openssh.com:umac-128@openssh.com:hmac-sha1-etm@openssh.com:umac-64-etm@openssh.com"
+    # sshdKEYALGORITHMSOverride: "-diffie-hellman-group14-sha1:diffie-hellman-group-exchange-sha256:ecdh-sha2-nistp256:ecdh-sha2-nistp384:ecdh-sha2-nistp521:ecdsa-sha2-nistp256"
+    # sshdHostKeyAlgorithmsOverride: "ssh_host_rsa_key:ssh_host_dsa_key:ssh_host_ecdsa_key:ssh_host_ed25519_key"
+  # labels: {}
+  # nodeSelector:
+    # eric-pm-bulk-reporter: {}
+    # hooklauncher: {}
+  # podDisruptionBudget:
+    # minAvailable: 0
+  persistentVolumeClaim:
+    storageClassName: *oam_storage_class
+    # size: 10Gi
+  # security:
+    # keyManagement:
+      # enabled: true
+    # certificateManagement:
+      # enabled: false
+  # probes:
+    # bulkreporter:
+      # readinessProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 15
+        # timeoutSeconds: 15
+        # failureThreshold: 3
+        # successThreshold: 1
+      # livenessProbe:
+        # initialDelaySeconds: 15
+        # periodSeconds: 15
+        # timeoutSeconds: 15
+        # failureThreshold: 3
+        # successThreshold: 1
+    # alarmreporter:
+      # readinessProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 15
+        # timeoutSeconds: 15
+        # failureThreshold: 3
+        # successThreshold: 1
+      # livenessProbe:
+        # initialDelaySeconds: 15
+        # periodSeconds: 15
+        # timeoutSeconds: 15
+        # failureThreshold: 3
+        # successThreshold: 1
+    # pmsftp:
+      # readinessProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 15
+        # timeoutSeconds: 15
+        # failureThreshold: 3
+        # successThreshold: 1
+      # livenessProbe:
+        # initialDelaySeconds: 15
+        # periodSeconds: 20
+        # timeoutSeconds: 15
+        # failureThreshold: 3
+        # successThreshold: 1
+  # resources:
+    # initcontainer:
+      # requests:
+        # cpu: "50m"
+        # memory: "50Mi"
+        # ephemeral-storage:
+      # limits:
+        # cpu: "1"
+        # memory: "200Mi"
+        # ephemeral-storage:
+    # bulkreporter:
+      # requests:
+        # cpu: "100m"
+        # memory: "50Mi"
+        # ephemeral-storage:
+      # limits:
+        # cpu: "1"
+        # memory: "200Mi"
+        # ephemeral-storage:
+    # alarmreporter:
+      # requests:
+        # cpu: "100m"
+        # memory: "50Mi"
+        # ephemeral-storage:
+      # limits:
+        # cpu: "1"
+        # memory: "200Mi"
+        # ephemeral-storage:
+    # pmsftp:
+      # requests:
+        # cpu: "50m"
+        # memory: "50Mi"
+        # ephemeral-storage:
+      # limits:
+        # cpu: "1"
+        # memory: "200Mi"
+        # ephemeral-storage:
+    # logshipper:
+      # requests:
+        # memory: "20Mi"
+        # cpu: "46m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "30Mi"
+        # cpu: "60m"
+        # ephemeral-storage:
+    # hooklauncher:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "20m"
+        # ephemeral-storage: "100Mi"
+      # limits:
+        # memory: "100Mi"
+        # cpu: "50m"
+        # ephemeral-storage: "100Mi"
+  ## ROP File Storage Backend 
+  # objectStorage:
+    # enabled: false
+  # userConfig:
+    # ldap:
+      # useIPv6DNSFirst: false
+  # annotations: {}
+  # podAnnotations:
+    #  eric-pm-bulk-reporter:
+  # tolerations:
+    # eric-pm-bulk-reporter:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+    # hooklauncher: []
+  # topologySpreadConstraints:
+    # eric-pm-bulk-reporter: []
+
+## SFTP Server
+eric-data-sftp-server:
+  # enabled: false
+  # replicaCount: 1
+  # probes:
+    # sftpServer:
+      # startupProbe:
+        # initialDelaySeconds: 5
+        # timeoutSeconds: 15
+        # failureThreshold: 3
+      # livenessProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 5
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 15
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 3
+  # nodeSelector:
+    # eric_data_sftp_server: {}
+    # hooklauncher: {}
+  # tolerations:
+    # eric_data_sftp_server: []
+    # hooklauncher: []
+  ## "soft" - It prefers to schedule pods to nodes that satisfy the anti-affinity but will not guarantee.
+  ## "hard" - Hard requirement that server pods must be scheduled on defferent nodes. The pods won't be scheduled if requirement not fulfilled.
+  # affinity:
+    # podAntiAffinity: "hard"
+    ## Define failure domain with topolgyKey. Note: this label must be present on all workers, otherwise it can lead to unintended behavior.
+    # topologyKey: "kubernetes.io/hostname"
+  service:
+    annotations:
+        sharedVIPLabel: *shared_vip_oam_label
+        # addressPoolName: ""
+        # cloudProviderLB: {}
+    loadBalancerIP: *VIP_OAM
+    # port: 9023
+    # sshHostKeys:
+      # name: "eric-data-sftp-server-ssh-server-key"
+    # externalIPv4:
+      # enabled:
+      # loadBalancerIP: ""
+      # annotations:
+        # sharedVIPLabel: ""
+        # addressPoolName: ""
+    # externalIPv6:
+      # enabled:
+      # loadBalancerIP: ""
+      # annotations:
+        # sharedVIPLabel: ""
+        # addressPoolName: ""
+    # dscp: 0
+  # resources:
+    # sftpServer:
+      # requests:
+        # memory: 256Mi
+        # cpu: 50m
+        # ephemeral-storage: 512Mi
+      # limits:
+        # memory: 1024Mi
+        # cpu: 500m
+        # ephemeral-storage: 2Gi
+    # logshipper:
+      # requests:
+        # memory: 50Mi
+        # cpu: 100m
+        # ephemeral-storage: 256Mi
+      # limits:
+        # memory: 100Mi
+        # cpu: 250m
+        # ephemeral-storage: 4Gi
+    # hooklauncher:
+      # requests:
+        # memory: 50Mi
+        # cpu: 50m
+        # ephemeral-storage: 100Mi
+      # limits:
+        # memory: 100Mi
+        # cpu: 100m
+        # ephemeral-storage: 100Mi
+  # userManagement:
+    # ldap:
+      # lookupFamilyOrder: "ipv4_first" ## <empty>/ipv4_first/ipv6_first/ipv4_only/ipv6_only
+  # podDisruptionBudget:
+    # maxUnavailable: 1
+  # terminationGracePeriodSeconds: 30
+  # topologySpreadConstraints:
+    # eric-data-sftp-server: []
+  # certmHostKey:
+    # enabled: false
+  # labels: {}
+  # annotations: {}
+
+# eric-cloud-native-nf-additions-log-shipper:
+  # enabled: false
+
+## ERIC-SC-DSC IHC parameters
+
+eric-dsc:
+  routes:
+    nbi:
+      fqdn: "fqdn" ## Populate properly this value
+  certificates:
+    nbi:
+      # default values -- key and certificate must be imported to yang provider.
+      key: "sc-nbi-default-key"
+      certificate: "sc-nbi-default-cert"
+
+# eric-dsc-confvalidator:
+  # resources:
+    # validator:
+      # requests:
+        # memory: "512Mi"
+        # cpu: "0.5"
+        # ephemeral-storage: ""
+      # limits:
+        # memory: "1024Mi"
+        # cpu: "1"
+        # ephemeral-storage: ""
+    # logshipper:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "20m"
+        # ephemeral-storage: ""
+      # limits:
+        # memory: "100Mi"
+        # cpu: "50m"
+        # ephemeral-storage: ""
+  # probes:
+    # validator:
+      # readinessProbe:
+        # port: 9874
+        # initialDelaySeconds: 2
+        # periodSeconds: 2
+        # timeoutSeconds: 1
+        # successThreshold: 1
+        # failureThreshold: 3
+  # annotations: {}
+  # labels: {}
+  # nodeSelector: {}
+  # tolerations: []
+
+eric-dsc-fdr:
+  # replicaCount: 2
+  # resources:
+    # fdr:
+      # requests:
+        # memory: "3Gi"
+        # cpu: "2.0"
+        # ephemeral-storage:""
+      # limits:
+        # memory: "5Gi"
+        # cpu: "4.0"
+        # ephemeral-storage:""
+    # logshipper:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "20m"
+        # ephemeral-storage:""
+      # limits:
+        # memory: "100Mi"
+        # cpu: "50m"
+        # ephemeral-storage:""
+    # sctp:
+      # requests:
+        # cpu: "0.7"
+        # memory: "256Mi"
+        # ephemeral-storage: "160Mi"
+      # limits:
+        # cpu: "1"
+        # memory: "2.5Gi"
+        # ephemeral-storage: "420Mi"
+    # initContainer:
+      # requests:
+        # cpu: "100m"
+        # memory: "128Mi"
+        # ephemeral-storage: "32Mi"
+      # limits:
+        # cpu: "350m"
+        # memory: "512Mi"
+        # ephemeral-storage: "164Mi"
+    # sctpConfigProvider:
+      # requests:
+        # cpu: "0.5"
+        # memory: "128Mi"
+        # ephemeral-storage: "32Mi"
+      # limits:
+        # cpu: "1"
+        # memory: "512Mi"
+        # ephemeral-storage: "164Mi"
+    # sctpConfigListener:
+      # requests:
+        # cpu: "0.5"
+        # memory: "256Mi"
+        # ephemeral-storage: "240Mi"
+      # limits:
+        # cpu: "1"
+        # memory: "512Mi"
+        # ephemeral-storage: "580Mi"
+    # senpNvipTapa:
+      # requests:
+        # cpu: "32m"
+        # memory: "24Mi"
+        # ephemeral-storage: ""
+      # limits:
+        # cpu: "64m"
+        # memory: "128Mi"
+        # ephemeral-storage: ""
+  # affinity:
+    # podAntiAffinity: "soft"
+  # podDisruptionBudget:
+    # minAvailable : 1
+  # topologySpreadConstraints: []
+  # probes:
+    # fdr:
+      # readinessProbe:
+        # port: 9874
+        # initialDelaySeconds: 2
+        # periodSeconds: 2
+        # timeoutSeconds: 1
+        # successThreshold: 1
+        # failureThreshold: 3
+    # sctp:
+      # enabled: true
+      # startupProbe:
+        # failureThreshold: 30
+        # timeoutSeconds: 1
+        # initialDelaySeconds: 0
+        # periodSeconds: 2
+      # livenessProbe:
+        # failureThreshold: 3
+        # timeoutSeconds: 1
+        # initialDelaySeconds: 0
+        # periodSeconds: 3
+    # sctpConfigListener:
+      # enabled: true
+      # startupProbe:
+        # failureThreshold: 30
+        # timeoutSeconds: 1
+        # initialDelaySeconds: 0
+        # periodSeconds: 2
+      # livenessProbe:
+        # failureThreshold: 3
+        # timeoutSeconds: 2
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+    # senpNvipTapa:
+      # enabled: false
+      # startupProbe:
+        # failureThreshold: 30
+        # timeoutSeconds: 2
+        # initialDelaySeconds: 0
+        # periodSeconds: 2
+        # successThreshold: 1
+      # livenessProbe:
+        # failureThreshold: 5
+        # timeoutSeconds: 3
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # successThreshold: 1
+      # readinessProbe:
+        # failureThreshold: 5
+        # timeoutSeconds: 3
+        # initialDelaySeconds: 0
+        # periodSeconds: 10
+        # successThreshold: 1
+  # annotations: {}
+  # labels: {}
+  # nodeSelector: {}
+  # podSecurityContext:
+    # supplementalGroups: []
+  # tolerations:
+    # fdr: []
+    # sctpConfigProvider: []
+  # terminationGracePeriodSeconds:
+    # fdr: 30
+    # sctpConfigProvider: 30
+  service:
+    diameter:
+      # labels: {}
+      # annotations:
+        # cloudProviderLB:
+        # sharedVIPLabel: ""
+        # addressPoolName: ""
+      loadBalancerIP: *VIP_SIG_Diameter
+      # type: LoadBalancer
+      # port:
+        # - 3868
+        # - 3869
+        # - 5658
+      # externalTrafficPolicy: Cluster
+    sctp:
+      # timezone: UTC
+      # type: LoadBalancer
+      # port:
+        # - 3868
+        # - 3869
+      # externalTrafficPolicy: Cluster
+      loadBalancerIP: *VIP_SIG_SCTP
+      # annotations:
+        # addressPoolName:
+        # cloudProviderLB: {}
+      # certificates:
+        # dtlsEnabled: false
+        # path:
+          # caCertDir: /etc/dtls-ca-certs
+          # caCert: ca-cert.pem
+          # clientDir: /etc/dtls-client-certs
+          # serverDir: /etc/dtls-server-certs
+        # trustedCertificateSecretName:
+        # clientCertificateSecretName:
+        # serverCertificateSecretName:
+    # cm:
+      # port: 4000
+      # targetPort: 4001
+  # secondaryNetwork:
+  #   enabled: false
+  # senp:
+  #   nvip:
+  #     trenches:
+  #     - name: trench-tst
+  #       ipFamily: ipv4
+  #     conduits:
+  #     - name: lb-fe-a-tst
+  #       intoTrench: trench-tst
+  #       type: stateless-lb
+  #     streams:
+  #     - name: stream-1-tst
+  #       intoTrench: trench-tst
+  #       intoConduit: lb-fe-a-tst
+  #     vips:
+  #     - name: vip1-tst
+  #       intoTrench: trench-tst
+  #       address: "214.14.133.97/32"
+  #       intoAttractor: attr1-tst
+  #     gateways:
+  #     - name: gateway1-tst
+  #       intoTrench: trench-tst
+  #       address: 214.14.132.130
+  #       static:
+  #         bfdSwitch: true
+  #         minRx: 300ms
+  #         minTx: 300ms
+  #         multiplier: 3
+  #     - name: gateway2-tst
+  #       intoTrench: trench-tst
+  #       address: 214.14.132.131
+  #       static:
+  #         bfdSwitch: true
+  #         minRx: 300ms
+  #         minTx: 300ms
+  #         multiplier: 3
+  #      - name: gateway3-tst
+  #        intoTrench: trench-a
+  #        address: 200.200.100.2
+  #        bgp:
+  #          remoteAsn: 4200000120
+  #          localAsn: 4259841732
+  #          holdTime: 3m
+  #      - name: gateway4-tst
+  #        intoTrench: trench-a
+  #        address: 200.200.100.3
+  #        bgp:
+  #          remoteAsn: 4200000120
+  #          localAsn: 4259841732
+  #          holdTime: 3m
+  #     flows:
+  #     - name: flow-1-tst
+  #       intoTrench: trench-tst
+  #       partOfStream: stream-1-tst
+  #       priority: 1
+  #       vips:
+  #       - vip1-tst
+  #       protocols:
+  #       - tcp
+  #       byteMatches:
+  #       - sctp[4:4] = 0
+  #     attractors:
+  #     - name: attr1-tst
+  #       intoTrench: trench-tst
+  #       gateways:
+  #       - gateway1-tst
+  #       - gateway2-tst
+  #       vips:
+  #       - vip1-tst
+  #       replicas: 1
+  #       useConduits:
+  #       - lb-fe-a-tst
+  #       interface:
+  #         name: nad2.multus
+  #         networkAttachments:
+  #         - name: nad-2
+  #           namespace: nvip-ns
+  #     - name: attr2-tst
+  #       intoTrench: trench-a
+  #       gateways:
+  #       - gateway3-tst
+  #       - gateway4-tst
+  #       vips:
+  #       - vip-1
+  #       replicas: 1
+  #       useConduits:
+  #       - lb-fe-a
+  #       interface:
+  #         name: nad1.multus
+  #         networkAttachments:
+  #         - name: nad-1
+  #           namespace: nvip-ns
+  #   networkAttachmentDefinitions:
+  #   - name: nad-1
+  #     namespace: nvip-ns
+  #     type: ovs
+  #     bridge: br_data
+  #     vlan: 4051
+  #     ipam: {type: "whereabouts", range: "200.200.100.0/27", "exclude": ["200.200.100.1/32", "200.200.100.2/32"]}
+  #   - name: nad-2
+  #     type: ovs
+  #     bridge: br_data_2
+  #     vlan: 4052
+  #     ipam: {type: "whereabouts", range: "200.220.100.0/27", "exclude": ["200.220.100.1/32", "200.220.100.2/32"]}
+  # configuration:
+  #   mh:
+  #     # Use ephemeral port to let SENP nVIP decide which port number
+  #     # should be used for egress connections
+  #     useEphemeralPort: false
+  #     # Mapping of SENP nVIP Custom Objects and local SCTP EP objects.
+  #     # Used for multi-homing feature in SCTP, MH_ENABLED is set to true.
+  #     servicePathMap: []
+  #     # Keep the identation as in the example below, to allow creation of a valid JSON format
+  #     nvipPathMap:
+  #     - "192.0.168.1":
+  #         default: "true"
+  #         conduit: "lb-fe-a"
+  #         egress_stream: "192.0.168.1-egress"
+  #         init_stream: "192.0.168.1-init"
+  #         trench: "trench-a"
+  #         vip_name: "vip-1"
+  #     - "192.0.168.2":
+  #         default: "false"
+  #         conduit: "lb-fe-b"
+  #         egress_stream: "192.0.168.2-egress"
+  #         init_stream: "192.0.168.2-init"
+  #         trench: "trench-a"
+  #         vip_name: "vip-2"
+  #     - "2345:425:2ca1::567:5673:23b4":
+  #         default: "true"
+  #         conduit: "lb-fe-a"
+  #         egress_stream: "2345:425:2ca1::567:5673:23b4-egress"
+  #         init_stream: "2345:425:2ca1::567:5673:23b4-init"
+  #         trench: "trench-a"
+  #         vip_name: "vip-3"
+  #     - "2345:425:2ca1::567:5673:23b5":
+  #         default: "true"
+  #         conduit: "lb-fe-b"
+  #         egress_stream: "2345:425:2ca1::567:5673:23b5-egress"
+  #         init_stream: "2345:425:2ca1::567:5673:23b5-init"
+  #         trench: "trench-a"
+  #         vip_name: "vip-4"
+
+# eric-dsc-agent:
+  # replicaCount: 2
+  # resources:
+    # agent:
+      # requests:
+        # memory: "3Gi"
+        # cpu: "2.0"
+        # ephemeral-storage: ""
+      # limits:
+        # memory: "5Gi"
+        # cpu: "4.0"
+        # ephemeral-storage: ""
+    # logshipper:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "20m"
+        # ephemeral-storage: ""
+      # limits:
+        # memory: "100Mi"
+        # cpu: "50m"
+        # ephemeral-storage: ""
+  # probes:
+    # agent:
+      # readinessProbe:
+        # port: 9874
+        # initialDelaySeconds: 2
+        # periodSeconds: 2
+        # timeoutSeconds: 1
+        # successThreshold: 1
+        # failureThreshold: 3
+  # affinity:
+    # podAntiAffinity: "soft"
+  # podDisruptionBudget:
+    # minAvailable : 1
+  # topologySpreadConstraints: []
+  # cassandra:
+    # dataCenterName: *dsc_wcdb_datacenter_name
+    # statefulSetName: *dsc_wcdb_statefulset_name
+  # annotations: {}
+  # labels: {}
+  # nodeSelector: {}
+  # tolerations: []
+
+# eric-dsc-director:
+  # resources:
+    # director:
+      # requests:
+        # memory: "512Mi"
+        # cpu: "0.5"
+        # ephemeral-storage: ""
+      # limits:
+        # memory: "1024Mi"
+        # cpu: "1"
+        # ephemeral-storage: ""
+    # logshipper:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "20m"
+        # ephemeral-storage: ""
+      # limits:
+        # memory: "100Mi"
+        # cpu: "50m"
+        # ephemeral-storage: ""
+    # eoscagent:
+      # requests:
+        # memory: "50Mi"
+        # cpu: "20m"
+        # ephemeral-storage: ""
+      # limits:
+        # memory: "300Mi"
+        # cpu: "50m"
+        # ephemeral-storage: ""
+    # licenseConsumer:
+      # requests:
+        # cpu: "50m"
+        # memory: "100Mi"
+        # ephemeral-storage: ""
+      # limits:
+        # cpu: "250m"
+        # memory: "500Mi"
+        # ephemeral-storage: ""
+  # probes:
+    # director:
+      # readinessProbe:
+        # port: 9874
+        # initialDelaySeconds: 2
+        # periodSeconds: 2
+        # timeoutSeconds: 1
+        # successThreshold: 1
+        # failureThreshold: 3
+  # cassandra:
+    # dataCenterName: *dsc_wcdb_datacenter_name
+    # statefulSetName: *dsc_wcdb_statefulset_name
+  # annotations: {}
+  # labels: {}
+  # nodeSelector: {}
+  # tolerations: []
+  # eoscagent:
+    # objectStorageService:
+      # bucketLifecycleDays: "3"
+  # mounts:
+    # subscriberTracingArchives:
+      # storageAllocation: "300Mi"
+
+eric-dsc-application-database:
+  persistentVolumeClaim:
+    storageClassName: *oam_storage_class
+
+eric-dsc-coredump-handler:
+  enabled: true
+  # handler:
+  #   hostDirs:
+  #     coredumps: "/var/lib/systemd/coredump/"
+  #   mounts:
+  #     coredumps:
+  #       path: "/var/lib/systemd/coredump/"
+  # objectStorageService:
+  # buckets:
+  #   coredumps:
+  #     lifecycle:
+  #       days: "3"
+  # nodeSelector: {}
+  # tolerations:
+    # handler: []
+  # terminationGracePeriodSeconds:
+    # handler: 5
+
+eric-dsc-wcdb-cd:
+  enabled: false
+  # nameOverride: *dsc_wcdb_statefulset_name
+  # sysctls:
+    # cassandra: []
+  # metrics:
+    # cassandra:
+      # enabled: true
+      # excluded:
+        # - "cassandra_table_estimated_columns"
+        # - "cassandra_table_estimated_partition_size_bytes"
+        # - "cassandra_table_view_lock_acquisition_seconds"
+        # - "cassandra_table_view_read_seconds"
+        # - "org.apache.cassandra.metrics:type=ThreadPools,path=internal,scope=Repair#*,*"
+  persistence:
+    dataVolume:
+      persistentVolumeClaim:
+        # size: 30Gi
+        storageClassName: *oam_storage_class
+  # replicaCount: 2
+  # resources:
+    # cassandra:
+      # limits:
+        # cpu: 4
+        # memory: 16Gi
+      # requests:
+        # cpu: 4
+        # memory: 16Gi
+      # jvm:
+        # initialMemoryAllocationPercentage: 50
+        # smallMemoryAllocationMaxPercentage: 50
+        # largeMemoryAllocationMaxPercentage: 50
+    # brsc:
+      # requests:
+        # memory: "512Mi"
+        # cpu: "0.2"
+      # limits:
+        # memory: "512Mi"
+        # cpu: "0.5"
+    # ecchronos:
+      # requests:
+        # cpu: 1
+        # memory: 512Mi
+      # limits:
+        # cpu: 1
+        # memory: 512Mi
+      # jvm:
+        # initialMemoryAllocationPercentage: 25
+        # smallMemoryAllocationMaxPercentage: 25
+        # largeMemoryAllocationMaxPercentage: 25
+  # probes:
+    # brsc:
+      # livenessProbe:
+        # initialDelaySeconds: 60
+        # periodSeconds: 20
+        # timeoutSeconds: 10
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 10
+        # timeoutSeconds: 10
+        # failureThreshold: 6
+    # cassandra:
+      # livenessProbe:
+        # initialDelaySeconds: 120
+        # periodSeconds: 20
+        # timeoutSeconds: 10
+        # failureThreshold: 6
+      # readinessProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 10
+        # timeoutSeconds: 10
+        # failureThreshold: 6
+    # ecchronos:
+      # livenessProbe:
+        # initialDelaySeconds: 7200
+        # periodSeconds: 20
+        # timeoutSeconds: 10
+        # failureThreshold: 3
+  # affinity:
+    # podAntiAffinity: "hard"
+  # nodeSelector:
+    # cassandra: {}
+    # configureKeyspacesJob: {}
+    # tlsRestarter: {}
+    # annotator: {}
+    # operator: {}
+  # tolerations:
+    # cassandra: {}
+    # configureKeyspacesJob: {}
+    # tlsRestarter: {}
+    # annotator: {}
+    # operator: {}
+  # cassandra:
+    # internodePort: 7001
+    # remoteSeedNodes: []
+    # jvmOptions:
+      # set:
+        # - "XX:+UseG1GC"
+        # - "XX:InitialRAMPercentage=50.0"
+        # - "XX:MaxRAMPercentage=50.0"
+        # - "XX:MaxGCPauseMillis=200"
+        # - "XX:InitiatingHeapOccupancyPercent=70"
+      # unset:
+        # - "Xmn800M"
+        # - "Xmn100M"
+        # - "Xmn400M"
+        # - "XX:+HeapDumpOnOutOfMemoryError"
+        # - "XX:+UseParNewGC"
+        # - "XX:+UseConcMarkSweepGC"
+        # - "XX:+CMSParallelRemarkEnabled"
+        # - "XX:SurvivorRatio=8"
+        # - "XX:MaxTenuringThreshold=1"
+        # - "XX:CMSInitiatingOccupancyFraction=75"
+        # - "XX:+UseCMSInitiatingOccupancyOnly"
+        # - "XX:CMSWaitDuration=10000"
+        # - "XX:+CMSParallelInitialMarkEnabled"
+        # - "XX:+CMSEdenChunksRecordAlways"
+        # - "XX:+CMSClassUnloadingEnabled"
+  # dataCenters:
+    # - name: *dsc_wcdb_datacenter_name
+      # service:
+        # externalIP:
+          # annotations:
+            # addressPoolName:
+  # Cassandra overload protection feature
+  #overloadProtection:
+    # Enable/disable overload protection
+    #enabled: true
+    # ecOP settings
+    #ecop:
+      # These values will be mapped to the ecop.yaml file in each pod
+      # All values are customizable except stop_threshold, isolate_threshold
+      #yaml:
+        #disk_space:
+        #  throttle_threshold: 0.5
+  # georeplication:
+    # certificates:
+      # asymmetricKeyCertificateName: "dsc-internode-external-key/dsc-internode-external-cert"
+      # trustedCertificateListName: "sc-trusted-default-cas"
+  # egress:
+    # certificates:
+      # asymmetricKeyCertificateName: "dsc-cql-client-external-key/dsc-cql-client-external-cert"
+      # trustedCertificateListName: "sc-trusted-default-cas"
+  # service:
+    # certificates:
+      # asymmetricKeyCertificateName: "dsc-cql-server-external-key/dsc-cql-server-external-cert"
+      # trustedCertificateListName: "sc-trusted-default-cas"
+    # externalTrafficPolicy: Local
+    # externalIP:
+      # enabled: false
+    # endpoints:
+      # cql:
+        # tls:
+          # enforced: "optional"
+  # security:
+    # auth:
+      # cql:
+        # wcdbcdAdminSecret: eric-dsc-wcdb-cd-admin-creds
+        # adminSecret: eric-dsc-wcdb-cd-day0-creds
+  # annotations: {}
+  # labels: {}
+  # repairAgent:
+    # enabled: true
+    # ecchronos:
+      # yaml:
+        # statistics:
+          # enabled: false
+        # repair:
+          # unwind_ratio: 0.5
+          # interval:
+            # time: 7
+            # unit: days
+          # alarm:
+            # warn:
+              # time: 8
+              # unit: days
+            # error:
+              # time: 10
+              # unit: days
+      # jvmOptions:
+        # set:
+          # - XX:ParallelGCThreads=1
+
+# eric-dsc-log-shipper:
+  # enabled: false

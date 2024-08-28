@@ -1,0 +1,173 @@
+modelVersion: 2.0
+
+description: "SLF Subchart"
+
+import:
+  base: ../rulesets/ruleset2.0-eric-base.yaml
+  tapagent: ../eric-sc-tapagent/ruleset2.0.yaml
+  tlskeylogagent: ../eric-sc-tlskeylogagent/ruleset2.0.yaml
+
+properties:
+  - HELM_REPO_INTERNAL: "proj-sc-all-internal-helm"
+  - HELM_REPO_DROP: "proj-sc-all-drop-helm"
+  - DOCKER_REPO_INTERNAL: "proj-sc-all-internal"
+  - DOCKER_REPO_DROP: "proj-sc-all-drop"
+  - CHART_NAME: "eric-sc-slf"
+  - CHART_PATH: ${CHART_NAME}/charts/${CHART_NAME}
+  - SLF_IMAGE_NAME: ${CHART_NAME}
+  - SLF_DOCKERFILE_PATH: "./esc/slf/" # TODO: change to eric-sc-slf folder when source code is isolated
+
+env:
+  # Common container images
+  - TLSKEYLOGAGENT_IMAGE_NAME
+  - TLSKEYLOGAGENT_IMAGE_VERSION
+  - TLSKEYLOGAGENT_IMAGE_REPO
+  - TAPAGENT_IMAGE_NAME
+  - TAPAGENT_IMAGE_VERSION
+  - TAPAGENT_IMAGE_REPO
+  # the GERRIT username
+  - GERRIT_USERNAME
+  # the GERRIT password (Gerrit HTTP password)
+  - GERRIT_PASSWORD
+  # the ARM functional user token for Helm repository (J-Frog ARM Token)
+  - HELM_TOKEN
+  # Run git related actions in dry-run
+  - DRY_RUN (default=true)
+
+# variables' names include "slf" because they will be stored in .bob/ of 5g_proto
+# TODO: remove "slf" from the variables' names when ssf source code gets isolated
+# and the chart is moved to a separate git repo
+var:
+  - slf-version
+  - slf-image-repo
+  - slf-chart-repo
+  - commithash
+  - branch
+
+rules:
+
+  all-local:
+    - rule: init
+    - rule: pre-package
+    - task: package:chart-local
+    - task: publish:chart-local
+    - task: clean:release-auto-tmp-folder
+
+  all-ci:
+    - rule: init
+    - rule: pre-package
+    - task: package:chart-ci
+    - task: publish:chart-ci
+    - rule: post-publish
+    - task: clean:release-auto-tmp-folder
+
+  clean:
+    - task: release-auto-tmp-folder
+      cmd: rm -rf ${base.OUTPUT_DIR}/untar_tmp
+
+  init:
+    - task: version
+      docker-image: base.adp-release-auto
+      cmd: version-handler generate
+            --is-release ${env.base.RELEASE}
+            --user ${env.base.USER}
+            --output slf-version
+            --git-repo-path .
+            --version-prefix-file ./${CHART_NAME}/VERSION_PREFIX
+    - task: image-repo
+      cmd: /bin/bash -c 'if [ \"${env.base.RELEASE}\" == \"false\" ];
+                         then
+                            echo ${DOCKER_REPO_INTERNAL} > ${base.OUTPUT_DIR}/var.slf-image-repo;
+                         else
+                            echo ${DOCKER_REPO_DROP} > ${base.OUTPUT_DIR}/var.slf-image-repo;
+                         fi;'
+    - task: chart-repo
+      cmd: /bin/bash -c 'if [ \"${env.base.RELEASE}\" == \"false\" ];
+                         then
+                            echo ${HELM_REPO_INTERNAL} > ${base.OUTPUT_DIR}/var.slf-chart-repo;
+                         else
+                            echo ${HELM_REPO_DROP} > ${base.OUTPUT_DIR}/var.slf-chart-repo;
+                         fi;'
+
+  pre-package:
+    - task: build-slf-image
+      cmd: docker build ${SLF_DOCKERFILE_PATH}/
+                --file ${SLF_DOCKERFILE_PATH}/Dockerfile
+                --build-arg DOCKER_BASE_IMG=${base.SC_CBOS_IMG}
+                --tag ${base.DOCKER_REGISTRY_URL}/${var.slf-image-repo}/${SLF_IMAGE_NAME}:${var.slf-version}
+    - task: publish-slf-image
+      cmd: docker push ${base.DOCKER_REGISTRY_URL}/${var.slf-image-repo}/${SLF_IMAGE_NAME}:${var.slf-version}
+
+  package:
+    - task: chart-local
+      description: package helm chart by replacing the images' repo paths with the internal repo
+      docker-image: base.adp-release-auto
+      cmd: helm-package
+        --folder ${CHART_PATH}
+        --workdir ${base.OUTPUT_DIR}
+        --output ${base.OUTPUT_DIR}
+        --version ${var.slf-version}
+        --replace eric-product-info.yaml:slf_repo_path=${var.slf-image-repo}
+        --replace eric-product-info.yaml:slf_image_name=${SLF_IMAGE_NAME}
+        --replace eric-product-info.yaml:slf_image_tag=${var.slf-version}
+        --replace eric-product-info.yaml:tapagent_repo_path=${var.tapagent.tapagent-image-repo}
+        --replace eric-product-info.yaml:tapagent_image_name=${tapagent.IMAGE_NAME}
+        --replace eric-product-info.yaml:tapagent_image_tag=${var.tapagent.tapagent-image-version}
+        --replace eric-product-info.yaml:tlskeylogagent_repo_path=${var.tlskeylogagent.tlskeylogagent-image-repo}
+        --replace eric-product-info.yaml:tlskeylogagent_image_name=${tlskeylogagent.IMAGE_NAME}
+        --replace eric-product-info.yaml:tlskeylogagent_image_tag=${var.tlskeylogagent.tlskeylogagent-image-version}
+    - task: chart-ci
+      description: package helm chart by replacing the images' repo paths with the internal repo
+      docker-image: base.adp-release-auto
+      cmd: helm-package
+        --folder ${CHART_PATH}
+        --workdir ${base.OUTPUT_DIR}
+        --output ${base.OUTPUT_DIR}
+        --version ${var.slf-version}
+        --replace eric-product-info.yaml:slf_repo_path=${var.slf-image-repo}
+        --replace eric-product-info.yaml:slf_image_name=${SLF_IMAGE_NAME}
+        --replace eric-product-info.yaml:slf_image_tag=${var.slf-version}
+        --replace eric-product-info.yaml:tapagent_repo_path=${env.TAPAGENT_IMAGE_REPO}
+        --replace eric-product-info.yaml:tapagent_image_name=${env.TAPAGENT_IMAGE_NAME}
+        --replace eric-product-info.yaml:tapagent_image_tag=${env.TAPAGENT_IMAGE_VERSION}
+        --replace eric-product-info.yaml:tlskeylogagent_repo_path=${env.TLSKEYLOGAGENT_IMAGE_REPO}
+        --replace eric-product-info.yaml:tlskeylogagent_image_name=${env.TLSKEYLOGAGENT_IMAGE_NAME}
+        --replace eric-product-info.yaml:tlskeylogagent_image_tag=${env.TLSKEYLOGAGENT_IMAGE_VERSION}
+
+  publish:
+    - task: chart-local
+      docker-image: base.inca
+      cmd: arm-upload
+        --file ${base.OUTPUT_DIR}/${CHART_NAME}-${var.slf-version}.tgz
+        --destination ${base.ARMSERO_ARTIFACTORY_URL}/${var.slf-chart-repo}/${CHART_NAME}/
+        --token ${var.base.serodocker-api-token}
+    - task: chart-ci
+      docker-image: base.inca
+      docker-envs:
+        - HELM_TOKEN
+      cmd: arm-upload
+        --file ${base.OUTPUT_DIR}/${CHART_NAME}-${var.slf-version}.tgz
+        --destination ${base.ARMSERO_ARTIFACTORY_URL}/${var.slf-chart-repo}/${CHART_NAME}/
+        --token ${env.HELM_TOKEN}
+
+  post-publish:
+    - task: get-commit
+      docker-image: base.adp-release-auto
+      cmd: git rev-parse --short HEAD > .bob/var.commithash
+    - task: get-branch
+      docker-image: base.adp-release-auto
+      cmd: git rev-parse --abbrev-ref HEAD > .bob/var.branch
+    - task: git-tag
+      docker-image: base.adp-release-auto
+      description: Create and push git tag. Example "eric-slf/1.0.0-55"
+      docker-envs:
+        - GERRIT_USERNAME
+        - GERRIT_PASSWORD
+      cmd: version-handler create-git-tag
+           --git-repo-url ${base.GIT_REPO_URL}
+           --tag ${CHART_NAME}/${var.slf-version}
+           --message "Release ${var.slf-version}"
+           --commitid ${var.commithash}
+           --branch ${var.branch}
+           --dry-run ${env.DRY_RUN}
+           --debug

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+	<groupId>com.ericsson</groupId>
+	<artifactId>esc-parent</artifactId>
+	<version>1.0.28</version>
+	<relativePath>../../pom.xml</relativePath>
+  </parent>
+
+	<groupId>com.ericsson.sc</groupId>
+	<artifactId>certm-cr-handler-test</artifactId>
+	<version>0.0.5</version>
+	<description>Testing class for certm-cr-handler</description>
+
+	<properties>
+		<mainClass>com.ericsson.sc.certmcrhandlertest.Main</mainClass>
+		<maven.deploy.skip>true</maven.deploy.skip>
+		<revision>${sc.version}</revision>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.ericsson</groupId>
+			<artifactId>utilities</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.ericsson.sc</groupId>
+			<artifactId>certm-cr-handler</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.yaml</groupId>
+			<artifactId>snakeyaml</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.fabric8</groupId>
+			<artifactId>kubernetes-client</artifactId>
+			<version>6.8.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcprov-jdk15on</artifactId>
+			<version>1.70</version>
+		</dependency>
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcpkix-jdk15on</artifactId>
+			<version>1.70</version>
+		</dependency>
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcprov-ext-jdk15on</artifactId>
+			<version>1.70</version>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<configuration>
+					<archive>
+					  <manifest>
+						<addClasspath>true</addClasspath>
+						<classpathPrefix>lib/</classpathPrefix>
+						<mainClass>${mainClass}</mainClass>
+					  </manifest>
+					</archive>
+				  </configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<configuration>
+				  <archive>
+					<manifest>
+					  <mainClass>${mainClass}</mainClass>
+					</manifest>
+				  </archive>
+				  <descriptorRefs>
+					<descriptorRef>jar-with-dependencies</descriptorRef>
+				  </descriptorRefs>
+				</configuration>
+			  </plugin>
+		</plugins>
+	</build>
+
+</project>

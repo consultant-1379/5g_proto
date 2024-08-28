@@ -1,0 +1,34 @@
+# This file is used for configuring remote syslog server.
+# Declare variables to be passed into your templates at deploy time using
+# "--values <path>/eric-log-transformer-external-syslog-server-config.yaml"
+# during helm install.
+
+# Configure external syslog server hostname, certificate and port number.
+
+# The Certificate Management (CertM) service requires that certificates for
+# the TLS connection to remote syslog server is configured.
+# TLS will require the existence of client certificate/key and
+# the CA to be used for the verification of external syslog server certificate.
+# Configure the client/key in keystore with name equals to asymmetricKeyCertificateName 
+# parameter value and CA in truststore with name equals to trustedCertificateListName 
+# parameter value
+
+eric-log-transformer:
+  egress:
+    syslog:
+      enabled: true
+      remoteHosts:
+        #  If user wants to enable remote syslog sever, following host
+        #  and port need to be configured. Multiple servers can be configured.
+        - host: example_syslog_host1
+          port: 6514
+        #- host: example_syslog_host2
+        #  port: 6514
+      tls:
+        enabled: true
+      certificates:
+        #  If user wants to enable tls with remote syslog server, following
+        #  certificate information should be configured, the value should be
+        #  identical with CLI configuration.
+        asymmetricKeyCertificateName: log-syslog-client
+        trustedCertificateListName: log-syslog-client

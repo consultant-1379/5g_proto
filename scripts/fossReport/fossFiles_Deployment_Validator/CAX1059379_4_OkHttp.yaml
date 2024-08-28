@@ -1,0 +1,42 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2019-06-21 12:24
+FOSS:
+    # Available in Bazaar
+    FOSSName: OkHttp
+    # Available in Bazaar
+    FOSSVersion: 2.7.5
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/square/okhttp/archive/parent-{{FOSSVersion}}.zip
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 14/CAX1059379
+    # Not Available in Bazaar
+    PRIMNumber(CTC): CTC 101 5313
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: "OkHttp is an HTTP client that’s efficient by default: HTTP/2 support allows all requests to the same host to share a socket. Connection pooling reduces request latency (if HTTP/2 isn’t available). Transparent GZIP shrinks download sizes. Response caching avoids the network completely for repeat requests. HTTP is the way modern applications network. It’s how we exchange data and media."
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: Apache License 2.0
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'com.squareup.okhttp3:logging-interceptor:jar:{{FOSSVersion}}'
+    - 'com.squareup.okhttp3:okhttp:jar:{{FOSSVersion}}'
+    - 'com.squareup.okhttp:okhttp-ws:jar:{{FOSSVersion}}'
+    - 'com.squareup.okhttp:logging-interceptor:jar:{{FOSSVersion}}'
+    - 'com.squareup.okhttp:okhttp:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ENTNGRG Georgios Antoniou

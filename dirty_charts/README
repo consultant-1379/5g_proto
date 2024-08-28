@@ -1,0 +1,31 @@
+Instructions on how to deploy SC with dirty images
+==================================================
+
+Dirty images might arrive from unofficial sources:
+- via teams
+- via mail
+- via local adp service repo
+
+Step 1 - Create packages.yaml
+============================
+
+Create packages.yaml file under ~/5g_proto/dirty_charts/ folder.
+The file should have specific format according to the example below.
+
+##### Example of packages.yaml - Start ##########
+dependencies:
+- name: eric-data-sftp-server
+  tgz: eric-data-sftp-server-1.12.0-hac4a2978.tgz
+- name: eric-pm-server
+  tgz: eric-pm-server-6.2.0-11.tgz
+##### Example of packages.yaml - End ############
+
+Step 2 - Download tgz images
+============================
+
+Download and/or copy&paste images directly inside folder
+~/5g_proto/dirty_charts/
+
+
+Contact challengers team if you require any support,
+if you notice any problems or if you want any improvements.   

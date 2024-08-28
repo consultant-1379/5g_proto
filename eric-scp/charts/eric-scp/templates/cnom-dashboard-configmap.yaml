@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "eric-scp.name" . }}-cnom-dashboard-config
+  labels:
+    ericsson.com/cnom-server-dashboard-models: "true"
+{{- include "eric-scp.labels" . | indent 4 }}
+  annotations:
+{{- include "eric-scp.helm-annotations" . | indent 4 }}
+{{- include "eric-scp.config-annotations" . | indent 4 }}
+data:
+{{- if (index .Values "slf" "enabled") }}
+        {{- if (index .Values "rlf" "enabled") }}
+                {{- if (index .Values "nlf" "enabled") }}
+{{ (.Files.Glob "dashboardconfig/scpSlfNlfRlfDashboard.json").AsConfig | indent 4 }}
+                {{- else }}
+{{ (.Files.Glob "dashboardconfig/scpSlfRlfDashboard.json").AsConfig | indent 4 }}
+                {{- end }}
+        {{- else }}
+                {{- if (index .Values "nlf" "enabled") }}
+{{ (.Files.Glob "dashboardconfig/scpSlfNlfDashboard.json").AsConfig | indent 4 }}
+                {{- else }}
+{{ (.Files.Glob "dashboardconfig/scpSlfDashboard.json").AsConfig | indent 4 }}
+                {{- end }}
+        {{- end }}
+{{- else }}
+        {{- if (index .Values "rlf" "enabled") }}
+                {{- if (index .Values "nlf" "enabled") }}
+{{ (.Files.Glob "dashboardconfig/scpNlfRlfDashboard.json").AsConfig | indent 4 }}
+                {{- else }}
+{{ (.Files.Glob "dashboardconfig/scpRlfDashboard.json").AsConfig | indent 4 }}
+                {{- end }}
+        {{- else }}
+                {{- if (index .Values "nlf" "enabled") }}
+{{ (.Files.Glob "dashboardconfig/scpNlfDashboard.json").AsConfig | indent 4 }}
+                {{- else }}
+{{ (.Files.Glob "dashboardconfig/scpDashboard.json").AsConfig | indent 4 }}
+                {{- end }}
+        {{- end }}
+{{- end }}
+{{- if (index .Values "vtap" "enabled") }}
+{{ (.Files.Glob "dashboardconfig/scpVtapDashboard.json").AsConfig | indent 4 }}
+{{- end }}

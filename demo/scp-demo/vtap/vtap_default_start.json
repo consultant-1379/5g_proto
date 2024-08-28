@@ -1,0 +1,10 @@
+    [
+           {
+                "ServiceName": "eric-scp-worker",
+                "TAP_ENABLED": true,
+                "TracingMode": "sftp",
+                "TAP_INT": "eth0",
+                "NF_TYPE": "scp",
+                "TAP_FILTER": "port 80"
+           }
+    ]

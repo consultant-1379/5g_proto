@@ -1,0 +1,30 @@
+{{- if .Values.global -}}
+{{- if and .Values.global.networkPolicy .Values.networkPolicy -}}
+{{- if and .Values.global.networkPolicy.enabled .Values.networkPolicy.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ template "eric-bsf.name" . }}-worker-external-access
+  labels:
+{{- include "eric-bsf.labels" . | indent 4 }}
+    app: {{ template "eric-bsf.name" . }}-worker
+  annotations:
+{{- include "eric-bsf.helm-annotations" . | indent 4 }}
+{{- include "eric-bsf.config-annotations" . | indent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ template "eric-bsf.name" . }}-worker
+  policyTypes:
+  - Ingress
+  ingress:
+  - from: []
+    ports:
+    - port: {{ .Values.service.worker.portName }}
+      protocol: TCP
+    - port: {{ .Values.service.worker.tlsPortName }}
+      protocol: TCP  
+{{- end }}
+{{- end }}
+{{- end }}

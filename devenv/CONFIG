@@ -1,0 +1,56 @@
+# vim:ts=4:sw=4:sw=4:et:syntax=make
+#
+# COPYRIGHT ERICSSON GMBH 2018
+#
+# The copyright to the computer program(s) herein is the property
+# of Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written
+# permission of Ericsson GmbH in accordance with
+# the terms and conditions stipulated in the agreement/contract
+# under which the program(s) have been supplied.
+#
+# Created on: Jun 05, 2018
+#     Author: eedsvs
+#
+
+SHELL := /bin/bash
+PWD := $(shell pwd)
+
+# Package/docker repo
+ARM_DOCKER_REG_URL := armdocker.rnd.ericsson.se
+ARM_DOCKER_REG_USRSIG := $(DEV_USER)
+ARM_DOCKER_REG_PROJKEY := 5g-bsf
+ARM_DOCKER_REG_MGRSID := eedsvs
+ARM_DOCKER_REG_LDAPGRP := FUTURE_USE
+
+ARM_DOCKER_HELM_REPO := proj-5g-bsf-helm
+ARM_DOCKER_HELM_REPO_URL := https://$(ARM_DOCKER_REG_URL)/artifactory/$(ARM_DOCKER_HELM_REPO)
+
+ARM_DOCKER_GEN_REPO := artifactory/proj-5g-bsf-generic-local
+ARM_DOCKER_GEN_REPO_URL := https://$(ARM_DOCKER_REG_URL)/$(ARM_DOCKER_GEN_REPO)
+
+# project related (5G proto level)
+PROJ_NAMESPACE := $(ARM_DOCKER_REG_PROJKEY)
+PROJ_ID := $(ARM_DOCKER_REG_URL)/proj-$(PROJ_NAMESPACE)
+PROJ_ID_HELM := $(ARM_DOCKER_REG_URL)/artifactory/proj-$(PROJ_NAMESPACE)-helm/
+
+# Repository for ADP Helm Charts
+ADP_REPO_BASE := https://arm.rnd.ki.sw.ericsson.se/artifactory/proj-adp-gs-all-helm/
+
+# Unique docker images names used for building and packaging
+HELM_IMAGE_REPO := $(PROJ_ID)/helm
+HELM_IMAGE_TAG := v0.12
+HELM_IMAGE_NAME := $(HELM_IMAGE_REPO):$(HELM_IMAGE_TAG)
+
+# Kubernetes deployment target
+KUBE_CLUSTER := hahn117
+KUBECONFIG := $(TOP)/devenv/kube-$(KUBE_CLUSTER).conf
+KUBE_NAMESPACE := $(PROJ_NAMESPACE)-$(DEV_USER)
+
+#marconi001: erikube-nfs, todd044, marconi002: managed-nfs-storage
+KUBE_STORAGE_CLASS := managed-nfs-storage
+ 
+# Demo settings
+DEMO_NAMESPACE := 5g-bsf-demo
+

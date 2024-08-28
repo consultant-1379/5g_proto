@@ -1,0 +1,29 @@
+
+# Credentials used by SNMP trap receiver.
+trapCredentials:
+  # Enum: "2", "3".
+  version: "2"
+  snmpv2:
+    # String: 1-32 characters.
+    communityName: "ericsson"
+  snmpv3:
+    # String: 1-32 characters.
+    user: "ericuser"
+    # String: "^[0-9a-fA-F]{5,32}$"
+    engineId: "8000123acd1ab43abbfff000fa"
+    # Enum: "noAuthNoPriv", "authNoPriv", "authPriv".
+    securityLevel: "authPriv"
+    # Enum: "MD5", "SHA1".
+    authProtocol: "MD5"
+    # String: Min length 8 characters.
+    authPassphrase: "ericpass"
+    # Enum: "DES", "AES128".
+    privProtocol: "AES128"
+    # String: Min length 8 characters.
+    privPassphrase: "ericpass"
+
+# Configuration for snmp-alarm-provider.
+providerConfiguration:
+  enabled: true
+  heartbeatInterval: 60
+

@@ -1,0 +1,18 @@
+diff --git a/source/common/upstream/outlier_detection_impl.cc b/source/common/upstream/outlier_detection_impl.cc
+index cd9deefed..3fe48330d 100644
+--- a/source/common/upstream/outlier_detection_impl.cc
++++ b/source/common/upstream/outlier_detection_impl.cc
+@@ -343,11 +343,9 @@ void DetectorImpl::checkHostForUneject(HostSharedPtr host, DetectorHostMonitorIm
+ 
+   const std::chrono::milliseconds base_eject_time = std::chrono::milliseconds(
+       runtime_.snapshot().getInteger(BaseEjectionTimeMsRuntime, config_.baseEjectionTimeMs()));
+-  const std::chrono::milliseconds max_eject_time = std::chrono::milliseconds(
+-      runtime_.snapshot().getInteger(MaxEjectionTimeMsRuntime, config_.maxEjectionTimeMs()));
+   ASSERT(monitor->numEjections() > 0);
+-  if ((min(base_eject_time * monitor->ejectTimeBackoff(), max_eject_time)) <=
+-      (now - monitor->lastEjectionTime().value())) {
++  //DND-17704
++  if (base_eject_time <= (now - monitor->lastEjectionTime().value())) {
+     ejections_active_helper_.dec();
+     host->healthFlagClear(Host::HealthFlag::FAILED_OUTLIER_CHECK);
+     // Reset the consecutive failure counters to avoid re-ejection on very few new errors due

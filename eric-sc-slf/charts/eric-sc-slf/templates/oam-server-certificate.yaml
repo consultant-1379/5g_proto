@@ -1,0 +1,27 @@
+# Copyright 2019 Ericsson GmbH
+{{- if eq (include "eric-sc-slf.tls" .) "true" }}
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+  name: {{ template "eric-sc-slf.name" . }}-oam-server-certificate
+  annotations:
+{{- include "eric-sc-slf.helm-annotations" . | indent 4 }}
+{{- include "eric-sc-slf.config-annotations" . | indent 4 }}
+  labels:
+{{- include "eric-sc-slf.labels" . | indent 4 }}
+spec:
+  kubernetes:
+    generatedSecretName: {{ template "eric-sc-slf.name" . }}-oam-server-certificate
+    certificateName: tls.crt
+    privateKeyName: tls.key
+  certificate:
+    subject:
+      cn: {{ template "eric-sc-slf.name" . }}
+    subjectAlternativeName:
+      dns:
+        - certified-scrape-target
+        - {{ template "eric-sc-slf.name" . }}-v2
+    extendedKeyUsage:
+      tlsClientAuth: false
+      tlsServerAuth: true
+{{- end }}

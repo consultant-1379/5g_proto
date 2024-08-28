@@ -1,0 +1,11 @@
+{{- range $asymmetric := .Values.certificates.traf.asymmetric }}
+---
+apiVersion: certm.sec.ericsson.com/v1
+kind: ExternalCertificate
+metadata:
+  name: {{ printf "%s-%s" $asymmetric.key $asymmetric.certificate }}-external-certificate
+spec:
+  generated-secret-name: {{ printf "%s-%s" $asymmetric.key $asymmetric.certificate }}-secret
+  generated-secret-type: tls
+  asymmetric-key-certificate-name:  {{ printf "%s/%s" $asymmetric.key $asymmetric.certificate | quote }}
+{{- end}}

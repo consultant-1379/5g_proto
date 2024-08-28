@@ -1,0 +1,117 @@
+modelVersion: 2.0
+
+import:
+  base: ruleset2.0-eric-base.yaml
+
+description: "bsf-load http traffic generator"
+
+properties:
+  - BSF_LOAD_SERVICE_NAME: eric-bsf-load
+
+env:
+ - BOB_FORCE_IMAGE_PULL (default=false)
+ - RELEASE (default=false)
+ - TEST_TYPE (default=)
+
+var:
+ - bsf-load-version
+ - build-token
+
+rules:
+  init:
+    - task: base.init:create-output-dir
+    - task: base.init:set-namespace
+    - task: base.init:set-kube-config
+    - task: base.init:set-build-proxy
+    - task: base.init:set-supreme-properties
+    - task: base.init:api-tokens
+    - task: bsf-load-version
+      docker-image: base.adp-release-auto
+      cmd: generate-version --is-release ${env.RELEASE} --output bsf-load-version
+
+  build:
+    - task: bsf-load
+      docker-image: base.java-maven-builder
+      cmd: mvn --no-transfer-progress -s ${var.base.build-proxy} -Duser.home=. -f pom.xml ${base.MVN_ARGS} -am -pl simulators/bsfload package
+
+  image:
+    - task: build-bsf-load
+      cmd:  docker build ./simulators/bsfload/
+           --file simulators/bsfload/docker/Dockerfile
+           --build-arg ADP_DEV_REPO=${base.ADP_DEV_REPO}
+           --build-arg DOCKER_BASE_IMG=${base.CBOS_ZYPPER_IMG}
+           --build-arg CBOS_REPO=${base.CBOS_REPO}
+           --tag ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${BSF_LOAD_SERVICE_NAME}:${var.bsf-load-version}
+
+  lint:
+    - task: helm-bsf-load
+      docker-image: base.helm-builder-py3
+      cmd: helm lint simulators/bsfload/helm
+
+  package:
+    - task: helm-bsf-load
+      docker-image: base.adp-release-auto
+      cmd: helm-package
+        --folder simulators/bsfload/helm/
+        --output ${base.OUTPUT_DIR}
+        --version ${var.bsf-load-version}
+        --replace values.yaml:docker_registry=$(echo ${base.DOCKER_REGISTRY_URL})
+        --replace values.yaml:docker_repo_path=$(echo ${base.DOCKER_REPO_PATH}/${env.base.USER})
+        --replace values.yaml:image_name=$(echo ${BSF_LOAD_SERVICE_NAME})
+        --replace values.yaml:image_tag=$(echo ${var.bsf-load-version} | sed 's/+/-/')
+
+  push:
+    - task: bsf-load-image
+      cmd: docker push ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${BSF_LOAD_SERVICE_NAME}:${var.bsf-load-version}
+    - task: bsf-load-chart
+      docker-image: base.adp-release-auto
+      cmd: upload_file.sh
+        --filename=${base.OUTPUT_DIR}/${BSF_LOAD_SERVICE_NAME}-${var.bsf-load-version}.tgz
+        --repository=${base.HELM_CHART_REPO}
+        --api-token=${var.base.armdocker-api-token}
+
+  deploy:
+    - task: deploy-cert-secrets
+      docker-image: base.supreme
+      docker-flags:
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d bsfload -p ${base.CERTS_OUT_DIR}/supreme.yaml
+    - task: bsf-load
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume $PWD:/workspace"
+        - "--workdir /workspace"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: /bin/bash -c 'if [[ "${env.TEST_TYPE}" = "IaaS_Stability_tools_on_separate_workers" ]]; then
+                            helm install --namespace ${var.base.namespace} --set usage=tools ${BSF_LOAD_SERVICE_NAME}-${env.base.USER} ${base.OUTPUT_DIR}/${BSF_LOAD_SERVICE_NAME}-${var.bsf-load-version}.tgz --set service.type=NodePort;
+                        elif [[ "${env.TEST_TYPE}" = "IaaS_Stability" ]]; then
+                            helm install --namespace ${var.base.namespace} ${BSF_LOAD_SERVICE_NAME}-${env.base.USER} ${base.OUTPUT_DIR}/${BSF_LOAD_SERVICE_NAME}-${var.bsf-load-version}.tgz --set service.type=NodePort;
+                        else
+                            helm install --namespace ${var.base.namespace} ${BSF_LOAD_SERVICE_NAME}-${env.base.USER} ${base.OUTPUT_DIR}/${BSF_LOAD_SERVICE_NAME}-${var.bsf-load-version}.tgz;
+                        fi;
+                        '
+
+  undeploy:
+    - task: undeploy-cert-secrets
+      cmd: kubectl --namespace ${var.base.namespace} delete --ignore-not-found secret bsfload-cert-secret
+    - task: bsf-load
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: helm uninstall --namespace ${var.base.namespace} ${BSF_LOAD_SERVICE_NAME}-${env.base.USER}
+
+  clean:
+    - task: base.init:create-output-dir
+    - task: base.init:set-build-proxy
+    - task: helm
+      cmd:
+        - rm -f ${base.OUTPUT_DIR}/${BSF_LOAD_SERVICE_NAME}-*.tgz
+        - rm -rf ${base.OUTPUT_DIR}/${BSF_LOAD_SERVICE_NAME}
+    - task: maven
+      docker-image: base.java-maven-builder
+      cmd: mvn --no-transfer-progress -s ${var.base.build-proxy} -Duser.home=. -f pom.xml ${base.MVN_ARGS} -am -pl simulators/bsfload clean
+    - task: version
+      cmd: rm -f ${base.OUTPUT_DIR}/var.bsf-load-version

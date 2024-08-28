@@ -1,0 +1,31 @@
+##################################################################
+#                                                                #
+#     WARNING WARNING WARNING WARNING WARNING WARNING WARNING    #
+#                                                                #
+##################################################################
+#                                                                #
+# This Playlist performs a time shift test of the SC software by #
+# moving time into the future in steps and renews the ECCD       #
+# certificates as needed.                                        #
+# It is testing that the running system can still execute        #
+# properly many years into the future and checks that            #
+# certificates are renewing when needed.                         #
+#                                                                #
+# This playlist should not be executed unless you know what you  #
+# are doing!                                                     #
+#                                                                #
+# Because after executing this test and you want to bring the    #
+# system back to current time the only safe way to do this is to #
+# RE-INSTALL the ECCD node and the SC software, i.e. everying    #
+# running on this node WILL BE DESTROYED.                        #
+#                                                                #
+# Enter "F" or "f" to exit without doing any changes.            #
+#                                                                #
+#                   YOU HAVE BEEN WARNED                         #
+#                   ====================                         #
+#                                                                #
+##################################################################
+#                                                                #
+#     WARNING WARNING WARNING WARNING WARNING WARNING WARNING    #
+#                                                                #
+##################################################################

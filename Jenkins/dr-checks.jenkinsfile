@@ -1,0 +1,115 @@
+pipeline {
+    agent {
+        node {
+			label '5G-SC'
+        }
+    }
+    options {
+        timeout(time: 70, unit: 'MINUTES')
+        timestamps()
+    }
+    environment {
+		// Variables needed for the ruleset
+		BSF = true
+		BSF_DIAMETER = true
+		CSA = false
+		NLF = true
+		SCP = true
+		SLF = true
+		RLF = true
+		SEPP = true
+        	WCDB = true
+		LOGGING = true
+        PRODUCTION = true
+        KUBE_HOST = "${KUBE_HOST}"
+    }
+    stages {
+        stage('Init'){
+            steps{
+                echo pwd()
+                sh 'ls -ltrh'
+                sh 'git submodule update --init --recursive'
+                //sh './bob/bob base.base-image'
+                sh './bob/bob init:set-build-proxy'
+
+                // extract esc version of build from requirements.yaml
+                sh 'cat esc/helm/eric-sc-umbrella/requirements.yaml | grep $(cat VERSION_PREFIX) | tail -n 1 | awk -F \"version: \" \'{print $2}\' > .bob/var.esc-version' 
+            
+                // Update umbrella package
+                // product:number -> cxp-number
+                // product:revision -> cxp-rev-number
+                sh './bob/bob init:cxp-number'
+                sh './bob/bob init:cxp-rev-number'
+                sh './bob/bob init:product-info'
+                sh './bob/bob init:set-kube-config'
+                
+                // copy umbrella charts
+                sh "./bob/bob update-umbrella:copy"
+                sh "./bob/bob update-umbrella:update-product-numbers"
+                
+                sh 'printenv | sort'
+                script {
+                    if ( fileExists("/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh") ) {
+                        // Log current job 
+                        sh "/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh -start"
+                    } // if
+                } //script
+            } // steps 
+        } //stage
+        stage('Create SC Umbrella package') {
+            steps {
+                // Create needed charts folder
+                // Fetch all dependencies and store in umbrella/charts
+                // Package umbrella chart and store in .bob folder
+                // Temporary store .tgz charts in 5g_proto/charts
+                sh "./bob/bob package-umbrella-fast"
+
+                // User .bob folder requirements and
+                // add all chart repo to local repo
+                // then helm package with dependency updates
+                // and store tgz package in .bob folder
+                //sh "./bob/bob package-umbrella"
+            } // steps 
+        } //stage
+        stage('Check Helm DRs') {
+            steps {
+                sh "./bob/bob helm-dr-check:sc"
+            } // steps 
+        } //stage
+        stage('Archive files') {
+            steps {
+	            archiveArtifacts artifacts: '.bob/helm-dr-check/eric-sc/design-rule-check-report.*', allowEmptyArchive: true
+	            junit testResults: '.bob/helm-dr-check/eric-sc/design-rule-check-report-junit.xml', allowEmptyResults: true
+	            publishHTML (target: [
+	                allowMissing: false,
+	                alwaysLinkToLastBuild: false,
+	                keepAll: true,
+	                reportDir: '.bob/helm-dr-check/eric-sc/',
+	                reportFiles: 'design-rule-check-report.html',
+	                reportName: "Helm Design Rule Check for SC umbrella chart"
+	            ])
+            } // steps 
+        } //stage
+    } // stages
+    post {
+        always {
+            script {
+                // Log current job
+                if ( fileExists("/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh") ) {
+                    sh "/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh -stop"
+                } // if
+            } // script
+            cleanWs()
+        }
+        unstable {
+            mail to: 'evak@intracom-telecom.com,IXG-ChallengersTeam@ericsson.onmicrosoft.com',
+                 subject: "DR-Checker identified violations. Pipeline: ${currentBuild.fullDisplayName}",
+                 body: "Check errors on ${env.BUILD_URL}artifact/.bob/helm-dr-check/eric-sc/design-rule-check-report.html"
+        }
+        failure {
+            mail to: 'evak@intracom-telecom.com,IXG-ChallengersTeam@ericsson.onmicrosoft.com',
+                 subject: "DR-Checker failed. Pipeline: ${currentBuild.fullDisplayName}",
+                 body: "Failure on ${env.BUILD_URL}"
+        }
+    }
+} // pipeline

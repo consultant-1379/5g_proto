@@ -1,0 +1,58 @@
+eric-sepp:
+  spec:
+    manager:
+      resources:
+        requests:
+          cpu: 150m #0.5
+          memory: 384Mi #512Mi
+        limits:
+          cpu: 400m #1
+          memory: 512Mi #1024Mi
+    worker:
+      resources:
+        requests:
+          cpu: 50m #1
+          memory: 32Mi #512Mi
+        limits:
+          cpu: 0.2 #1.5
+          memory: 128Mi #1024Mi
+    certnotifier:
+      resources:
+        requests:
+          memory: 128Mi #60Mi
+          cpu: 20m #80m
+        limits:
+          memory: 192Mi #120Mi
+          cpu: 100m #160m
+    logfwdr:
+      resources:
+        requests:
+          memory: 16Mi #32Mi
+          cpu: 10m #50m
+        limits:
+          memory: 32Mi #64Mi
+          cpu: 50m #100m
+    sds:
+      resources:
+        requests:
+          memory: 128Mi #512Mi
+          cpu: 50m #500m
+        limits:
+          memory: 512Mi #1024Mi
+          cpu: 300m #1
+    tapagent:
+      resources:
+        requests:
+          memory: 64Mi #100Mi
+          cpu: 50m #100m
+        limits:
+          memory: 256Mi #500Mi
+          cpu: 250m #500m
+    tlskeylogagent:
+      resources:
+        requests:
+          memory: 100Mi
+          cpu: 50m #100m
+        limits:
+          memory: 500Mi
+          cpu: 250m #500m

@@ -1,0 +1,52 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- ericsson-rlf-pm-job-instances 0.1.8 -->
+<!-- modified: 2022-05-12 -->
+<!-- Copyright (c) 2022 Ericsson AB. All rights reserved.     -->
+<config xmlns="http://tail-f.com/ns/config/1.0">
+    <pm xmlns="urn:rdns:com:ericsson:oammodel:ericsson-pm">
+        <job>
+            <name>rlf_service_job</name>
+            <granularity-period>five-min</granularity-period>
+            <requested-job-state>active</requested-job-state>
+            <type>measurement-job</type>
+            <measurement-reader>
+                <name>rlf_service_reader</name>
+                <group-ref>rlf_service</group-ref>
+            </measurement-reader>
+        </job>
+        <job>
+            <name>rlf_system_job</name>
+            <granularity-period>five-min</granularity-period>
+            <requested-job-state>active</requested-job-state>
+            <type>measurement-job</type>
+            <measurement-reader>
+                <name>rlf_system_metrics_reader</name>
+                <group-ref>rlf_system_metrics</group-ref>
+            </measurement-reader>
+        </job>
+        <job>
+            <name>rlf_overload_job</name>
+            <granularity-period>one-min</granularity-period>
+            <requested-job-state>active</requested-job-state>
+            <type>threshold-job</type>
+            <measurement-reader>
+                <name>rlf_overload_reader</name>
+                <measurement-type-ref>rlf_cpu_load</measurement-type-ref>
+                <group-ref>rlf_system_metrics</group-ref>
+                <threshold-direction>increasing</threshold-direction>
+                <threshold-monitoring>
+                    <name>rlf_overload_threshold_monitoring</name>
+                    <threshold-high>70</threshold-high>
+                    <threshold-low>60</threshold-low>
+                    <threshold-severity>major</threshold-severity>
+                </threshold-monitoring>
+                <threshold-monitoring>
+                    <name>rlf_overload_threshold_escalation</name>
+                    <threshold-high>80</threshold-high>
+                    <threshold-low>75</threshold-low>
+                    <threshold-severity>critical</threshold-severity>
+                </threshold-monitoring>
+            </measurement-reader>
+        </job>
+    </pm>
+</config>

@@ -1,0 +1,69 @@
+fullnameOverride: "eric-telegraf"
+
+image:
+  repo: "armdockerhub.rnd.ericsson.se/library/telegraf"
+
+service:
+  type: NodePort
+  tls:
+    enabled: true
+    ## secret names:
+    ## eric-influxdb2-trusted-cert with ca-cert in data "ca-certs-SC.pem"
+    ## eric-influxdb2-asymmetric-key-cert-secret with
+    ##   certificate in data "tls.crt"
+    ##   private key in data "tls.key"
+    useCR: true
+    trustedCert: "sc-trusted-default-cas"
+    clientCert: "sc-telegraf-default-cert"
+    clientKey: "sc-telegraf-default-key"
+
+config:
+  agent:
+    interval: "10s"
+    round_interval: true
+    metric_batch_size: 1000
+    metric_buffer_limit: 10000
+    collection_jitter: "0s"
+    flush_interval: "10s"
+    flush_jitter: "0s"
+    precision: ""
+    debug: false
+    quiet: false
+    logfile: ""
+    hostname: "$HOSTNAME"
+    omit_hostname: false
+  processors:
+    - enum:
+        mapping:
+          field: "status"
+          dest: "status_code"
+          value_mappings:
+            healthy: 1
+            problem: 2
+            critical: 3
+  outputs:
+    - influxdb_v2:
+        urls:
+          - "http://eric-influxdb2:8086"
+        token: "rootroot"
+        organization: "ericsson"
+        bucket: "metrics"
+  inputs:
+    - http_listener_v2:
+        service_address: ":8080"
+        data_format: "prometheusremotewrite"
+        paths:
+          - "/metrics"
+        tls_cert: "/etc/telegraf/server/cert.pem"
+        tls_key: "/etc/telegraf/server/key.pem"
+        tls_allowed_cacerts:
+          - "/etc/telegraf/ca/ca-sc.pem"
+    - statsd:
+        service_address: ":8125"
+        percentiles:
+          - 50
+          - 95
+          - 99
+        metric_separator: "_"
+        allowed_pending_messages: 10000
+        percentile_limit: 1000

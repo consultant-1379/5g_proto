@@ -1,0 +1,8 @@
+Example of a Multi-stage distroless Docker "Hello World" image.
+
+The first stage builds the application.
+The second one the distroless image.
+
+The distroless image contains only the OpenJDK 8 runtime and its dependencies.
+
+https://github.com/GoogleContainerTools/distroless/

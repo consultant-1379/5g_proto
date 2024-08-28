@@ -1,0 +1,528 @@
+node('SERO_GIC') {
+	stage('Check pre-conditions'){
+		if ( "${env.VTAP_LITE}" == 'true' ) {
+			TAPAGENT = true;
+		}
+	}// stage
+	stage('Set agent'){
+		if (env.IP_VERSION == '6') {
+			// move to IPv6 buildslave(s)
+			AGENT_LABEL = '5G-SC-IPv6'
+		} // if
+		else {
+			// move to IPv4 buildslave(s)
+			AGENT_LABEL = '5G-SC'
+		} // else
+	} // stage
+} // node
+
+pipeline {
+
+	agent { label "${AGENT_LABEL}"   } // set label according to IP_VERSION parameter
+
+	options{
+		//timeout(time: 30, unit: 'MINUTES')
+		timestamps()
+	} // options
+
+	environment {
+		// deployment configuration
+		NETCONF_TLS = "${env.NETCONF_TLS}"
+		GEORED = "${env.GEORED}"
+		
+		// kubernetes related parameters
+		KUBE_HOST = "${KUBE_HOST}"
+		NAMESPACE = "${NAMESPACE}"
+		
+		// parameters used for jenkinsfile stages
+		OUTPUT_DIR=".bob"
+	} // environment
+	stages {
+		stage('Init Env') {
+			steps {
+				sh 'printenv | sort'
+				script {
+					// set displayed build name
+					currentBuild.displayName = "#${BUILD_NUMBER} - ${env.COMMIT}"
+					// set displayed description
+					currentBuild.description = "node: ${env.NODE_NAME}, k8s cluster: ${env.KUBE_HOST}, \n"
+					currentBuild.description += "Configure secrets/configmaps needed for all deploy actions that will follow"
+					if ( fileExists("/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh") ) {
+						// Log current job
+						sh "/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh -start"
+					} // if
+				} //script
+			} //steps
+		} //stage
+		stage('Cleaning WS on Buildcomputes'){
+			// only if no other instance of the same job is running in parallel
+			// if another instance is running this procedure would delete its WS and make it failing
+			when {
+				expression { currentBuild.getPreviousBuildInProgress() == null && !(env.NODE_NAME =~ /5G-LMVL/) }
+			}
+			steps {
+				catchError(message: "Timeout while cleaning WS on Buildcomputes", buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+				// remove all (!) content (including the git repo)
+					script {
+						env.AGENT_LABEL="${AGENT_LABEL}"
+						env.LOCAL_PATH = sh(returnStdout: true, script: 'pwd').trim()
+						println "LOCAL PATH: ${LOCAL_PATH}"
+						println "WORKSPACE: ${WORKSPACE}"
+						println "JOB_NAME: ${JOB_NAME}"
+						withCredentials([usernamePassword(credentialsId: 'eiffelesc-user-password', usernameVariable: 'USER', passwordVariable: 'PASSWORD')]) {
+							def NODE_NAMES_LABEL = sh(returnStdout: true, script: 'curl -s -u $USER:$PASSWORD ${JENKINS_URL}/label/${AGENT_LABEL}/api/json?pretty=true | jq -r ".nodes[].nodeName"').trim().split("\n");
+							println "LABEL: ${AGENT_LABEL}, ${NODE_NAMES_LABEL}"
+							for (NODE_NAME_LABEL in NODE_NAMES_LABEL) {
+								env.NODE_NAME_LABEL = "${NODE_NAME_LABEL}"
+								def NODE_OFFLINE = sh(returnStdout: true, script: 'curl -s -u $USER:$PASSWORD ${JENKINS_URL}/computer/${NODE_NAME_LABEL}/api/json?pretty=true | jq -r ".offline"').trim();
+								if ("${NODE_OFFLINE}" == "false" && env.NODE_NAME != "${NODE_NAME_LABEL}" && env.NODE_NAME != "") {
+									def NODE_ADDRESS_LABEL = sh(returnStdout: true, script: 'curl -s -u $USER:$PASSWORD ${JENKINS_URL}/computer/${NODE_NAME_LABEL}/config.xml | awk -F\'[<>]\' \'/<host>/{print $3;exit}\'').trim();
+									env.NODE_ADDRESS_LABEL = "${NODE_ADDRESS_LABEL}"
+									if (env.LOCAL_PATH == env.WORKSPACE && env.WORKSPACE != "" && (env.WORKSPACE.endsWith("${JOB_NAME}"))) {
+										sh '''#!/bin/bash -x
+										echo "PATH: ${WORKSPACE}"
+										echo "REMOTE NODE: ${NODE_NAME_LABEL}"
+										timeout 60 ssh eiffelesc@${NODE_ADDRESS_LABEL} "if [ -d ${WORKSPACE} ]; then rm -rf ${WORKSPACE}/; else echo \"Nothing to clean\"; fi;"
+										'''
+									} //if
+								} //if
+							} //for
+						} //withCredentials
+					} //script
+				} //catchError
+			} //steps
+		} //stage
+		stage('Initialize') {
+			steps {
+				echo ("KUBE HOST: $KUBE_HOST \n"+
+					"NAMESPACE: $NAMESPACE\n"+
+					"\n"+
+					"The following flags are enabled:\n"+
+					"NETCONF_TLS : $NETCONF_TLS \n"+
+					"GEORED : $GEORED \n"+
+					"VTAP_LITE : $VTAP_LITE \n"+
+					"TAPAGENT: $TAPAGENT")
+			} // steps
+		} // stage
+		stage('Init bob') {
+			steps {
+				// print current directory path and list files
+				sh 'pwd; ls -ltrh;'
+				
+				// prepare git submodules
+				sh 'git submodule update --init --recursive'
+				
+				sh './bob/bob sc.config.clean:directories'
+
+				sh './bob/bob base.init:create-output-dir' // create .bob directory
+				sh './bob/bob sc.init:copy-helm-credentials' // copy helm_repositories.yaml to .bob, to be used by inCA
+				sh './bob/bob base.init:set-namespace' // set namespace
+				sh './bob/bob base.init:set-kube-config' // set kube config for k8s access
+				sh './bob/bob base.init:set-supreme-properties' // set supreme properties for certificate creation/installation
+			} // steps
+		} // stage
+		stage('Check namespace'){
+			steps {
+				script{
+					sh '''#!/bin/bash -x
+						new_namespace=$(cat ./.bob/var.namespace | tr -d '\n')
+						kubectl get ns ${new_namespace} --kubeconfig ~/.kube/$KUBE_HOST.config
+						if [ $? -eq 0 ]; then
+							echo "The namespace $new_namespace exist."
+						else
+							kubectl create ns $new_namespace --kubeconfig ~/.kube/$KUBE_HOST.config
+							if [ $? -eq 1 ]; then
+								echo "Failed to create namespace $new_namespace"
+								exit 1;
+							fi;
+						fi;
+						'''
+				}
+			 } // steps
+		} // stage
+		stage('CNCS Base dependency') {
+			steps {
+				script {
+					def names = []
+					def repos = []
+					def versions = []
+					def appendIfNotNull = { paramName, list ->
+						def paramValue = params[paramName]
+						if (paramValue != null && paramValue != '' && paramValue != 'null') {
+							list.add(paramValue)
+						} // if
+					} // def appendIfNotNull
+					
+					appendIfNotNull("CNCS_BASE_CHART_NAME", names)
+					appendIfNotNull("CNCS_BASE_CHART_REPO", repos)
+					appendIfNotNull("CNCS_BASE_CHART_VERSION", versions)
+					
+					if ( names.size() > 0 && repos.size() > 0 && versions.size() > 0 ) {
+						if ( env.CHART_NAME == null && env.CHART_REPO == null && env.CHART_VERSION == null ) {
+							env.CHART_NAME = names.join(',')
+							env.CHART_REPO = repos.join(',')
+							env.CHART_VERSION = versions.join(',')
+						} else {
+							if ( env.CHART_NAME.isEmpty() && env.CHART_REPO.isEmpty() && env.CHART_VERSION.isEmpty() ) {
+								env.CHART_NAME = names.join(',')
+								env.CHART_REPO = repos.join(',')
+								env.CHART_VERSION = versions.join(',')
+							} else {
+								env.CHART_NAME += ',' + names.join(',')
+								env.CHART_REPO += ',' + repos.join(',')
+								env.CHART_VERSION += ',' + versions.join(',')
+							} // if-else
+						} // if-else
+					} // if
+				} // script
+			} // steps
+		} // stage
+		stage('CNCS NF Additions dependency') {
+			steps {
+				script {
+					def names = []
+					def repos = []
+					def versions = []
+					def appendIfNotNull = { paramName, list ->
+						def paramValue = params[paramName]
+						if (paramValue != null && paramValue != '' && paramValue != 'null') {
+							list.add(paramValue)
+						} // if
+					} // def appendIfNotNull
+					
+					appendIfNotNull("CNCS_NF_ADDITIONS_CHART_NAME", names)
+					appendIfNotNull("CNCS_NF_ADDITIONS_CHART_REPO", repos)
+					appendIfNotNull("CNCS_NF_ADDITIONS_CHART_VERSION", versions)
+					
+					if ( names.size() > 0 && repos.size() > 0 && versions.size() > 0 ) {
+						if ( env.CHART_NAME == null && env.CHART_REPO == null && env.CHART_VERSION == null ) {
+							env.CHART_NAME = names.join(',')
+							env.CHART_REPO = repos.join(',')
+							env.CHART_VERSION = versions.join(',')
+						} else {
+							if ( env.CHART_NAME.isEmpty() && env.CHART_REPO.isEmpty() && env.CHART_VERSION.isEmpty() ) {
+								env.CHART_NAME = names.join(',')
+								env.CHART_REPO = repos.join(',')
+								env.CHART_VERSION = versions.join(',')
+							} else {
+								env.CHART_NAME += ',' + names.join(',')
+								env.CHART_REPO += ',' + repos.join(',')
+								env.CHART_VERSION += ',' + versions.join(',')
+							} // if-else
+						} // if-else
+					} // if
+				} // script
+			} // steps
+		} // stage
+		stage('BSF dependency') {
+			steps {
+				script {
+					def names = []
+					def repos = []
+					def versions = []
+					def appendIfNotNull = { paramName, list ->
+						def paramValue = params[paramName]
+						if (paramValue != null && paramValue != '' && paramValue != 'null') {
+							list.add(paramValue)
+						} // if
+					} // def appendIfNotNull
+					
+					appendIfNotNull("BSF_CHART_NAME", names)
+					appendIfNotNull("BSF_CHART_REPO", repos)
+					appendIfNotNull("BSF_CHART_VERSION", versions)
+					
+					if ( names.size() > 0 && repos.size() > 0 && versions.size() > 0 ) {
+						if ( env.CHART_NAME == null && env.CHART_REPO == null && env.CHART_VERSION == null ) {
+							env.CHART_NAME = names.join(',')
+							env.CHART_REPO = repos.join(',')
+							env.CHART_VERSION = versions.join(',')
+						} else {
+							if ( env.CHART_NAME.isEmpty() && env.CHART_REPO.isEmpty() && env.CHART_VERSION.isEmpty() ) {
+								env.CHART_NAME = names.join(',')
+								env.CHART_REPO = repos.join(',')
+								env.CHART_VERSION = versions.join(',')
+							} else {
+								env.CHART_NAME += ',' + names.join(',')
+								env.CHART_REPO += ',' + repos.join(',')
+								env.CHART_VERSION += ',' + versions.join(',')
+							} // if-else
+						} // if-else
+					} // if
+				} // script
+			} // steps
+		} // stage
+		stage('SCP dependency') {
+			steps {
+				script {
+					def names = []
+					def repos = []
+					def versions = []
+					def appendIfNotNull = { paramName, list ->
+						def paramValue = params[paramName]
+						if (paramValue != null && paramValue != '' && paramValue != 'null') {
+							list.add(paramValue)
+						} // if
+					} // def appendIfNotNull
+					
+					appendIfNotNull("SCP_CHART_NAME", names)
+					appendIfNotNull("SCP_CHART_REPO", repos)
+					appendIfNotNull("SCP_CHART_VERSION", versions)
+					
+					if ( names.size() > 0 && repos.size() > 0 && versions.size() > 0 ) {
+						if ( env.CHART_NAME == null && env.CHART_REPO == null && env.CHART_VERSION == null ) {
+							env.CHART_NAME = names.join(',')
+							env.CHART_REPO = repos.join(',')
+							env.CHART_VERSION = versions.join(',')
+						} else {
+							if ( env.CHART_NAME.isEmpty() && env.CHART_REPO.isEmpty() && env.CHART_VERSION.isEmpty() ) {
+								env.CHART_NAME = names.join(',')
+								env.CHART_REPO = repos.join(',')
+								env.CHART_VERSION = versions.join(',')
+							} else {
+								env.CHART_NAME += ',' + names.join(',')
+								env.CHART_REPO += ',' + repos.join(',')
+								env.CHART_VERSION += ',' + versions.join(',')
+							} // if-else
+						} // if-else
+					} // if
+				} // script
+			} // steps
+		} // stage
+		stage('SEPP dependency') {
+			steps {
+				script {
+					def names = []
+					def repos = []
+					def versions = []
+					def appendIfNotNull = { paramName, list ->
+						def paramValue = params[paramName]
+						if (paramValue != null && paramValue != '' && paramValue != 'null') {
+							list.add(paramValue)
+						} // if
+					} // def appendIfNotNull
+					
+					appendIfNotNull("SEPP_CHART_NAME", names)
+					appendIfNotNull("SEPP_CHART_REPO", repos)
+					appendIfNotNull("SEPP_CHART_VERSION", versions)
+					
+					if ( names.size() > 0 && repos.size() > 0 && versions.size() > 0 ) {
+						if ( env.CHART_NAME == null && env.CHART_REPO == null && env.CHART_VERSION == null ) {
+							env.CHART_NAME = names.join(',')
+							env.CHART_REPO = repos.join(',')
+							env.CHART_VERSION = versions.join(',')
+						} else {
+							if ( env.CHART_NAME.isEmpty() && env.CHART_REPO.isEmpty() && env.CHART_VERSION.isEmpty() ) {
+								env.CHART_NAME = names.join(',')
+								env.CHART_REPO = repos.join(',')
+								env.CHART_VERSION = versions.join(',')
+							} else {
+								env.CHART_NAME += ',' + names.join(',')
+								env.CHART_REPO += ',' + repos.join(',')
+								env.CHART_VERSION += ',' + versions.join(',')
+							} // if-else
+						} // if-else
+					} // if
+				} // script
+			} // steps
+		} // stage
+		stage('SC-CS dependency') {
+			steps {
+				script {
+					def names = []
+					def repos = []
+					def versions = []
+					def appendIfNotNull = { paramName, list ->
+						def paramValue = params[paramName]
+						if (paramValue != null && paramValue != '' && paramValue != 'null') {
+							list.add(paramValue)
+						} // if
+					} // def appendIfNotNull
+					
+					appendIfNotNull("CS_CHART_NAME", names)
+					appendIfNotNull("CS_CHART_REPO", repos)
+					appendIfNotNull("CS_CHART_VERSION", versions)
+					
+					if ( names.size() > 0 && repos.size() > 0 && versions.size() > 0 ) {
+						if ( env.CHART_NAME == null && env.CHART_REPO == null && env.CHART_VERSION == null ) {
+							env.CHART_NAME = names.join(',')
+							env.CHART_REPO = repos.join(',')
+							env.CHART_VERSION = versions.join(',')
+						} else {
+							if ( env.CHART_NAME.isEmpty() && env.CHART_REPO.isEmpty() && env.CHART_VERSION.isEmpty() ) {
+								env.CHART_NAME = names.join(',')
+								env.CHART_REPO = repos.join(',')
+								env.CHART_VERSION = versions.join(',')
+							} else {
+								env.CHART_NAME += ',' + names.join(',')
+								env.CHART_REPO += ',' + repos.join(',')
+								env.CHART_VERSION += ',' + versions.join(',')
+							} // if-else
+						} // if-else
+					} // if
+				} // script
+			} // steps
+		} // stage
+		stage('Update Spider'){
+			steps {
+				script {
+					sh '''
+						echo "CHART_NAME=$(echo ${CHART_NAME})";
+						echo "CHART_REPO=$(echo ${CHART_REPO})";
+						echo "CHART_VERSION=$(echo ${CHART_VERSION})";
+						'''
+					withCredentials([usernamePassword(credentialsId: 'eiffelesc-credentials', usernameVariable: 'GERRIT_USERNAME', passwordVariable: 'GERRIT_PASSWORD'),
+									usernamePassword(credentialsId: 'eiffelesc-armsero-token-credentials', usernameVariable: 'HELM_USER', passwordVariable: 'ARM_API_TOKEN')]) {
+						if (env.CHART_VERSION == null || CHART_VERSION == "" || CHART_VERSION == "null") {
+							// avoid recreation of the same spider without any chart changes
+							// pass empty INT CHART NAME/REPO/VERSION
+							//sh './bob/bob sc.scspider.update-dependencies:copy' 
+							//sh './bob/bob sc.scspider.package:prepare-dev-ci'
+							sh '''
+								echo "INT_CHART_NAME=" > artifact.properties;
+								echo "INT_CHART_REPO=" >> artifact.properties;
+								echo "INT_CHART_VERSION=" >> artifact.properties;
+							'''
+						} else {
+							sh './bob/bob sc.scspider.package:prepare-ci'
+						}
+					} // withCredentials
+				} // script
+			 } // steps
+		} // stage
+		stage('Fetch Spider Dependencies') {
+			steps {
+				sh './bob/bob sc.scspider.post-package:create-dependencies-folder'
+				sh './bob/bob sc.scspider.post-package:fetch-dependencies'
+			}
+		}
+		stage('Install tapagent configuration') {
+			when {
+				environment name: 'VTAP_LITE', value: 'true'
+			} // when
+			steps {
+				sh 'set -e; ./bob/bob sc.config.configuration:tapagent'
+			} // steps
+		} // stage
+		stage('Create Certificates') {
+			steps {
+				sh "echo 'Creating day-0 certificates...'; ./bob/bob sc.config.certificates:rootca-create sc.config.certificates:netconf-tls-create"
+				sh "echo 'Creating CERTM config json file for day-0 certificates...'; ./bob/bob sc.config.configuration:certm"
+			} // steps
+		} // stage
+		stage('Create Secrets') {
+			parallel {
+				stage('Default Secrets') {
+					steps {
+						sh "./bob/bob sc.config.secrets:default-secrets"
+					} // steps
+				} // stage
+				stage('Regcred Secret') {
+					steps {
+						sh "./bob/bob sc.config.secrets:default-regcred-secret"
+					} // steps
+				} // stage
+				stage('CNCS Base FM') {
+					steps {
+						script {
+							sh './bob/bob sc.scspider.post-package:unpack-cncs-b-chart'
+							sh './bob/bob sc.config.prepare:cncs-b-faultmappings' // cncs base faultmappings
+						} // script
+					} // steps
+				} // stage
+				stage('CNCS NF Additions FM') {
+					steps {
+						script {
+							sh './bob/bob sc.scspider.post-package:unpack-cncs-a-chart'
+							sh './bob/bob sc.config.prepare:cncs-a-faultmappings' // cncs nf additions faultmappings
+						} // script
+					} // steps
+				} // stage
+				stage('SC-CS FM') {
+					steps {
+						script {
+							sh './bob/bob sc.scspider.post-package:unpack-sc-cs-chart'
+							sh './bob/bob sc.config.prepare:sc-cs-faultmappings' // sc-cs faultmappings
+						} // script
+					} // steps
+				} // stage
+				stage('BSF FM') {
+					when {
+						environment name: 'BSF', value: 'true'
+					} // when
+					steps {
+						script {
+							sh './bob/bob sc.scspider.post-package:unpack-bsf-chart'
+							sh './bob/bob sc.config.prepare:bsf-faultmappings' // bsf faultmappings
+						} // script
+					} // steps
+				} // stage
+				stage('SCP FM') {
+					when {
+						environment name: 'SCP', value: 'true'
+					} // when
+					steps {
+						script {
+							sh './bob/bob sc.scspider.post-package:unpack-scp-chart'
+							sh './bob/bob sc.config.prepare:scp-faultmappings' // scp faultmappings
+						} // script
+					} // steps
+				} // stage
+				stage('SEPP FM') {
+					when {
+						environment name: 'SEPP', value: 'true'
+					} // when
+					steps {
+						script {
+							sh './bob/bob sc.scspider.post-package:unpack-sepp-chart'
+							sh './bob/bob sc.config.prepare:sepp-faultmappings' // sepp faultmappings
+						} // script
+					} // steps
+				} // stage
+			} // parallel
+		} // stage
+		stage('Create Faultmappings') {
+			steps {
+				sh './bob/bob sc.config.configmaps:default-configmaps' // create eric-fh-alarm-handler-faultmappings configmap
+			} // steps
+		} // stage
+		stage("Archive artifact.properties") {
+			steps {
+				sh '''
+					echo "KUBE_HOST=$(echo ${KUBE_HOST})" >> artifact.properties;
+					echo "NAMESPACE=`cat ${OUTPUT_DIR}/var.namespace`" >> artifact.properties;
+					./bob/bob sc.scspider.post-package:archive-dependencies-info
+				'''
+				archiveArtifacts artifacts: 'artifact.properties', onlyIfSuccessful: true
+			} // steps
+		} // stage
+	} // stages
+	post {
+		always {
+			script{
+				// Log current job
+				if ( fileExists("/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh") ) {
+					sh "/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh -stop"
+				} // if
+			} // script
+		} // always
+		//success {
+			//cleanWs()
+		//} // success
+		failure{
+			script {
+				// do not undeploy for troubleshooting purposes
+				if ((env.CLEANCLUSTER != 'FALSE') || ("$TEST_TYPE".contains("SmokeTest"))) {
+					sh "./scripts/force-clean.sh --cluster ${env.KUBE_HOST} --namespace `cat .bob/var.namespace` --delete-namespace --debug"
+				} // if
+				// only send mail for smoketest
+				if ("$TEST_TYPE".contains("SmokeTest")) {
+					COLOR = "<body style=\"background-color: LightYellow;\">"
+					emailext body: "$COLOR" + "Hi ${env.COMMITTER},<p> the deploy failed, maybe due to your commit? <p> Please check:<br>${env.BUILD_URL}<br><br>Thank you for pushing.<br><br>BR,<br>A-Team",
+					mimeType: 'text/html',
+					subject: "5G Smoke-test pre-deploy failed for ${COMMIT}",
+					to: "${env.EMAIL_COMMITTER}, ${env.EMAIL_OTHER}"  // mail to committers and respective Teams channel
+				} // if
+			} // script
+		} // failure
+	} // post
+} // pipeline

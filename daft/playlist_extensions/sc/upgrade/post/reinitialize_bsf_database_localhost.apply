@@ -1,0 +1,248 @@
+#!/usr/bin/perl
+
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.3
+#  Date     : 2023-06-20 15:06:45
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2022-2023
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+#
+# This script is used as a DAFT playlist extension for upgrades to SC 1.7 or
+# higher coming from SC 1.6 or older.
+# It will re-initialize the BSF database because of changes dano in SC 1.7.
+#
+# Script was introduced by user story DND-32191.
+# https://eteamproject.internal.ericsson.com/browse/DND-32191
+#
+################################################################################
+
+use strict;
+use Cwd qw(abs_path);
+use File::Basename qw(dirname);
+
+my $debug_cmd = "";    # Modify this to read "echo " to enable debugging of script without changing data
+my $daft_script_path = "";
+my $job_log_file = "";
+my $job_params_file = "";
+my %job_params_hash;
+
+my $cmyp_ip = "";
+my $cmyp_cli_port = "";
+my $cmyp_password;
+my $cmyp_user = "bsf-admin";
+my $new_sc_release_version;
+my $nodetype;
+my $old_sc_release_version;
+my $rc = 0;
+my @result;
+my $sc_namespace;
+my %user_info;
+my $user_key = "";
+
+# Check if the needed environment variables exist
+print "Reading environment variables\n";
+if (exists $ENV{'TOOL_PATH_DAFT'} && $ENV{'TOOL_PATH_DAFT'} ne "") {
+    $daft_script_path = $ENV{'TOOL_PATH_DAFT'};
+} else {
+    print "The environment variable TOOL_PATH_DAFT does not exist or is empty\n";
+    exit 1;
+}
+if (exists $ENV{'JOB_WORKSPACE_PATH_DAFT'} && $ENV{'JOB_WORKSPACE_PATH_DAFT'} ne "") {
+    $job_params_file = "$ENV{'JOB_WORKSPACE_PATH_DAFT'}/job_parameters.conf";
+    $job_log_file = "$ENV{'JOB_WORKSPACE_PATH_DAFT'}/all.log";
+} else {
+    print "The environment variable JOB_WORKSPACE_PATH_DAFT does not exist or is empty\n";
+    exit 1;
+}
+
+# Check if the job parameters file exist
+unless (-f "$job_params_file") {
+    print "The job parameters file '$job_params_file' does not exist\n";
+    exit 1;
+}
+
+# Update the Perl library path to allow this script to use existing library files
+use lib abs_path $ENV{'TOOL_PATH_DAFT'} . '/perl/lib';
+
+# Import existing library files
+use ADP::Kubernetes_Operations;
+use General::Logging;
+use General::Message_Generation;
+use General::OS_Operations;
+use General::Playlist_Operations;
+
+# Read the job parameters file into an hash
+print "Reading job variables from file: $job_params_file\n";
+if (General::Playlist_Operations::job_parameters_read($job_params_file, \%job_params_hash) != 0) {
+    print "Failure to read the job parameters file '$job_params_file'\n";
+    exit 1;
+}
+
+# Check for job parameters to see if we should skip this playlist extension script
+if (exists $job_params_hash{'SKIP_DEPLOY_UPGRADE_SC'} && $job_params_hash{'SKIP_DEPLOY_UPGRADE_SC'} eq "yes") {
+    print "Job parameter SKIP_DEPLOY_UPGRADE_SC=yes, we shall not execute this script\n";
+    exit 0;
+}
+
+# Check for job parameters needed by this script
+if (exists $job_params_hash{'SC_RELEASE_VERSION'}) {
+    $new_sc_release_version = $job_params_hash{'SC_RELEASE_VERSION'};
+    print "New Software Version: $new_sc_release_version\n";
+} else {
+    print "Job parameter SC_RELEASE_VERSION does not exist in the job parameter file\n";
+    exit 1;
+}
+if (exists $job_params_hash{'OLD_SC_RELEASE_VERSION'}) {
+    $old_sc_release_version = $job_params_hash{'OLD_SC_RELEASE_VERSION'};
+    print "Old Software Version: $old_sc_release_version\n";
+} else {
+    print "Job parameter OLD_SC_RELEASE_VERSION does not exist in the job parameter file\n";
+    exit 1;
+}
+if (exists $job_params_hash{'SC_NAMESPACE'}) {
+    $sc_namespace = $job_params_hash{'SC_NAMESPACE'};
+    print "SC Namespace: $sc_namespace\n";
+} else {
+    print "Job parameter SC_NAMESPACE does not exist in the job parameter file\n";
+    exit 1;
+}
+unless (exists $job_params_hash{'KUBECTL_EXECUTABLE'}) {
+    print "Job parameter KUBECTL_EXECUTABLE does not exist in the job parameter file\n";
+    exit 1;
+}
+if (exists $job_params_hash{'nodetype'}) {
+    $nodetype = $job_params_hash{'nodetype'};
+    print "Node Type: $nodetype\n";
+} else {
+    print "Job parameter 'nodetype' does not exist in the job parameter file\n";
+    exit 1;
+}
+for my $key (keys %job_params_hash) {
+    if ($key =~ /^(default_user_\d+)_(\S+)/) {
+        $user_info{$1}{$2} = $job_params_hash{$key};
+        if ($2 eq "user" && $job_params_hash{$key} eq $cmyp_user) {
+            $user_key = $1;
+        }
+    }
+}
+
+# Check if the nodetype includes BSF
+if ($nodetype !~ /bsf/) {
+    print "The nodetype does not include 'bsf', no need to execute this script\n";
+    exit 0;
+}
+
+# Check if new and old software version match the conditions for executing this script
+if ($new_sc_release_version =~ /^1\.([7-9]|[1-9][0-9])\.\d+$/) {
+    if ($old_sc_release_version !~ /^1\.[2-6]\.\d+$/) {
+        print "Old Software Version $old_sc_release_version does not match expected condition, no need to execute the script\n";
+        exit 0;
+    }
+} else {
+    print "New Software Version $new_sc_release_version does not match expected condition, no need to execute the script\n";
+    exit 0;
+}
+
+# Check if the user was found
+if ($user_key ne "") {
+    if (exists $user_info{$user_key}{'password'}) {
+        $cmyp_password = $user_info{$user_key}{'password'};
+        print "Password for user '$cmyp_user' found\n";
+    } else {
+        print "Password for user '$cmyp_user' not found, cannot initialize the database\n";
+        exit 1;
+    }
+} else {
+    print "No user '$cmyp_user' found, cannot initialize the database\n";
+    exit 1;
+}
+
+# Enable logging of all executed commands to the job all.log file
+General::Logging::log_enable($job_log_file);
+
+# Find CMYP IP address
+my $cmyp_service_name = ADP::Kubernetes_Operations::get_cmyp_service_name($sc_namespace);
+print "Get CMYP Information\n";
+$rc = General::OS_Operations::send_command(
+    {
+        "command"       => "$job_params_hash{'KUBECTL_EXECUTABLE'} --namespace $sc_namespace get svc $cmyp_service_name -o jsonpath='{.status.loadBalancer.ingress[0].ip}'",
+        "hide-output"   => 1,
+        "return-output" => \@result,
+    }
+);
+if ($rc == 0 && scalar @result == 1) {
+    $cmyp_ip = $result[0];
+    print "CMYP IP: $cmyp_ip\n";
+}
+
+$rc = General::OS_Operations::send_command(
+    {
+        "command"       => "$job_params_hash{'KUBECTL_EXECUTABLE'} --namespace $sc_namespace get svc $cmyp_service_name -o jsonpath='{.spec.ports[1].port}'",
+        "hide-output"   => 1,
+        "return-output" => \@result,
+    }
+);
+if ($rc == 0 && scalar @result == 1) {
+    $cmyp_cli_port = $result[0];
+    print "CMYP Port: $cmyp_cli_port\n";
+}
+
+if ($cmyp_ip eq "" || $cmyp_cli_port eq "") {
+    print "Unable to detect CMYP IP or Port\n";
+    # Disable logging
+    General::Logging::log_disable();
+    exit 1;
+}
+
+unless (-f "$daft_script_path/expect/bin/send_command_to_ssh.exp") {
+    print "Unable to find the send_command_to_ssh.exp script\n";
+    # Disable logging
+    General::Logging::log_disable();
+    exit 1;
+}
+
+# Check for job parameters to see if we should just print and not change anything
+if (exists $job_params_hash{'DEBUG_PLAYLIST'} && $job_params_hash{'DEBUG_PLAYLIST'} eq "yes") {
+    print "Job parameter DEBUG_PLAYLIST=yes, we shall not change anything by this script\n";
+    $debug_cmd = "echo ";
+}
+
+# Initialize the database
+$rc = General::OS_Operations::send_command(
+    {
+        "command"       => "$debug_cmd$daft_script_path/expect/bin/send_command_to_ssh.exp " .
+                               "--ip=$cmyp_ip " .
+                               "--port=$cmyp_cli_port " .
+                               "--user=$cmyp_user " .
+                               "--password='$cmyp_password' " .
+                               # TODO: Do we need to figure out what datacenter names to use from the already deployed software ?
+                               # "--command='bsf-function nf-instance BSF-Node-1 bsf-service BindingSupportFunction binding-database initialize-db datacenter { name datacenter1 replication-factor 2 } datacenter { name datacenter2 replication-factor 2 }' " .
+                               "--command='bsf-function nf-instance bsf1 bsf-service serviceName1 binding-database initialize-db datacenter { name datacenter1 replication-factor 2 }' " .
+                               "--command='exit'",
+        "hide-output"   => 1,
+        "return-output" => \@result,
+    }
+);
+if ($rc == 0) {
+    print "Database initialized\n";
+} else {
+    print "Failed to initialize the database:\n" . join "\n", @result;
+}
+
+# Disable logging
+General::Logging::log_disable();
+
+exit $rc;

@@ -1,0 +1,42 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: Nov 14, 2023
+FOSS:
+    # Available in Bazaar
+    FOSSName: su-exec 
+    # Available in Bazaar
+    FOSSVersion: COMMIT20190918
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/ncopa/su-exec/archive/212b75144bbc06722fbd7661f651390dc47a43d1.tar.gz
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 2/CTX1024020
+    # Not Available in Bazaar
+    Primary: N
+    # Available in Bazaar
+    STAKOCode: ESW4
+    # Available in Bazaar
+    STAKOReason: Product version is older than 54 months.
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: "switch user and group id, setgroups and exec"
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: MIT License (MIT)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: MIT License (MIT)
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Classpath
+    # Not Available in Bazaar
+    MavenDependency: NO
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    #Comments
+    Comments: NA
+    ReportAuthor: ERAPRPA Prashant Pratik

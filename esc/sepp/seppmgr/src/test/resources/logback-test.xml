@@ -1,0 +1,23 @@
+<configuration>
+    <!-- Disable logback own logging -->
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
+    <!-- Enable JMX control -->
+    <jmxConfigurator />
+    <conversionRule conversionWord="pid" converterClass="com.ericsson.utilities.logger.ProcessIdConverter" />
+    <conversionRule conversionWord="toSeverity" converterClass="com.ericsson.utilities.logger.ToSeverityConverter" />
+    <conversionRule conversionWord="toJson" converterClass="com.ericsson.utilities.logger.ToJsonConverter" />
+
+    <appender name="STDOUT"
+        class="ch.qos.logback.core.ConsoleAppender">     <!-- encoders are assigned the type ch.qos.logback.classic.encoder.PatternLayoutEncoder 
+            by default -->
+        <encoder>
+            <pattern>{"version":"1.1.0","timestamp":"%date{yyyy-MM-dd'T'HH:mm:ss.SSSXXX}","service_id":"eric-sepp-manager","severity":"%toSeverity(%level)","message":%toJson(seppmgr[%pid]||%thread||%logger{30}||%L||%method||%msg)}%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- log level should only be changed for troubleshooting unit tests -->
+    
+    <root level="OFF">
+        <appender-ref ref="STDOUT" />
+    </root>
+</configuration>

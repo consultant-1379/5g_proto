@@ -1,0 +1,8 @@
+eric-pm-server:
+  server:
+    extraConfigmapMounts:
+      - name: eric-scp-rr-volume
+        configMap: eric-scp-rr
+        mountPath: /etc/config/scscp
+        subPath: ""
+        readOnly: true

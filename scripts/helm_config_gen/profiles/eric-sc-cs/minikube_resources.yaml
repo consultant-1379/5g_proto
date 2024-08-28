@@ -1,0 +1,176 @@
+# eric-sc-cs
+
+eric-sc-rlf:
+  spec:
+    rlf:
+      replicaCount: 1
+      resources:
+        requests:
+          cpu: 50m
+          memory: 256Mi
+        limits:
+          cpu: 200m
+          memory: 512Mi
+  resources:
+    logshipper:
+      requests:
+        memory: 24Mi
+        cpu: 15m
+      limits:
+        memory: 100Mi
+        cpu: 100m
+
+eric-sc-nlf:
+  replicaCount: 1
+  resources:
+    nlf:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        memory: 512Mi
+        cpu: 200m
+    tapagent:
+      requests:
+        memory: 16Mi
+        cpu: 10m
+      limits:
+        memory: 128Mi
+        cpu: 100m
+    tlskeylogagent:
+      requests:
+        memory: 100Mi
+        cpu: 10m
+      limits:
+        memory: 256Mi
+        cpu: 100m
+    logshipper:
+      requests:
+        memory: 24Mi
+        cpu: 15m
+      limits:
+        memory: 100Mi
+        cpu: 100m
+
+eric-sc-monitor:
+  spec:
+    resources:
+      requests:
+        cpu: 20m
+        memory: 160Mi
+      limits:
+        cpu: 100m
+        memory: 256Mi
+    logshipper:
+      requests:
+        memory: 24Mi
+        cpu: 15m
+      limits:
+        memory: 100Mi
+        cpu: 100m
+
+eric-sc-hcagent:
+  resources:
+    hcagent:
+      requests:
+        cpu: 30m
+        memory: 128Mi
+      limits:
+        cpu: 100m
+        memory: 384Mi
+    logshipper:
+      requests:
+        memory: 24Mi
+        cpu: 15m
+      limits:
+        memory: 100Mi
+        cpu: 100m
+
+eric-sc-manager:
+  spec:
+    scmanager:
+      resources:
+        requests:
+          memory: 208Mi
+          cpu: 20m
+        limits:
+          memory: 288Mi
+          cpu: 100m
+    lmconsumer:
+      resources:
+        requests:
+          cpu: 20m
+          memory: 100Mi
+        limits:
+          cpu: 100m
+          memory: 256Mi
+    logshipper:
+      requests:
+        memory: 24Mi
+        cpu: 15m
+      limits:
+        memory: 100Mi
+        cpu: 100m
+
+eric-data-distributed-coordinator-ed-sc:
+  metricsexporter:
+    enabled: false
+  pods:
+    dced:
+      replicaCount: 1
+  brAgent:
+    enabled: false
+  persistence:
+    persistentVolumeClaim:
+      enabled: true
+      size: 250Mi
+      storageClassName: local-path
+  resources:
+    init:
+      requests:
+        cpu: 50m
+        memory: 200Mi
+      limits:
+        cpu: 500m
+        memory: 500Mi
+    dced:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 100Mi
+    metricsexporter:
+      requests:
+        cpu: 10m
+        memory: 8Mi
+      limits:
+        cpu: 100m
+        memory: 32Mi
+    logshipper:
+      requests:
+        cpu: 15m
+        memory: 24Mi
+      limits:
+        cpu: 100m
+        memory: 100Mi
+    brAgent:
+      requests:
+        cpu: 25m
+        memory: 192Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+  env:
+    dced:
+      ETCD_QUOTA_BACKEND_BYTES: "128000000"
+
+eric-probe-virtual-tap-broker:
+  resources:
+    VirtualTapBroker:
+      requests:
+        cpu: 30m #50m #100m #4000m
+        memory: 64Mi #128Mi #512Mi
+      limits:
+        cpu: 200m #500m #4000m
+        memory: 128Mi #256Mi #512Mi

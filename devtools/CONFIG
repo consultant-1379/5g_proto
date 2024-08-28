@@ -1,0 +1,114 @@
+# vim:ts=4:sw=4:sw=4:et:syntax=make
+#
+# COPYRIGHT ERICSSON GMBH 2018
+#
+# The copyright to the computer program(s) herein is the property
+# of Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written
+# permission of Ericsson GmbH in accordance with
+# the terms and conditions stipulated in the agreement/contract
+# under which the program(s) have been supplied.
+#
+# Created on: Jun 05, 2018
+#     Author: eedsvs
+#
+
+SHELL := /bin/bash
+PWD := $(shell pwd)
+
+# unless overwritten by devtools' toplevel Makefile
+PROFILE := /dev/stdout
+MANIFEST := /dev/stdout
+
+STANDARD_INSTALL_DIR := /usr/local
+
+# general Go defs
+GO_INSTALL_DIR := $(STANDARD_INSTALL_DIR)
+GOROOT := $(GO_INSTALL_DIR)/go
+GO_BIN_DIR := $(GOROOT)/bin
+GO_SRC_DIR := $(GOROOT)/src
+GO_PKG_DIR := $(GOROOT)/pkg
+GO := $(GO_BIN_DIR)/go
+
+GO_VERSION := 1.10.3
+
+# general Java defs
+JAVA_INSTALL_DIR := $(STANDARD_INSTALL_DIR)
+JAVA_VERSION_NUM := 12
+JAVA_VERSION := jdk-$(JAVA_VERSION_NUM)
+JAVA_HOME := $(JAVA_INSTALL_DIR)/$(JAVA_VERSION)
+JAVA := $(JAVA_HOME)/bin/java
+JAVAC := $(JAVA_HOME)/bin/javac
+JAVA_TGZ := openjdk-$(JAVA_VERSION_NUM)_linux-x64_bin.tar.gz
+JAVA_DOWNLOAD_URL := https://download.java.net/java/GA/jdk$(JAVA_VERSION_NUM)/33/GPL/$(JAVA_TGZ)
+JAVA_JRE_DOCKER_IMG := openjdk:$(JAVA_VERSION_NUM)-jre
+JAVA_JRE_DOCKER_IMG_SLIM := openjdk:$(JAVA_VERSION_NUM)-jre-slim-sid
+#JAVA_JRE_DOCKER_IMG_FAT := openjdk:$(JAVA_VERSION_NUM)-jdk-sid
+
+# general Java defs
+H2LOAD_INSTALL_DIR := $(STANDARD_INSTALL_DIR)
+H2LOAD_DIR := h2
+H2LOAD_HOME := $(H2LOAD_INSTALL_DIR)/$(H2LOAD_DIR)
+H2LOAD_BIN := $(H2LOAD_HOME)/bin
+H2LOAD_ZIP := h2-2018-03-18.zip
+H2LOAD_ZIP_URL := http://www.h2database.com/$(H2LOAD_ZIP)
+H2LOAD_IMAGE_NAME := h2load
+H2LOAD := $(H2LOAD_BIN)/h2.sh
+
+# general IntelliJ defs
+INTELLIJ_INSTALL_DIR := $(STANDARD_INSTALL_DIR)
+INTELLIJ_VERSION := idea-IC-182.4323.46
+INTELLIJ_HOME := $(INTELLIJ_INSTALL_DIR)/$(INTELLIJ_VERSION)
+INTELLIJ := $(INTELLIJ_HOME)/bin/idea.sh
+INTELLIJ_TGZ := ideaIC-2018.2.3.tar.gz
+INTELLIJ_DOWNLOAD_URL := https://download.jetbrains.com/idea/$(INTELLIJ_TGZ)
+
+# general Eclipse defs
+ECLIPSE_INSTALL_DIR := $(STANDARD_INSTALL_DIR)
+ECLIPSE_VERSION := eclipse-2021-06
+ECLIPSE_HOME := $(ECLIPSE_INSTALL_DIR)/eclipse
+ECLIPSE := $(ECLIPSE_HOME)/eclipse
+ECLIPSE_TGZ := eclipse-jee-2021-03-R-linux-gtk-x86_64.tar.gz
+ECLIPSE_DOWNLOAD_URL := http://ftp.halifax.rwth-aachen.de/eclipse/technology/epp/downloads/release/2021-06/R/eclipse-jee-2021-06-R-linux-gtk-x86_64.tar.gz
+#other mirrors
+#http://ftp-stud.fht-esslingen.de/pub/Mirrors/eclipse/technology/epp/downloads/release/
+#http://ftp.fau.de/eclipse/technology/epp/downloads/release/
+
+# general gradle defs
+GRADLE_INSTALL_DIR := $(STANDARD_INSTALL_DIR)
+GRADLE_VERSION := gradle-4.10.2
+GRADLE_HOME := $(GRADLE_INSTALL_DIR)/$(GRADLE_VERSION)
+GRADLE := $(GRADLE_HOME)/bin/gradle
+GRADLE_ZIP := $(GRADLE_VERSION)-bin.zip
+GRADLE_DOWNLOAD_URL := https://services.gradle.org/distributions/$(GRADLE_ZIP)
+
+KUBECTL_VERSION := v1.15.3
+KUBECTL_DOWNLOAD_URL := https://storage.googleapis.com/kubernetes-release/release/$(KUBECTL_VERSION)/bin/linux/amd64/kubectl
+
+JQ_VERSION := 1.6
+JQ_DOWNLOAD_URL := https://github.com/stedolan/jq/releases/download/jq-$(JQ_VERSION)/jq-linux64
+
+# Swagger Code Gen
+SWAGGER_INSTALL_DIR := $(STANDARD_INSTALL_DIR)
+SWAGGER_VERSION := 3.3.0
+SWAGGER_HOME := $(SWAGGER_INSTALL_DIR)/swagger-$(SWAGGER_VERSION)
+SWAGGER_BIN := $(SWAGGER_HOME)/bin
+SWAGGER := $(SWAGGER_BIN)/swagger
+SWAGGER_JAR := swagger-codegen-cli.jar
+SWAGGER_DOWNLOAD_URL := https://oss.sonatype.org/content/repositories/snapshots/io/swagger/swagger-codegen-cli/3.0.0-SNAPSHOT/swagger-codegen-cli-3.0.0-20180717.153005-90.jar
+# SWAGGER_DOWNLOAD_URL := http://central.maven.org/maven2/io/swagger/swagger-codegen-cli/$(SWAGGER_VERSION)/swagger-codegen-cli-$(SWAGGER_VERSION).jar
+
+# general HELM defs
+HELM_CHART_API_VER := v1
+HELM_VERSION := v2.14.2
+
+# asking yourself why the extra "bash" in the end?
+# --> see https://unix.stackexchange.com/questions/144514/add-arguments-to-bash-c
+#HELM := bash -i -c 'helm $$@' bash
+HELM := helm
+KUBECTL := kubectl
+JQ := jq
+
+# Name for local Docker container with a "curl" that can handle HTTP/2:
+CURL_IMAGE_NAME := curlnew

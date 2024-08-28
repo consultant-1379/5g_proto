@@ -1,0 +1,38 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2019-07-03 16:00
+FOSS:
+    # Available in Bazaar
+    FOSSName: Restlet (for JavaSE)
+    # Available in Bazaar
+    FOSSVersion: 2.4.1
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/restlet/restlet-framework-java/archive/{{FOSSVersion}}.tar.gz
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 14/CAX1054852
+    # Not Available in Bazaar
+    PRIMNumber(CTC): CTC 101 5316
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: Restlet is a very flexible framework that is suitable for most Web application developments. Thanks to its unique design, it can be used for both client-side and server-side applications and of course for applications that act as both clients and servers. With the availability of a port for the GWT platform, it can also work in your favourite Web browser!
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: (Apache License 2.0, Eclipse Public License (EPL) 1.0)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Classpath
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'org.restlet.jse:org.restlet:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ENTNGRG Georgios Antoniou

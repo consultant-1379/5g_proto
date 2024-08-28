@@ -1,0 +1,386 @@
+{
+  "title": "",
+  "data": {
+    "ericsson-scp:scp-function": {
+      "nf-instance": [
+        {
+          "name": "instance_1",
+          "nf-pool": [
+            {
+              "name": "RegionA",
+              "nf-pool-discovery": [
+                {
+                  "name": "chfs",
+                  "nrf-query": [
+                    {
+                      "name": "query-1",
+                      "nf-type": "chf"
+                    }
+                  ],
+                  "last-update": "2022-09-23T12:58:37.519+00:00",
+                  "update-interval": "10s",
+                  "discovered-nf-instance": [
+                    {
+                      "name": "2ec8ac0b-265e-4165-86e9-e0735e6ce10d",
+                      "nf-type": "CHF",
+                      "nf-set-id": [],
+                      "nf-status": "registered",
+                      "scp-domain": [],
+                      "nf-instance-id": "2ec8ac0b-265e-4165-86e9-e0735e6ce10d",
+                      "discovered-nf-service": [
+                        {
+                          "name": "default",
+                          "set-id": [],
+                          "address": {
+                            "fqdn": "Zhejiang-3",
+                            "scheme": "http",
+                            "multiple-ip-endpoint": [
+                              {
+                                "name": "TCP-80",
+                                "port": 80,
+                                "transport": "tcp",
+                                "ipv4-address": [],
+                                "ipv6-address": []
+                              }
+                            ]
+                          },
+                          "priority": 3,
+                          "nf-service-id": "default"
+                        }
+                      ]
+                    }
+                  ],
+                  "static-nf-instance-data-ref": []
+                }
+              ]
+            }
+          ],
+          "nrf-group": [
+            {
+              "nrf": [
+                {
+                  "name": "nrf_west1",
+                  "scheme": "http",
+                  "priority": 1,
+                  "ip-endpoint": [
+                    {
+                      "name": "nrf_west1_ep",
+                      "port": 80,
+                      "ipv4-address": "10.100.199.57"
+                    }
+                  ],
+                  "max-retries": 0,
+                  "retry-timeout": 1501,
+                  "nf-profile-ref": "scp_profile1"
+                }
+              ],
+              "name": "East",
+              "nf-instance-id": "2966b5fb-0bb1-4b02-a6bc-ccfd91d6a2d5",
+              "nf-profile-ref": "scp_profile1"
+            }
+          ],
+          "nf-profile": [
+            {
+              "name": "scp_profile1",
+              "plmn": [
+                {
+                  "mcc": "262",
+                  "mnc": "72"
+                }
+              ],
+              "snssai": [
+                {
+                  "sd": "AbB109",
+                  "sst": 150
+                }
+              ],
+              "nf-type": "chf",
+              "capacity": 100,
+              "locality": "ericsson.se",
+              "allowed-plmn": [
+                {
+                  "mcc": "262",
+                  "mnc": "72"
+                }
+              ],
+              "allowed-nf-type": [
+                "nrf",
+                "udm",
+                "scp"
+              ],
+              "nf-specific-info": {
+                "chf-info": {
+                  "gpsi-range": [
+                    {
+                      "id": 11445,
+                      "identity-end": "10040",
+                      "identity-start": "10020"
+                    }
+                  ],
+                  "plmn-range": [
+                    {
+                      "id": 50,
+                      "plmn-end": "600999",
+                      "plmn-start": "10015"
+                    }
+                  ]
+                }
+              },
+              "service-priority": 1,
+              "allowed-nf-domain": [
+                "ericsson.se"
+              ],
+              "service-address-ref": "internalAddress",
+              "requested-heartbeat-timer": 20
+            }
+          ],
+          "nrf-service": {
+            "nf-discovery": {
+              "nrf-group-ref": "East"
+            },
+            "nf-management": {
+              "nrf-group-ref": [
+                "East"
+              ]
+            }
+          },
+          "own-network": [
+            {
+              "name": "internalNetwork",
+              "routing-case-ref": "default_routing",
+              "service-address-ref": "internalAddress"
+            }
+          ],
+          "message-data": [
+            {
+              "name": "message_data_slf",
+              "variable-name": "supi",
+              "body-json-pointer": "/subscriberIdentifier"
+            }
+          ],
+          "routing-case": [
+            {
+              "name": "default_routing",
+              "routing-rule": [
+                {
+                  "name": "create_update_release",
+                  "condition": "req.header[':authority'] == 'scp.ericsson.se:80' and var.supi exists",
+                  "routing-action": [
+                    {
+                      "name": "slf-lookup",
+                      "action-slf-lookup": {
+                        "slf-lookup-profile-ref": "slf-lookup-profile1"
+                      }
+                    },
+                    {
+                      "name": "route-to-region",
+                      "action-route-round-robin": {
+                        "target-nf-pool": {
+                          "var-name": "region"
+                        },
+                        "failover-profile-ref": "fob1",
+                        "last-resort-nf-pool-ref": "mate-scp-pool"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "notify_own_region_1",
+                  "condition": "req.header[':authority'] == 'eric-chfsim-4-mnc-456-mcc-456'",
+                  "routing-action": [
+                    {
+                      "name": "route-to-cg",
+                      "action-route-preferred": {
+                        "target-nf-pool": {
+                          "nf-pool-ref": "ownRegion_Consumer1_Pool"
+                        },
+                        "failover-profile-ref": "fob_notify",
+                        "last-resort-nf-pool-ref": "mate-scp-pool",
+                        "preserve-if-indirect-routing": "absolute-uri-path"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "notify_own_region_2",
+                  "condition": "req.header[':authority'] == 'eric-chfsim-5-mnc-456-mcc-456'",
+                  "routing-action": [
+                    {
+                      "name": "route-to-cg",
+                      "action-route-preferred": {
+                        "target-nf-pool": {
+                          "nf-pool-ref": "ownRegion_Consumer2_Pool"
+                        },
+                        "failover-profile-ref": "fob_notify",
+                        "last-resort-nf-pool-ref": "mate-scp-pool",
+                        "preserve-if-indirect-routing": "absolute-uri-path"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "other_region_B",
+                  "condition": "(req.header[':authority'] == 'cg1-regionB') or (req.header[':authority'] == 'cg2-regionB')",
+                  "routing-action": [
+                    {
+                      "name": "route-to-pool_regionB",
+                      "action-route-round-robin": {
+                        "target-nf-pool": {
+                          "nf-pool-ref": "RegionB"
+                        },
+                        "failover-profile-ref": "fob1",
+                        "last-resort-nf-pool-ref": "mate-scp-pool",
+                        "preserve-if-indirect-routing": "absolute-uri-path"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "other_region_C",
+                  "condition": "(req.header[':authority'] == 'cg1-regionC') or (req.header[':authority'] == 'cg2-regionC')",
+                  "routing-action": [
+                    {
+                      "name": "route-to-pool_regionC",
+                      "action-route-round-robin": {
+                        "target-nf-pool": {
+                          "nf-pool-ref": "RegionC"
+                        },
+                        "failover-profile-ref": "fob1",
+                        "last-resort-nf-pool-ref": "mate-scp-pool",
+                        "preserve-if-indirect-routing": "absolute-uri-path"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "message-data-ref": [
+                "message_data_slf"
+              ]
+            },
+            {
+              "name": "failure-slf-cases",
+              "routing-rule": [
+                {
+                  "name": "go-to-mate",
+                  "condition": "true",
+                  "routing-action": [
+                    {
+                      "name": "mate-pool",
+                      "action-route-round-robin": {
+                        "target-nf-pool": {
+                          "nf-pool-ref": "mate-scp-pool"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "service-address": [
+            {
+              "fqdn": "scp.ericsson.se",
+              "name": "internalAddress",
+              "port": 80,
+              "ipv6-address": "2001:1b70:8230:801::1"
+            }
+          ],
+          "failover-profile": [
+            {
+              "name": "fob1",
+              "target-timeout": 2345,
+              "retry-condition": {
+                "reset": false,
+                "http-status": [
+                  500,
+                  501,
+                  502,
+                  503,
+                  504
+                ],
+                "refused-stream": false,
+                "connect-failure": false
+              },
+              "request-time-budget": 10000,
+              "preferred-host-retries-max": 1,
+              "target-nf-pool-reselects-max": 3,
+              "last-resort-nf-pool-reselects-max": 3
+            },
+            {
+              "name": "fob_notify",
+              "target-timeout": 2345,
+              "retry-condition": {
+                "reset": false,
+                "http-status": [
+                  500,
+                  501,
+                  502,
+                  503,
+                  504
+                ],
+                "refused-stream": false,
+                "connect-failure": false
+              },
+              "request-time-budget": 10000,
+              "preferred-host-retries-max": 2,
+              "target-nf-pool-reselects-max": 0,
+              "last-resort-nf-pool-reselects-max": 3
+            }
+          ],
+          "slf-lookup-profile": [
+            {
+              "name": "slf-lookup-profile1",
+              "identity-type": "supi",
+              "message-data-ref": "message_data_slf",
+              "result-variable-name": "region",
+              "routing-case-lookup-failure": "failure-slf-cases",
+              "routing-case-identity-missing": "failure-slf-cases",
+              "routing-case-identity-not-found": "failure-slf-cases",
+              "routing-case-destination-unknown": "failure-slf-cases"
+            }
+          ],
+          "static-nf-instance-data": [
+            {
+              "name": "static_chf",
+              "static-nf-instance": [
+                {
+                  "name": "chfsim1",
+                  "nf-type": "chf",
+                  "static-nf-service": [
+                    {
+                      "name": "nchf-convergedcharging",
+                      "address": {
+                        "scheme": "http",
+                        "multiple-ip-endpoint": [
+                          {
+                            "name": "chfsim1",
+                            "port": 30492,
+                            "ipv6-address": [
+                              "2001:1b70:6220:ad61:ffff:ffff:0:100"
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "egress-connection-profile": [
+            {
+              "name": "default_profile"
+            }
+          ],
+          "ingress-connection-profile": [
+            {
+              "name": "default_profile"
+            }
+          ],
+          "egress-connection-profile-ref": "default_profile",
+          "ingress-connection-profile-ref": "default_profile"
+        }
+      ]
+    }
+  }
+}

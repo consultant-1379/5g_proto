@@ -1,0 +1,7 @@
+
+config	
+no sepp-function nf-instance instance_1 request-screening-case 
+no sepp-function nf-instance instance_1 own-network internalNetwork in-request-screening-case-ref
+commit
+exit
+exit

@@ -1,0 +1,11 @@
+productName: "Rate Limiting Function (eric-sc-rlf)"
+productNumber: product_number
+productRevision: product_revision
+images:
+  rlf:
+    productName: "RLF"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+    name: rlf_image_name
+    tag: rlf_image_tag

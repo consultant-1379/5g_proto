@@ -1,0 +1,7 @@
+server:
+  extraConfigmapMounts:
+    - name: eric-sc-slf-rr
+      configMap: eric-sc-slf-rr
+      mountPath: /etc/config/scslf
+      subPath: ""
+      readOnly: true

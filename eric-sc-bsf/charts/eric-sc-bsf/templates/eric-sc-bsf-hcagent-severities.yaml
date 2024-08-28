@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "eric-sc-bsf.name" . }}-hcagent-severities
+  labels:
+{{- include "eric-sc-bsf.labels" . | indent 4 }}
+    app: {{ template "eric-sc-bsf.name" . }}
+  annotations:
+{{- include "eric-sc-bsf.common-annotations" . | indent 4 }}
+data:
+{{- $wcdbcdHostname := include "eric-sc-bsf.wcdbcd.hostname" . }}
+{{- $datacenter := include "eric-sc-bsf.wcdbcd.datacenter" . }}
+{{- $rack := include "eric-sc-bsf.wcdbcd.rack" . }}
+{{- $wcdbcdStsName := printf "%s-%s-%s" $wcdbcdHostname $datacenter $rack }}
+{{- $wcdbcdOperatorName := printf "%s-%s" $wcdbcdHostname "operator" }}
+{{- $wcdbcdSeverities := list
+    (dict
+     "service-name" $wcdbcdStsName
+     "highest-severity-reported" "Critical"
+     "replication-controller-type" "statefulset"
+     "minimum-replicas-required" (index .Values "eric-bsf-wcdb-cd" "replicaCount") 
+     "high-availability-replicas-required" 0)
+    (dict
+     "service-name" $wcdbcdOperatorName
+     "highest-severity-reported" "Critical"
+     "replication-controller-type" "deployment"
+     "minimum-replicas-required" 1
+     "high-availability-replicas-required" 0)
+}}
+  {{ template "eric-sc-bsf.name" . }}-severities.json: |
+{{ concat .Values.severities $wcdbcdSeverities | toPrettyJson | indent 4 }}

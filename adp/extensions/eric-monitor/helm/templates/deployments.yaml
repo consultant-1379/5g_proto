@@ -1,0 +1,80 @@
+# Copyright 2018 The DSC Evo Team
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ .Values.service.name }}
+spec:
+  ports:
+  - name: http
+    protocol: TCP
+    port: {{ .Values.spec.port }}
+    targetPort: rest-api
+  selector:
+    app: {{ .Values.service.name }}
+  type: "ClusterIP"
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ .Values.service.name }}-internal
+spec:
+  ports:
+  - protocol: TCP
+    port: 8081
+    targetPort: 8081
+  selector:
+    app: {{ .Values.service.name }}
+  type: "ClusterIP"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.service.name }}
+  labels:
+    app: {{ .Values.service.name }}
+spec:
+  replicas: {{ .Values.spec.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.service.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.service.name }}
+    spec:
+      containers:
+      - name: {{ .Values.service.name }}
+        image: {{ .Values.spec.image }}:{{ .Values.spec.tag }}
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+          name: rest-api
+          protocol: TCP
+    {{- if eq .Values.spec.tls true }}
+        volumeMounts:
+        - name: secrets
+          mountPath: /root/certificates
+          readOnly: true
+    {{ end }}
+        resources:
+          requests:
+            memory: 128Mi
+            cpu: 0.1
+          limits:
+            memory: 256Mi
+            cpu: 0.2
+  {{- if eq .Values.spec.tls true }}  
+      volumes:
+        - name: secrets
+          secret:
+            secretName: {{ .Values.certificates.secret }}
+            items:
+              - key: {{ .Values.certificates.certificate }}
+                path: certificate.pem                              
+              - key: {{ .Values.certificates.key }}
+                path: key.pem
+              - key: {{ .Values.certificates.ca }}
+                path: ca.pem    
+  {{ end }}
+

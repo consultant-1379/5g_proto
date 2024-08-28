@@ -1,0 +1,145 @@
+modelVersion: 2.0
+
+import:
+  base: ruleset2.0-eric-base.yaml
+
+description: "Load Generator"
+
+properties:
+  - EXPORT_DIR: ${base.OUTPUT_DIR}/export-loadgen
+  - IMAGE_NAME: ${SERVICE_NAME}
+  - SERVICE_NAME: eric-loadgen
+
+env:
+ - BOB_FORCE_IMAGE_PULL (default=false)
+ - RELEASE (default=false)
+
+var:
+ - loadgen-cxu-number
+ - loadgen-cxu-rev-number
+ - loadgen-version
+
+rules:
+  init:
+    - task: base.init:create-output-dir
+    - task: base.init:set-namespace
+    - task: base.init:set-kube-config
+    - task: base.init:set-build-proxy
+    - task: base.init:api-tokens
+    - task: version
+      docker-image: base.adp-release-auto
+      cmd: generate-version --is-release ${env.RELEASE} --output loadgen-version
+    - task: loadgen-cxu-number
+      cmd:
+        - VP=$(cat VERSION_PREFIX) && arr=(${VP//./ }) && X_VERSION=${arr[0]}
+        - cat LOADGEN_CXU_PREFIX | sed -e "s/ /_/g" -e "s/$/$X_VERSION/" > ${base.OUTPUT_DIR}/var.loadgen-cxu-number
+    - task: loadgen-cxu-rev-number
+      docker-image: base.adp-release-auto
+      cmd: /bin/bash -c "
+        if ${env.RELEASE}; then 
+          /usr/local/bin/get_rstate.py  $(cat ${base.OUTPUT_DIR}/var.loadgen-version) > ${base.OUTPUT_DIR}/var.loadgen-cxu-rev-number; 
+          echo -n $(cat ${base.OUTPUT_DIR}/var.loadgen-version|awk -F'-' '{print $2}')|tee -a ${base.OUTPUT_DIR}/var.loadgen-cxu-rev-number;
+          sed -i ':a;$!{N;s/\n//;ba;}' ${base.OUTPUT_DIR}/var.loadgen-cxu-rev-number;
+          echo '' | tee -a ${base.OUTPUT_DIR}/var.loadgen-cxu-rev-number;
+        else
+          /usr/local/bin/get_rstate.py  $(cat ${base.OUTPUT_DIR}/var.loadgen-version) > ${base.OUTPUT_DIR}/var.loadgen-cxu-rev-number;
+        fi"
+
+      # cmd: scripts/prim_number_revision.sh ${base.OUTPUT_DIR}/var.loadgen-version > ${base.OUTPUT_DIR}/var.loadgen-cxu-rev-number
+
+  build:
+    - task: esc-parent
+      docker-image: base.java-maven-builder
+      cmd: mvn -s ${var.base.build-proxy} -Duser.home=. -DskipTests -Djacoco.skip=true -am -pl :eric-loadgen ${base.MVN_ARGS} package
+
+  image:
+     - task: build-eric-loadgen
+       cmd: docker build ./simulators/loadgen/
+            --file simulators/loadgen/Dockerfile
+            --build-arg ADP_DEV_REPO=${base.ADP_DEV_REPO}
+            --build-arg CBOS_REPO=${base.CBOS_REPO}
+            --build-arg CBOS_REPO_DEVEL=${base.CBOS_REPO_URL}/${base.CBOS_VERSION}_devel
+            --build-arg DOCKER_BASE_IMG=${base.CBOS_ZYPPER_IMG}
+            --tag ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${IMAGE_NAME}:${var.loadgen-version}
+           
+  lint:
+    - task: helm
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: helm lint ${base.OUTPUT_DIR}/${SERVICE_NAME}
+
+  package:
+    - task: helm-chart
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "
+           rm -rf ${base.OUTPUT_DIR}/eric-loadgen-${var.loadgen-version}.tgz;
+           rm -rf ${base.OUTPUT_DIR}/${SERVICE_NAME};
+           mkdir -p ${base.OUTPUT_DIR}/${SERVICE_NAME};
+           cp -r simulators/loadgen/helm/* ${base.OUTPUT_DIR}/${SERVICE_NAME};
+           sed -i 's|product_number|'${var.loadgen-cxu-number}'|g' ${base.OUTPUT_DIR}/${SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/product_revision/'${var.loadgen-cxu-rev-number}'/g' ${base.OUTPUT_DIR}/${SERVICE_NAME}/eric-product-info.yaml;
+           update_values.rb ${base.OUTPUT_DIR}/${SERVICE_NAME}/values.yaml
+           imageCredentials:registry:url=${base.DOCKER_REGISTRY_URL} imageCredentials:repoPath=${base.DOCKER_REPO_PATH}/${env.base.USER}
+           spec:image=${IMAGE_NAME} spec:tag=${var.loadgen-version} > ${base.OUTPUT_DIR}/${SERVICE_NAME}/values.tmp.yaml;
+           mv ${base.OUTPUT_DIR}/${SERVICE_NAME}/values.tmp.yaml ${base.OUTPUT_DIR}/${SERVICE_NAME}/values.yaml;
+           helm package --version ${var.loadgen-version} ${base.OUTPUT_DIR}/${SERVICE_NAME}/ -d ${base.OUTPUT_DIR}/";
+
+  push:
+    - task: docker-image
+      cmd: docker push ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${IMAGE_NAME}:${var.loadgen-version}
+    - task: helm-chart
+      cmd: "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\" --upload-file ${base.OUTPUT_DIR}/${SERVICE_NAME}-${var.loadgen-version}.tgz \"${base.HELM_CHART_REPO}/${SERVICE_NAME}-${var.loadgen-version}.tgz\""
+
+  deploy:
+    - task: all
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: /bin/bash -c 'helm install --namespace ${var.base.namespace} ${SERVICE_NAME}-${env.base.USER} ${base.OUTPUT_DIR}/${SERVICE_NAME}-${var.loadgen-version}.tgz'
+
+  undeploy:
+    - task: all
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: helm uninstall --namespace ${var.base.namespace} ${SERVICE_NAME}-${env.base.USER}
+
+  download:
+    - task: download-loadgen
+      cmd: "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\" -O https://arm.seli.gic.ericsson.se/artifactory/proj-5g-bsf-helm-local/${SERVICE_NAME}-${var.loadgen-version}.tgz"
+
+  export:
+    - task: clean:export
+    - task: folders
+      cmd:
+        - mkdir -p ${EXPORT_DIR}
+        - mkdir -p ${EXPORT_DIR}/helm
+        - mkdir -p ${EXPORT_DIR}/docker
+    - task: helm
+      cmd: cp ${base.OUTPUT_DIR}/${SERVICE_NAME}-${var.loadgen-version}.tgz ${EXPORT_DIR}/helm
+    - task: image
+      cmd: docker save ${base.DOCKER_REGISTRY_URL}/${base.DOCKER_REPO_PATH}/${env.base.USER}/${IMAGE_NAME}:${var.loadgen-version} > ${EXPORT_DIR}/docker/${IMAGE_NAME}-${var.loadgen-version}.tar
+
+  clean:
+    - task: base.init:create-output-dir
+    - task: base.init:set-build-proxy
+    - task: export
+      cmd:
+        - rm -rf ${EXPORT_DIR}
+    - task: helm
+      cmd:
+        - rm -f ${base.OUTPUT_DIR}/${SERVICE_NAME}-*.tgz
+        - rm -rf ${base.OUTPUT_DIR}/${SERVICE_NAME}
+    - task: maven
+      docker-image: base.java-maven-builder
+      cmd: mvn -s ${var.base.build-proxy} -Duser.home=. -DskipTests -am -pl :eric-loadgen ${base.MVN_ARGS} clean
+    - task: version
+      cmd:
+        - rm -f ${base.OUTPUT_DIR}/var.loadgen-cxu-number
+        - rm -f ${base.OUTPUT_DIR}/var.loadgen-cxu-rev-number
+        - rm -f ${base.OUTPUT_DIR}/var.loadgen-version

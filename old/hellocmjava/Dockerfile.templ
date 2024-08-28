@@ -1,0 +1,9 @@
+FROM ###JAVA_JRE_DOCKER_IMG###
+
+COPY build/libs /tmp
+RUN mkdir -p /root/java-exec && mv /tmp/lib /tmp/###JAR### /root/java-exec
+WORKDIR /root/java-exec
+
+EXPOSE 8080
+
+CMD java -jar ###JAR###

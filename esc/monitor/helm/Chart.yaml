@@ -1,0 +1,4 @@
+apiVersion: v1
+description: Pod Monitor. (c) Ericsson GmbH 2018
+name: eric-sc-monitor
+version: 0.0.1

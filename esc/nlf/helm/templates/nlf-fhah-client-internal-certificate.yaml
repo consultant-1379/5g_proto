@@ -1,0 +1,22 @@
+{{- if eq (include "eric-sc-nlf.tls" .) "true" }}
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+  name: {{ template "eric-sc-nlf.name" . }}-manager-fhah-client-certificate
+  annotations:
+{{- include "eric-sc-nlf.helm-annotations" . | indent 4 }}
+{{- include "eric-sc-nlf.config-annotations" . | indent 4 }}
+  labels:
+{{- include "eric-sc-nlf.labels" . | indent 4 }}
+spec:
+  kubernetes:
+    generatedSecretName: nlf-fhah-client-if-certificate-secret
+  certificate:
+    subject:
+      cn: eric-nlf-worker
+    issuer:
+      reference: eric-fh-alarm-handler-fi-server-client-ca
+    extendedKeyUsage:
+      tlsClientAuth: true
+      tlsServerAuth: false
+{{- end }}

@@ -1,0 +1,43 @@
+Version: v1
+Decription: FOSS list
+LastUpdate: 2024-03-26 13:28
+FOSS:
+    # Available in Bazaar
+    FOSSName: Metrics, Dropwizard
+    # Available in Bazaar
+    FOSSVersion: V4.2.25
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/dropwizard/metrics/archive/v4.2.25.tar.gz
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 49/CAX1057751
+    # Not Available in Bazaar
+    Primary: Y
+    # Available in Bazaar
+    STAKOCode: General use
+    # Available in Bazaar
+    STAKOReason: ()
+    # Not Available in Bazaar
+    FunctionalityUsedInTheEricssonProduct: Metrics provides a powerful toolkit of ways to measure the behavior of critical components in your production environment. With modules for common libraries like Jetty, Logback, Log4j, Apache HttpClient, Ehcache, JDBI, Jersey and reporting backends like Ganglia and Graphite, Metrics provides you with full-stack visibility.
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: Apache License 2.0
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency:
+    - 'io.dropwizard.metrics:metrics-core:jar:4.2.25'
+    - 'io.dropwizard.metrics:metrics-jmx:jar:4.2.25'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: XEIRPAP Eirini Papastefanaki

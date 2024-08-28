@@ -1,0 +1,35 @@
+# ATMOZ SFTP Server
+
+service:
+  name: "eric-atmoz-sftp"
+  port: "8922"
+
+imageCredentials:
+  registry:
+    url: # overrides global registry url
+    imagePullPolicy: # overrides global image pull policy
+    pullSecret: "regcred"
+  repoPath: # overrides global repoPath
+
+persistence:
+  persistentVolumeClaim:
+    size: "1Gi"
+    storageClassName: "network-block"
+
+nodeSelector: {}
+
+tolerations:
+   sftp: []
+
+spec:
+  replicas: "1"
+  image:
+  tag: latest
+  port: "22"
+  resources:
+    requests:
+      cpu: 500m
+      memory: 256Mi
+    limits:
+      cpu: 1
+      memory: 512Mi

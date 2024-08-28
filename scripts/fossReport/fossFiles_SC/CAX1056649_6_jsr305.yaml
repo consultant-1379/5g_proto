@@ -1,0 +1,42 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2019-06-21 12:24
+FOSS:
+    # Available in Bazaar
+    FOSSName: jsr305
+    # Available in Bazaar
+    FOSSVersion: 3.0.2
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: http://central.maven.org/maven2/com/google/code/findbugs/jsr305/{{FOSSVersion}}/jsr305-{{FOSSVersion}}-sources.jar
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 6/CAX1056649
+    # Not Available in Bazaar
+    Primary: Y
+    # Available in Bazaar
+    STAKOCode: Not for a New Design
+    # Available in Bazaar
+    STAKOReason: Product version is older than 54 months
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: jsr-305 will work to develop standard annotations (such as @NonNull) that can be applied to Java programs to assist tools that detect software defects.
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: BSD 2-Clause
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: BSD 2-Clause
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'com.google.code.findbugs:jsr305:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ENTNGRG Georgios Antoniou

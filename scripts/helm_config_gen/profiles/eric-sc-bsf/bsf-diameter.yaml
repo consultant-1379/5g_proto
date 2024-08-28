@@ -1,0 +1,17 @@
+eric-bsf-diameter:
+  enabled: true
+
+eric-stm-diameter:
+  enabled: true
+  service:
+    diameter:
+      ports:
+        tcp:
+          - port: 3868
+            targetPort: 3868
+          - port: 3869
+            targetPort: 3869 
+
+eric-bsf:
+  bsfdiameter:
+    enabled: true

@@ -1,0 +1,43 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2021-03-24 13:08
+FOSS:
+    # Available in Bazaar
+    FOSSName: Apache Velocity Engine
+    # Available in Bazaar
+    FOSSVersion: 2.3
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/apache/velocity-engine/archive/refs/tags/2.3.tar.gz
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 11/CAX1053078
+    # Not Available in Bazaar
+    Primary: Y
+    # Available in Bazaar
+    STAKOCode: Restricted use
+    # Available in Bazaar
+    STAKOReason: Product version is older than 18 months
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct:  "The Apache Velocity Engine is a free open-source templating engine. Velocity permits you to use a simple yet powerful template language to reference objects defined in Java code. It is written in 100% pure Java and can be easily embedded into your own applications. The engine is the core of the Apache Velocity Project"
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: Apache License 2.0
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'org.apache.velocity:velocity-engine-core:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ZARISAR Aristeidis Sarras
+

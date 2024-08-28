@@ -1,0 +1,791 @@
+module ericsson-sctp-adp {
+    yang-version 1.1;
+    namespace urn:rdns:com:ericsson:oammodel:ericsson-sctp-adp;
+    prefix sctpadp;
+
+    import ericsson-yang-extensions {
+        prefix yexte;
+    }
+    import ietf-inet-types {
+        prefix inet;
+    }
+
+    organization
+      'Ericsson AB';
+    contact
+      'Ericsson first line support via email';
+    description
+      'SCTP YANG Module.
+       Copyright (c) 2021 Ericsson AB. All rights reserved.';
+    reference
+      'RFC 4960: Stream Control Transmission Protocol';
+
+    revision 2021-11-29 {
+        description
+          'Description added for sctp container. Major version stepped due to
+           transmit-buffer-size range shrink (NBC) in version 1.0.4';
+        yexte:version 2;
+        yexte:release 0;
+        yexte:correction 0;
+    }
+
+    revision 2021-09-27 {
+        description
+          'Corrections in pattern for IPv6 address.';
+        yexte:version 1;
+        yexte:release 0;
+        yexte:correction 6;
+    }
+
+    revision 2021-09-16 {
+        description
+          'New patterns added for address parameter in order
+           to support wildcards symbols in IP addresses.';
+        yexte:version 1;
+        yexte:release 0;
+        yexte:correction 5;
+    }
+
+    revision 2021-08-30 {
+        description
+          'init-rto, min-rto, max-rto, heartbeat-interval, ipv4-pdu and ipv6-pdu
+           are aligned with values.yaml to have the same default values for CM
+           and non-CM deployments. transmit-buffer-size range changed because
+           SCTP allows values starting from 1024 bytes.';
+        yexte:version 1;
+        yexte:release 0;
+        yexte:correction 4;
+    }
+
+    revision 2021-06-25 {
+        description
+          'Initial version.';
+        yexte:version 1;
+        yexte:release 0;
+        yexte:correction 3;
+    }
+
+    container sctp {
+        presence
+          'SCTP enabled';
+
+        description
+          'The sctp is an abstraction of SCTP configuration.';
+
+        leaf user-label {
+            type string;
+            description
+              'Label for free use.';
+        }
+        list sctp-profile {
+            key id;
+            description
+              'Part of the configuration applied to SCTP entities.
+               
+               The sctp-profile can be shared by one or more
+               sctp-remote-endpoint.
+               
+               sctp-profile id 0 is created automatically and
+               can not be removed, this profile is used as default if another
+               one is not specified by an SCTP user';
+
+            must '/sctp/sctp-profile[id="0"]' {
+                error-message
+                  'Profile with id 0 must exist.';
+            }
+
+            must 'min-rto <= init-rto' {
+                error-message
+                  'min-rto must be less or equal to init-rto';
+            }
+            must 'init-rto <= max-rto' {
+                error-message
+                  'init-rto must be less or equal to max-rto';
+            }
+            must 'min-rto < max-rto' {
+                error-message
+                  'min-rto must be less than max-rto';
+            }
+
+            must '(ipv6-pdu = 0 and ipv4-pdu = 0) or
+                  (ipv6-pdu != 0 and ipv4-pdu != 0)' {
+                error-message
+                  'ipv6-pdu and ipv4-pdu both must be zero or '
+                + 'both more than zero';
+            }
+
+            min-elements 1;
+            max-elements 255;
+
+            leaf id {
+                type uint8 {
+                    range 0..254;
+                }
+                description
+                  'The identifier of the sctp-profile.';
+            }
+
+            leaf min-rto {
+                type uint16 {
+                    range 10..5000;
+                }
+                units milliseconds;
+                description
+                  'The minimum allowed value for RTO.
+                   
+                   RFC 4960 defines this parameter as RTO.Min.';
+                default 400;
+            }
+
+            leaf max-rto {
+                type uint32 {
+                    range 11..120000;
+                }
+                units milliseconds;
+                description
+                  'The maximum allowed value for RTO.
+                   
+                   RFC 4960 defines this parameter as RTO.Max.';
+                default 3200;
+            }
+
+            leaf init-rto {
+                type uint32 {
+                    range 10..120000;
+                }
+                units milliseconds;
+                description
+                  'The initial value for RTO.
+                   
+                   RFC 4960 defines this parameter as RTO.Initial.';
+                default 500;
+                yexte:takes-effect 'for newly creating associations';
+            }
+
+            leaf rto-alpha-index {
+                type enumeration {
+                    enum alpha-1-2nd {
+                        description
+                          1/2.;
+                        value 1;
+                    }
+                    enum alpha-1-4th {
+                        description
+                          1/4.;
+                        value 2;
+                    }
+                    enum alpha-1-8th {
+                        description
+                          1/8.;
+                        value 3;
+                    }
+                    enum alpha-1-16th {
+                        description
+                          1/16.;
+                        value 4;
+                    }
+                }
+                description
+                  'RTO alpha index (mapped to RTO.Alpha).
+                   
+                   This parameter is used to compute the value of the
+                   SRTT (Smoothed Round-Trip Time) for a particular destination
+                   address. It is used to weight up the RTT (Round-Trip Time)
+                   measures and its value must be between zero and one. A value
+                   close to one gives more importance to the last RTT measure.
+                   See init-rto';
+                default alpha-1-8th;
+            }
+
+            leaf rto-beta-index {
+                type enumeration {
+                    enum beta-1-2nd {
+                        description
+                          1/2.;
+                        value 1;
+                    }
+                    enum beta-1-4th {
+                        description
+                          1/4.;
+                        value 2;
+                    }
+                    enum beta-1-8th {
+                        description
+                          1/8.;
+                        value 3;
+                    }
+                    enum beta-1-16th {
+                        description
+                          1/16.;
+                        value 4;
+                    }
+                }
+                description
+                  'RTO beta index (mapped to RTO.Beta).
+                   
+                   This parameter is used to compute the value of the
+                   RTTVar (Round-Trip Time Variation) of a destination address.
+                   Similarly to rto-alpha-index, it is used to weight up some
+                   of the terms within the equation used to compute the RTTVar:
+                   RTTVar = (1 - RTO.Beta)*RTTVar + RTO.Beta*|SRTT - lastRTT|
+                   A value close to 1 gives more importance to the last observed
+                   variation.
+                   See init-rto';
+                default beta-1-4th;
+            }
+
+            leaf cookie-life {
+                type uint32 {
+                    range 1000..180000;
+                }
+                units milliseconds;
+                description
+                  'Valid cookie life.
+                   
+                   RFC 4960 defines this parameter as Valid.Cookie.Life.
+                   
+                   The lifespan of the State Cookie sent
+                   in the INIT_ACK chunk. It is used to limit the valid amount
+                   of time between the sending of the INIT_ACK chunk and the
+                   reception of a COOKIE_ECHO chunk when establishing an
+                   association. If a COOKIE_ECHO chunk arrives after cookie-life
+                   delay since the INIT_ACK was sent, it is discarded and,
+                   therefore, no association is established.';
+                yexte:takes-effect 'for newly creating associations';
+                default 60000;
+            }
+
+            leaf increment-cookie-life {
+                type uint32 {
+                    range 0..180000;
+                }
+                units milliseconds;
+                description
+                  'Allowed increment of parameter cookie-life.
+                   
+                   The sender of an INIT chunk may request the remote endpoint
+                   to increase a cookie life-span (for instance, if a previous
+                   attempt to connect failed due to a stale-cookie error).
+                   If the value sent in the "Cookie Preservative" field of the
+                   INIT chunk is less than or equal to this parameter,
+                   the receiver of the INIT will increase the valid cookie life
+                   in the number of milliseconds specified. If the value present
+                   in the "Cookie Preservative" is greater than this parameter,
+                   the cookie life shall be incremented in the number of
+                   milliseconds specified by the parameter.
+                   Some considerations about this parameter: for security
+                   reasons the server may want to ignore any increase on
+                   the cookie life-span (increasing the value of the cookie
+                   life-span means more time for an attacker to break our key),
+                   so the value of this parameter would be set to zero.';
+                default 0;
+            }
+
+            leaf assoc-max-rtx {
+                type uint8 {
+                    range 1..20;
+                }
+                description
+                  'Association maximum number of consecutive unsuccessful
+                   retransmissions packets.
+                   
+                   RFC 4960 defines this parameter as Association.Max.Retrans.
+                   
+                   If the number of retransmissions becomes greater than this
+                   value, the remote peer is considered as unreachable and the
+                   association is closed down.';
+                default 4;
+            }
+
+            leaf max-init-rtx {
+                type uint8 {
+                    range 1..16;
+                }
+                description
+                  'Maximum number of retransmissions during the establishing
+                   phase of an association.
+                   
+                   RFC 4960 defines this parameter as Max.Init.Retransmits.';
+                default 8;
+            }
+
+            leaf max-shutdown-rtx {
+                type uint8 {
+                    range 1..20;
+                }
+                description
+                  'Maximum number of retransmissions during the shutdown phase
+                   of an association.';
+                default 5;
+            }
+
+            leaf heartbeat-enabled {
+                type boolean;
+                description
+                  'States whether sending of HEARTBEAT is activated.
+                   
+                   true: Activates HEARTBEATs for SCTP endpoint.
+                   false: Disables HEARTBEATs for SCTP endpoint.';
+                default true;
+            }
+
+            leaf heartbeat-interval {
+                type uint32 {
+                    range 10..1800000;
+                }
+                units milliseconds;
+                when '../heartbeat-enabled = "true"';
+                description
+                  'SCTP HEARTBEAT interval.
+                   
+                   RFC 4960 defines this parameter as HB.interval.
+                   
+                   A duration of time interval between cyclic HEARTBEATs';
+                default 5000;
+            }
+
+            leaf heartbeat-timer-reduction-rate {
+                type uint8 {
+                    range 0..100;
+                }
+                units percent;
+                when '../heartbeat-enabled = "true"';
+                description
+                  'Adjusts HEARTBEAT interval decreasing.
+                   
+                   This parameter sets the number of percents on which current
+                   HEARTBEAT interval should be decreased
+                   (comparing to current value) with each new HEARTBEAT attempt
+                   if no HEARTBEAT acknowledgment is received.';
+                default 50;
+            }
+
+            leaf heartbeat-smooth-factor {
+                type uint8 {
+                    range 0..100;
+                }
+                when '../heartbeat-enabled = "true"';
+                description
+                  'Allows to smooth HEARTBEATs in time.
+                   
+                   It is recommended to setup non-zero heartbeat-smooth-factor
+                   to avoid burst of HEARTBEATs.';
+                default 50;
+            }
+
+            leaf max-in-streams {
+                type uint16 {
+                    range 1..65535;
+                }
+                description
+                  'Maximum number of inbound streams for an association.
+                   
+                   A Stream is a unidirectional logical channel established
+                   between two SCTP endpoints, within which all user messages
+                   are delivered in sequence except for those submitted to the
+                   unordered delivery service. At SCTP association establishment
+                   the SCTP endpoints negotiate the number of Streams used in
+                   each direction within the SCTP association.';
+                default 17;
+            }
+
+            leaf max-out-streams {
+                type uint16 {
+                    range 1..65535;
+                }
+                description
+                  'Maximum number of outbound streams for an association.
+                   
+                   A Stream is a unidirectional logical channel established
+                   between two SCTP endpoints, within which all user messages
+                   are delivered in sequence except for those submitted to the
+                   unordered delivery service. At SCTP association establishment
+                   the SCTP endpoints negotiate the number of Streams used in
+                   each direction within the SCTP association.';
+                default 17;
+            }
+
+            leaf transmit-buffer-size {
+                type uint16 {
+                    range 2..10000;
+                }
+                units kilobytes;
+                description
+                  'Outgoing buffer size of an association.
+                   Also known as "M".
+                   
+                   The maximum amount of data that SCTP can store before
+                   discarding user messages. A new user-data is accepted if its
+                   size is not greater than
+                   (transmit-buffer-size - size of currently buffered data),
+                   otherwise it is discarded.';
+                default 10000;
+            }
+
+            leaf transmit-buffer-threshold {
+                type uint16 {
+                    range 1..10000;
+                }
+                units kilobytes;
+                description
+                  'Congestion threshold of transmit-buffer-size.
+                   
+                   Upon exceeding this threshold the user of SCTP will be asked
+                   to stop sending data. This condition will persist until the
+                   occupancy of the transmit buffer drops below
+                   congestion-ceased-percent * transmit-buffer-threshold.';
+                must 'current() <= ../transmit-buffer-size' {
+                    error-message
+                      'transmit-buffer-threshold must be less or equal to '
+                    + 'transmit-buffer-size';
+                }
+                default 7500;
+            }
+
+            leaf congestion-ceased-percent {
+                type uint8 {
+                    range 1..100;
+                }
+                units percent;
+                description
+                  'Congestion ceased level of transmit-buffer-threshold in
+                   percent.
+                   
+                   See also description of transmit-buffer-threshold and
+                   transmit-buffer-size.';
+                default 85;
+            }
+
+            leaf initial-arwnd {
+                type uint32 {
+                    range 1500..1048576;
+                }
+                units bytes;
+                description
+                  'Value of the initial advertised receiver window credit
+                   (a-rwnd sent in the INIT message).
+                   
+                   The Advertised Receiver Window Credit is the field in INIT,
+                   INIT ACK and SACK chunks that indicates the current available
+                   space in the receiver buffer for a specific association.
+                   The a-rwnd is at all times equal to or less than the total
+                   allocated size of the receiver buffer for specific
+                   association. During lifetime of association, receiver buffer
+                   space advertised by a-rwnd in INIT or INIT ACK chunks can
+                   only be decreased due to received DATA (and not due to some
+                   administrative, configuration or management actions).';
+                yexte:takes-effect 'for newly creating associations';
+                default 60000;
+            }
+
+            leaf max-burst {
+                type uint16 {
+                    range 1..16384;
+                }
+                description
+                  'Maximum number of burst packets (Max.Burst).';
+                default 4;
+            }
+
+            leaf sack-timer {
+                type uint16 {
+                    range 0..500;
+                }
+                units milliseconds;
+                description
+                  'Time delay for sending the Selective Acknowledgement (SACK).
+                   
+                   Time is measured from reception of the DATA chunk to sending
+                   of the SACK chunk.
+                   
+                   If sack-timer is zero then SACK will be sent immediately.';
+                default 40;
+            }
+
+            leaf bundling-enabled {
+                type boolean;
+                description
+                  "States whether bundling is allowed for an endpoint.
+                   
+                   Bundling is the act of placing more than one chunk within an
+                   SCTP packet. The bundled chunks can be chunks carrying SCTP
+                   user's data or chunks caring SCTP control information
+                   such as, for example, data reception selective
+                   acknowledgement (SACK).
+                   Whether bundling of the DATA chunks occurs depends on the
+                   number of DATA chunks available for transmission in the send
+                   buffer as well as on whether the Bundling feature is invoked.
+                   
+                   true: An endpoint bundles chunks by including multiple chunks
+                   in one outbound SCTP packet.
+                   false: Bundling is not used.";
+                default true;
+            }
+
+            leaf bundling-timer {
+                type uint16 {
+                    range 0..10000;
+                }
+                units milliseconds;
+                when '../bundling-enabled = "true"';
+                description
+                  'Time interval to bundle data to one SCTP packet.
+                   
+                   Interval during which SCTP buffers data chunks in order to
+                   send them bundled in one SCTP packet.
+                   
+                   SCTP will buffer data chunks until either of the following
+                   occurs:
+                   - The bundling delay time expires.
+                   - The size of buffered data chunks reaches or exceeds
+                     the maximum size of the SCTP packet.
+                   In case there are data chunks still buffered after the
+                   transmission of a maximum sized SCTP packet, the bundling
+                   timer is restarted. Otherwise, if the send buffer is emptied,
+                   the bundling timer is stopped and restarted again when the
+                   first data chunk is received and buffered for bundling
+                   purpose.
+                   For SCTP implementations that implement the Nagle-like
+                   algorithm (RFC 6458), upon arrival of a SACK that
+                   acknowledges all outstanding data, if the bundling timer is
+                   running and data chunks are stored in the send buffer,
+                   the bundling delay timer is stopped and the buffered data
+                   chunks are bundled and sent in one SCTP packet. Note that
+                   Nagle algorithm is specified in RFC 1122.
+                   
+                   If bundling-timer is zero then bundled packet will be sent
+                   with no delay.';
+                default 16;
+            }
+
+            leaf ipv4-pdu {
+                type uint16 {
+                    // Max: IP Buff Size (65535) - IPv4 header (20)
+                    range 0|68..65515;
+                }
+                units bytes;
+                description
+                  'Maximum size of the SCTP PDU for IPv4 paths.
+                   
+                   This is the size of IP MTU without underlying overhead like
+                   regular IPv4 header, IPsec, etc.
+                   
+                   For example, if vNIC MTU is 1500, then this parameter shall
+                   be calculated as:
+                   - if over IP: 1500 - 20 = 1480;
+                   - if IPIP over IPSec (AES, SHA-256): 1500 - 86 - 20 = 1394;
+                   
+                   If this parameter is set to zero, MTU size will be retrieved
+                   from network interface (which corresponds to the used IP
+                   address) and SCTP PDU size will be calculated as MTU minus
+                   regular IPv4 header size. Setting this parameter to zero
+                   requires the parameter ipv6-pdu to be also set to zero.';
+
+                default 1300;
+            }
+
+            leaf ipv6-pdu {
+                type uint16 {
+                    // Max: IP Buff Size (65535) - IPv6 header (40)
+                    range 0|1240..65495;
+                }
+                units bytes;
+                description
+                  'Maximum size of the SCTP PDU for IPv6 paths.
+                   
+                   This is the size of IP MTU without underlying overhead like
+                   regular IPv6 header, IPsec, etc.
+                   
+                   For example, if vNIC MTU is 1500, then this parameter shall
+                   be calculated as:
+                   - if over IP: 1500 - 40 = 1460;
+                   - if IPIP over IPSec (AES, SHA-256): 1500 - 106 - 40 = 1354;
+                   
+                   If this parameter is set to zero, MTU size will be retrieved
+                   from network interface (which corresponds to the used IP
+                   address) and SCTP PDU size will be calculated as MTU minus
+                   regular IPv6 header size. Setting this parameter to zero
+                   requires the parameter ipv4-pdu to be also set to zero.';
+                default 1300;
+            }
+
+            leaf dscp {
+                type uint8 {
+                    range 0..64;
+                }
+                description
+                  'Differentiated Service Code Point
+                   
+                   This value represents the DSCP related to the
+                   Quality of Service.
+                    
+                   The dscp value is applied to all outgoing traffic.
+                   
+                   64 is special value: if DSCP value is not provided in
+                   EINSS7_00SctpXInitializeReq then zero DSCP value will be used
+                   on a socket. If DSCP value is provided in
+                   EINSS7_00SctpXInitializeReq then the value from
+                   EINSS7_00SctpXInitializeReq will be used on a socket. If
+                   dscp is not equal to 64 in the configuration then any
+                   DSCP value provided through EINSS7_00SctpXInitializeReq
+                   call will be ignored and the value from the configuration
+                   will be used instead.';
+                default 64;
+            }
+
+            leaf user-label {
+                type string;
+                description
+                  'Label for free use.';
+            }
+        }
+        list incoming-association-handling {
+            key id;
+            description
+              'Settings for incoming association handling.
+               
+               Defines action for handling of incoming SCTP INIT (associations
+               established by the remote side).
+               
+               Each instance is used to associate incoming association (which is
+               established by the remote side) with sctp-profile or drop
+               incoming association.';
+
+            max-elements 65535;
+
+            leaf id {
+                type uint16 {
+                    range 1..65535;
+                }
+            }
+
+            leaf port-number {
+                type uint16;
+                description
+                  'Port number of the remote endpoint.
+                   
+                   Zero value means the port number will not be used to match
+                   incoming INIT, address will be matched only.';
+                default 2905;
+            }
+            leaf-list address {
+                type union {
+                    type inet:host;
+                    /* Wildcards for IPv4 */
+                    type string {
+                        pattern
+                          '(([0-9\?]\*?|\*[0-9\?]|[1-9\?][0-9\?]\*?|'
+                        + '\*[1-9\?][0-9\?]|[1\?][0-9\?\*][0-9\?]|'
+                        + '2[0-4\?][0-9\?]|25[0-5\?]|\*)\.){3}([0-9\?]\*?|'
+                        + '\*[0-9\?]|[1-9\?][0-9\?]\*?|\*[1-9\?][0-9\?]|'
+                        + '[1\?][0-9\?\*][0-9\?]|2[0-4\?\*][0-9\?]|25[0-5\?]|'
+                        + '\*)(%[\p{N}\p{L}]+)?';
+                    }
+                    /* Wildcards for IPv6 */
+                    type string {
+                        pattern
+                          '((:|[0-9a-fA-F\?]{0,4}|[0-9a-fA-F\?]{0,3}\*|'
+                        + '\*[0-9a-fA-F\?]{0,3}|[0-9a-fA-F\?]'
+                        + '\*[0-9a-fA-F\?]{0,2}|'
+                        + '[0-9a-fA-F\?]{0,2}\*[0-9a-fA-F\?]):)'
+                        + '(([0-9a-fA-F\?]{0,4}|[0-9a-fA-F\?]{0,3}\*|'
+                        + '\*[0-9a-fA-F\?]{0,3}|[0-9a-fA-F\?]'
+                        + '\*[0-9a-fA-F\?]{0,2}|'
+                        + '[0-9a-fA-F\?]{0,2}\*[0-9a-fA-F\?]):){0,5}'
+                        + '(((([0-9a-fA-F\?]{0,4}|[0-9a-fA-F\?]{0,3}\*|'
+                        + '\*[0-9a-fA-F\?]{0,3}|[0-9a-fA-F\?]'
+                        + '\*[0-9a-fA-F\?]{0,2}|'
+                        + '[0-9a-fA-F\?]{0,2}\*[0-9a-fA-F\?]):)?'
+                        + '(:|[0-9a-fA-F\?]{0,4}|[0-9a-fA-F\?]{0,3}\*|'
+                        + '\*[0-9a-fA-F\?]{0,3}|[0-9a-fA-F\?]'
+                        + '\*[0-9a-fA-F\?]{0,2}|'
+                        + '[0-9a-fA-F\?]{0,2}\*[0-9a-fA-F\?]))|'
+                        + '(((25[0-5\?]|2[0-4\?\*][0-9\?]|'
+                        + '[01\?\*]?[0-9\?]?[0-9\?]|[01\?]?[0-9\?\*]?[0-9\?]|'
+                        + '[0-9\?]?[0-9\?]\*?|\*)\.){3}'
+                        + '(25[0-5\?]|2[0-4\?\*][0-9\?]|'
+                        + '[01\?\*]?[0-9\?]?[0-9\?]|[01\?]?[0-9\?\*]?[0-9\?]|'
+                        + '[0-9\?]?[0-9\?]\*?|\*)))'
+                        + '(%[\p{N}\p{L}]+)?';
+                    }
+                }
+                description
+                  'List of peer addresses or peer host names. Wildcards are
+                   supported in IP address: "*" means zero or more decimal
+                   (in IPv4) or hexadecimal (in IPv6) numbers; "?" means any
+                   decimal (in IPv4) or hexadecimal (in IPv6) number. Examples:
+                   192.168.*.1 match 192.168.0.1-192.168.255.1
+                   192.168.1*.1 match 192.168.10.1-192.168.199.1
+                   192.168.1?.1 match 192.168.10.1-192.168.19.1
+                   192.168.??.1 match 192.168.10.1-192.168.99.1
+                   2031:0:130F:0:0:9C:8A:*
+                    match 2031:0:130F:0:0:9C:8A:0-2031:0:130F:0:0:9C:8A:FFFF
+                   2031:0:130F:0:0:9C:8A:?
+                    match 2031:0:130F:0:0:9C:8A:0-2031:0:130F:0:0:9C:8A:F';
+                min-elements 1;
+                max-elements 16;
+            }
+
+            leaf profile {
+                type leafref {
+                    path ../../sctp-profile/id;
+                }
+                description
+                  'Reference to sctp-profile.';
+                default 0;
+            }
+
+            leaf init-chunk-processing-mode {
+                type enumeration {
+                    enum use-association-sctp-profile {
+                        description
+                          'Use sctp-profile defined in profile.';
+                        value 0;
+                    }
+                    enum use-endpoint-sctp-profile {
+                        description
+                          'Use sctp-profile defined for the endpoint that
+                           handles incoming INIT.';
+                        value 1;
+                    }
+                    enum drop-incoming-init {
+                        description
+                          'Drop incoming INIT.';
+                        value 2;
+                    }
+                }
+                description
+                  'Defines how SCTP shall handle incoming INIT chunk matched by
+                   port-number, address and match-type.';
+                default use-association-sctp-profile;
+            }
+
+            leaf match-type {
+                type enumeration {
+                    enum all {
+                        description
+                          'All IP addresses received in INIT chunk should be
+                           matched with address list-parameter.';
+                        value 0;
+                    }
+                    enum any {
+                        description
+                          'Any IP address received in INIT chunk should be
+                           matched with any IP address of address
+                           list-parameter.';
+                        value 1;
+                    }
+                }
+                description
+                  'Defines IP addresses matching type.';
+                default all;
+            }
+
+            leaf user-label {
+                type string;
+                description
+                  'Label for free use.';
+            }
+        }
+    }
+}

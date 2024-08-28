@@ -1,0 +1,42 @@
+Version: v1
+Decription: FOSS list
+LastUpdate: 2022-03-22 15:46
+FOSS:
+    # Available in Bazaar
+    FOSSName: javax.el
+    # Available in Bazaar
+    FOSSVersion: 3.0.0
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/javaee/uel-ri/archive/javax.el-{{FOSSVersion}}.tar.gz
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 2/CAX1056092
+    # Not Available in Bazaar
+    Primary: N
+    # Available in Bazaar
+    STAKOCode: Not for a New Design
+    # Available in Bazaar
+    STAKOReason: Product version is older than 54 months 
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: This FOSS is part of the Jetty project. Jetty provides an Web server and javax.servlet container, plus support for Web Sockets, OSGi, JMX, JNDI, JASPI, AJP and many other integrations. These components are open source and available for commercial use and distribution. 
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: (GNU General Public License v2.0 w/Classpath exception ( GPL-2.0-with-classpath-exception), Eclipse Public License 1.0 (EPL-1.0))
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: GNU General Public License v2.0 w/Classpath exception
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'org.glassfish:javax.el:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ZIMPAND Dimitra Panagiotou

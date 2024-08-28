@@ -1,0 +1,117 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "id": "file://schema/Alarm#",
+  "title": "Alarm",
+  "description": "Definition of an active alarm",
+  "type": "object",
+  "properties": {
+    "alarmName": {
+      "description": "The name of the alarm.",
+      "type": "string"
+    },
+    "faultyResource": {
+      "description": "The faulty resource which is the cause of this alarm. Identifies a particular instance or resource of the fault.",
+      "type": "string"
+    },
+    "serviceName": {
+      "description": "A string identifying the service.",
+      "type": "string"
+    },
+    "severity": {
+      "description": "The current severity of the alarm. The severity level is proportional to the urgency of the required action.",
+      "type": "string",
+      "enum": [
+        "Warning",
+        "Minor",
+        "Major",
+        "Critical"
+      ]
+    },
+    "description": {
+      "description": "Extra information providing further insight about the alarm.",
+      "type": "string"
+    },
+    "eventTime": {
+      "description": "The timestamp when the alarm was last updated. The timestamp is in ISO 8601 format, YYYY-MM-DDTHH:MM:SS[.mmmmmm] TZ, the microsecond part is optional if 0. TZ is the abbreviation of the time zone used. By default UTC is used.",
+      "type": "string"
+    },
+    "additionalInformation": {
+      "description": "Additional alarm information as a JSON object.",
+      "type": "object"
+    },
+    "expires": {
+      "description": "Remaining time in seconds before alarm is expired, and will be automatically cleared. Note that the value may be negative if expired but not yet cleared.",
+      "type": "integer"
+    },
+    "vendor": {
+      "description": "The vendor specifies a private enterprise number maintained by IANA (Internet Assigned Numbers Authority) as listed by the URL http://www.iana.org/assignments/enterprise-numbers/enterprise-numbers. In combination with the code, this provides a unique identification of the alarm type. Value 193 is the Ericsson vendor.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "code": {
+      "description": "The code is an unsigned integer. The combination of this number with the vendor number is unique per alarm type.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "category": {
+      "description": "The event type as defined in X.733/X.736.",
+      "type": "string",
+      "enum": [
+        "Other",
+        "CommunicationsAlarm",
+        "QualityOfServiceAlarm",
+        "ProcessingErrorAlarm",
+        "EquipmentAlarm",
+        "EnvironmentalAlarm",
+        "IntegrityViolation",
+        "OperationalViolation",
+        "PhysicalViolation",
+        "SecurityServiceOrMechanismViolation",
+        "TimeDomainViolation"]
+    },
+    "probableCause": {
+      "description": "Probable cause based on ITU recommendations M.3100, X.733 and X.736, and in ETSI recommendation GSM 12.11. Values are specified in the ERICSSON-ALARM-PC-MIB module (12/155 19-CAA 901 2587/2 Uen A).",
+      "type": "integer",
+      "minimum": 0
+    },
+    "history": {
+      "description": "Alarm history, a list of earlier updates to the alarm in chronological order. The first one is the most recent one.",
+      "type": "array",
+      "items": {
+        "description": "The alarm change, only attributes which are changed from previous alarm update are shown. The bottom entry, which represents the alarm raise, shows all defined attributes.",
+        "type": "object",
+        "properties": {
+          "eventTime": {
+            "description": "The timestamp when the alarm was updated. The timestamp is in ISO 8601 format, YYYY-MM-DDTHH:MM:SS[.mmmmmm] TZ, the microsecond part is optional if 0. TZ is the abbreviation of the time zone used. By default UTC is used.",
+            "type": "string"
+          },
+          "description": {
+            "description": "Extra information providing further insight about the alarm.",
+            "type": "string"
+          },
+          "additionalInformation": {
+            "description": "Additional alarm information as a JSON object.",
+            "type": "object"
+          },
+          "severity": {
+            "description": "The severity of the alarm.",
+            "type": "string",
+            "enum": [
+              "Warning",
+              "Minor",
+              "Major",
+              "Critical"
+            ]
+          }
+        },
+        "required": ["eventTime"]
+      }
+    }
+  },
+  "required": [
+    "alarmName",
+    "serviceName",
+    "severity",
+    "eventTime"
+  ]
+}

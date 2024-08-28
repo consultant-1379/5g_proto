@@ -1,0 +1,9 @@
+eric-sepp:
+  manager:
+    leaderElection:
+      enabled: false
+  spec:
+    manager:
+      replicaCount: 1
+    worker:
+      replicaCount: 1

@@ -1,0 +1,14 @@
+apiVersion:  certm.sec.ericsson.com/v1 
+kind: ExternalCertificate
+metadata:
+  name: {{ template "eric-sc-slf.name" . }}-nrf-ca-certificate
+  annotations:
+{{- include "eric-sc-slf.helm-annotations" . | indent 4 }}
+{{- include "eric-sc-slf.config-annotations" . | indent 4 }}
+  labels:
+{{- include "eric-sc-slf.labels" . | indent 4 }}
+spec:
+  generated-secret-name: {{ template "eric-sc-slf.name" . }}-nrf-ca-certificate
+  generated-secret-type: opaque
+  trusted-certificates-file-name: "cert1.pem"
+  trusted-certificate-list-name: {{ index .Values "certificates" "nrf" "caCertificate" | quote }}

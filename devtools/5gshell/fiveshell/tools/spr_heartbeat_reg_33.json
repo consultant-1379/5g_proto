@@ -1,0 +1,5 @@
+[
+  { "op": "replace", "path": "/nfStatus", "value": "REGISTERED" },
+  { "op": "replace", "path": "/load", "value":  33}
+]
+

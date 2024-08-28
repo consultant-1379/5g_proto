@@ -1,0 +1,337 @@
+BSF DEMO - TALK SLOWLY
+
+
+PREP
+cd ~/git/5g_proto/
+
+
+1. Install NRF SIM
+./scripts/create_certificates_bsf_demo.sh nrfsim  #only difference to official create_certificates.sh script is that  KUBE_NAMESPACE="5g-bsf-demo"
+./simulators/nrfsim/make deploy.demo
+
+
+2. Install baseline
+helm install --namespace 5g-bsf-demo .bob/eric-esc-umbrella-0.0.1-19c1d606-dirty.tgz --name eric-esc-demo --home=/home/helmuser/.helm
+
+2b. Build BSF helm deployment
+cd 5g_proto/esc/
+make build-bsf-only
+
+
+3. log bash functions:
+
+
+logNRF_1() {
+    k logs -f "$1" | grep -A 2  'RegisterNFInstance request' | sed 's/handleRegisterNfInstance      /\n/;T;D' | sed 's/|Received UpdateNFInstance request.//;T;D'| sed 's/c.e.utilities.common.Registry:87  |lambda$start$0                /\n/;T;D'| GREP_COLOR='1;34' grep --color=always -A 1 -E 'RegisterNFInstance|Updating'
+}
+
+logBSF() {
+    k logs -f eric-bsf-manager-0  | grep -A 1 'com.ericsson.esc.nrf.Nrf:247 |' | sed 's/|prepare                       /\n/;T;D' | sed 's/da$nfInstanceRegisterCreate$18/\n/;T;D' | sed 's/da$nfInstanceRegisterCreate$19/\n/;T;D' | GREP_COLOR='1;34' grep -A 1 -B 1 --color=always -E 'Registering'
+} 
+
+
+
+showRegisteredNFs() {
+    curl -X GET "http://$NODE_IP:$NRFSIM_PORT/nnrf-nfm/v1/nf-instances" | jq
+}
+
+showRegisteredNF() {
+    curl -X GET "http://$NODE_IP:$NRFSIM_PORT/nnrf-nfm/v1/nf-instances/"$1"" | jq | GREP_COLOR='1;34' grep --color=always -E 'nfInstanceId|nfType|nfStatus'
+}
+
+
+logNRF() {
+    export NRF_POD=$(kubectl get pods --namespace 5g-bsf-demo -l "app=eric-nrfsim" -o jsonpath="{.items[0].metadata.name}")
+    logNRF_1  $NRF_POD
+}
+
+
+
+export CMM_CONFIG_NAME=bsf-5g-bsf-demo
+
+k exec -it eric-data-wide-column-database-cd-0 sh 
+
+CLEAR CASSANDRA DB BEFOREHAND
+
+k exec -it eric-data-wide-column-database-cd-0 watch 'cqlsh -e "TRUNCATE nbsf_management_keyspace.pcf_bindings;"'
+
+
+From WDCD exec shell in pod: 
+cqlsh
+select * from nbsf_management_keyspace.pcf_bindings;
+TRUNCATE nbsf_management_keyspace.pcf_bindings;
+
+watch 'cqlsh --no-color -e "SELECT binding_id,supi,pcf_fqdn from nbsf_management_keyspace.pcf_bindings;"'
+
+
+
+UPDATE TIME
+sudo date -s "$(wget -qSO- --max-redirect=0 google.com 2>&1 | grep Date: | cut -d' ' -f5-8)Z"
+
+
+Export needed variables ** IN SPECIFIC TERMINAL
+
+export CMM_PORT=$(kubectl get --namespace 5g-bsf-demo -o jsonpath="{.spec.ports[0].nodePort}" services eric-cm-mediator)
+export NODE_IP=$(kubectl get nodes --namespace 5g-bsf-demo -o jsonpath="{.items[0].status.addresses[0].address}")
+export NRFSIM_PORT=$(kubectl get --namespace 5g-bsf-demo -o jsonpath="{.spec.ports[0].nodePort}" services eric-nrfsim)
+export NODE_IP=$(kubectl get nodes --namespace 5g-bsf-demo -o jsonpath="{.items[0].status.addresses[0].address}")
+export YP_PORT=$(kubectl get --namespace 5g-bsf-demo -o jsonpath="{.spec.ports[0].nodePort}" services eric-cm-yang-provider)
+#export MONITOR_PORT=$(kubectl get --namespace 5g-bsf-demo -o jsonpath="{.spec.ports[0].nodePort}" services eric-monitor)
+#export NODE_IP=$(kubectl get nodes --namespace 5g-bsf-demo -o jsonpath="{.items[0].status.addresses[0].address}")
+
+export BINDING_IPV4='{"supi":"imsi-12345","gpsi":"msisdn-306972909290","ipv4Addr":"10.0.0.7","dnn":"ERIC01","pcfFqdn":"pcf.ericsson.com","pcfIpEndPoints":[{"ipv4Address":"10.0.0.1","transport":"TCP","port":1024}],"pcfDiamHost":"pcf-diamhost","pcfDiamRealm":"pcf-diamrealm","snssai":{"sst":2,"sd":"ACEDF0"}}'
+export BINDING_IPV4_DOMAIN='{"supi":"imsi-22222","ipv4Addr":"10.47.0.7","ipDomain"2ND :"testIpDomain","dnn":"ERIC01","pcfFqdn":"pcf2.ericsson.com","pcfIpEndPoints":[{"ipv4Address":"10.5.5.5","transport":"TCP","port":1024}],"snssai":{"sst":4,"sd":"FADEF5"}}'
+export BINDING_IPV6='{"supi":"imsi-99999","ipv6Prefix":"2001:db8:abcd:0012::0/64","dnn":"ERIC01","pcfFqdn":"pcf3.ericsson.com","pcfIpEndPoints":[{"ipv4Address":"10.3.3.3","transport":"TCP","port":1024}],"snssai":{"sst":3,"sd":"BEADF3"}}'
+export BINDING_MAC='{"macAddr48":"52:54:00:a8:99:0b","dnn":"ERIC02","pcfFqdn":"pcf.ericsson.com","pcfIpEndPoints":[{"ipv4Address":"10.2.2.2","transport":"TCP","port":1025}],"snssai":{"sst":3,"sd":"ACDCF9"}}'
+
+
+2. UC1: Deploy BSF Service
+==========================
+	1. Show Kubernetes Dashboard -> here are our deployed ADP generic services -> Value in its ease of use
+	2. Show terminal where we have our current pods running (first just ADP GS)
+	3. Deploy BSF -> Helm chart allows us to install with just one deployment package (show package)
+	4. Mention BSF is up and running but NOT READY due to no configuration -> this is WANTED
+	
+	VISUALS:
+		Kubernetes Dashboard
+		Terminal 1:		watch kubectl --namespace 5g-bsf-demo get pods
+		Terminal 2:		BSF: from /home/eedcsi/git/5g_proto directory: 
+		
+		COMMAND:		helm install --namespace 5g-bsf-demo .bob/eric-bsf-0.0.1.tgz --name eric-bsf-demo
+
+run commands to update worker variables!!!
+
+	export BSFWORKER_PORT=$(kubectl get --namespace 5g-bsf-demo -o jsonpath="{.spec.ports[0].nodePort}" services eric-bsf-worker)
+
+
+	
+3. UC2: Register to the NRF  ***CONFIGURATION VIA NETCONF***
+=============================================================
+
+	1. Show example xml configuration -> sent via Netconf 
+	2. Point out NRF Simulator running
+	
+	showRegisteredNFs -> currently just NRF itself
+	
+	logBSF
+	logNRF
+	
+	3. Configure -> via Netconf 
+	   ~/demo/bsf_demo/update_bsf_config_2021-07.pl  ~/demo/bsf_demo/BSF_demo_TD_2021-07.txt
+	   cat ~/bsf_sample_config.xml | sshpass -p rootroot ssh -t -p $YP_PORT expert@$NODE_IP -s netconf
+
+    3b. Initialize the DB
+	bsf-function nf-instance bsf1 bsf-service serviceName1 binding-database initialize-db datacenter { name datacenter1 replication-factor 2 } 
+	
+	4. Show logs BSF & NRF -> Config update & registration confirmation
+		
+	watch "curl -X GET "http://$NODE_IP:$NRFSIM_PORT/nnrf-nfm/v1/nf-instances" | jq "
+	
+        showRegisteredNF <nrf_id>   # e.g. showRegisteredNF  f90d9dfc-af3e-4aed-9581-dfaa3f8f2bf1
+		
+
+	VISUAL:  
+		#Terminal 1:		BSF: logBSF
+		Terminal 2:		watch "curl -X GET "http://$NODE_IP:$NRFSIM_PORT/nnrf-nfm/v1/nf-instances" | jq "
+		Terminal 3: 		Configuration change
+
+	#curl -X GET "http://$NODE_IP:$NRFSIM_PORT/nnrf-nfm/v1/nf-instances" | jq
+	#curl -X GET "http://$NODE_IP:$NRFSIM_PORT/nnrf-nfm/v1/nf-instances/<id> " | jq
+
+
+4. UC3 Binding Registration
+===========================
+
+0.	Make sure no bindings are in the database or else the success rate will only be about 65% instead of 100%.
+k exec -it eric-data-wide-column-database-cd-0 -c cassandra -- cqlsh --no-color -e "truncate nbsf_management_keyspace.pcf_bindings;"
+
+
+
+	1. Showing the binding information (mention it is Ipv4)
+		echo $BINDING_IPV4 | jq
+	
+    2. Open watch in terminal
+        k exec -it eric-data-wide-column-database-cd-0 -c cassandra -- watch 'cqlsh --no-color -e "SELECT binding_id,supi,pcf_fqdn,pcf_diam_host from nbsf_management_keyspace.pcf_bindings;"'
+
+    3. Open wireshark and trace http on enp0s9
+
+	4. Show simple binding registration with Ipv4 using curl (representing PCF)
+           #export BSFWORKER_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-bsf-worker)
+	       curl -s -d "$BINDING_IPV4" -H "Content-Type: application/json" -X POST "http://$NODE_IP:$BSFWORKER_PORT/nbsf-management/v1/pcfBindings" | jq
+
+
+
+5. UC4: Binding Discovery
+==========================
+	1. Send curl command from terminal to show discovery of the PCF via the BSF (Representing AF)
+	
+	Using IPv4 UE Address to discover: 
+	curl -s -v  "http://$NODE_IP:$BSFWORKER_PORT/nbsf-management/v1/pcfBindings?ipv4Addr=10.0.0.7" | jq
+	
+	2. Can also discover binding with other combination of attributes, such as the DNN, slicing info, and SUPI: 
+	curl -s -v "http://$NODE_IP:$BSFWORKER_PORT/nbsf-management/v1/pcfBindings?ipv4Addr=10.0.0.7&dnn=ERIC01&sst=2&sd=ACEDF0&supi=imsi-12345" | jq
+	
+	3. What we have seen is just simple ipv4 binding registration/discovery, but we also support ipv6
+	
+	VISUAL:
+	TERMINAL 1: Registration of IPv6
+		Show ipv6 binding info:
+			echo $BINDING_IPV6 | jq
+		Registration
+			curl -s -d "$BINDING_IPV6" -H "Content-Type: application/json" -X POST "http://$NODE_IP:$BSFWORKER_PORT/nbsf-management/v1/pcfBindings" | jq
+
+	
+	TERMINAL 2: Discovery (NOTE, was /64 before)
+		curl -s -v "http://$NODE_IP:$BSFWORKER_PORT/nbsf-management/v1/pcfBindings?ipv6Prefix=2001:db8:abcd:0012::0/128"|jq
+
+
+Diameter Traffic
+==================
+
+----
+Preparation
+UBUNTU:
+export NAMESPACE=5g-bsf-eedcsi
+export DIAMETER_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-stm-diameter" -o jsonpath="{.items[0].metadata.name}")
+export DSCLOAD_POD=$(kubectl get pods --namespace $NAMESPACE -l "app=eric-dscload" -o jsonpath="{.items[0].metadata.name}")
+
+cd ~/ksniff
+export DISPLAY=":0.0"
+
+sudo ./kubectl-sniff -n $NAMESPACE $SCP_MANAGER_POD
+--
+
+
+make deploy
+
+k exec -it eric-dscload-deployment-59dfb4bc87-jlvrp -- bash
+
+cd /opt/dsc-load/
+./dsc_load &
+
+telnet localhost 2200
+
+
+#                       Status            Event           Action         State Success     State Failure
+Profile SBCustom one Rx StartStandby      TriggerRequest  SendInitMarked ClientWaitInitAns StartStandby
+Profile SBCustom one Rx ClientWaitInitAns InitiateAnswer  NoActionSucc   StartStandby      StartStandby
+Profile SBCustom one Rx ClientWaitInitAns TriggerRequest  NoActionSucc   StartStandby      StartStandby
+Profile SBCustom one Rx StartStandby      InitiateAnswer  NoActionSucc   StartStandby      StartStandby
+Profile SBCustom one Rx ClientWaitInitAns FailureAnswer   NoActionSucc   StartStandby      StartStandby
+
+#Server TCP/SCTP localendpoints ownhost ownrealm desthost destrealm NOP rate maxdelay maxloss SB profile numsessions ipbase imsibase prefixbits numbindings
+#Client TCP/SCTP localendpoints ownhost                               ownrealm      remoteendpoint      desthost     destrealm             NOP rate maxdelay maxloss  SB profile numsessions ipbase imsibase prefixbits numbindings
+Client TCP 192.168.130.30 pcf-diamhost                                pcf-diamrealm 10.101.177.112:3868 server       source.client.realm.com                NOP 0 0 0 PCRF
+Client TCP 192.168.130.30 af-eric-dscload-deployment-59dfb4bc87-jlvrp af-diamrealm  10.101.177.112:3868 pcf-diamhost bsf1.mnc073.mcc262.pub.3gppnetwork.org NOP 0 0 0 SB SBCustom 1 10.0.0.1 0815 64
+
+
+echo "one shot Client mme-11.epc.mnc012.mcc310.3gppnetwork.org 10.0.0.240:0" | netcat localhost 2200
+echo "one shot Client af-eric-dscload-deployment-59dfb4bc87-jlvrp 192.168.130.30:0" | netcat localhost 2200
+
+show clients
+Configuration                                                                                                                                                                                                                                                                                     | Status                             | Served | Elapsed | Outgoing | Incoming | Transport | Transport | Pending | Delay | Incoming | Incoming | Incoming |  Sleep | Health  | Outgoing | NOPs | Requests |  Answers | ResultCode | ResultCode | Success | Requests | Answers |    Send | ER | EA | EM | LR | LA 
+                                                                                                                                                                                                                                                                                                  |                                    |        |     sec |      TPS |      TPS |       MPS |   Stall % | transit |  msec | MSG usec | capacity |   load % |   usec |         |  dropped | sent |     sent | received |    success |    failure |  Rate % | received |    sent | failure |    |    |    |    |    
+                                                                                                                                                                                                                                                                                                  |                                    |        |         |          |          |           |           |         |       |          |      MPS |          |        |         |          |      |          |          |            |            |         |          |         |         |    |    |    |    |    
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------------------------+--------+---------+----------+----------+-----------+-----------+---------+-------+----------+----------+----------+--------+---------+----------+------+----------+----------+------------+------------+---------+----------+---------+---------+----+----+----+----+---
+Client TCP 192.168.130.30:38145 pcf-diamhost pcf-diamrealm 10.101.177.112:3868 bsf1.mnc073.mcc262.pub.3gppnetwork.org  mnc073.mcc262.pub.3gppnetwork.org server source.client.realm.com NOP 0 0 0 PCRF                                                                                            | connected with 10.101.177.112:3868 |      1 |   58856 |        0 |        0 |         0 |         0 |       0 |     1 |       61 |    16393 |        0 | 999999 | healthy |        0 |    0 |      969 |      969 |        969 |          0 |   100.0 |     1710 |    1710 |       0 |  0 |  0 |  0 |  0 |  0 
+Client TCP 192.168.130.30:37531 af-eric-dscload-deployment-59dfb4bc87-jlvrp af-diamrealm 10.101.177.112:3868 bsf1.mnc073.mcc262.pub.3gppnetwork.org  mnc073.mcc262.pub.3gppnetwork.org pcf-diamhost bsf1.mnc073.mcc262.pub.3gppnetwork.org NOP 0 0 0 SB SBCustom 1 10.0.0.1 000000000000815 64 2  | connected with 10.101.177.112:3868 |      1 |   58856 |        0 |        0 |         0 |         0 |       0 |     1 |       57 |    17543 |        0 | 999999 | healthy |        0 |    0 |      968 |      968 |        968 |          0 |   100.0 |     1774 |    1774 |       0 |  0 |  0 |  0 |  0 |  0 
+
+
+
+
+#!/bin/bash
+
+line=$(echo "list" | netcat localhost 2200 | grep "rate increase Client pgw-sbg3")
+echo $line | netcat localhost 2200
+
+
+HTTP traffic
+-------------
+k6 run bsf_stability_test.js  -e NUMBER_OF_BINDINGS=2 -e BSF_WORKER_IP=10.63.143.68 -e BSF_WORKER_PORT=32464  --vus 10 --duration 60s --no-usage-report --insecure-skip-tls-verify
+
+	
+
+	
+6. UC5: Scaling - Note: auto scaling is on the horizon
+=======================================================
+
+	1. From Kubernetes dashboard, show the ease with which we can scale -> allows for super simple user experience 
+	2. Point out the pods coming up on the terminal
+	3. Start traffic
+	4. Scale to 4 worker pods
+
+	VISUAL:
+		Kubernetes Dashboard -> Scale Worker Deployment
+		(Grafana -> Show traffic distribution)
+		Terminal 1: watch kubectl --namespace 5g-bsf-demo get pods
+		
+7. UC6
+============
+	1. Mention Kubernetes feature of resilience -> we have specified that we want to always have four worker 
+		pods running -> when we kill one, another will be brought up somewhere else
+	2. We are now showing a manual kill of the pod, but the same principal applies if the pod were to terminate for any other reason
+	3. Show new pod up and running in seconds
+	
+	VISUAL
+		Kubernetes Dashboard -> See pods
+		Grafana -> see traffic distro
+		Terminal 1: Showing current pods
+		Terminal 2: kubectl --namespace 5g-bsf-demo delete pod eric-bsf-worker-deployment-859c7fd79-29m95          <- Get id from the above printout
+		
+		
+		
+
+BACKUP CURL COMMANDS
+
+REGISTER BINDING
+curl -s -d "$BINDING_IPV4" -H "Content-Type: application/json" -X POST "http://$NODE_IP:$BSFWORKER_PORT/nbsf-management/v1/pcfBindings"         | jq
+	
+# Bad request																																			| jq
+curl -s -d "$BINDING_IPV4_DOMAIN" -H "Content-Type: application/json" -X POST "http://$NODE_IP:$BSFWORKER_PORT/nbsf-management/v1/pcfBindings"  | jq
+																																				| jq
+curl -s -d "$BINDING_IPV6" -H "Content-Type: application/json" -X POST "http://$NODE_IP:$BSFWORKER_PORT/nbsf-management/v1/pcfBindings"         | jq
+																																				| jq
+curl -s -d "$BINDING_MAC" -H "Content-Type: application/json" -X POST "http://$NODE_IP:$BSFWORKER_PORT/nbsf-management/v1/pcfBindings"          | jq
+
+
+
+DISCOVER BINDING 
+
+Supported 
+	ipv4
+	ipv4 + ipDomain
+	mac
+	ipv6
+	supi+dnn+snssai (possibly not allowed w/o ue -> i.e. with ipv4/6/mac)
+	gpsi+dnn+snssai (possibly not allowed w/o ue -> i.e. with ipv4/6/mac)
+
+# IPv4 UE Address
+curl -s "http://$NODE_IP:$BSFWORKER_PORT/nbsf-management/v1/pcfBindings?ipv4Addr=10.0.0.7"|jq
+
+# IPv4 and IP Domain UE Address
+curl -s "http://$NODE_IP:$BSFWORKER_PORT/nbsf-management/v1/pcfBindings?ipv4Addr=10.47.0.7&ipDomain=testIpDomain"|jq
+
+# IPv6 Prefix UE Address
+curl -s "http://$NODE_IP:$BSFWORKER_PORT/nbsf-management/v1/pcfBindings?ipv6Prefix=2001:db8:abcd:0012::0/64"|jq
+
+# MAC UE Address
+curl -s "http://$NODE_IP:$BSFWORKER_PORT/nbsf-management/v1/pcfBindings?macAddr48=52:54:00:a8:99:0b"|jq
+
+# IPv4 UE Address, DNN, SNSSAI
+curl -s "http://$NODE_IP:$BSFWORKER_PORT/nbsf-management/v1/pcfBindings?ipv4Addr=10.0.0.71&dnn=ERIC01&sst=2&sd=ACEDF0" | jq
+
+# IPv4 UE Address, DNN, SNSSAI, SUPI
+curl -s "http://$NODE_IP:$BSFWORKER_PORT/nbsf-management/v1/pcfBindings?ipv4Addr=10.0.0.7&dnn=ERIC01&sst=2&sd=ACEDF0&supi=imsi-12345" | jq
+
+# IPv4 UE Address, DNN, SNSSAI, GPSI
+curl -s "http://$NODE_IP:$BSFWORKER_PORT/nbsf-management/v1/pcfBindings?ipv4Addr=10.0.0.7&dnn=ERIC01&sst=2&sd=ACEDF0&gpsi=msisdn-306972909290" | jq
+
+# DNN, SNSSAI, SUPI
+curl -s "http://$NODE_IP:$BSFWORKER_PORT/nbsf-management/v1/pcfBindings?dnn=ERIC01&sst=2&sd=ACEDF0&supi=imsi-12345" | jq
+
+# DNN, SNSSAI, GPSI
+curl -s "http://$NODE_IP:$BSFWORKER_PORT/nbsf-management/v1/pcfBindings?dnn=ERIC01&sst=2&sd=ACEDF0&gpsi=msisdn-306972909290" | jq
+
+
+export BINDING_ID=<a binding ID that was retrieved from the "Location" header of the response of a Register operation>
+curl -si -X DELETE "http://$NODE_IP:$BSFWORKER_PORT/nbsf-management/v1/pcfBindings/$BINDING_ID"

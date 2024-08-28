@@ -1,0 +1,1690 @@
+This file contains local changes of Envoy performed by the development team.
+The purpose is to take track of these changes and map them to the corresponding internal version numbers.
+From 1.15.2-2 on, the builder version is also specified.
+
+1.29.4-7 (3.0.0-21) Built from "sc_envoy" repository (master) (commit: 3e7af62f0b)
+                    3e7af62f0b DND-67148: implemented fast fix by checking the iterator if it's on end of map. 
+
+1.29.4-6 (3.0.0-21) Built from "sc_envoy" repository (master) (commit: 02d5cc6fcb)
+                    02d5cc6fcb DND-None: Enhancement Add log line to print the CERTIFICATE_VERIFY_FAILED error detail for troubleshooting
+                    5a44b834c6 Updated certificates and tests for sepp validator
+
+1.29.4-5 (3.0.0-21) Build from "sc_envoy" repository (master) (commit: a06157488c)
+                    a06157488c DND-66361: Bugfix on originating id header handling
+
+1.29.4-4 (3.0.0-21) Build from "sc_envoy" repository (master) (commit: c64d0cad2e)
+                    c64d0cad2e Bug SCDS-1738: Multipart Handling Fails
+
+1.29.4-3 (3.0.0-20) Build from "sc_envoy" repository (master) (commit: d812ea1066)
+                    d812ea1066 bugfix/DND-65853: Fixed issue with incrementing 5xx, rx reset and pending failure eject upstream counter per NF simultaneously
+                    07fed8ce2c DND-65640: Correct extended json pointer format to support ending in /*
+                    a7b9ee1e45 DND-65070: Added integration test for upstream_rq_pending_failure_eject_per_nf counter
+                    832eae9d0c Tests: PluggableConfigurator is now templated
+                    e214f043b3 DND-65070: Added upstream_rq_pending_failure_eject_per_nf counter
+                    b5fda48aa9 DND-65298: Added more USFW USOC unit tests for cheking default scenarios
+
+1.29.4-2 (3.0.0-20) Build from "sc_envoy" repository (master) (commit: 98543f0944)
+                    98543f0944 (Minor) Remove logging messages needed during
+                    development that shall not be in the release image
+
+1.29.4-1 (3.0.0-20) Build from "sc_envoy" repository (master) (commit: 4b53e91eb6)
+                    Upgrade to CBOS 6.14.0
+                    Upgrade stdout-redirect to 1.37.0
+
+1.29.4-0 (3.0.0-20) Build from "sc_envoy" repository (master) (commit: 4b53e91eb6)
+                    4b53e91eb6 USFW USOC feature
+                    df33ca5d59 DND63729: Multipart body handling
+                    820f46760c updated ENVOY_VERSION
+                    5097e1d56c Uplifted Envoy to 1.29.4
+
+1.29.1-4 (3.0.0-20) Built from "sc_envoy" repository (master) (commit: 0a2fdcf141)
+                   ff91e1b996 Bug DND-64820, SCDS-1702: Headers not in run-context
+1.29.1-3 (3.0.0-20) Built from "sc_envoy" repository (master) (commit: fdc9597493)
+                   fdc9597493 Merge remote-tracking branch 'origin/feature/DND-62713-multiple-nrf-groups-for-discovery-slf'
+                   0207c6133f DND-64050: Adapt eric_reselect_priorities to take into account unhealthy hosts due to AHC
+                   e51740f5a3 DND-64823: Minor missing guard during original_hostname_ eval
+                   1912f043e9 DND-64746: Reselection logic not triggered when failure is upstream reset * Fixed merge conflict resolution during 1.29 uplift.
+                   b0447b9a21 (Minor) Add ULIDs
+                   9707443abd Minor: Add a guard to onUpstreamHostSelected()
+                   ab3b377b0f Minor: Refresh expired certificates
+                   8b7f0d6a7c fixed L: EricProxy All Tests
+                   77516cc1df Minor: Add ULID for apiPrefix adaptations
+                   d967c0ba4c DND-62713: implemented
+
+1.29.1-2 (3.0.0-20) Built from "sc_envoy" repository (master) (commit: 08f2c96da8)
+                   08f2c96da8 DND-None: Increase max tracing wrapper size for EricTap to max(uint_16)
+                   c73388cdc9 DND-59215 Api Prefix Support
+                   0f47d31f9b DND-64508: Remove leftover log that could trigger on traffic path
+                   aed77bf8ef DND-60151: Integration tests for originating-network-id header handling
+                   
+1.29.1-1 (3.0.0-20) Built from "sc_envoy" repository (master) (commit: 89468a25b8)
+                   89468a25b8 Minor : Enhancements and corrections
+                   3f40135f3d (Minor): Update envoybuilder in devcontainer to -20
+                   739c8f21e3 Devenvironment improvements: * Update envoy builder to -20 * fix devcontainer postcreate command * add task to remotely refresh comp db
+                   429b8791d5 DND-60151: Bugfix: Revert previous decision about originating-network-id header format * mncs 01 and 001 should be treated differently * Make the space character ' ' at the start of the header value optional
+                   df909910be DND-60151: Bugfix: Correct header format checks and a case where the header was appended when it shouldn't
+                   18afd8fdeb (Minor) ULIDs and reformatting
+                   76cf50c605 (Minor) Add/fix ULIDs
+                   2bdcfaa3b6 Minor: Add task for remote comp-db build
+                   68d0938995 Fixed Uplift bugs
+                   a7541ba9bc (Minor) Cleanup, removed old code, add ULID
+                   020ba08f31 Minor: Added ULID for Via header and removed some unneeded comments
+                   93a321e7be (Minor) Cleanup, add ULIDs
+                   6063355e6a DND-60151: Handling for 3gpp-sbi-network-id header
+                   8144280f1f deleted dublicate methods
+
+1.29.1-0 (3.0.0-20) Built from "sc_envoy" repository (master) (commit: c2f51a8734)
+                   c2f51a8734 Uplifted Envoy to 1.29.1
+
+1.28.8-12 (3.0.0-20) Built from "sc_envoy" repository (master) (commit: 7f9077cff2)
+                   7f9077cff2 DND-60151: Correction on originating-network-id header format * Mnc can be either 2 digit or 3 digit. Update the relative regex to   reflect that. * EricProxyConfig now exposes proto config through protoConfig() method.   A main benefit is being able to call has_<field>() methods on top level   messages. * Removed all functions used to previously access a proto config field * Added printCounters() function in HttpIntegrationTest class in order to   avoid different implementations across our test classes
+                   cf2504eaac (Minor) cleanup
+1.28.8-11 (3.0.0-20) Built from "sc_envoy" repository (master) (commit: dfb25e7c39)
+                   93a321e7be (Minor) Cleanup
+
+1.28.0-10 (3.0.0-20) Built from "sc_envoy" repository (master) (commit: 66c7174173)
+                   66c7174173 DND-60738: Via header enhancement to Rel 17 specifications
+                   d389432100 (Minor) Small cleanup, removed un-needed function
+                   eba487a806 (Minor) Removed outdated comments
+                   1f52e3cbd4 (Minor) Add ULIDs, reformat, fix comments, clean up
+                   47023ba9e0 fixed EricProxyPerNfCountersIntegrationTest:test_reset
+                   3402d96c94 DND-60862: Fix per_nf counter bug at request timeout
+                   
+
+1.28.0-9 (3.0.0-19)  Build from "sc_envoy" repository (master) (commit: e397e96604)
+                     e397e96604 Merge branch 'master' of ssh://gerrit.ericsson.se:29418/MC_5G/sc_envoy
+                     47023ba9e0 fixed EricProxyPerNfCountersIntegrationTest:test_reset
+                     3402d96c94 DND-60862: Fix per_nf counter bug at request timeout
+                     
+1.28.0-8 (3.0.0-18)  Build from "sc_envoy" repository (master) (commit: b80d7837f8)
+                     b80d7837f8 DND-61812: Add additional guards to protect against crashes on VM drain
+1.28.0-7 (3.0.0-18)  Build from "sc_envoy" repository (master) (commit: b25183721f)
+                     900e6eb0b2 DND-61812: Fix envoy crash in eric-reselect predicate on a worker drain
+
+1.28.0-6 (3.0.0-18)  Build from "sc_envoy" repository (master) (commit: b25183721f)
+		     b25183721f (minor) remove code that was commented out
+
+1.28.0-5 (3.0.0-18)  Build from "sc_envoy" repository (master) (commit: b25183721f)
+                     9500de7485 Event-Reporting: make application-id variable static
+1.28.0-5 (3.0.0-18)  Build from "sc_envoy" repository (master) (commit: fe934903fc)
+                     Upgrade to CBOS 6.8.0
+                     Upgrade redirect-stdout to 1.34.0
+1.28.0-4 (3.0.0-18)  Build from "sc_envoy" repository (master) (commit: fe934903fc)
+                     fe934903fc New Features: USFW + Event-Reporting
+1.28.0-3 (3.0.0-18)  Built from "sc_envoy" repository (master) (commit: c04c459533)
+                     97de1ee7c3 DND-60518 Add user-agent to SLF and NLF interrogations
+                     8fdaeb77ee (minor) formatting done by refresh_compdb.sh
+                     d3635c6309 DND-56645: Improve IP Address Hiding on FQDN absence
+
+1.28.0-2 (3.0.0-18)  Built from "sc_envoy" repository (master) (commit: 33a637feef)
+                     29d6b9d89d Workaround: remove test dependencies to allow compilation-db building
+                     251a4ff8ca DND-60533: Remove Content-length header when response status is 204
+                     2f80464441 DND-60533: Remove Content-length header when response status is 204
+                     2cfbaf33bb DND-None: Added some comments and cleanup in eric_proxy proto
+                     91854b1b6c DND-57539: Envoy implementation for Option D with Dual Stack
+
+1.28.0-1 (3.0.0-18)  Built from "sc_envoy" repository (master) (commit: 2c3c0bb847)
+                     2c3c0bb847 DND-556689: disabled ext. envoy.geoip_providers.maxmind
+                     b7421802e2 HTTP based readiness probe: Add extra path to admin interface
+
+1.28.0-0 (3.0.0-18)  Built from "sc_envoy" repository (master) (commit: 1680e50ac0)
+                     1680e50ac0 Merge branch 'eedrak_envoy_1_28_0'
+
+1.27.2-20 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: e4da6653cd)
+                     e4da6653cd HTTP based readiness probe: Add extra path to admin interface
+                     613cb93a29 DND-56019: Handling of 3gpp-sbi-discovery-service-names
+
+1.27.2-19 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: 446ba78b6b)
+                     446ba78b6b DND-56014: Adapt local reply message details for loop detection
+
+                   
+1.27.2-18 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: 9bf812ea2b)
+                     9bf812ea2b DND-58694: Illegal memory access fix during memory pressure (correcting prev Faulty correction)
+                     b9548a6693 DND-58694: Illegal memory access fix during memory pressure
+                   
+1.27.2-17 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: 08e78cc891)
+                     08e78cc891 (HEAD -> master, tag: envoy-v1.27.2-17, origin/master, origin/HEAD) bugfix/DND-51012: Added case insensitive check for TaR in response
+
+1.27.2-16 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: f23d51ba57)
+                     f23d51ba57 DND-58120: Minor fix
+                     fef19212e4 DND-58120: Adding another guard when preferred_ip_fam is not supplied by manager
+                   
+1.27.2-14 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: 59675be7c7)
+                     59675be7c7 (HEAD -> master, tag: envoy-v1.27.2-14, origin/master, origin/HEAD) Minor: Changed some ENVOY_LOG to ENVOY_STREAM_LOG for FQDN scrambling
+
+1.27.2-13 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: 3ddbb3351e)
+                     3ddbb3351e DND-None: Fixed negative malloc caught during ASAN tests for FQDN scrambling
+                     c67cb25211 DND-58136: Step per_nf resp. code counter per try
+                     ed0512ff55 DND-58120: Floating point exception due to empty list
+                     396baa4c57 DND-None: Some code and logs cleanup 
+                   
+1.27.2-12 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: 0f3360969d)
+                     0f3360969d DND-56140: Bugfix: Align RP names across eric_proxy configuration
+
+1.27.2-11 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: 97c220cfcc)
+                     97c220cfcc (HEAD -> master, tag: envoy-v1.27.2-11, origin/master, origin/HEAD) bugfix/DND-57294: Modified Option D implementation to support Dual Stack
+
+1.27.2-10 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: f947a38d82)
+                     f947a38d82 DND-57292: reverted context.h, save discovered producer_id directly in MD.
+                                           Fixed filter test id
+                   
+1.27.2-9 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: 613e25c9c3)
+                    613e25c9c3 DND-57292: fixed
+                   
+1.27.2-8 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: fa3781b8a4)
+                    fa3781b8a4 DND-57310: Fix seg. fault stepping per_nf counters
+                    c86c34af93 added fix for metadata update
+
+1.27.2-7 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: 26595b3c4f)
+                    26595b3c4f DND-56686: fix sepp-worker crash for uninitialized  FCphase
+
+1.27.2-6 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: 4eff10dd76)
+                    a5d9ed24c6 fixed if for fqdn
+                    20e36e3caa DND-51258: Introducing per_nf upstream counters
+                    f33f0c1405 DND-56679: fixed peer info for local reply
+                    45f8090eb7 Merge branch 'optionD_sbi_peer_info'
+
+1.27.2-5 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: 4cb64e5e5b)
+                    4cb64e5e5b (HEAD -> master, tag: envoy-v1.27.2-5, origin/master, origin/HEAD) FQDN Scrambling: Added check for the presence of rp_config_ value
+                    0307ac8893 bugfix/DND-55900: Support multiple service cases per req/resp in FQDN Mapping/Scrambling
+                    69759bafb8 Remove stale log
+
+1.27.2-4 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: f97308cbf7)
+                    5b6803a545 DND-51140: added dynamic forwarding
+                    db48e57640 bugfix/DND-55374: Changed scope input from service_context.scope() to context.statsScope() for vtap
+                    12605325fe DND-53912: Added regex pre-compilation for search/replace function
+                    3edbb283d5 DND-51258: fixed TC_023
+                    8d02b8bd34 DND-51140: fixed local reply
+
+1.27.2-3 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: 54bda1557d)
+                    54bda1557d DND-47836: Retry Predicate Adaptations to support Dual Stack failover requirements
+                    d44bf7fcd3 FQDN Scrambling: Changed roaming partner name extraction from roaming partner config instead of ssl connection
+
+1.27.2-2 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: 21e95739d3)
+                    21e95739d3 DND-53119: Expose API name to be used in conditions
+                    f0f3ccab11 DND-55441: fixed
+
+1.27.2-1 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: 59ee330241)
+                    59ee330241 (HEAD, tag: envoy-v1.27.2-1) Merge tag 'v1.27.2' into envoy_uplift_v1.27.2
+                    14340ee3f5 FQDN Scrambling: Removed null character '\0' string terminator from encryption
+
+1.27.1-4 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: 7ac82ba556)
+                   7ac82ba556  DND-53453: added setAutoSanValidation for SniFromHostName
+                   bc1758d1fd  DND-55028: fixed
+                   a4b82f18a7  DND-53453: working tests
+                   f9c73de9eb fix cds update test
+                   
+1.27.1-3 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: de5cfb86c1)
+                    de5cfb86c1 FQDN Scrambling: Updated AES GCM mode tag length to 4 chars
+                    edec05780f DND-None: Add debug log for headers in onUpstreamHostSelected() cb in router
+                    c1e24e3047 DND-None: Modified FQDN scrambling counters to exclude unknown encryption ids
+
+1.27.1-2 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: 12cbe34f44)
+                    Upgrade to CBOS 6.1.0
+                    Store stdout-redirect in envoy base image when building envoy
+
+1.27.1-1            Internal use
+
+1.27.1-0 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: 12cbe34f44)
+                   f29a008b04 DND-51140: fixed
+                   6b9db09c69 Release v1.27.1
+                   90144d5b69 DND-53112 Api Prefix in Service Requests and introduction of Sepp Router state
+                   4124e98178 DND-47572: fixed compilation errors after last master merge
+                   2d1fd7c67d DND-53112: Respect Deployment specific strings when extracting ApiContext for Service Classifier
+                   29345ea097 DND-52229: Bugfix: interplmn fqdn handling * convert interplmn_fqdn host metadata to list, to be the same with   all host md constructed by the manager * fix logical error that would cause problems when EricProxyState filter   state would be used for more data, apart from interplmn_fqdn * fix build issue for sepp_th_fqdn_scrambling integration test
+                   9d35e9eacd DND-38898 & DND-52526: Added/modified counters for FQDN mapping and scrambling with integration tests
+                   f900c8734e DND-48495: search and replace, bug fixes and improvements
+                   5655795b14 (Minor) Convert "string +" to absl functions
+                   5a3b71e43a DND-48495: search and replace for body modifications  - test files added  - string search implemented  - regex search implemented  - precompiled regex outstanding  - only basic test coverage
+                   fd5fba6cf9 DND-52229/bugfix: interplmn_fqdn handling
+                   cbfd285341 DND-38522(WIP): Implemented FQDN scrambling/descrambling for multiple labels
+                   a18ce1692e DND-47572: completed ip hiding fix
+                   7c259c43d7 DND-38522(WIP): Added split labels functionality for FQDN scrambling
+                   1834f01ab6 DND-47572: more fixes for envoy 1.27.0
+                   3b5bb0c99c DND-38522(WIP): Implemented GCM mode for FQDN scrambling
+                   5e50cad691 DND-47572: adapted setBufferedRequestBody for upstream filters
+                   f72c7ff100 fix for log flags
+                   168ea96bc3 DND-47572: Fixed remaining compilation issues
+                   d71c33b38b DND-38522(WIP): Implemented TH FQDN Scrambling feature
+                   a56541701a DND-47572: Fix toUpper compilation error
+                   a0f3436997 DND-38522(WIP): Updated TH FQDN mapping handling to provide base for TH FQDN scrambling
+                   1fb080549a DND-47572: More fixes for build of test cases
+
+                   
+1.25.5-18 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: f900c8734e)
+                   f900c8734e DND-48495: search and replace, bug fixes and improvements
+                   5a3b71e43a DND-48495: search and replace for body modifications
+                   fd5fba6cf9 DND-52229/bugfix: interplmn_fqdn handling
+                   cbfd285341 DND-38522(WIP): Implemented FQDN scrambling/descrambling for multiple labels
+                   7c259c43d7 DND-38522(WIP): Added split labels functionality for FQDN scrambling
+                   5652705000 Merge branch 'master' into DND-38522_fqdn_scrambling
+                   3b5bb0c99c DND-38522(WIP): Implemented GCM mode for FQDN scrambling
+
+1.25.5-17 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: a2b811bfd4)
+                   Upgrade to CBOS 5.23.0
+
+1.25.5-16 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: a2b811bfd4)
+                   a2b811bfd4 DND-50654: Missed pushing actions_routing impacts
+                   91fdf0c154 DND-50654 : Stale value of TaR after egress screening modifies it
+                   d12fd32bdc Minor: Add benchmark for fast_mod for modulo operators
+                   72a65f5a83 DND-52332 : Proxy Via headers with SCP-/SEPP- prefixes not blocked in loop-prevention
+                   8870f3329b  DND-51140: fixed bug with activation
+                   01c94226e9 DND-none: Remove stale logs
+                   e8837dd91d DND-50779: Bugfix TaR header not included on response functionality
+                   e6d25b5121  DND-51140: preserve dstservinst, if dstinst  is not updated, fixed local reply case
+                   efbe75e533 DND-51140: added task for sbi nf peer info test
+                   3ce7c53d9f  DND-51140: deleting  srcsepp for SCP nodes, fixed tests
+                   cbcc17eea7 DND-47832: Added more refactoring and negative test case
+                   bb16a92db6  DND-51140: refactored
+                   d9cac66b4b  DND-51140: refactored, added local reply class
+                   f96d0c78f2  DND-51140: fixed 1,2,7 problem was with whitespace in header
+                   41b777b6ff DND-47832: Refactoring JsonOpWrapper and EricProxyFilter
+                   
+1.25.5-15 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: 91fdf0c154)
+                   91fdf0c154 DND-50654 : Stale value of TaR after egress screening modifies it
+                   d12fd32bdc Minor: Add benchmark for fast_mod for modulo operators
+                   72a65f5a83 DND-52332 : Proxy Via headers with SCP-/SEPP- prefixes not blocked in loop-prevention
+                   8870f3329b  DND-51140: fixed bug with activation
+                   01c94226e9 DND-none: Remove stale logs
+                   e8837dd91d DND-50779: Bugfix TaR header not included on response functionality
+                   e6d25b5121  DND-51140: preserve dstservinst, if dstinst  is not updated, fixed local reply case
+                   efbe75e533 DND-51140: added task for sbi nf peer info test
+                   3ce7c53d9f  DND-51140: deleting  srcsepp for SCP nodes, fixed tests
+                   cbcc17eea7 DND-47832: Added more refactoring and negative test case
+                   bb16a92db6  DND-51140: refactored
+                   d9cac66b4b  DND-51140: refactored, added local reply class
+                   f96d0c78f2  DND-51140: fixed 1,2,7 problem was with whitespace in header
+                   41b777b6ff DND-47832: Refactoring JsonOpWrapper and EricProxyFilter
+
+1.25.5-14 (3.0.0-16) Built from "sc_envoy" repository (master) (commit: 0858a07edb)
+                     8870f3329b DND-51140: fixed bug with activation
+                     01c94226e9 DND-none: Remove stale logs
+                     e8837dd91d DND-50779: Bugfix TaR header not included on response functionality
+                     e6d25b5121 DND-51140: preserve dstservinst, if dstinst  is not updated, fixed local reply case
+                     3ce7c53d9f DND-51140: deleting  srcsepp for SCP nodes, fixed tests
+                     cbcc17eea7 DND-47832: Added more refactoring and negative test case
+                     d9cac66b4b DND-51140: refactored, added local reply class
+                     f96d0c78f2 DND-51140: fixed 1,2,7 problem was with whitespace in header
+                     41b777b6ff DND-47832: Refactoring JsonOpWrapper and EricProxyFilter
+                   
+1.25.5-13 (3.0.0-15) Built from "sc_envoy" repository (master) (commit: ac97664e5d)
+                     ac97664e5d DND-47832: msg screening enhancement support to_upper/to_lower
+                     9f1d7c6452 DND-44338: introduced error_handling_flags for map_at() (json_utils)
+                     0ad8a236fa DND-47832: enhance modify_json_value operation
+                     245b12735b DND-44338: code clean-up  and new test for dictionary support (json_utils)
+                     e9c9f5ec29 DND-47832: performance improvement for modifyJson()
+                     6a53f47ff8 DND-44338: initial support for dictionary iteration via modifyJson()
+                     862183e418 DND-none: prototype implementation of ModifyJsonValue (WiP)
+                     7010b8a9a2 DND-46510: SbiNfPeerInfo header implementation and tests
+                     Upgrade to CBOS 5.21.0
+                   
+1.25.5-12 (3.0.0-15) Built from "sc_envoy" repository (master) (commit: 1762c593a0)
+                     1762c593a0 Introducing the custom reselection logic for SC
+                     a049b7d089 bugfix/DND-47325: Fixed nf-selection-on-priority and remote routing
+                                combo issue in Option D
+                     8d69ae21aa DND-44005: updated files for generate documentation tool
+
+1.25.5-11 (3.0.0-14) Built from "sc_envoy" repository (master) (commit: dbaa12f75d)
+                     Upgrade to CBOS 5.20.0
+
+1.25.5-10 (3.0.0-13) Built from "sc_envoy" repository (master) (commit: dbaa12f75d)
+                     dbaa12f75d DND-None: Fix IpFamily env var to IPv4 not V4_ONLY
+                     8d3ae87779 bugfix/DND-None: Changed IP_FAMILY env var value from V4_ONLY to IPv4
+                     871f79b1c2 included correlation-info check in ct_integration _test
+
+1.25.5-9 (3.0.0-12) Built from "sc_envoy" repository (master) (commit: 5e77d28bb5)
+                    539731fc38 Bug DND-None: Include correlation info header to SLF lookup function
+                    1cf7a55941 DND-None: Some Option D bugfixes, logs and code cleanup
+                    61e8a75cf1 DND-44546: fix T-FQDN encoding is not done for nfServiceList
+                    de52138122 DND-45673: added support for match any for fqdn mapping, added tests.
+                    97ea6ff84c Bug DND-45833: Wrong "details" field (Option D)
+                    4d71b00d46 DND-NONE: Log adaptations
+                   
+1.25.5-8 (3.0.0-12) Built from "sc_envoy" repository (master) (commit: fdeb67faf0)
+							      fdeb67faf0 Bugfixes for DND-45516,DND-45588
+1.25.5-7 (3.0.0-12) Built from "sc_envoy" repository (master) (commit: 705d5ddee1)
+                    705d5ddee1 bugfix/DND-45319: Option D: Changed local reply detail for empty nfInstances
+                    5fba9c1ee7 bugfix/DND-45319: Envoy local reply error details modified according to Blueprint for Option D
+                    e5d38f405a bugfix/DND-45319: Envoy bug fixes for Option D
+                    9533075692 Option D: Update error details according to Blueprint
+
+1.25.5-6 (3.0.0-12) Built from "sc_envoy" repository (master) (commit: 65cc8e048d08)
+                   65cc8e048d Bug DND-45440: action-nf-discovery: term_var always empty
+1.25.5-5 (3.0.0-12) Built from "sc_envoy" repository (master) (commit: dfdec6ef06)
+                   dfdec6ef06 Merge commit '90974e8efc3c39f07e2da6cb114a665cecfc5557'
+                   90974e8efc  DND-45412: fixed, refactored, added tests
+                   d520205691 Replaced std::transform(::tolower) invocations with absl::AsciiStrToLower()
+                   083e4a3c5b Bugfix: Routing: Invalid contents of x-host header/ host metadata
+                   1b0083688b DND-None: Fix IP hiding local reply procedure
+                   8d2b91cc43  DND-45306: fixed, updated tests, added new flag
+                   9ffd393cf3 Merge commit '420481efafb7a5a713f6b4595e1c6f0c96e155e5'
+                   420481efaf DND-45035: fixed extractHostAndPort/add_scheme_header to false
+                   cb65913627 fixed the bug
+
+1.25.5-4 (3.0.0-12) Built from "sc_envoy" repository (master) (commit: 9c84deea4c)
+                    Upgrade to CBOS 5.17.0
+
+1.25.5-3 (3.0.0-12) Built from "sc_envoy" repository (master) (commit: 9c84deea4c)
+                    ee7a368430 Added ... at the end of log message when truncated.
+                    86faba5adc DFS-3112: New test to compare :status after action_reject
+                   
+1.25.5-2 (3.0.0-12) Built from "sc_envoy" repository (master) (commit: 0e193d0b1b)
+                    0e193d0b1b Option-D: Added default behavior to not preserve disc params
+                    0eb29cb047 Minor: Added some temporary trace level comments for TH NRF FQDN mapping feature
+                    c225b1c707 DND-38246: fixed empty service name
+                    0ca2739922 DND-38246: remember services, log empty configs, added tests for counters
+                    3f483d8c32 DND-38246: fixed failure counters, updated log messages
+                    8bb672a453 deleted EXPECT_FALSE(true)
+                    8a94f6a286 added comments to the tests regarding the counters
+                    c0f567f49c DND-38246: fixed rp names, refactored, added traces, fixed destructor
+                    a66f13dbc4 Squashed commit of the following:
+
+1.25.5-1 (3.0.0-12) Built from "sc_envoy" repository (master) (commit: e39f8fb446)
+                    94fe042624 DND-43947: Implemented support for nfServiceList map for TH IP hiding feature
+                    f35ab11e5e DND-40329: refactored, added task Action Log Test
+                    91d61f8835 Squashed commit of the following:
+                    bc938cde96 DND-None: SEPP TH NRF Fqdn Mapping
+                    e2dd438986 Minor: Service Classifier
+                    63f8f16a25 (origin/option-d, option-d) (Minor) Cleanup and formatting, no functional changes
+                    d9cf137ab9 DND-42425(WIP)(Option D): Added preferred target config for action remote preferred routing
+                    3d1b030667 Misc: Update README
+                    3ff482cfe9 DND- 38246 NRF Fqdn Mapping
+                    cdedb921c2 DND-42425(WIP)(Option D): Integrated action remote preferred routing with envoy router
+                    4e846fe663 DND-42425(WIP)(Option D): Extended list of TaRs extraction for remote preferred routing
+                    2c279fd39d Test: Increase time for scp_producer_id_integration_test
+                    b8f3891661 DND-41481, DND-42966: Option D error handling, SLF lookup bugfix
+                    07799365af Bug_DND-none: crash in onUpstreamHostSelected if no host is provided
+                    4b3d90dc8f (Minor) LOG update
+                    2ae445a5ff DND-41390(WIP)(Option D): Integrated action remote round robin with envoy router
+                    8746b523d0 DND-41390: expect disc-params from config without 3gpp-Sbi-Discovery prefix
+                    09e2150823 Option D: Change add_parameter's value data type
+                    58b7b9825f DND-41390(WIP)(Option D): Updated proto files to include number of retries/reselects for remote preferred and remote round robin
+                    c269442087 DND-41390(WIP)(Option D): Implemented list of TaRs extraction for remote round robin
+                    848435a80b DND-41390: initial eric_proxy support for remote-round-robin
+                    ea09b01c30 DND-41390: initial common/router support for remote-round-robin
+                    b9bbc4b6fe DND-41381: WIP: disc-result JSON obj stored in object
+                    84f79e8bab DND-41385: Modified option D extract constraint parameters impl and unit tests to include equal distribution of capacity among IP endpoints.
+                    708ebe98e4 DND-41385: Modified option D extract constraint parameters impl and unit tests to include NF profile level properties if missing on NF service level
+                    436134206d DND-41381: WIP. Mainly integrated Prashant's code
+                    d2f0284faf (Minor) Renamed eric-utility in Bazel to end in _lib
+                    3fb997561b DND-40329: changed float number string convertion
+                    e32cab606f DND-41381: WIP: error handling
+                    fed088e193 moved headerValue to cc file, added range check
+                    cafa7160b0 DND-41385: Modified extract constraint parameters impl for Option D
+                    771fe4ead2 DND-41390: protobuf updates for action-remote-round-robin
+                    c5bd8ba7a3 New integration test for option-d. WIP.
+                    50893b69e4 DND-41381: Option D: action-nf-discovery initial commit
+                    c586407c9e DND-41385(WIP): Implemented extract constraint parameters for Option D
+                    f13e88640f Protobuf: Added cluster+timeout to action-nf-lookup
+                    9f7ba4c656 Add action_nf_discovery
+                    12174dd9ee (Minor) Cleanup, no functional changes
+                    406e5be09c (Minor) Re-formatting, cleanup. No functional changes.
+                    12c56bfd1a Docs: First fixes to make "docs/build.sh" run further
+                    e94a96a499 Add Option D protobuf for action-nf-discovery
+                    a98fa3fe33 SCDS-1213: Emit log-level changes on "warning" level
+                    11dae80746 (Minor) Add missing line to Envoy changelog
+
+1.25.5-0 (3.0.0-12) Built from "sc_envoy" repository (master) (commit: d1ee954e73)
+                   4b5f5474f3 repo: Release v1.25.5
+                   05c9c2be66 Allow upstream to receive x-envoy-original-path headers (#26649)
+                   da7b710ede deps: Bump `@com_github_curl` -> 8.0.1
+                   f08253efd4 ci: Fix local cache key (#26568)
+                   76ef60c4d8 repo: Dev v1.25.5
+                   1366737000 repo: Release `1.25.4`
+                   4a8cc2eaba http: sanitizing x-envoy-original-path correctly
+                   c4a0acf63c http3: reject invalid pseudo header
+                   72eebf032b http: stop forwarding invalid :method value
+                   4f7be1a1af grpc service calls: fix handling of non-utf8 header values
+                   374352cdb8 Lua Filter: Crash reproduction and fix.
+                   87b7fb399f oauth2: fix crash when a redirect url without a state param is received
+                   17ec18e37c http: add support for validating upstream header keys and values
+                   f1944c820b build(deps): bump distroless/base-nossl-debian11 from `8c880fa` to `9523ef8` in /ci (#26531)
+                   d97f4b8d1c repo: Dev v1.25.4
+                   e99d61c459 repo: Release `1.25.3`
+                   ba9a0999aa repo: Sync version histories
+                   8d0e02631d ci: Update Github's SSH key (#26330)
+                   0ca6b77853 ci: Fix project publish command/docs (#26307)
+                   38f78e6377 ci: Use tmpfs directories for self-hosted agents (#26159)
+                   252b809653 bazel: Use `remote_download_minimal` where possible (/take2) (#26200)
+                   5b424da2d2 build(deps): bump distroless/base-nossl-debian11 from `78d2ac0` to `8c880fa` in /ci (#25997)
+                   c409085a4d ci: Set non-RBE options correctly (#25914)
+                   34e0f19ec8 ci: Use `x64-large` ami/pool for x64 release/build/test (#25928)
+                   11f241b924 ci: Download minimal for release tests (#26156)
+                   9b84ad9b68 ci: Use more CPUs for non-RBE (#26158)
+                   a1d21377aa bazel/ci: Add download retries (#26048)
+                   4bb2448c2f ci: Use cached test results for release runs (#26046)
+                   c4f3c7572c deps: bumps Wasmtime to 6.0.1 (#26190)
+                   27b763237d [backport/1.25] ci: Use local (named) cache for non-RBE jobs (#25829) (#25875)
+                   cae770a8d8 docker/ci: Use a mock repo for regression test
+                   7d5bc5275b tooling: Shift project tools to `@envoy_repo` (#25605)
+                   7cf299f393 repo: Dev `1.25.3-dev`
+                   afa98867c8 repo: Release v1.25.2
+                   fac9d6c394 Revert "repo: Release v1.25.2"
+                   d1c8f6572c repo: Release v1.25.2
+                   b2281047ce repo: Add changelogs
+                   a53cff2194 Fix changelog and API docs (#25797)
+                   3f65803bf3 ci: Use separate azp `repository_cache` arm64/x64 (#25761)
+                   91e0401ad1 docker: Fix skopeo push (#25790)
+                   cf9378d67c docker: Refactor `docker_ci.sh`
+                   31f4217e38 ci: Shift dev/release detection to env stage (#25764)
+                   0c7eb4fda0 assets: Publish immediately on release (#25718)
+                   f184fb4a43 docs: Publish versioned docs on release branches/commits (#25715)
+                   faaf55f27a docker: Publish images from release branches/commits (#25711)
+                   f7b8202aa8 docker: Unify image names (part2) (#25726)
+                   b5f1dd77c5 docker: Unify image names (#25620)
+                   c11fe5c1d8 docker/ci: Add debugging info (#25626)
+                   8f8ae38838 test: Disable flaky windows `thrift_proxy` test (#25665)
+                   926c0d551a build(deps): bump distroless/base-nossl-debian11 to `78d2ac0` in /ci
+                   bae6c4b6cb examples: Add (optional) image cleanup (rmi) (#25373)
+                   7a107a777c examples: Add debugging info on failure (#25339)
+                   13629b793d kafka: upgrade to Kafka 3.4.0 (#25491)
+                   a4a3f39849 ci: Reorganize release pipelines (#25505)
+                   8eca7df509 changelogs: Merge normally (#25378)
+                   359be93d4a repo: Dev `1.25.2-dev`
+                   
+1.25.1-16 (3.0.0-11) Built from "sc_envoy" repository (master) (commit: 8e423d956a)
+                     Upgrade to CBOS 5.14.0
+1.25.1-15 (3.0.0-11) Built from "sc_envoy" repository (master) (commit: 8e423d956a)
+                   8e423d956a DND-41777: Removed modification of "server" and "via" headers in TH IP Hiding
+                   20dfd59c3a DND-38463: Added counter for pseudo NF responses
+                   b7c0d716ae Merge branch 'bugfix/DND-40786-body-variables'
+                   ce1cc502b9 Enhancement: R17 extension of Sbi-Producer-Id
+1.25.1-14 (3.0.0-11) Built from "sc_envoy" repository (master) (commit: a4d993635c)
+                   a4d993635c DND-40799: Extended Sbi-Callback header support
+                   8a2c9dfa87 DND-40737: Bugfix for n32c traffic rejection  * The comparison between presented SANs and domain names supplied    by the manager is now case insensitive  * Added relevant integration test
+                   83bb725e93 DND-40689 Cannot compare booleans
+                   72a7116500 Fix prostCreateCommand for devcontainer creation so that the correct .bazelrc is created
+                   68d7159f89 Header validation is also performed for strict DFP
+                   e626850538 Bugfix: Reject ingress traffic for n32c   * In case an empty list of ineligible sans is supplied the handshake     state cached in the connection object is set to true. The manager     has also been patched to not supply an empty list so this bugfix     is not as crucial as it sounds
+                   08900a70c1 Bug-DND-39546: fix IP hiding error handling for multiple nf-instances
+                   23272a0490 DND-39045: support searches paths in TH IP Hiding
+                   b47d129b12 Minor: Add test case for CT Notifications to No-TaR endpoints
+                   3cbb871878 DND-34241: Uncomment missing dependencies
+                   727197b1db Temporary Fix: Workaround till DND-38747 is fixed
+                   1855715395 DND-39179: Adapted local reply messages
+                   c5fd4de8cc DND-37768: Reject ingress traffic for n32c enabled RPs who haven't performed a handshake
+                   688ef88de1 updated test for ip hiding counters, updated yaml for local reply
+                   10f8049045 updated local reply tests
+                   5106e5399b Enhancement: Move Subnet Cidr creation for IP Hiding to config time
+                   d589a09cf0 Fixed the postCreateCommand of devcontainer to setup clang with the correct llvm path
+                   7786e94b33 Modify devcontainer config files
+                   27d55168be Minor: Change log level from info to debug for error cases to prevent bottleneck
+                   1113c89233 DND-34241: disabled unused extensions at build time
+                   01ebb52184 DND-38975: added tests, fixed bugs
+                   e00232b0ea DND-38975: fixed bug with arg unpacking
+                   9551f09ac8 Moved local_reply config to separate file. Added tests for wrong tar
+                   c32ef592ea DND-38975: added op_equals_case_insensitive condition and functionality
+                   2383bbf1ad DND-38571: Add Dfp enhancements also for SEPP
+                   914c6df6a8 TH IP hiding: Minor updates of comments and logs
+                   18b124b938 bugfix/DND-None: Removed try catch block from action create body
+                   d67d8a1ab9 bugfix/DND-None: Removed local reply from action create body
+                   
+1.25.1-13 (3.0.0-11) Built from "sc_envoy" repository (master) (commit: 68d7159f89)
+                   8a2c9dfa87 DND-40737: Bugfix for n32c traffic rejection
+                   * The comparison between presented SANs and domain names supplied
+                     by the manager is now case insensitive
+                   * Added relevant integration test
+                   83bb725e93 DND-40689: Bugfix Cannot compare booleans
+
+1.25.1-12 (3.0.0-11) Built from "sc_envoy" repository (master) (commit: 68d7159f89)
+                   68d7159f89 Header validation is also performed for strict DFP
+                   e626850538 Bugfix: Reject ingress traffic for n32c
+                   1855715395 DND-39179: Adapted local reply messages
+                                                                        
+1.25.1-11 (3.0.0-11) Built from "sc_envoy" repository (master) (commit: 08900a70c1)
+                   08900a70c1 Bug-DND-39546: fix IP hiding error handling for multiple nf-instances
+                   23272a0490 DND-39045: support searches paths in TH IP Hiding
+                   b47d129b12 Minor: Add test case for CT Notifications to No-TaR endpoints
+                   
+1.25.1-10 (3.0.0-11) Built from "sc_envoy" repository (master) (commit: 2500b3b7be)
+                   3cbb871878 DND-34241: Uncomment missing dependencies
+                   727197b1db Temporary Fix: Workaround till DND-38747 is fixed
+                   c5fd4de8cc DND-37768: Reject ingress traffic for n32c enabled RPs who haven't performed a handshake
+                   688ef88de1 updated test for ip hiding counters, updated yaml for local reply
+                   10f8049045 updated local reply tests
+                   5106e5399b Enhancement: Move Subnet Cidr creation for IP Hiding to config time
+                   d589a09cf0 Fixed the postCreateCommand of devcontainer to setup clang with the correct llvm path
+                   7786e94b33 Modify devcontainer config files
+                   27d55168be Minor: Change log level from info to debug for error cases to prevent bottleneck
+                   1113c89233 DND-34241: disabled unused extensions at build time
+                   01ebb52184 DND-38975: added tests, fixed bugs
+                   e00232b0ea DND-38975: fixed bug with arg unpacking
+                   9551f09ac8 Moved local_reply config to separate file. Added tests for wrong tar
+                   c32ef592ea DND-38975: added op_equals_case_insensitive condition and functionality
+                   2383bbf1ad DND-38571: Add Dfp enhancements also for SEPP
+                   914c6df6a8 TH IP hiding: Minor updates of comments and logs
+                   18b124b938 bugfix/DND-None: Removed try catch block from action create body
+                   d67d8a1ab9 bugfix/DND-None: Removed local reply from action create body
+                   
+1.25.1-8 (3.0.0-11) Built from "sc_envoy" repository (master) (commit: 8ebb083193)
+                   5106e5399b Enhancement: Move Subnet Cidr creation for IP Hiding to config time
+                   d589a09cf0 Fixed the postCreateCommand of devcontainer to setup clang with the correct llvm path
+                   7786e94b33 Modify devcontainer config files
+                   27d55168be Minor: Change log level from info to debug for error cases to prevent bottleneck
+                   1113c89233 DND-34241: disabled unused extensions at build time
+                   01ebb52184 DND-38975: added tests, fixed bugs
+                   e00232b0ea DND-38975: fixed bug with arg unpacking
+                   9551f09ac8 Moved local_reply config to separate file. Added tests for wrong tar
+                   c32ef592ea DND-38975: added op_equals_case_insensitive condition and functionality
+                   2383bbf1ad DND-38571: Add Dfp enhancements also for SEPP
+                   914c6df6a8 TH IP hiding: Minor updates of comments and logs
+                   18b124b938 bugfix/DND-None: Removed try catch block from action create body
+                   d67d8a1ab9 bugfix/DND-None: Removed local reply from action create body
+                   
+1.25.1-6 (3.0.0-11) Built from "sc_envoy" repository (master) (commit: 725fc008d8)
+                    Upgrade to CBOS 5.10.0
+                    
+1.25.1-5 (3.0.0-11) 
+                   2383bbf1ad DND-38571: Add Dfp enhancements also for SEPP
+1.25.1-4 (3.0.0-11) 
+
+1.25.1-3 (3.0.0-11) 
+
+1.25.1-2 (3.0.0-11) Built from "sc_envoy" repository (master) (commit: 725fc008d8)
+                    62efdeb595 DND-37950(WIP): Code refactoring and cleanup related to TH IP hiding
+                    af51f8c09b DND-37950(WIP): Code cleanup and more integration tests for TH IP Hiding in NF Status Notify with Profile Changes
+                    80be1c8dfa DND-37950(WIP): Implemented TH IP Hiding for NF Status Notify with Profile Changes
+                    af7e132ffa DND-37950(WIP): Adapted sepp_th_integration_test server header checks for no TH
+                    fa1248203b DND-37950(WIP): Modified proto and ip hiding implementation to include implementation for ip hiding in notification with profile changes
+
+1.25.1-1 (3.0.0-11) Built from "sc_envoy" repository (master) (commit: 21d9821103)
+                    21d9821103 enabled eric_sepp validator
+                    ae046f3324 added 'feature/DND-38300-check-on-malformed-uris-used-for-routing'
+                    d78c8f7f58 updated sepp_validator due 1.25 uplift
+                    c7d8002200 DND-35883: updated counter names
+                   
+1.25.1-0 (3.0.0-11) Built from "sc_envoy" repository (master) (commit: dfba75afa6)
+                    dfba75afa6 uplift to Envoy 1.2.1
+                    f31787dbfb uplift to Envoy 1.2.0
+
+1.24.0-5 (3.0.0-11) Built from "sc_envoy" repository (master) (commit: 6f60d928bd)
+                    efafecf2dd DND-36253: Changed request buffering process similar to that of response
+                    d3eef80b41 (origin/feature/DND-38300-check-on-malformed-uris-used-for-routing) added test for cer removal for sepp_validator, deleted couts, added comments
+                    656865c914 fixed ip hiding tests for counters
+                    4d4b3b8bde Fixed bug with validator precheck.
+                    b47e51a21b DND-36253(WIP): Implemented conf checks for both req & resp JSON leaves and depth
+                    bd3eb2fa6e DND-35883: deleted counters for error actions in TPH
+                    be051dc5b2 fixed typo
+                    29b23be5e6 (tag: envoy-v1.24.0-P4) TPH-IP_Hiding: Fixed core dump when nfServices are not present
+                    0b65851a2b DND-36253(WIP): Implemented conf checks for JSON leaves and depth
+                    aba17d6ee4 DND-36253: addDecodedData if decodingBuffer is invalid
+
+1.24.0-4 (3.0.0-11) Built from "sc_envoy" repository (master) (commit: 930de90e2c)
+                    Upgrade to CBOS 5.8.0
+
+1.24.0-3 (3.0.0-10) Built from "sc_envoy" repository (master) (commit: 930de90e2c)
+                    930de90e2c DND-37886: N32c requests not routed correctly
+
+1.24.0-2 (3.0.0-10) Built from "sc_envoy" repository (master) (commit: d97b08a432)
+                    d97b08a432 Modified eric-proxy proto for configurable checks
+                    91a302cbf7 DND-35883: add t2e tag to th counters
+                    159c1f44cf DND-35883: optimized ip hiding counters with rememberBuiltin
+                    7f6bf04ab2 DND-35883: updated counter names, fixed bug with rp names
+                    82aed7dbf9 Misc: Minor corrections gdb.md
+                    4d1bd67dbe Misc : Add a readme for some GDB tips in envoy integration tests
+                    75b61d18d6 Updated sepp_validator due envoy uplift
+                    0adb9dd42a Minor: Refactor TaR in response handling cleanup
+                    2f59c006f2 (origin/mixed_cluster_scheme) Minor : cleanup
+                    32d693a6ef Minor: add @api target in vscode task
+                    93da48563b (WiP): Modify :scheme header based on envoy.transport_socket_match MD
+                    9a813d894b (WiP) : Investigate segfault in sepp_th_ip_hiding
+
+1.24.0-1 (3.0.0-10) Built from "sc_envoy" repository (master) (commit: 8ee12a2b3c)
+                    0acea2cdac DND-36539: Included error case checking in apply_ip_action action on fqdn absence
+                    6f78650dca DND-377079 + DND-32561 : Eric Tap Enhancements
+
+1.23.0-29 (3.0.0-10) Built from "sc_envoy" repository (master) (commit: c43f0a14f9)
+                     46c176b4c8 DND-36539: Added "interPlmnFqdn" check in NF Status Notify
+                     2b517825ef DND-35883: deleted counter for !json_body
+                     e907707163 DND-36539: Fixed "server" header checks in IP hiding integration test
+                     e046878092 DND-35883: seperated TH IP hidding counters on request/response, added request counters inc, added tests
+                     dafbe96892 DND-36539(WIP): Added some more integration tests for IP Hiding NF Status Notify
+                     2b90cd8af9 DND-36539: adapted sepp_th_integration_test server/via header checks
+                     6273de0738 DND-36539(WIP): impl. and tests for error actions (NF Disc.)
+                     03416b6304 DND-36539(WIP): Added IP Hiding impl. for NF Status Notify
+                     c2df76d5eb DND-36539(WIP): Updated IP Hiding impl. for NF Discovery
+                     2d0bb05541 Tools: Improve drcrash
+                     2dffbac100 DND-35883: added th counters, refactored
+                     39759a35ae (origin/DND-35883-envoy-counters-kpis-for-tph-ip-hiding) Move N32c bypass to an earlier place
+                     cd113590df DND-35874: IP hiding impl. for NnrfDiscoveryRequest/Response
+                     d5ad5f7929 Replace dyn MD "TopoHiding" with a flag
+                     58d6715c6d Minor fix: add tag to sc_envoy branch only if official image
+                     1030d5faa5 DND-35874: initial IP hiding impl. for NnrfDiscoveryRequest/Response (WiP)
+                     64910e5e42 DND-35330: TH IP Hiding Spike (POC)
+                     79d04607bc Signaling Notifier
+                     6a14e7010b  Signaling plane Notifier - Envoy Channel
+                     f47dc264df Disabling the Notification channel and adding example of notification invocation
+                     62e2e4e526 Signaling plane Notifier - Envoy Channel
+
+1.23.0-28 (3.0.0-10) Internal version
+
+1.23.0-27 (3.0.0-9) Built from "sc_envoy" repository (master) (commit: b77120b466)
+                   Switch to Micro CBOS
+                   Upgrade to CBOS 5.5.0
+
+1.23.0-26 (3.0.0-9) Internal version
+
+1.23.0-25 (3.0.0-9) Built from "sc_envoy" repository (master) (commit: b77120b466)                   
+                   b3636bb024 (origin/vtap_bug_syscall, vtap_bug_syscall) Minor Fix: adapt image-builder tool
+                   328203d85a DND-37009: Fix syscall abstractions for vtap extensions
+                   9a871f768b bugfix/DND-36939: Handled the returned null pointer when trying to parse the malformed JSON body
+                   4d4d3295c1 Removed json.hpp file from build for integration test.
+
+1.23.0-24 (3.0.0-9) Built from "sc_envoy" repository (SC1.10.0) (commit:dfbcc8a9d4)
+                    dfbcc8a9d4 bugfix/DND-36939: Handled the returned null pointer when trying to parse the malformed JSON body
+
+1.23.0-23 (3.0.0-9) Built from "sc_envoy" repository (master) (commit: 3283929078)
+                   3283929078 Bug DND-36680: Add "server" header only for internal replies
+                   da5c53bfe6 Bugfix: Make own_port optional again
+                   22965f1be2 (Minor) Add UL-IDs as comments and in logs
+                   6dd3b0ae1a DND-36248: Fix warning logs triggered by n32c requests
+                   e37f70d587 (Minor) Added own_internal_port to one testcase to fix it
+                   9d8d47fbf8 Make own_port mandatory and adapt testcases
+                   f4969ede55 (Minor) Reformatting, typos
+
+1.23.0-22 (3.0.0-9) Built from "sc_envoy" repository (SC1.10.0) (commit:798f66958d)
+                    24ccd8a38a Bug DND-36680: Add "server" header only for internal replies
+                    330619bf26 Bugfix: Make own_port optional again
+
+1.23.0-21 (3.0.0-9) Built from "sc_envoy" repository (master) (commit: 716a07495c)
+                   22965f1be2 (Minor) Add UL-IDs as comments and in logs
+                   6dd3b0ae1a DND-36248: Fix warning logs triggered by n32c requests
+                   e37f70d587 (Minor) Added own_internal_port to one testcase to fix it
+                   9d8d47fbf8 Make own_port mandatory and adapt testcases
+                   f4969ede55 (Minor) Reformatting, typos
+                   
+1.23.0-20 (3.0.0-9) Built from "sc_envoy" repository (SC1.10.0) (commit:4e16bc26b2)
+                    4e16bc26b2 DND-36248: Fix warning logs triggered by n32c requests
+                    043b39978b Make own_port mandatory and adapt testcases
+
+1.23.0-19 (3.0.0-7) Built from "sc_envoy" repository (master) (commit:81d1aa97aa)
+                    Upgrade to CBOS 5.2.0
+
+1.23.0-18 (3.0.0-6) Built from "sc_envoy" repository (master) (commit:81d1aa97aa)
+                    81d1aa97aa DND-35475: Bugfix, Adapt egress screening for n32c
+
+1.23.0-16 (3.0.0-6) Built from "sc_envoy" repository (master) (commit: 50759a2042)
+                    Upgrade to CBOS 5.1.0
+                    Update base images dockerfiles according to Hadolint DL4006
+
+1.23.0-15 (3.0.0-6) Built from "sc_envoy" repository (master) (commit: 50759a2042)
+                    50759a2042 DND-35198: Skip routing, out-req & in-resp for N32c
+
+1.23.0-12 (3.0.0-6) Built from "sc_envoy" repository (master) (commit: 9f9dd19c9b)
+                    Upgrade to CBOS 5.0.0
+                    Add CBOS hardening script
+                    Reduce layers in base image
+
+1.23.0-11 (3.0.0-6) Built from "sc_envoy" repository (master) (commit: 9f9dd19c9b)
+                   9f9dd19c9b DND-31951: add in-/egress group labels for vTap counters
+                   c75f3d9c74 Minor: Close+flush previous socket when reattempting on disconnected state
+                   
+1.23.0-10 (3.0.0-5) Built from "sc_envoy" repository (master) (commit: 49f5fde86e)
+                   49f5fde86e Minor: Eric Tap Enhancement
+                   7f1884ccb4 DND-31829: Cache & resend connection Info
+                   9858272c0a Fix tab indentation to be 4 columns on all platforms while executing
+                   cdbe8b71ed Minor: Fix clang build settings to pick correct ubsan libraries
+                   7789fe7877  DND-33148: added san test
+                   6c8630875c  DND-33148: added integration tests
+                   e089bb45b0  DND-33148: implemented unit-tests
+                   e4a06bf89b (Minor) Change to more accurate class name for scp_producer_id_integration_test file.
+                   
+1.23.0-9 (3.0.0-5) Built from "sc_envoy" repository (master) (commit: 7f1884ccb4)
+                   7f1884ccb4 DND-31829: Cache & resend connection Info
+                   9858272c0a Fix tab indentation to be 4 columns on all platforms while executing
+                   cdbe8b71ed Minor: Fix clang build settings to pick correct ubsan libraries
+                   7789fe7877  DND-33148: added san test
+                   6c8630875c  DND-33148: added integration tests
+                   e089bb45b0  DND-33148: implemented unit-tests
+                   e4a06bf89b (Minor) Change to more accurate class name for scp_producer_id_integration_test file.
+                   
+1.23.0-8 (3.0.0-4) Built from "sc_envoy" repository (master) (commit: bd474080da)
+                   49245a8506 Bug DND-34212: In-resp-screening not triggered after SLF
+                   7d95285b5f Bug DND-33939: External NW not detected for non-TLS request
+                   02c9bce9a2 Bug DND-34212: Egress screening not triggered after SLF lookup
+                   86cce12894 Minor: Remove unused Stats::Scope reference from PerSocketTapperImpl
+
+1.23.0-7 (3.0.0-4) Built from "sc_envoy" repository (master) (commit: 91770ae82c)
+                   91770ae82c Eric-Tap: Resource Cleanup Enhancements
+                   5b9be13a4d DND-31951: final vtap counter adaptations
+                   95bcf88640 DND-31951: final vtap counter adaptations
+                   fa7df1fa91 No-DND: Adding pool name label to egress MS counters
+                   27069dee6a DND-33286: Expand Integration Test coverage for producer-id
+                   920512596d Fix ASAN error: Use-after-free
+                   47541fde52 DND-31951: final vtap counter adaptations
+                   9fb5d70483 disabled eric_sepp_validator
+                   bfd9f989e7 Minor: Fix merge conflicts
+                   5844faf9ba  DND-33148: added unit tests fixed bugs
+                   9db36c0f23 DND-31951: Disable vTap counter for queue length
+                   812e091508 Minor: Log Improvements
+                   755cd2fb6e Add missing #include statement for std::optional
+                   71fbcd4bcb Fixing merge conflict
+                   683f6b19a0 DND-31701: Producer Id handling in response message
+                   0b332fcde5  DND-33148: updated for several matchers for one trusted store
+                   4bf720f7d6  DND-33148: finished sepp validator
+                   3df01ef7ad  DND-33148: implemented doSynchronousVerifyCertChain
+                   2e3e473786  DND-33148: changed sepp validator to extension activated sepp validator extension created sepp validator factory and constructor
+                   5db1403ad5 Minor: add guard to seppResponsePreProcessing()
+                   346c400698  DND-33148: fixed proto file
+                   84ab580c25  DND-33148: created proto config file
+                   d38000535a DND-31701: Producer ID handling in response message
+                   d278ba3ba6 DND-31701 : Producer ID handling in response message
+                   
+1.23.0-5 (3.0.0-3) Built from "sc_envoy" repository (master) (commit: d36dc40192)
+                   Upgrade to CBOS 4.2.0
+
+1.23.0-4 (3.0.0-2) Built from "sc_envoy" repository (master) (commit: d36dc40192)
+                   c565cb04f7 Remove old code for three eric-proxy instances
+                   cee1ae4e2a Bug DND-33939: Request to non-tls port of SEPP external network recognized as internal
+
+1.23.0-3 (3.0.0-2) Built from "sc_envoy" repository (master) (commit: cee1ae4e2a)
+                   cee1ae4e2a Bug DND-33939: Request to non-tls port of SEPP external network recognized as internal
+                   7b9ab4a8fb Bug DND-33290 Screening cases not triggered properly for SCP/SEPP egress message screening
+                   7722690ce9 Bug DND-33287 Screening/routing cases in SEPP external network not triggered without any RP references
+                   da30b227d5 Bug DND-32285: Screening case in SEPP external network triggered multiple times
+                   222824749c DND-32778 fix array access with jsoin pointer '/'
+
+1.23.0-2 (3.0.0-2) Built from "sc_envoy" repository (master) (commit: a79a9edbab)
+                   Upgrade to CBOS 4.1.0
+
+1.23.0-1 (3.0.0-2) Built from "sc_envoy" repository (master) (commit: a79a9edbab)
+                   a79a9edbab fixed leading zero bug in a day
+                   a38346aa57 Upgrade to envoy v1.23.0
+                   5d4388a9ea DND-32581: Add Envoy integration tests for NF pool reselection
+                   823c9ae24a DND-32766: Bugfix: Prevent coredump when a message screening action results in a payload over the configured threshold
+                   948512e5e3 Script for envoy image creation
+                   f37c56daa1 fixed auto-changelog script
+                   3ef7793e83 Added tasks for log tests
+                   784a49e44e Support non-string values in Substitution format string in json_format (#22396)
+                   13ebb7ea84 fixed createTransportSocket, RateLimit all tests are passed
+                   b6418f0b6e fixed errors, all tests task is passed
+                   dd1b5c4661 Merge tag 'v1.23.0' into envoy_uplift_v1.23.0
+                   4bf7f23b45 local reply tests: added test for 400 reply
+                   ce49c7f656 repo: Release `1.23.0` (#22227)
+
+1.22.2-14 (3.0.0-2) Built from "sc_envoy" repository (master) (commit: 9d3d883ab5)
+                   9d3d883ab5 Tool : rop-fetcher for fetching ROP XML files from a deployment
+                   f973fcebbf DND-32531: Addapt the tests
+                   7b72b53d65 Support non-string values in Substitution format string in json_format (#22396)
+                   7c1a96427c local reply tests: added test for 400 reply
+1.22.2-13 (3.0.0-2) Built from "sc_envoy" repository (master)(commit:7c363d0291)
+                    7c363d0291 Bug DND-32965: T-FQDN and Topology Hiding response processing not executed
+                    b650ba12c6 DND-31951: Add counters for EricVtap
+
+1.22.2-12 (3.0.0-1) Built from "sc_envoy" repository (master)(commit:41947dc5b0)
+                    41947dc5b0 DND-32247: one_eric_proxy_instance implementation and adaptations
+
+1.22.2-11 (3.0.0-1) Built from "sc_envoy" repository (master)(commit:a71faac634)
+                    4a46688065 DND-32778: fix Core dump in Envoy when handling json body of type array
+                    45da9686b4 Enable https for envoy-> slf communication
+
+1.22.2-9 (3.0.0-1)  Built from "sc_envoy" repository (master) (commit:d11fc2dbdf)
+                    Built with the experimental new envoy-builder that uses
+                    the buildfarm (envoy builder version 3.0.0-1). This
+                    builder is not committed to the main branch yet.
+
+                    d11fc2dbdf Bug DND-32797: Invalid JSON body in local reply for TFQDN
+                               There were extra { } around the JSON body when
+                               TFQDN-decoding failed and when JSON body
+                               operations failed.
+                    1a3b14e461 added additional local reply integration tests
+                    256bd12d52 DND-none: Minor improvements, not visible to
+                               the outside
+                    9a2f32b423 DND-28835: updated regex in logger
+                    a0b16c57b3 DND-28835: deleted leading S and C chars from log message, added tests, fixed escape string formatting
+                    8ffc6c7d82 DND-28835: strip log messages from escape message new line
+1.22.2-8 (2.3.3-2)  Built from "sc_envoy" repository (master) (commit:608b22042d)
+                    Install all RPMs in the envoy-base-image Dockerfiles
+
+1.22.2-7 (2.3.3-2)  Built from "sc_envoy" repository (master) (commit:608b22042d)
+                    608b22042d DND-31048: Enable mTls for envoy->RLF communication
+
+1.22.2-6 (2.3.3-2)  Built from "sc_envoy" repository (master) (commit:099b8ab398)
+                    099b8ab398 DND-31733: Implement retry-after header in HTTP date format
+                    1e977798b4 DND-28835: stripping first whitespaces from message
+                    ecdcc52774 DND-28835: added flag to strip the log message from metadata in square brackets
+                    495770cb41 Bug DND-32662: Not all FQDN converted to TFQDN
+
+1.22.2-5 (2.3.3-2)  Built from "sc_envoy" repository (master) (commit: 1ddb634233)
+                    1ddb634233 DND-28835: added custom flags for ul_id, connection_id, stream_id. Added macro ENVOY_STREAM_UL_LOG for ul_id
+                    6648950328 DND-32599: Fix worker restarts on debug log level
+                    e835f3ea37 Enhancement : Add abstraction layer for dyn MD access
+                    bbf5f6be17 Bug DND-32584: rename detail -> cause, added detail
+                    ee64d58bab DND-32562 : Envoy container stops sending tapping messages to sidecar when tapcollector has distrubances
+
+1.22.2-4 (2.3.3-2)  Built from "sc_envoy" repository (master) (commit:ad46efa1ce)
+                    Upgrade to CBOS 3.58.0
+
+1.22.2-3 (2.3.3-2)  Built from "sc_envoy" repository (master) (commit:ad46efa1ce)
+                    Upgrade to CBOS 3.57.0
+
+1.22.2-2 (2.3.3-1)  Built from "sc_envoy" repository (master) (commit:ad46efa1ce)
+                    ad46efa1ce DND-31734: Fix metrics generation for RPs matching with wildcard certificates
+                    962d304d2e Minor: Change log level from info to debug
+
+1.22.2-1 (2.3.3-1)  Built from "sc_envoy" repository (master) (commit:26d48ea639)
+                    26d48ea639 Envoy Uplift:1.22.2
+                    b3a66a4133 Remove compressor,decompressor and AccessLogger CEL filters
+                    dfdfd33372 Remove oauth2, rbac, kill-request filters from compilation
+                    78788f6f59 added check for /problem+json. Fixed config from manager
+
+1.22.0-7 (2.3.3-1)  Built from "sc_envoy" repository (master) (commit:54b4944d93)
+        54b4944d93  DND-32148 Bugfix: recursion call was in the wrong place
+        1c8b42b164  Revert "Revert "Bug DND-32148: Let cluster choose preferred_host""
+
+1.22.0-6 (2.3.3-1)  Built from "sc_envoy" repository (master) (commit: 63e3311578)
+                    63e3311578 Revert "Bug DND-32148: Let cluster choose preferred_host"
+
+1.22.0-5 (2.3.3-1)  Built from "sc_envoy" repository (master) (commit: b38dbccb42)
+                    b38dbccb42 DND-32300: new dyn. MD eric_filter,_local_replied added
+                    9c188884b3 fixed failing tests
+                    95db932558 reorganised dependencies in BUILD
+                    1b976f8110 DND-32410, DND-31494 Change content-type for errors
+                    f379bc74d2 Change ENVOY_LOG to ENVOY_STREAM_LOG
+                    770bea346b DND-32410: changed content type for loop_detected to application/json DND-31494: added tests for standard compliant cause attribute
+                    54da84ea9f Bug DND-32148: Let cluster choose preferred_host
+                    f3b8af393d Revert "DND-32220: fix routing when target-apiRoot hdr contains upper case letters"
+                    1217fb647d DND-32220: fix routing when target-apiRoot hdr contains upper case letters
+                    d10b193042 Tools : Automated update of Changelog
+                    7ffb020329 DND-32220: fix routing when target-apiRoot hdr contains upper case letters
+                    799362b2e9 Fix : Faulty Commit
+                    44f84e32a1 DND-32215 : Diff handling between req/resp.header and var.header
+                    5cb02da81e (minor) Rename sepp_th_test to sepp_th_integration_test
+            
+1.22.0-4 (2.3.3-1)  Built from "sc_envoy" repository (master) (commit: 48e1ba2b88)
+                    Upgrade to CBOS 3.56.0
+
+1.22.0-3 (2.3.3-1)  Built from "sc_envoy" repository (envoy_uplift_v1.22.0) (commit: 48e1ba2b88)
+                    48e1ba2b88 Merge branch 'master' into  envoy_uplift_v1.22.0
+                    8fb0d6e33e DND-31264 ENVOY Continued adaptations after merge
+                    8eef28131a DND-32092: Add per-try-timeout to SLF requests
+                    806ac38e54 DND-31302: New envoy builder 2.3.3-1 in devcontainer
+                    
+1.21.1-22 (2.3.3-1) Built from "sc_envoy" repository (master) (commit: befaa78b88)
+                    8eef28131a DND-32092 Add per-try-timeout to SLF requests
+                    34c1de6d77 DND-31264 ENVOY Correct RP counter names/labels
+
+1.21.1-21 (2.3.3-0) Built from "sc_envoy" repository (master) (commit: 53b32df4f8)
+                    87807bf623 DND-31494: fixed ResponseFlagFilter for new flags(E_MPR and E_APR)
+                    20498cbd87 commented out DYNAMIC from RoutingBehaviour
+                    796c3b068e Improve Routing-Behaviour
+                    d3449cf25f Changed RoutingBehaviour, everything is RR, everything is controlled via cluster structure
+                    0431920a1c DND-31494: added new flags for missing_path
+                    789ef395a5 Added new tool (drcrash) to launch debug container w/ gdb
+
+1.21.1-20 (2.3.3-0) Built from "sc_envoy" repository (master) (commit: 693457bff3)
+                    cdc77616be Merge branch 'DND-31429_new_TFQDN_encoding'
+                    8904e5e688 DND-32076: Bugfix for retry-after header
+                    592d1f0f49 Merge branch 'DND31210-var-handl-1'
+                    1f35aea0e4 Eric-tap: Minor fix
+                    db3d6111f5 Eric-Vtap : Bugfix Not picking Eric_TAP_TRACE_SIZE_LIMIT
+                    32cd58e6ba (DND-32092-SLF-Reselection) Eric-Vtap : Bug IP Version check
+                    629472053d Eric-vtap: Enhancements:
+                    Improved logging messages and prioritized connection info streams
+                    over event streams.
+                    NOTE: cannot completely cover prioritization of connection stream
+                    segments unless there are separate queues for connection events
+                    read/write/closed events.
+                    6640853454 Fix missing renaming from predexpr to condition
+                    1899b7fefa Eric-vtap : Enhancements
+                    b148a447af (Minor) Fix typo in comment in protobuf
+                    4b651a7e31 Internal Topo-Hiding improvements, add ULID
+1.21.1-19 (2.3.3.-0) Upgrade to CBOS 3.55.0
+1.21.1-18 (2.3.3-0-pre-03) Built from "sc_envoy" repository (master) (commit: 945543e628)
+                    New Envoy-builder 2.3.3-0
+                    945543e628 (HEAD -> master, sc_envoy_origin/master, sc_envoy_origin/HEAD) Eric Vtap : Enhancements
+                    bf7fd2880f DND-32009: Remove protobuf constraint RP pool-name > 0
+                    3198c302d9 (DND-32092-SLF-Reselection) Bugfix: Send HTTP status code as int, not string
+                    08d1cf81b4 DND-none: Avoid needless copies in action-reject-mesage
+                    bdc0bfbafe DND-32013: Fix memory corruption issue on eric_ingress_ratelimit
+                    772a2f6076 DND-31754: modify-status-code, bugfix and test adaptations
+                    172243b8cc Fixed a bug with TARGET_API_ROOT_PREFERRED in switch case
+                    3015861edf (Minor) Add UL-IDs, Change comments, formatting, function-name
+                    8ca9aaa447 Eric-vTap : Enhancements
+                    03fd122d52 DND-31494: DND-31225: set E_IVH flag
+                    ec1475e1ca DND-31494: DND-31225: Added TARGET_API_ROOT_PREFERRED
+1.21.1-17 (2.3.2-6) Built from "sc_envoy" repository (master) (commit: 3a1c93d968bf)
+                    Upgraded to Common Base OS 3.54.0
+                    3a1c93d968 Added extension to support temporary test environment
+                    f8eb2fff20 Eric-vTap : Performance Enhancements
+                    478ede6154 Eric-Tap Filter
+                    030cb02922 DND-31903 : (Egress MS) Segmentation Fault on Routing Stage Failure
+                    4fb558572d DND-31525: Adapt envoy to send cause attributes as configured by YANG
+                    212b8137c2 DND-31225: set the flags
+                    0394223ed6 DND-31396: Implement wildcard certificate matching for ratelimit filter
+                    99371bda57 Added metedata for routing-behaviour
+                    ff78f36dc5 refactored body after code review
+                    957695238f Bugfix : Egress Message Screening 
+                    be62f92329 vTap : Performance Enhancement
+                    e71b8a126b DND-31433: apply action_modify_json_body on dyn. MD
+                    2081309be3 Bug DND-31517: 'server' header leaks topology info
+
+1.21.1-16           Built from "sc_envoy" repository (master) (commit: 7ce68520b3)
+                    Upgraded to Common Base OS 3.53.0-5
+                    DND-31225: updated access log proto v3 with new flags
+                    bb89639aa1 DND-none: Changed rp counter names in integration tests
+                    b8b76e7b6c DND-30951: Include counters in eric_ingress_ratelimit intergration tests
+                    9eb079b907 DND-31264: Corrected RP counter names
+                    868c43058d replaced per_rp -> per_roaming_partner
+                    d923ba1a77 Revert "DND-31379:  updated counters for rlf_lookup_failure"
+                    089e007fe9 DND-31225: added new stream flags for error cases
+                    427c9d4661 fixed unknown name for network in counters
+                    7c3e23ea11 added initialization for all counters in rate limit
+                    ab569e9f86 added logger to rl_stats
+                    e0b735198d Added network counters initialization
+                    a4e502f357 DND-31379:  updated counters for rlf_lookup_failure
+                    2745db39ad DND-31433: preserve orig. body (buffer) for TFQDN callbackUri updates
+                    fc4b6719c1 DND-30995: Msg. Screening performance improvements
+
+1.21.1-15-3 (2.3.2-6)  Built from "sc_envoy" repository (master) (commit: 32798a685c)                     
+                       DND-31379: Fix counters produced from eric_ingress_ratelimit filter
+                       e111a7fffb DND-none: Bugfix on Ratelimit
+                       eb0f4ad3b6 fixed std::logic_error in rl test
+                       1459fb1f43 fixed missing } in ratelimit config 
+
+1.21.1-15 (2.3.2-6)  Built from "sc_envoy" repository (master) (commit: 6798da770b)                     
+                     e111a7fffb DND-none: Bugfix on Ratelimit
+                     eb0f4ad3b6 fixed std::logic_error in rl test
+                     1459fb1f43 fixed missing } in ratelimit config
+                     90464570c0 DND-30523: deleted global counters, updated look up failure
+                     bfa01f9340 DND-30523: updated names, added 5xx counter, fixed nf_instance_name
+                     6ae6602a08 tasks.json: increased '--jobs' limit to 24
+                     f08be2289e Merge branch 'master' of ssh://gerrit.ericsson.se:29418/MC_5G/sc_envoy
+                     05fdd02a29 DND-30271: Added JSON body modification TC
+                     48e9b076ec DND-31200 : SCP SLF failure counters not appearing in ROP files
+
+1.21.1-14 (2.3.2-6)  Built from "sc_envoy" repository (master) (commit: 3c4b8411ae)
+                     3c4b8411ae DND-30951: Network limit Integration tests for eric_ingress_ratelimit filter
+                     bfa01f9340 DND-30523: updated names, added 5xx counter, fixed nf_instance_name
+                     5aedbe5db4 DND-30523: included stats into BUILD
+                     429e866c03 DND-30523: integrated counters into RL
+                     bfa01f9340 DND-30523: updated names, added 5xx counter, fixed nf_instance_name
+                     5aedbe5db4 DND-30523: included stats into BUILD
+                     429e866c03 DND-30523: integrated counters into RL
+                     8ac380556a merged optimized_json branch into master
+                     06ce5e7e89 deleted check decoder_callbacks_ != null refactored
+                     4fe9db1675 refectored. moved functions back to filter, removed is_modify from Body
+                     8ba9a632fe DND-30338: Introducing eric_ingress_ratelimit filter
+ 
+1.21.1-13 (2.3.2-6)  Built from "sc_envoy" repository (master) (commit: 3c4b8411ae)
+                     3c4b8411ae DND-30951: Network limit Integration tests for eric_ingress_ratelimit filter
+                     8c4790a1f6 DND-30951: Integration tests for eric_ingress_ratelimit
+                     794eb0fa13 Bug DND-31191: tests and fix
+                     ead90d4e3c DND-none: Ratelimit filter adaptations
+                     1a2a5c6c32 DND-31031: accept and empty string value for header actions
+                     b8ac25a344 Bug DND-31177: Memory leak when config is updated
+                     37dfe3475c Fix: Use correct filter type for eric_proxy filter
+                     b561f12b44 eric_proxy.proto merge fix
+                     7782b4c18f Bugfix: eric_ingress_ratelimit filter
+                     e72df4ac5b DND-30675: Egress Message Screening Envoy Filter Adaptations
+                     8ac380556a DND-30995: merged optimized_json branch into master
+1.21.1-13 (2.3.2-5)  Built from "sc_envoy" repository (master) (commit: 8ba9a632fe)
+                     8ba9a632fe DND-30338: Introducing eric_ingress_ratelimit filter
+                     83bfb539fa DND-30271: Improved body modification TC
+                     37d673dc63 DND-30271: Fixed + Added body modi TCs
+1.21.1-12 (2.3.2-5)  Built from "sc_envoy" repository (master) (commit: bdc375e4f1)
+                     bdc375e4f1 Bug DND-31033: Modified test. Implemented fix.
+                     f30fce89dd DND-31033: (Minor) Added ULIDs
+                     86aa7782ea DND-30271: update tasks.json, added empty body test
+                     71a6214b5c DND-30271: added body modi TC for malformed body
+                     aba714d9ea DND-30271: added more integration tests for body modi
+1.21.1-11 (2.3.2-5)  Built from "sc_envoy" repository (master) (commit: 114046f083)
+                     114046f Bug_DND-30832: Add printouts for several recursion calls
+                     2705420 DND-none: Commented out all contributed build dependencies
+1.21.1-10 (2.3.2-5)  Built from "sc_envoy" repository (master) (commit: 0fc8755e83)
+                     d01335b0be DND-30759: Only add TaR header for direct routing
+1.21.1-9  (2.3.2-5)  Built from "sc_envoy" repository (master) (commit: 9e95783154)
+                     Bug DND-30832: Remove previously added condition in if statement
+1.21.1-8  (2.3.2-5)  Built from "sc_envoy" repository (master) (commit: b04274a656)
+                     Bug DND-30832: Envoy crash during Temp. Block. TC
+                     34704ea485 Fix: Add TaR header to response only if not topo-hiding
+1.21.1-7  (2.3.2-5)  Built from "sc_envoy" repository (master) (commit: 0f239ae32d)
+                     ab8aa0b1ca DND-30806: Empty extractor-regex value shall
+                     store '' and "exists" for a variable containing an empty
+                     string returns false. This is to restore backwards-
+                     compatibility.
+1.21.1-6  (2.3.2-5)  Built from "sc_envoy" repository (master) (commit: be7dbe2f7d)
+                     be7dbe2f7d Target-apiroot header on response: only for 2xx
+1.21.1-5  (2.3.2-5)  Built from "sc_envoy" repository (master) (commit: f47b25dcdb)
+                     Upgrade to new CBOS 3.47.0-10
+                     f47b25dcdb Bug DND-30824 Envoy crash: extractor-regex and non-string type
+                     54ef8cb6e1 Bug DND-30806 Fix NBC: Empty extractor-regex value shall store empty string
+                     c24514a62c Remove unused protobuf-copy in generate-api
+                     76218a444c Remove action_modify_body which is not needed any more
+1.21.1-4  (2.3.2-5)  Built from "sc_envoy" repository (master) (commit: 2abc7efeff)
+                     2abc7efeff DND-30784: fix updating variables from Json Pointer after body modification
+
+1.21.1-3  (2.3.2-5)  Built from "sc_envoy" repository (master) (commit: 83ce305dac)
+                     83ce305dac dbafe38c91 fba3b324a4 2d8c3721cb e2e7a73bda bb83d53122 a8e72dc5d5
+                     --> DND-30738: Add TaR to Response: Fix test after changes in the code
+                     db7a543f54 DND-30754: fix Envoy  crash during action_lookup when supi=null
+                     7853b84ec4 Remove unnecessary logging message
+1.21.1-2  (2.3.2-5)  Built from "sc_envoy" repository (master) (commit: 8093481e62)
+                     8093481e62 Bug DND-30612: Handle SLF result w/ prio -1
+1.21.1-1  (2.3.2-5)  Built from "sc_envoy" repository (master) (commit: 1883be8ebb)
+                     1883be8ebb Envoy 1.21.1 Security uplift
+1.21.0-5  (2.3.2-5)  Built from "sc_envoy" repository (master) (commit: 8d64f88463)
+                     5fcddbd748 Bug DND-30566: Fixed "envoy crashes when fqdn is null in SLF lookup
+                     c314950f38 Bug DND-30271: fix path creating bug for AddToJson
+                     ae285aa290 Bug DND-30410: fixed a bug with repeated body modification
+                     b3fca288ed DND-30272 Change variables to typed variables
+                     a91bae1886 Combine the two functions "varOrStringAsString" into one
+                     5f1f758772 DND-30410: improved the unique_ptr handling
+                     b258ac53e3 DND-30410: Add modified_body_ to keep modified mody as json. Update actions to use modified body. Update FQDN to use modified mody.
+                     8c4b6e3391 DND-30271: fixed/added body modi integration tests
+                     339c3bb14a DND-30304: Fix formatting in json_utils.cc/h
+                     d875791bff DND-30237 SCP Improve SLF Robustness
+                     3ee5552808 DND-30271: adaptation of content-length header
+                     6f86cc7d1b Bug DND-30399 Revert changes getRpName, get RP name for TH directly from ssl
+                     2d575462c8 Bug DND-30399: check if kv_table is empty in getRoamingPartnerName
+                     d23752ff29 DND-29603: json_operations bugfixes and unit tests
+                     29b156d1f9 allow empty string for VarOrString/term_var
+1.21.0-4  (2.3.2-5)  Built from "sc_envoy" repository (master) (commit: f4309f14ff)
+                     Upgrade to CBOS 3.46.0-2
+
+1.21.0-3  (2.3.2-4)  Built from "sc_envoy" repository (master) (commit: f4309f14ff)
+                     Upgrade to CBOS 3.45.0-10
+                     59f2fc4ece DND-30150 : Slf lookup failure counters
+                     44fadce594 DND-29603   added actionModifyJsonBody to updateRequiredVarsFromActions   
+                                            json_operations bug fixes and test enhancements
+                     fef2e4fdd8 DND-29603: body mod. bug fixes and test enhancements
+                     6df99cafe0 DND-30150 : Slf lookup failure counters
+                     f471ef4e17 DND-30242: Make removal/change of a host's fqdn trigger a config change
+                     18f738eec2 DND-30150 : Counters for Slf Lookup Failure
+                     768cb1e321 DND-29603 deactivated json_body_int. tests temporarily
+                     7778fdb3eb (Minor) Apply improvements suggested by clang-tidy
+                     6e99a58a21 DND-29603: impl. of path_not_exists complete
+                     667fc5c348 (Minor) Change nlohmann::basic_json -> Json
+                     02b9e63707 DND-30150: Slf Lookup Failure Counters
+                     fd5e81424d DND-29603: impl. of path_not_exists started
+                     
+1.21.0-2  (2.3.2-4)  Built from "sc_envoy" repository (master) (commit: 5fa55e21df)
+                     5fa55e21df Bug DND-30299: Moved H07 from TFqdn if case
+                     884a222670 DND 30150: SLF Failure counters
+                     85fdea9735 DND 30150: SLF Lookup failure counter enhancement
+                     f85d81c208 Bugfix/Enhancement : DND-30150/DND-30048
+                     48863b4215 Enhancement: Integration tests minor cleanups
+                     46778a578b NBC Renamed predicate-expression -> condition
+
+1.21.0-1  (2.3.2-4)  Built from "sc_envoy" repository (master) (commit: 7ade59b618)
+                     Upgrade to envoy v1.21.0
+                     8a12a55cfb action-slf-lookup:minor cleanup
+                     6d9da71507 DND 30048 : Implement Routing based on GPSI
+                     3fc04ba015 DND-29924: Response code details adaptations
+                     caac0151e2 DND-30150 : SCP/SEPP Add counters for routing stage failures
+                     e4e162c637 DND-30100: Add original body to Dyn.Md. in Router. Refactor code in Router.
+                     049dc9bdf3 DND 30048 : Implement Routing based on GPSI
+                     3c2b366d74 DND-29924: Conclude v1.21.0 merge
+                     87716aab26 DND-30192: fixed the error
+
+1.20.0-16  (2.3.2-4) Built from "sc_envoy" repository (master) (commit: 28dbc74d4)
+                     28dbc74d4 (HEAD -> master, tag: envoy-v1.20.0-16,origin/master, origin/HEAD) fixed case
+                                sensitivity for fqdn, optimised code)
+                     c06639aeb optimized code
+                     3d8f8658e DND-none: Correct memory issues pointed out by Asan
+                     bdd25f0d4 Merge branch 'master' of ssh://gerrit.ericsson.se:29418/MC_5G/sc_envoy
+                     64cef3748 passing string by link in findRpName
+                     79a94c049 DND-28929: Improve handling of ingress/egress screening and routing
+                     cc8619e84 removed checking if rpNameTable is emty
+                     4a78b2456 renamed tests for TH, added #!_#, updated tests
+
+1.20.0-15  (2.3.2-4) Built from "sc_envoy" repository (master) (commit: b68eaf27718fe408e6884ff39c86d39fcedeefd4)
+                     Upgrade to CBOS 3.44.0 
+
+1.20.0-14  (2.3.2-1) Using cashed RP name in getRpName
+                    b68eaf277 (HEAD -> master, origin/master, origin/HEAD) Deleted if from getRpName to use cashed RP name
+                    d0501f9b9 Enhancement : Include TSAN and ASAN for SC-Envoy + Add TSAN and ASAN checks in VSCode task with bazel targets
+                    3ad3cd3e9 (minor) Test typo fix 
+
+1.20.0-13  (2.3.2-1) Built from "sc_envoy" repository (master) (commit: d3d66dffd9e259d13dbe09ed344cebdb4e2ad7f9)
+                    Upgrade to CBOS 3.42.0
+                    d3d66dffd (HEAD -> master, origin/master, origin/HEAD) Merge branch 'DND-28711-topology-hiding-envoy-filter-adaptations'
+                    aa21bf6d5 DND-28711: Updated BUILD file
+                    a5b104f87 Merge branch 'master' of ssh://gerrit.ericsson.se:29418/MC_5G/sc_envoy
+                    e4837280d VSC Improvements: Fix for permissions
+                    199d2a12c Merge branch 'master' of ssh://gerrit.ericsson.se:29418/MC_5G/sc_envoy
+                    60808808d Fix: Tests compile and run again
+                    03f1916da VSC Improvements: Revert default root user in VSC container. Update the Envoy Builder.
+                    8a10242f2 VSC Improvements
+                    bb4f46cc2 Merge branch 'dnd28793_ssl_key_log'
+1.20.0-12  (2.3.2-1) Built from "sc_envoy" repository (master) (commit: 945a0309952ad6e077883615af5ec138839cb9cd)
+                    945a030995 Bug_DND-29672: fix massive logs with loglevel=INFO (for T-FQDN)
+                    647e48741c DND-29041: added an int. test for changed NF-disc. response modifications
+1.20.0-11  (2.3.2-1) Built from "sc_envoy" repository (master) (commit: 226d94b1a282960acb430c30e02dd78b43ca1c6a)
+                    Upgrade to CBOS 3.41.0
+1.20.0-10 (2.3.2-1) Built from "sc_envoy" repository (master) (commit: 226d94b1a282960acb430c30e02dd78b43ca1c6a)
+                    226d94b1a2 (Minor) Improve log message
+                    1aa43afd9f Logging: Add ENVOY_STREAM_LOG in more functions
+                    db99e80930 Logging: Add ENVOY_STREAM_LOG to findOrInsertVarName()
+                    19be16252a Logging: Add Envoy Stream Log + corresponding callbacks in stats.cc
+                    0a6f8cfb71 Test: Add description of TCs in multi_header_integration_test
+                    a07d4a1ba3 Updated vscode tasks.json file
+1.20.0-9  (2.3.2-1) Built from "sc_envoy" repository (master) (commit: 0406c06fe6269cd0a1359d0e8e0cbf3d06be7e3d)
+                    0406c06fe6 DND-29041 scheme encoded to generated T-FQDN
+                    92fdcf4377 DND-29041 added scheme MD for response modifications (WiP)
+                    1561555570 Merge branch 'master' of ssh://gerrit.ericsson.se:29418/MC_5G/sc_envoy
+                    0fd9af4fd9 Test: Add integration TC for variable order validation. Add mult_header_integration_test task to vscode/tasks.json
+                    a4ed6dd945 (Minor) Remove a logging message
+                    0051c1a106 Merge branch 'master' of ssh://gerrit.ericsson.se:29418/MC_5G/sc_envoy
+                    f9d9c3a3b0 DND-29092: TC BUILD config additions
+                    4fd7fb8719 Merge branch 'master' of ssh://gerrit.ericsson.se:29418/MC_5G/sc_envoy
+                    2cb94ac394 Merge branch 'master' of ssh://gerrit.ericsson.se:29418/MC_5G/sc_envoy
+                    de7d2a0f15 DND-29092 fix :message data variable extraction overwrite via regex and TCs
+                    d29b81ef8f Test: Add integration TCs for DND-29369
+                    45720ab5ea Cleaned/updated vscode tasks.json
+                    5653de251c Bugfix DND-29201: Update variables after Action "go-to-FC"
+                    9dad48142f DND-28720: Added 2 more unique RP handling TCs
+                    432b1cf1fc Merge branch 'master' of ssh://gerrit.ericsson.se:29418/MC_5G/sc_envoy
+                    7d2ce8fe6b fixed router tests for 1.6
+                    13a90dd2f3 DND-28547: fix test BUILD file
+                    654fa7c7fc DND-29222: fixed
+                    4931ab5ef4 DND-29222: Wrote test. Reproduced the error.
+                    9e9b58e485 DND-28547: added new tests
+                    b21a39d5b9 DND-28547: add new tests
+                    1a2bdd0a36 DND-28547: added new tests
+                    d8115f7f75 DND-28547: implemented egress tests for the router
+1.20.0-8  (2.3.1-2) Built from "sc_envoy" repository (master) (commit: 011dfe3402b68d4aaca4990025f051a0dcfc0a79)
+                    011dfe3402 DND-29174: Fix some log levels
+1.20.0-7  (2.3.1-2) Built from "sc_envoy" repository (master) (commit: f937d374a482e834e92e4f238fc49e45c13b8d69)
+                    Upgrade to CBOS 3.40.0-7
+                    f937d374a4 Merge branch 'DND-28833-duplicate-headers'
+                    b9dfc9dc8f DND28833: Update variables at the end of filter
+                     case processing
+                    6295af834d DND-28720: Added new TC for Unique RP Handling
+                    987a791e49 DND-28559: Fix duplicate stepping of RP counters
+                    46485cd8b3 DND-28833: Minor fix in MultiHeaderIntegrationTest
+                    7bac1a0540 DND-28833: Add TC in MultiHeaerIntegrationTest for not
+                               considering last variable in response filter case
+                    268dd1df2a DND-28833: Fix: Only first header was used (filter-data)
+                    e35179820d DND-28720: Activate RP Counter Validation in 1 TC
+                    34404020a4 DND-28833: Adaptations and fixes: Tests pass
+                    dae7784108 DND-28833: (Minor) Cleanup
+                    9850e0e85a DND-28833: Fix TC TestMultiHdrAdd3
+                    cf9009196f DND-28833: Duplicate headers (WIP)
+                    cad243b267 DND-28720: Add Unique RP Handling + counter tests
+                    176e8c2759 DND-28720: ENVOY Remove KNOWN_ISSUE_ASSERT
+                    a921e61960 DND-28720: ENVOY TEST Update integration test certificates
+                    df0aa089e9 DND-28559: Fix a bug in counters per RP
+                    50589af404 DND-28833: Add multi header integration tests
+                    6f86da8448 Add test: Header append/prepend from var and header
+                    aa60925a3a DND-28833: Split comma-separated header values and add
+                               them as separate values (except for set-cookie)
+                    2decfdb7d8 Bug_DND-none: log improvements in modifyJson()
+                    414bbd9b88 DND-28833: Add first test
+                    c5d453474a DND-28833: Make headers lists of values instead of single strings
+                    45012d63cb DND-28889: introduce condition for cburi modifications
+1.20.0-6  (2.3.1-2) Built from "sc_envoy" repository (master) (commit: ab0f9ab848629605e4107fabfe526d4a4db52abf)
+                    ab0f9ab848 Fix: Do not add x-eric-proxy header in response direction
+                    dd245781c0 Bug DND-28882 Small addon to the previous fix 2d2e60b603
+1.20.0-5  (2.3.1-2) Built from "sc_envoy" repository (master) (commit: 2d2e60b6038536659df44323a8b7955a191c5a10)
+                    2d2e60b603 Bug DND-28882: Envoy crash with short path
+                    2efd588101 Minor: Log message improvements, var renamed
+1.20.0-4  (2.3.1-2) Built from "sc_envoy" repository (master) (commit: dd15c63ec54c32643db9aa1e163890b62ecc132e)
+
+                    Upgrade to CBOS 3.39.0
+
+1.20.0-3  (2.3.1-2) Built from "sc_envoy" repository (master) (commit: dd15c63ec54c32643db9aa1e163890b62ecc132e)
+                    DND-28559: Change RP Counter Prefix
+                    DND-28453: getStartFcForWildcard returns optional
+                    Test T-FQDN: created a home for our router.cc integration tests (WiP)
+                    Test: Fix stats_test
+                    Bugfix_DND_None: Remove double declaration of cert_san_span
+                    DND-28559: Step Ingress RP rq_xx counters in Action RejectMessage
+                    DND-28559: Step response counters at the end of processResponse
+                    DND-28559: Add creation and stepping of Ingress Counters per RP (rq_total and rq_xx)
+
+1.20.0-2  (2.3.0-2)  Built from "sc_envoy" repository (master) (commit: 56d56363f94be131a2d1ad2d6abfef063ebfcf56)
+                    DND-28548: Apply same (T-FQDN) URI necoding for location header and callback URIs
+                    Add more T-FQDN integration tests
+                    Improvement: Test-SAN can select filter-case
+                    SEPP T-FQDN Modification-Testcases added
+                    Bugfix: Set correct content-length for modified body
+                    Bugfix: Handle missing elements correctly
+                    Bugfix: Multiple path JSON body replacements
+                    DND-28785: Fix location header encoding in response (T-FQDN)
+                    DND-28785: Fix location header encoding in response (T-FQDN)
+
+1.20.0-1  (2.3.0-2)  Built from "sc_envoy" repository (master) (commit: 8a96150ef8486a71f9b770a37f3d93fab230b15c)
+                    8a96150ef8 Bugfix DND-28679: TFQDN Case-insensitive comp. req-nf-type
+                    f2a40b6c03 Format eric_proxy.proto by the Envoy tool
+                    94bc396771 Fixes for the merge of commits from improved_sc15 branch
+                    a9bda25dbb Test: Add new test CNfDiscNoTFqdn
+                    f015ec6c11 DND-28453: impl. step 6. and 7. reg. empty/non existing fc
+                    in key-value-table
+                    7d13123280 Test T-FQDN: Remove config_unique, improve CNfDiscTFqdn
+                    8bbd5417f6 eric_proxy: base_integration_test unused fixture removed
+                    0bfb2cf8be Test: Split sepp test into T-FQDN and Unique H/RP
+                    edda0ccb07 Bugfix DND28690: Fix incorrect response body handling
+                    6227fa4281 Bug_DND-28773: match ApiName and ApiVersion for CallbackUris
+                    064df70474 DND-28548: fix compile and test error after v1.20.0 merge
+                    c8c31ceac2 Merge tag 'v1.20.0' into eedrak_DND-28548_envoy_1_20_0
+1.19.1-1  (2.3.0-1)  Built from "sc_envoy" repository (master) (commit: 3dbccb5a7b9923fbc4a4054b76e47c1d4c3e2f5a)
+                    Upgraded to Envoy 1.19.1
+
+1.18.4-19 (2.3.0-2) Built from "sc_envoy" repository (master) (commit: af3a21d64e7ce26d98bd0509afa6d2c4042cb088)
+                    Upgraded to CBOS 3.38.0
+1.18.4-18 (2.3.0-2) Built from "sc_envoy" repository (master) (commit: af3a21d64e7ce26d98bd0509afa6d2c4042cb088)
+                    af3a21d Bugfix_DND_28513: Modify request and not response body
+                    655618b (Minor) Use symbolic constant for SEPP instead of int
+                    16556af (Minor) Log SAN+DN, change formatting            
+1.18.4-17 (2.3.0-2)  Built from "sc_envoy" repository (master) (commit: 30ec20d085f826979aaf991f05516ecc4768de65)
+                     Upgraded to CBOS 3.36.0
+1.18.4-16 (2.2.2-11) Built from "sc_envoy" repository (master) (commit: 30ec20d085f826979aaf991f05516ecc4768de65)
+                     Upgraded to CBOS 3.35.0
+1.18.4-15 (2.2.2-11) Built from "sc_envoy" repository (master) (commit: 5ea6978209997a857e2c078a0dec3a06c0fc08bf)
+                     5ea697820 Bugfix: fix for the previous commit
+1.18.4-14 (2.2.2-11) Built from "sc_envoy" repository (master) (commit: fb691ba562d9b2efeeee5a84fda254442cb216c9)
+                     fb691ba56 Bugfix: Authority header contained scheme for preferred-host
+1.18.4-13 (2.2.2-11) Built from "sc_envoy" repository (master) (commit: 3b30c33db63a03d056db1e9624a48022f0e8cff5)
+                     e4c11a75c Bugfix: preferred host was not set in all cases
+                     3df006718 DND_27230: Remove the TaR header for direct processing,
+                               for support:No-TaR and for support:TaR if preserve-if-indirect
+                               is not set to target-api-root.
+                               Change ENVOY_LOG to ENVOY_STREAM_LOG in Router.cc
+                     d84ba61fb DND_27230: Remove TaR header for support: No-TaR
+1.18.4-12 (2.2.2-11) Built from "sc_envoy" repository (master) (commit: 5e91fd0dc828ed0a71797e09997538705105961c)
+                     5e91fd0 Bug_DND-none Read Origin (Ext./Int.) from SSL connection
+                     f5257d1 DND_27230: Fix typo in debug log message
+                     608a81d DND_27230: Add support md scenarios TaR, NF, TFQDN and No-Tar 
+                     ef93f94 DND-27230: Adapt metadata to modified router code 
+1.18.4-11 (2.2.2-11) Built from "sc_envoy" repository (master) (commit: aaaa7bdc38e4358f96bf5c94dc214f35dc00c2a8)
+                     aaaa7bd Bug_DND-28129 Authority Header incorrect when RP doesn't support TaR
+1.18.4-10 (2.2.2-11) Built from "sc_envoy" repository (master) (commit: f505d7c4425d581303d0c8e594e975dcdb2d785a)  
+                     Fallback to CBOS 3.33.0
+                     c073e50d9 Bug DND-28108: Keep-authority-header has wrong value after re-select
+                     1ecb000ff Bugfix_DND28107: In case of support:tFQDN, set authority header to FQDN of currently selected host.
+                     55e838710 Bugfix_DND28108: Restore original authority header value for reselects in Router.
+1.18.4-9 (2.2.2-11)  Built from "sc_envoy" repository (master) (commit: 6da6b52640f69b0ddd830026163642501c32be03)
+                     6da6b5264 DND-28069 NBC: Authority header doesn't match VHost
+                     081719778 Bugfix DND-28079: Wildcard matching for SANs and DNs
+1.18.4-8 (2.2.2-11)  Built from "sc_envoy" repository (master) (commit: 4272365bf448af0adaeb7206b16f948e4d34d278)
+                     4272365bf DND-28053 Fix part2: Ignore port and handle IPv6
+                     448fc0f27 DND-28077 Fix "scheme is missing from target-apiRoot"
+                     d6a9d185a DND-28069 Fix :authority does not match vhost
+1.18.4-7 (2.2.2-11)  Built from "sc_envoy" repository (master) (commit: 6e122312f42a67033098bad3fdfd4a437eb05dcb)
+                     6e122312f DND28057 Case-insensitive handling of own-FQDN
+                     dc35b98ef DND-28053 Fix wrong routing when :authority == own fqdn
+                     2c1233eba DND-28050: KV- and KLV-Table access logs lowered to trace level
+                     dcfae25bd Bugfix: Remove scheme when extracting T-FQDN from TaR header
+1.18.4-6 (2.2.2-11)  Built from "sc_envoy" repository (master) (commit: 6c2378c3db430257178c1219c5297978e2d08e3e)
+                     6c2378c3d Back out commit 89ac4db0a, DND-27644 (reject invalid TaR)
+                     291067ac5 Bugfix_DND_28029: Check if eric_proxy exists in dyn. metadata pt. 2.
+                     b108e5271 Bugfix_DND_28029: Check if eric_proxy exists in dyn. metadata.
+                     6b14d0170 Merge branch 'master' of ssh://gerrit.ericsson.se:29418/MC_5G/sc_envoy
+                     89ac4db0a !!Backed out, see 6c2378c3d above!!! DND-27644: Reject messages
+                               with invalid target-apiRoot header
+                     261eb2f2d Bugfix: Fix decoding of TFQDN when authority has a port
+                     75564184d DND-28003 Fix SAN retrieval from ssl connection
+1.18.4-5 (2.2.2-11)  Built from "sc_envoy" repository (master) (commit: e761b3d1c0a4eab03a3608f6535bccb12838412c)
+                     Upgrade to CBOS 3.34.0
+                     e761b3d1c DND-27989 Reject request with invalid T-FQDN
+
+1.18.4-4 (2.2.2-11)  Built from "sc_envoy" repository (master) (commit: 2f8e08a83adddfb654a53ef3b561513ce38333a3)
+                     2f0d2bf8f DND-27601: NBC: Set dyn-MD for authority header handling
+                     It makes the configuration of "keep authority header" explicit for the
+                     route to pool/roaming-partner actions (both round-robin type). The
+                     strict-routing type is not affected.
+
+                     The SEPP/SCP manager must set the attribute "keep_authority_header" in
+                     RouteToPoolAction and RouteToRoamingPartnerAction if this is configured
+                     by the user.
+
+                     Since this involves a protobuf change, you have to update the
+                     eric_proxy.proto file in the Java code. You can get it from:
+                     5g_proto/devtools/envoy-builder/sc_envoy/api/envoy/extensions/filters/http/eric_proxy/v3/eric_proxy.proto
+                     b937a1c65 DND-27601: Add authority header handling based on
+                     keep-authority-header metadata
+1.18.4-3 (2.2.2-11)  Built from "sc_envoy" repository (master) (commit: 93c078c1676ba54fac4ecba56be4a9fb9554fb60)
+                     93c078c16 Bugfix: DN wildcard matching adapted to RFC2818
+1.18.4-2 (2.2.2-11)  Built from "sc_envoy" repository (master) (commit: 8c3f4622a71a227140bf3f5303be017c4154e5fc)
+                     Upgrade to CBOS 3.33.0
+                     8c3f4622a  Bugfix: Include port in x-host checks (integration test)
+                     0469da3a0 DND-27916: Support wildcard DNs for SAN matching
+                     4d48afaa7 Bugfix: Include port in x-host header
+                     950387222 T-FQDN: Change Base64 to Base32
+1.18.4-1 (2.2.2-10)  Built from "sc_envoy" repository (master) (commit: 8b48be0f99e869d11616819f566076e7bf9cdb7d)
+                     8b48be0f9 (HEAD -> master) Merge tag 'v1.18.4'
+                     e2b7dbd74 Merge branch 'master' of ssh://gerrit.ericsson.se:29418/MC_5G/sc_envoy
+                     da7a00b26 (sc_envoy_origin/master, sc_envoy_origin/HEAD) DND-27916: Consider port in new method isTFqdnInAuthorityInfo
+                     cfe2dec97 Merge branch 'master' of ssh://gerrit.ericsson.se:29418/MC_5G/sc_envoy
+                     f5791c5ce DND-26988: Adapt x-host and envoy.lb metadata
+                     02d7dfd37 (sc_envoy_origin/DND-27601-27916-tfqdn) Revert "Extract & cache CN from SSL certificate"
+                     f1c7f0d2b DND-27916: Get the SEPP traffic origin (int/ext) from the matched SAN
+                     da37e2668 (Minor): formatting improvements
+                     8b58300b6 DND-27601: Treat support md value as list.
+                     318dd597c DND-27601: Change support md keyword target-api-root to tar.
+                     cb998eefe DND-27916: Improve access to KlVTables
+                     a4b1ab419 DND-27195: Add Unique Handling per RP in eric_proxy filter
+                     162065228 DND-27601: Remove scheme from TaR added to authority header.
+                     1599afc42 Extract & cache CN from SSL certificate
+                     72161577b DND-27601: Restore original body if support md is not set.
+                     bef18019d (tag: v1.18.4) v1.18.4 release
+                     1f7062148 DND-27196: added scheme into TaR generated from authority
+                     5e79bbb29 DND-27196: int->ext response handling (WiP)
+                     de3ccfeef DND-27196: TFQDN int->ext request path implemented (WiP)
+                     d5ada0e83 DND-27601: Add additional debug logs.
+                     d76024fd3 Bugfix_DND27666_DND27328: Explicitly Remove TAR header when preserve-if-indirect is not set to tar and next hop is SCP.
+                     247071e7e Stop processing pending H/2 frames if connection transitioned to the closed state
+                     b89551d09 http2: limit use of deferred resets in the http2 codec to server-side connections.
+                     c54f4d1ca Abort filter chain iteration on local reply
+                     7acfc5ed2 Reject or strip fragment from request URI
+                     964a42924 ext-authz: merge duplicate headers from client request in check request
+                     896127bdb v1.18: Update c-ares to 1.17.2 (#17704) (#17776)
+                     311bfd3bb DND-27601: Add TFQDN support in the router part. Change static md type:scp/nf to support:target-api-root/tfqdn.
+
+
+1.18.3-15 (2.2.2-11) Built from "sc_envoy" repository (master) (commit: 1da5e89db13dfbf3397e642b145abce80c10b50f)
+                     Upgraded to CBOS 3.33.0
+1.18.3-14 (2.2.2-10) Built from "sc_envoy" repository (envoy-1.18.3-12-plus-f5791c5ce) (commit: 1da5e89db13dfbf3397e642b145abce80c10b50f)
+                     1da5e89db Bugfix: Include port in x-host header
+1.18.3-13 (2.2.2-10) Built from "sc_envoy" repository (envoy-1.18.3-12-plus-f5791c5ce) (commit: 61e21028b55b4d3bf02770728002ab825da38a59)
+                     Special image to allow I5/Iasonas integrate their changes
+                     before the changes from Avengers can be integrated (which
+                     require the 1.18.4-1 image above)
+                     f5791c5ce DND-26988: Adapt x-host and envoy.lb metadata
+1.18.3-12 (2.2.2-10) Built from "sc_envoy" repository (master) (commit: 52b6eeb2b71bcc7e7c52c2ed85f982cdf66fd748)
+                     Upgraded to CBOS 3.31.0
+
+1.18.3-11 (2.2.2-8) Built from "sc_envoy" repository (master) (commit: 52b6eeb2b71bcc7e7c52c2ed85f982cdf66fd748)
+                    Upgraded to CBOS 3.31.0
+                    52b6eeb2b (HEAD -> master, origin/master, origin/HEAD) Merge branch 'DND-26489-body-modi'
+                    f47292098 DND-27196: T-FQDN handling (ext-to-int) WiP
+                    ed7224648 (origin/DND-26489-body-modi) Added comment to protobuf
+                    96bcdef2d Bugfix: Log message contained unneeded placeholder
+                    03af191e6 Bugfix: Log message didn't contain variable placeholder
+                    ffba29903 Fix: protobuf file had a typo
+                    a301709b9 Merge branch 'DND-26489-body-modi' of ssh://gerrit.ericsson.se:29418/MC_5G/sc_envoy into DND-26489-body-modi
+                    070ba3d44 DND-26489: Update protobuf for SEPP
+                    44a39410e DND-26489: fixed failing filter_test(s)
+                    8749a92df VS Code: Updated tasks file
+                    97ca9e223 Test (minor): Add description to a test case
+                    c35650fce Test: Add new test for "var.a == ''"
+                    2362c6e65 DND-26489 Add basic body modifications
+                    14d71ac41 DND-27070: moved key_value_tables to RootContext
+                    2745cb7a0 DND-27070: action_modify_variable and key_value_tables implemented
+                    29a523acb DND-27070 Add ModifyVariableAction
+                    29fc3336e (Minor) Move methods inside source file
+                    bc546979d (origin/SC1.4.0) ENVOY Add comments to priority selection modifications.                    
+
+1.18.3-10 (2.2.2-8) Built from "sc_envoy" repository (master) (commit: 2243df52afa2977c321e89d32eb1e2b75f97793f)
+                    Upgraded to CBOS 3.28.0
+
+1.18.3-9 (2.2.2-8) Built from "sc_envoy" repository (master/SC1.4.0 branch) (commit: 2243df52afa2977c321e89d32eb1e2b75f97793f)
+                   Bug_DND-26916: cancel outstanding lookup request in onDestroy()
+
+1.18.3-8 (2.2.2-7) Built from "sc_envoy" repository (master/SC1.4.0 branch) (commit: c2d37c4eeac282ac3c98a8e5d3c26ebaa30120df)
+                   Bugfix DND-26823 bugfix: Envoy crash after SLF lookup
+
+1.18.3-7 (2.2.2-7) Built from "sc_envoy" repository (master/SC1.4.0 branch) (commit: ef6f742867fa80bd07cf459ddd889a5f411ad028)
+                   Bugfix DND-26881: Skip preferred host even if not defined in omit-host-metadata
+
+1.18.3-6 (2.2.2-7) Built from "sc_envoy" repository (master/SC1.4.0 branch) (commit: 4655b66b26f45dbad8b88af01eee6cb070cb6071)
+                   Upgraded to CBOS 3.27.0
+
+1.18.3-5 (2.2.2-7) Built from "sc_envoy" repository (master/SC1.4.0 branch) (commit: 4655b66b26f45dbad8b88af01eee6cb070cb6071)
+                   Bug_DND-none: fix and simplify slf timeout handling
+                   Bug_DND-none: fix envoy crash when eric-slf is not deployed
+
+1.18.3-4 (2.2.2-7) Built from "sc_envoy" repository (master branch) (commit: 11ed1fff4f722598729bb90b58e010c06f5a3aca)
+                   Improve variable and metadata logging
+                   Clean up log-messages
+                   Bugfix DND-26825 Trigger 'fc_id_not_found' if SLF returns an empty address list
+                   Bugfix DND-26821 Fix CT Notify routing when authority header=IP+port
+                          - the "x-host" header should only contain the host part of the authority header
+
+1.18.3-3 (2.2.2-7) Built from "sc_envoy" repository (dnd26630_pe_cond branch) (commit: 017ca6848d648c01933e6cfa88d60b3a809d9747)
+                   DND-26630: Change Predicate-Expression to Condition, part 1
+                   This is part 1 where the public interface is changed only.
+                   Part 2 will later change our internal class and variable names.
+                   All tests pass.
+
+1.18.3-2 (2.2.2-7) Built from "sc_envoy" repository (master branch) (commit: 3867e56dea568326e075a44457c12ecb66bffc63)
+                   Bugfix BUG_DND-26598 unconditionally copy route- to dyn.- metadata
+
+1.18.3-1 (2.2.2-7) Built from "sc_envoy" repository (master branch) (commit: 5de4080a08c2107386ac250ad1cd1d9bc6a4fb60)
+                   Bugfix Bug_DND-none Fix variable registration for SlfLookupAction
+                          The SlfLookupAction was not registered in "updateRequiredVarsFromActions", hence
+                          the i.e. "supi_var" was only updated if it was used in a predicateExpression.
+                          This is not required anymore.
+                   Bugfix ENVOY Remove old path header before adding a new one
+                   Bugfix Fix crashes for CT CI tests
+                   Bugfix Merge Envoy 'v1.18.3' from github
+                   Bugfix DND-25520 Fix Target-api-root header with IP and Port    
+                          According to TC 129 500 Ch. 5.2.3.2.4 and 6.10.2.5 the Target-api-root
+                          header contains a port.        
+                   Bugfix BUG_DND-26598 Fix filter case handling after clearing the cached route  
+                          The first eric-proxy filter with valid start filter case from route metadata
+                          will now copy the route metadata to dynamic metadata. If the eric-proxy filters
+                          do not find a start filter case in route metadata they will check in dynamic
+                          metadata as well.
+
+1.18.2-8 (2.2.2-7) Built from "sc_envoy" repository (master branch) (commit: b586ed1eeb74e5eccf3cbbe50a6e85fcd27cc94b)
+                   Upgrade to CBOS 3.26.0
+
+1.18.2-7 (2.2.2-5) Build from "sc_envoy" repository (master branch)
+(commitb586ed1eeb74e5eccf3cbbe50a6e85fcd27cc94b + test-fix for
+target-api-header containing host+port)
+                    Test image for Vicky to see if host+port for preferred
+                    host works
+1.18.2-6 (2.2.2-5) Built from "sc_envoy" repository (master branch) (commit: b586ed1eeb74e5eccf3cbbe50a6e85fcd27cc94b)
+                    Bugfix DND-26376 Fix the response filter chain after action_reject
+                           After an action-reject in phase 1 (inc. Msg.Screening) response screening
+                           in phase 4 was applied, as envoy creates a complete filter chain for the
+                           repsonse handling. The solution is to let the filter performing the rejection
+                           add an indication that an internal reject was triggered and by whom as dynamic
+                           metadata. On response, the eric-proxy filter will pass the response (without action)
+                           if this metadata is present and the message was not rejected by the filter instance
+                           itself. The filter instance, which had rejected the message will reset the metadata
+                           and process the reponse as usual.
+
+1.18.2-5 (2.2.2-5) Built from "sc_envoy" repository (master branch) (commit: 7dd277677e009b19444f0b905c2fc33e9ccbab79)
+                    Bugfix DND-24934: Host is retried even if it is defined under omit-host-metadata
+                    New: DND-26155: NBC Update Frequency is now a list
+                    Protobuf: DND-26155: Update Frequency is now a list
+                    New: DND-26193: NBC Rename filter v3alpha:sepp -> v3:eric_proxy
+                         The filter is renamed to make it independent of SEPP and SCP.
+                         The protobuf version is changed from v3alpha -> v3.
+                         The Java class name for the generated protobuf accessors is changed from
+                         SeppProto -> EricProxyProto.
+                         The protobuf toplevel message SeppConfig -> message EricProxyConfig.
+                    New: Change header x-lua to x-eric-proxy
+                         The header x-lua (so far un-used) has been renamed to x-eric-proxy and
+                         can be used in the manager to have the "catch-all-route" at the first
+                         position instead of the last position in the Envoy routing-table.
+                         The catch-all route is the one that matches when a request comes in,
+                         before the request goes into the http-filter chain.
+                         Moving the catch-all-route up has performance benefits.
+                         The manager shall configure Envoy to remove the x-eric-proxy header
+                         when the request leaves Envoy.
+                    New: NBC Change StringValue to Value for isInSubnet
+                         Change the type for the isInSubnet operator from StringValue to Value
+                         which helps the implementation in the SCP/SEPP-Manager.
+                    Protobuf: Change StringValue to Value for isInSubnet
+                    New: NBC Add preserve-if-indirect and preferred_target to RouteToPoolAction
+                         Replace the routing-behaviour TARGET_API_ROOT by the two new parameters
+                         in RouteToPoolAction: preserve_if_indirect and preferred_target.
+
+                         "preserve_if_indirect" specifies which data has to be preserved for
+                         indirect routing (= next hop is an SCP) vs. direct routing (= next hop
+                         is a NF). Currently, there is TARGET_API_ROOT which is equivalent to the
+                         former RoutingBehaviour with the same name, and there is ABSOLUTE_PATH.
+                         Indirect routing will use the absolute path (if there was one, if not it
+                         will disable preservation of the absolute-path for this request because
+                         there is no absolute path to use), and direct routing will use the
+                         relative path.
+
+                         "preferred_target" specifies that there is a preferred host, and from
+                         where to read it (variable or header. String constant is also possible
+                         but not that useful). The preferred host only the host, not the port,
+                         schema, or URL-path.i
+                         Unchanged: The preferred host is stored in the "host" dynamic metadata
+                         for the subet-loadbalancer and in the "x-host" header for Envoy-routes
+                         and omit-host-metadata configuration.
+                    Protobuf: Add preserve-if-indirect and preferred_target
+
+1.18.2-3 (2.2.2-5) Built from "sc_envoy" repository (master branch) (commit: 61882d8ebe940f7fea831870d06259aaf1073780)
+                    Upgraded to CBOS 3.25.0
+
+1.18.2-3 (2.2.2-5) Built from "sc_envoy" repository (master branch) (commit: 61882d8ebe940f7fea831870d06259aaf1073780)
+                    Upgraded to CBOS 3.24.0
+
+1.18.2-2 (2.2.2-5) Built from "sc_envoy" repository (master branch) (commit: 61882d8ebe940f7fea831870d06259aaf1073780)
+                    Bugfix: Trigger error-handling filter-cases after SLF lookup
+                    Test: Added CT integration test
+                    Protobuf: Fix min-length validation for headerValue
+                    New: DND-25580: Message screening sepp counters
+                    New: DND-26152 Add isInSubnet pred-exp operator
+                         A new "isInSubnet" operator that can be used in predicate-expressions
+                          to implement subnet-based routing. The "isInSubnet" operator can handle
+                          both IPv4 and IPv6 automatically, and expands compact IPv6 addresses
+                          before making the subnet-check. The IP-address can come from either:
+                          - a header (req.header["address"] isInSubnet "10.0.0.0/24")
+                          - a variable that was set in a message-data configuration
+                            (var.address isInSubnet "fe80::f816:3eff:fed3:4887/64")
+                          - a string constant, which is not really useful but implemented to
+                            avoid creating too many data-types in the protobuf definition.
+                          The addresses must be the pure addresses, that is:
+                          - without a port (OK: 10.0.0.4, Not OK: 10.0.0.4:80,
+                            OK: fe80::f816:3eff:fed3:4887, Not OK: [fe80::f816:3eff:fed3:4887]:80)
+                          - without square brackets if it's an IPv6 address
+                            (OK: fe80::f816:3eff:fed3:4887, Not OK: [fe80::f816:3eff:fed3:4887]
+                          An IPv4 address is never in an IPv6 subnet, also not vice versa.
+1.18.2-1 (2.2.2-5) Built from "sc_envoy" repository (master branch) (commit: 9f977aaa6378dfed5fac8c964cd34388c0e99306)
+                    Protobuf fix: eader and var name must be >= 1 chars, not 0
+                    DND-26150: "req.header['xxx'] exists" doesn't work
+                    (Minor) Do not log headers when paused
+                    Merge tag 'v1.18.2' into sc_envoy_1.18
+                    SLF Lookup implemented
+                    Bugfix: catch nullpointer de-referencing in Envoy router
+                    Added body-json-pointer to message-data
+                    DND-26077 target-apiRoot header not removed
+
+1.17.0-14 (2.2.2-5) Built from "sc_envoy" repository (master branch) (commit: e7f7bda7623a1f18bb18322d797adefe683f0e05)
+                    DND-26077 target-apiRoot header not removed
+
+1.17.0-13 (2.2.2-5) Built from "sc_envoy" repository (master branch) (commit: 6ffa139ea8d7ebc1a7665d0b24d48dbc13a0aa6f)
+                    Updated patch for SCDS-328
+
+1.17.0-12 (2.2.2-5) Built from "sc_envoy" repository (master branch) (commit: c8cde32a51a1b4f56af304fa1934fe5c538be827) 
+                    Added via-loop detection patch#2 to also allow protocol version (SCDS-328 for China Telecom)
+
+1.17.0-11 (2.2.2-5) Built from "sc_envoy" repository (master branch) (commit: bbeae2baf04b61a63a4a2e0c51a08e5a6d1df4c0)
+                    Upgraded to Common Base OS 3.22.0-14
+                    Fix for indirect routing failures due to merge error
+
+1.17.0-10 (2.2.2-4) Built from "sc_envoy" repository (master branch) (commit: a397a740)
+                    Message-Screening actions updated
+                     - ifExsts flag added to add-header-action
+                     - prepend-value added to mofigy-header-action
+
+1.17.0-9 (2.2.2-3) Built from "sc_envoy" repository (master branch) (commit: bc53c19)
+                   Change for DND-24889 (Indirect Routing via SCP)
+                   README file for VSC Container Environment Setup
+
+1.17.0-8 (2.2.2-3) Upgraded to Common Base OS 3.21.0-17 (commit: 442f073ea)
+
+1.17.0-7 (2.2.2-3) Upgraded to Common Base OS 3.20.1-2 (commit: 442f073ea)
+
+1.17.0-6 (2.2.2-3) Built from "sc_envoy" repository
+                   Fix for DND-24931 (writing to same variable from two routing-data rules)
+                   Fix for DND-24977 (coredump when header doesn't exist)
+                   Change for DND-24921 (TLS error message)
+
+1.17.0-5 (2.2.2-3) Built from "sc_envoy" repository (commit: 7c24d63f)
+                   applied updated cdn-via-loop-detection.patch
+
+1.17.0-4 (2.2.2-3) Built from "sc_envoy" repository (commit: 337566e7)
+                   Upgraded to Common Base OS 3.19.0-24
+                   Version info file contains info on build type (envoy = from github, sc_envoy = local build)
+
+1.17.0-3 (2.2.2-2) Built from "sc_envoy" repository (commit: 337566e7)
+                   all patches applied
+                   fix for DND-24766 (port missing in authority for strict routing)
+                   log improvements 
+
+1.17.0-2 (2.2.2-2) Built with new LLVM 11.0.1 and Java 15.0.2
+                   Fix for loop detection patch
+
+1.17.0-1 (2.2.2-1) Includes updated Outlier Patch
+                   Removed WASM
+
+1.17.0-0 (2.2.1-2) Initial internal release (Missing Outlier Patch)
+
+1.16.0-7 (2.2.1-1) FIPS fix
+                   Builder version properly included in VERSION_INFO
+
+1.16.0-6 (2.2.1-0) Added via-loop detection patch#2 to also allow protocol version (SCDS-328 for China Telecom)
+
+1.16.0-6 (2.2.1-0) Common Base OS 3.18.0-18 -> !!! Has been overtwitten by the one above on 09.04.2021 !!!
+
+1.16.0-5 ? (Please update the Changelog if you built a new version)
+
+1.16.0-4 (2.2.1-0) Common Base OS 3.16.0-22
+
+1.16.0-3 (2.2.1-0) Common Base OS 3.15.0-19
+                   Loop detection patch
+
+1.16.0-2 - Internal release
+
+1.16.0-1 - Initial version
+
+1.15.2-3 (2.2.1-0) - Common Base OS 3.15.0-19
+
+1.15.2-2 (2.1.1-6) - Common Base OS 3.14.0-16
+
+1.15.2-1 - Initial version (With FIPS)
+           Common Base OS 3.13.0-16
+
+1.15.0-3 - Common Base OS 3.13.0-16
+
+1.15.0-2 - Added exporting of symbols to compilation
+
+1.15.0-1 - Initial version (With FIPS)
+
+1.14.3-1 - Initial version (With FIPS)
+
+1.14.2-1 - Common Base OS 3.8.0-18
+         - 1.14.2 pre-release introduced due to CVE-2020-11080 (Updated nghttp2 from 1.40.0 to 1.41.0)
+
+1.14.1-3 - Updated spdlog from 1.4.0 to 1.4.2
+         - Updated nodejs http parser from 2.9.3 to 2.9.4
+
+1.14.1-2 - Updated grpc library from d8f4928fa779f6005a7fe55a176bdb373b0f910f to 1.27.3
+         - Updated fmtlib from 6.2.0 to 6.2.1
+
+1.14.1-1 - Initial version (Compiled with FIPS)
+         - Common Base OS 3.5.0-13
+
+1.13.1-1 - Initial version
+
+1.13.0-1 - Initial version
+
+1.12.3-1 - Initial version
+
+1.12.0-1 - Initial version
+
+1.11.2-1 - Initial version
+
+1.11.1-9 - Updated Common Base OS of the base image to 3.5.0-13
+
+1.11.1-8 - Internal version for testing purposes, compiled BoringSSL with FIPS
+
+1.11.1-7 - Changed version info to JSON format
+         - Moved printing of version info from helm chart to entrypoint.sh
+
+1.11.1-6 - Updated Common Base OS of the base image to 2.5.0-12
+
+1.11.1-5 - Updated Common Base OS of the base image to 2.3.0-12
+
+1.11.1-4 - Added DND-17704: envoy patch to disable increasing blocking times
+           Removed DND-18728: reset of  numEjections is not needed anymore
+
+1.11.1-3 - Added DND-16189: envoy patch to include hostname in outlier logs
+
+1.11.1-2 - Updated Common Base OS of the base image to 2.2.0-28
+         - Added sizeopt-flag to build options for smaller binary
+
+1.11.1-1 - Added changes according to DND-18728
+
+
+# vim: ts=2 sw=2 et

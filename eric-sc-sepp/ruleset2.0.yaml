@@ -1,0 +1,261 @@
+modelVersion: 2.0
+
+description: "SEPP Integration Helm Chart"
+
+import:
+  base: ../rulesets/ruleset2.0-eric-base.yaml
+  sepp: ../eric-sepp/ruleset2.0.yaml
+
+properties:
+  - HELM_REPO_INTERNAL: "proj-sc-all-internal-helm"
+  - HELM_REPO_DROP: "proj-sc-all-drop-helm"
+  - HELM_REPO_RELEASED: "proj-sc-all-released-helm"
+  - HELM_REPO_URL_INTERNAL: "${base.ARMSERO_ARTIFACTORY_URL}/${HELM_REPO_INTERNAL}"
+  - HELM_REPO_URL_DROP: "${base.ARMSERO_ARTIFACTORY_URL}/${HELM_REPO_DROP}"
+  - HELM_REPO_URL_RELEASED: "${base.ARMSERO_ARTIFACTORY_URL}/${HELM_REPO_RELEASED}"
+  - CHART_NAME: "eric-sc-sepp"
+  - CHART_PATH: ${CHART_NAME}/charts/${CHART_NAME}
+
+env:
+## Git related parameters
+  - GERRIT_USERNAME
+  - GERRIT_PASSWORD
+  - GERRIT_REFSPEC
+  - GIT_REPO_URL (default="https://gerrit.ericsson.se/a/MC_5G/5g_proto")
+  # overrides GIT_REPO_URL, set in Jenkins pipeline configuration parameters
+  - VCS_REPO_URL
+  - GIT_BRANCH (default="master")
+  # override GIT_BRANCH, set in Jenkins pipeline configuration parameters
+  - VCS_BRANCH
+  # inca skips git commit in "ihc-auto prepare" command
+  - INCA_SKIP_GIT_COMMIT (default=true)
+
+## Versioning related parameters
+  # Version strategy possible values: DYNAMIC, MAJOR, MINOR, PATCH, EP (explanation in https://gerrit.ericsson.se/plugins/gitiles/adp-cicd/adp-int-helm-chart-auto/+/HEAD/README.md#How-to-use-ihc_auto-script)
+  - VERSION_STRATEGY (default="DYNAMIC")
+  # Check sub-chart dependency version: In case that major/minor versions stepped but previous version is not released, the creation of integration chart will fail
+  - VERSION_CHECK (default=true)
+  # Allow downgrade of sub-chart dependencies
+  - ALLOW_DOWNGRADE (default=false)
+
+## Helm related parameters
+  - CHART_NAME
+  - CHART_REPO
+  - CHART_VERSION
+  # User signum
+  - HELM_USER (default="${env.base.USER}")
+  # The user's identity token in ARM SERO (Not the API key)
+  - ARM_API_TOKEN
+
+## Jenkins related parameters
+  - JENKINS_URL
+  - JOB_NAME
+  - BUILD_NUMBER
+
+var:
+  # TODO: Change variable name to "chart-version" when sepp integration chart is moved to a separate git repo
+  - sc-sepp-version
+
+rules:
+
+  all-internal-local:
+    - rule: init-local
+    - task: package:prepare-local
+    - task: post-publish:chart-version-local
+    - task: clean:inca-tmp-folder
+
+  all-drop-local:
+    - rule: init-local
+    - task: package:publish-local
+    - task: post-publish:chart-version-local
+    - task: clean:inca-tmp-folder
+
+  all-internal-ci:
+    - rule: init-ci
+    - task: package:prepare-ci
+    - task: clean:inca-tmp-folder
+
+  all-ci: # drop or released based on dependencies' versions
+    - rule: init-ci
+    - task: package:publish-ci
+    - task: package:chart-version
+  
+  clean:
+    - task: inca-tmp-folder
+      cmd: rm -rf ${base.OUTPUT_DIR}/${CHART_NAME}_tmp
+
+  init-local:
+    - rule: sepp.all-local
+
+  init-ci:
+    - rule: sepp.all-ci
+
+  package:
+    - task: prepare-local
+      description: Package and Publish eric-sc-sepp chart to INTERNAL repo with the updated dirty eric-sepp versions
+      docker-image: base.inca
+      docker-envs:
+        # git parameters
+        - SKIP_GIT_CLONE=true
+        - SKIP_GIT_COMMIT=${env.INCA_SKIP_GIT_COMMIT}
+        - GERRIT_USERNAME=${env.base.USER}
+        - GERRIT_PASSWORD=${var.base.gerrit-password}
+        - GIT_REPO_URL=${env.GIT_REPO_URL}
+        - GIT_BRANCH=${env.GIT_BRANCH}
+        # helm parameters
+        - CHART_PATH=${CHART_PATH}
+        - CHART_NAME="${sepp.CHART_NAME}"
+        - CHART_REPO="${base.ARMSERO_ARTIFACTORY_URL}/${var.sepp.sepp-chart-repo}"
+        - CHART_VERSION="${var.sepp.sepp-version}"
+        - HELM_USER=${env.HELM_USER}
+        - HELM_INTERNAL_REPO=${HELM_REPO_URL_INTERNAL}
+        - HELM_DROP_REPO=${HELM_REPO_URL_DROP}
+        - HELM_RELEASED_REPO=${HELM_REPO_URL_RELEASED}
+        - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+        - HELM_REPO_CREDENTIALS=${base.OUTPUT_DIR}/${base.REPO_CREDENTIALS_FILE}
+        - ARM_API_TOKEN=${var.base.serodocker-api-token}
+        - CI_HELM=true
+        - UPLOAD_INTERNAL=true
+        # versioning parameters
+        - UPDATE_APP_VERSION=true
+        - VERSION_CHECK=${env.VERSION_CHECK}
+        - ALLOW_DOWNGRADE=${env.ALLOW_DOWNGRADE}
+      cmd: ihc-auto prepare
+              --debug
+            # -r "eric-product-info.yaml:production_date=${var.product-rel-date}"
+            # -r "eric-product-info.yaml:product_desc=${var.product-description}"
+            # -r "eric-product-info.yaml:product_type=${var.product-type}"
+            # -r "eric-product-info.yaml:commercial_version=${var.product-version}"
+            # -r "eric-product-info.yaml:semantic_version=$(cat ./VERSION_PREFIX)"
+    - task: prepare-ci
+      description: Package and Publish eric-sc-sepp chart in INTERNAL repo with the updated dirty eric-sepp version
+      docker-image: base.inca
+      docker-envs:
+        # git parameters
+        - SKIP_GIT_CLONE=true
+        - SKIP_GIT_COMMIT=${env.INCA_SKIP_GIT_COMMIT}
+        - GERRIT_USERNAME
+        - GERRIT_PASSWORD
+        - GIT_REPO_URL=${env.GIT_REPO_URL}
+        - GIT_BRANCH=${env.GIT_BRANCH}
+        # helm parameters
+        - CHART_NAME
+        - CHART_REPO
+        - CHART_VERSION
+        - CHART_PATH=${CHART_PATH}
+        - HELM_USER=${env.HELM_USER}
+        - HELM_INTERNAL_REPO=${HELM_REPO_URL_INTERNAL}
+        - HELM_DROP_REPO=${HELM_REPO_URL_DROP}
+        - HELM_RELEASED_REPO=${HELM_REPO_URL_RELEASED}
+        - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+        - HELM_REPO_CREDENTIALS=${base.OUTPUT_DIR}/${base.REPO_CREDENTIALS_FILE}
+        - ARM_API_TOKEN=${env.ARM_API_TOKEN}
+        - CI_HELM=true
+        - UPLOAD_INTERNAL=true
+        # versioning parameters
+        - UPDATE_APP_VERSION=true
+        - AUTOMATIC_RELEASE=${env.base.RELEASE}
+        - VERSION_CHECK=${env.VERSION_CHECK}
+        - ALLOW_DOWNGRADE=${env.ALLOW_DOWNGRADE}
+      cmd: ihc-auto prepare
+              --debug
+            # -r "eric-product-info.yaml:production_date=${var.product-rel-date}"
+            # -r "eric-product-info.yaml:product_desc=${var.product-description}"
+            # -r "eric-product-info.yaml:product_type=${var.product-type}"
+            # -r "eric-product-info.yaml:commercial_version=${var.product-version}"
+            # -r "eric-product-info.yaml:semantic_version=$(cat ./VERSION_PREFIX)"
+    - task: publish-local
+      description: Package and Publish eric-sc-sepp chart to DROP or RELEASE repo with the updated DROP eric-sepp version
+      docker-image: base.inca
+      docker-envs:
+        # git parameters
+        - SKIP_GIT_CLONE=true
+        - GERRIT_USERNAME=${env.base.USER}
+        - GERRIT_PASSWORD=${var.base.gerrit-password}
+        - GERRIT_TOPIC="${CHART_NAME}"
+        - GIT_TAG_ENABLED=false
+        - GIT_REPO_URL=${env.GIT_REPO_URL}
+        - GIT_BRANCH=${env.GIT_BRANCH}
+        - VCS_REPO_URL=${env.GIT_REPO_URL}
+        - VCS_BRANCH=${env.GIT_BRANCH}
+        # helm parameters
+        - CHART_PATH=${CHART_PATH}
+        - CHART_NAME="${sepp.CHART_NAME}"
+        - CHART_REPO="${base.ARMSERO_ARTIFACTORY_URL}/${var.sepp.sepp-chart-repo}"
+        - CHART_VERSION="${var.sepp.sepp-version}"
+        - HELM_USER=${env.HELM_USER}
+        - HELM_INTERNAL_REPO=${HELM_REPO_URL_INTERNAL}
+        - HELM_DROP_REPO=${HELM_REPO_URL_DROP}
+        - HELM_RELEASED_REPO=${HELM_REPO_URL_RELEASED}
+        - HELM_REPO_CREDENTIALS=${base.OUTPUT_DIR}/${base.REPO_CREDENTIALS_FILE}
+        - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+        - ARM_API_TOKEN=${var.base.serodocker-api-token}
+        - CI_HELM=true
+        # versioning parameters
+        - AUTOMATIC_RELEASE=false
+        - ALWAYS_RELEASE=false
+        - IGNORE_NON_RELEASED=false
+        - UPDATE_APP_VERSION=true
+        - ALLOW_DOWNGRADE=${env.ALLOW_DOWNGRADE}
+        - VERSION_STEP_STRATEGY_DEPENDENCY=${env.VERSION_STRATEGY}
+        - VERSION_STEP_STRATEGY_MANUAL=${env.VERSION_STRATEGY}
+        - VERSION_CHECK=${env.VERSION_CHECK}
+        # general parameters
+        - SKIP_INFO=true
+      cmd: ihc-auto publish
+              --debug
+            # -r "eric-product-info.yaml:production_date=${var.product-rel-date}"
+            # -r "eric-product-info.yaml:product_desc=${var.product-description}"
+            # -r "eric-product-info.yaml:product_type=${var.product-type}"
+            # -r "eric-product-info.yaml:commercial_version=${var.product-version}"
+            # -r "eric-product-info.yaml:semantic_version=$(cat ./VERSION_PREFIX)"
+    - task: publish-ci
+      description: Package and Publish eric-sc-sepp chart to DROP or RELEASE repo based on the provided CHART_VERSION (drop or pra) version of the CHART_NAME dependency
+      docker-image: base.inca
+      docker-envs:
+        # git parameters
+        - SKIP_GIT_CLONE=false
+        - GERRIT_USERNAME
+        - GERRIT_PASSWORD
+        - GERRIT_REFSPEC
+        - GERRIT_TOPIC="${CHART_NAME}"
+        - GIT_TAG_ENABLED=true
+        - GIT_REPO_URL=${env.GIT_REPO_URL}
+        - GIT_BRANCH=${env.GIT_BRANCH}
+        - VCS_REPO_URL=${env.VCS_REPO_URL}
+        - VCS_BRANCH=${env.VCS_BRANCH}
+        # helm parameters
+        - CHART_NAME 
+        - CHART_REPO
+        - CHART_VERSION
+        - CHART_PATH=${CHART_PATH}
+        - HELM_USER=${env.HELM_USER}
+        - HELM_INTERNAL_REPO=${HELM_INTERNAL_REPO}
+        - HELM_DROP_REPO=${HELM_DROP_REPO}
+        - HELM_RELEASED_REPO=${HELM_RELEASED_REPO}
+        - HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}
+        - ARM_API_TOKEN=${env.ARM_API_TOKEN}
+        - CI_HELM=true
+        # versioning parameters
+        - IGNORE_NON_RELEASED=false
+        - ALWAYS_RELEASE=false
+        - AUTOMATIC_RELEASE=${env.RELEASE}
+        - ALLOW_DOWNGRADE=${env.ALLOW_DOWNGRADE}
+        - VERSION_STEP_STRATEGY_DEPENDENCY=${env.VERSION_STRATEGY}
+        - VERSION_STEP_STRATEGY_MANUAL=${env.VERSION_STRATEGY}
+        - VERSION_CHECK=${env.VERSION_CHECK}
+        - UPDATE_APP_VERSION=true
+        # general parameters
+        - SKIP_INFO=true
+        - SOURCE=${env.JENKINS_URL}/job/${env.JOB_NAME}/${env.BUILD_NUMBER}
+      cmd: ihc-auto publish
+              --debug
+            # -r "eric-product-info.yaml:production_date=${var.product-rel-date}"
+            # -r "eric-product-info.yaml:product_desc=${var.product-description}"
+            # -r "eric-product-info.yaml:product_type=${var.product-type}"
+            # -r "eric-product-info.yaml:commercial_version=${var.product-version}"
+            # -r "eric-product-info.yaml:semantic_version=$(cat ./VERSION_PREFIX)"
+
+  post-publish:
+    - task: chart-version-local
+      cmd: tgz_file=($(ls ${base.OUTPUT_DIR}/ | grep ${CHART_NAME})); version=${tgz_file%.tgz}; version=${version#${CHART_NAME}-}; echo $version > ${base.OUTPUT_DIR}/var.sc-sepp-version

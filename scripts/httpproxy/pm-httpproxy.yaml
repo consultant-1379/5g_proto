@@ -1,0 +1,16 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: eric-pm-server
+  namespace: namespace_template
+  annotations: 
+    kubernetes.io/ingress.class: ingress_class_template
+spec:
+  virtualhost:
+    fqdn: pm.namespace_template.hostname_template.rnd.gic.ericsson.se
+  routes:
+  - conditions:
+      - prefix: /
+    services:
+      - name: eric-pm-server
+        port: 9090

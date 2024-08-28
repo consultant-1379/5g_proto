@@ -1,0 +1,39 @@
+Last updated:
+
+eric-data-search-engine-curator      3.12.0+10
+eric-cnom-server                     2.9.0-289
+eric-cm-yang-provider                18.2.0+92   v4/v6-int
+eric-data-search-engine              12.4.0+22   v4/v6-int
+eric-data-sftp-server                1.29.0-39   v4/v6/ds-int
+eric-data-wide-column-database-cd    6.25.0+54   ds-ext
+eric-log-shipper                     14.7.0+16
+eric-log-transformer                 12.9.0+23
+eric-pm-bulk-reporter                9.19.0+16   v6-int, v4-int
+eric-data-document-database-pg       8.13.0+47
+eric-cm-mediator                     8.10.0+19
+eric-sec-certm                       6.26.0+0
+eric-sec-key-management              6.1.0+17
+eric-sec-sip-tls                     7.2.0+19
+eric-data-distributed-coordinator-ed 9.0.0+33
+eric-data-coordinator-zk             2.0.0+19
+eric-data-message-bus-kf             2.12.0+24
+eric-fh-alarm-handler                11.5.0+21
+eric-pm-server                       10.22.0+19
+eric-tm-ingress-controller-cr        13.5.0+21  v4/v6-ext 
+eric-lm-combined-server              9.3.0+30
+eric-ctrl-bro                        8.1.0+7
+eric-sec-ldap-server                 11.14.0+27
+eric-sec-admin-user-management       4.13.0+9
+eric-odca-diagnostic-data-collector  7.17.0-1
+eric-data-object-storage-mn          2.4.0+46
+eric-si-application-sys-info-handler 2.9.0+14
+eric-probe-virtual-tap-broker        4.4.0-7
+
+
+Not updated:
+eric-fh-snmp-alarm-provider-8.1.0+14
+vpnGw:
+  sendToAddress: # only used for ipv6
+Can be empty for our deployments.
+  
+

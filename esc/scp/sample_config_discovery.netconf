@@ -1,0 +1,146 @@
+<hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <capabilities>
+        <capability>urn:ietf:params:netconf:base:1.0</capability>
+    </capabilities>
+</hello>]]>]]>
+
+<?xml version="1.0"?>
+<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:ns2="urn:com:ericsson:ecim:1.0" xmlns:ns3="http://tail-f.com/ns/netconf/actions/1.0" xmlns:ns4="urn:ietf:params:xml:ns:yang:ietf-netconf-monitoring" xmlns:ns5="urn:ietf:params:xml:ns:netconf:notification:1.0" message-id="0">
+  <edit-config>
+    <target>
+      <running/>
+    </target>
+      <config>
+            <scp-function operation="replace" xmlns="urn:rdns:com:ericsson:oammodel:ericsson-scp">
+                <nf-instance xmlns="urn:rdns:com:ericsson:oammodel:ericsson-scp">
+                    <name>instance_1</name>
+                    <service-address>
+                        <name>internalAddress</name>
+                        <!-- change based on your deployment -->
+                        <port>32632</port>
+                        <fqdn>scp.ericsson.se</fqdn>
+                        <!-- change based on your deployment -->                        
+                        <ipv4-address>10.120.220.30</ipv4-address>
+                    </service-address>
+
+                    <own-network>
+                        <name>internalNetwork</name>
+                        <service-address-ref>internalAddress</service-address-ref>
+                        <routing-case-ref>default_routing</routing-case-ref>
+                    </own-network>
+                    
+                    <message-data>
+                        <name>apiRoot_data</name>
+                        <header>3gpp-Sbi-target-apiRoot</header>
+                        <extractor-regex>eric-chfsim-\d+-mnc-(?&lt;mnc&gt;\d+)-mcc-(?&lt;mcc&gt;\d+)</extractor-regex>
+                    </message-data>
+                    <message-data>
+                        <name>chfsim_data</name>
+                        <header>3gpp-Sbi-target-apiRoot</header>
+                        <extractor-regex>eric-(?&lt;chfsim&gt;chfsim-\d+?)-.+</extractor-regex>
+                    </message-data>
+                    <routing-case>
+                        <name>default_routing</name>
+                        <message-data-ref>apiRoot_data</message-data-ref>
+                        <message-data-ref>chfsim_data</message-data-ref>
+                        <routing-rule>
+                            <name>csepp_to_rp_A</name>
+                            <condition>var.mnc=='123' and var.mcc=='123'</condition>
+                            <action-pool>occ</action-pool>
+                        </routing-rule>
+                        <routing-rule>
+                            <name>psepp_to_dfw</name>
+                            <condition>var.mnc=='456' and var.mcc=='456' and (var.chfsim=='chfsim-6' or var.chfsim=='chfsim-7' or var.chfsim=='chfsim-8')</condition>
+                            <action-pool>universal_pool</action-pool>
+                        </routing-rule>
+                        <routing-rule>
+                            <name>psepp_to_pref</name>
+                            <condition>var.mnc=='456' and var.mcc=='456'</condition>
+                            <action-pool>occ</action-pool>
+                        </routing-rule>
+                    </routing-case>
+                    <static-nf-instance-data>
+                        <name>static_sepp_rp_A</name>
+                        <static-nf-instance>
+                            <name>seppA-chfsim1</name>
+                            <fqdn>eric-chfsim-1-mnc-123-mcc-123</fqdn>
+                            <port>80</port>
+                        </static-nf-instance>
+                        <static-nf-instance>
+                            <name>seppA-chfsim2</name>
+                            <fqdn>eric-chfsim-2-mnc-123-mcc-123</fqdn>
+                            <port>80</port>
+                        </static-nf-instance>
+                    </static-nf-instance-data>
+                    <static-nf-instance-data>
+                        <name>static_occ</name>
+                        <static-nf-instance>
+                            <name>occ-chfsim3</name>
+                            <fqdn>eric-chfsim-3-mnc-456-mcc-456</fqdn>
+                            <port>80</port>
+                        </static-nf-instance>
+                        <static-nf-instance>
+                            <name>occ-chfsim4</name>
+                            <fqdn>eric-chfsim-4-mnc-456-mcc-456</fqdn>
+                            <port>80</port>
+                        </static-nf-instance>
+                        <static-nf-instance>
+                            <name>occ-chfsim5</name>
+                            <fqdn>eric-chfsim-5-mnc-456-mcc-456</fqdn>
+                            <port>80</port>
+                        </static-nf-instance>
+                    </static-nf-instance-data>
+                    <nf-pool>
+                        <name>sepp_rp_A</name>
+                        <failover-behavior-ref>fob1</failover-behavior-ref>
+                        <nf-pool-discovery>
+                            <name>sepp_rp_A_pool</name>
+                            <static-nf-instance-data-ref>static_sepp_rp_A</static-nf-instance-data-ref>
+                        </nf-pool-discovery>
+                        <routing-method>forward</routing-method>
+                        <priority-group>
+                            <name>sepp_rp_A_priority-group</name>
+                            <priority>1</priority>
+                        </priority-group>
+                    </nf-pool>
+                    <nf-pool>
+                        <name>occ</name>                     
+                        <failover-behavior-ref>fob1</failover-behavior-ref>
+                        <nf-pool-discovery>
+                            <name>occ_pool</name>
+                            <static-nf-instance-data-ref>static_occ</static-nf-instance-data-ref>
+                        </nf-pool-discovery>
+                        <routing-method>target-api-root</routing-method>
+                        <priority-group>
+                            <name>occ_priority-group</name>
+                            <priority>1</priority>
+                        </priority-group>
+                    </nf-pool>
+                    <nf-pool>
+                        <name>universal_pool</name>
+                        <failover-behavior-ref>fob1</failover-behavior-ref>
+                        <routing-method>target-api-root</routing-method>
+                    </nf-pool>
+                    <failover-behavior>
+                        <name>fob1</name>
+                        <request-timeout>3456</request-timeout>
+                        <retry-condition>
+                            <http-status>500</http-status>
+                            <http-status>501</http-status>
+                            <http-status>502</http-status>
+                            <http-status>503</http-status>
+                            <http-status>504</http-status>
+                            <reset></reset>
+                            <connect-failure></connect-failure>
+                            <refused-stream></refused-stream>
+                        </retry-condition>
+                        <per-priority-retries-max>1</per-priority-retries-max>
+                        <total-retries-max>3</total-retries-max>
+                        <peer-timeout>2345</peer-timeout>
+                    </failover-behavior>
+                </nf-instance>
+            </scp-function>
+        </config>
+    </edit-config>
+</rpc>
+]]>]]>

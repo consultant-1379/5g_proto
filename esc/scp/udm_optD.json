@@ -1,0 +1,70 @@
+{
+   "nfInstanceId":"2f51c4c2-03ec-4983-86ef-6e00c52d6e51",
+   "nfInstanceName":"udm1",
+   "nfType":"UDM",
+   "nfStatus":"REGISTERED",
+   "heartBeatTimer":60,
+   "capacity":100,
+   "locality":"WestRegion",
+   "nfServicePersistence":false,
+   "nfServiceList":{
+      "Pool2.LABUDM.VCCOSL5GL00":{
+         "serviceInstanceId":"Pool2.LABUDM.VCCOSL5GL00",
+         "serviceName":"nudm-sdm",
+         "versions":[
+           
+         ],
+         "scheme":"http",
+         "nfServiceStatus":"REGISTERED",
+         "fqdn":"eric-seppsim-p1-mcc-206-mnc-33",
+         "priority":11,
+         "capacity":100,
+         "oauth2Required": false,
+         "nfServiceSetIdList":[
+            "setD"
+         ],
+         "ipEndPoints":[ 
+            {
+              "ipv4Address":"10.99.255.164", 
+               "transport":"TCP",
+               "port":32576
+            }
+         ]
+      }
+      
+   },
+   "nfProfileChangesSupportInd":false,
+   "nfProfileChangesInd":false,
+   "nfSetIdList":[
+      "setD"
+   ],
+   "lcHSupportInd":true,
+   "olcHSupportInd":false,
+   "plmnList": [
+      {
+        "mcc": "206",
+        "mnc": "33"
+      }
+    ],
+   "sNssais": [
+    {
+      "sst": 101,
+      "sd": "Aa101"
+    }
+   ],
+   "allowedSNssais": [
+    {
+      "sst": 101,
+      "sd": "Aa101"
+    }
+   ],
+   "allowedPlmns": [
+      {
+        "mcc": "262",
+        "mnc": "72"
+      }
+    ],
+   "scpDomains":[
+      "Domain1"
+   ]
+}

@@ -1,0 +1,20 @@
+## Feature Description:
+## 1) All container logs are sent to stdout
+## 2) All services utilize the direct log streaming feature (via logshipper sidecar, syslog client etc.)
+## 3) Log Shipper is deployed as a sidecar container (in the services that use sidecar)
+
+## Note:
+## 1) The services that do not use logshipper sidecar container send logs directly to Log Transformer via TCP, Syslog Client etc.
+## 2) All SC services use logshipper sidecar.
+## 3) global.logshipper.deployment.type can also be "" (empty), which deploys Log Shipper as Deamonset. In this case
+##    we may have double logs in Search Engine since the logs are shipped both by the the sidecars and the Daemonset
+
+global:
+  log:
+    streamingMethod: "dual" # logs in stdout + enables direct log streaming
+  logShipper:
+    deployment:
+      type: "sidecar" # deploys Log Shipper as sidecar
+
+eric-sc-cs-log-shipper:
+  enabled: true

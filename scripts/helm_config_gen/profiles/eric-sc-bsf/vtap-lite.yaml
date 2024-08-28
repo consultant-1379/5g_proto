@@ -1,0 +1,6 @@
+eric-bsf:
+  tapagent:
+    worker:
+      enabled: true
+    manager:
+      enabled: true

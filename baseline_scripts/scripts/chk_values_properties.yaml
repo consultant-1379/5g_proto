@@ -1,0 +1,9 @@
+---
+blacklisted-services:
+- service-name: eric-data-wide-column-database-cd 
+- service-name: eric-probe-virtual-tap-broker
+- service-name: eric-stm-diameter
+- service-name: eric-scp
+- service-name: eric-sepp
+- service-name: eric-bsf
+- service-name: eric-sc-slf

@@ -1,0 +1,192 @@
+diff --git a/openssl-classes/src/main/java/io/netty/internal/tcnative/KeylogCallback.java b/openssl-classes/src/main/java/io/netty/internal/tcnative/KeylogCallback.java
+new file mode 100644
+index 0000000..f6f39da
+--- /dev/null
++++ b/openssl-classes/src/main/java/io/netty/internal/tcnative/KeylogCallback.java
+@@ -0,0 +1,64 @@
++/** 
++ * COPYRIGHT ERICSSON GMBH 2019
++ *
++ * The copyright to the computer program(s) herein is the property
++ * of Ericsson GmbH, Germany.
++ *
++ * The program(s) may be used and/or copied only with the written
++ * permission of Ericsson GmbH in accordance with
++ * the terms and conditions stipulated in the agreement/contract
++ * under which the program(s) have been supplied.
++ *
++ * Created on: Nov 10, 2021
++ *     Author: echfari
++ */
++package io.netty.internal.tcnative;
++
++import java.util.concurrent.atomic.AtomicReference;
++import java.util.function.Consumer;
++
++/**
++ * Enables native TLS tracing callback to be used from java code
++ */
++public final class KeylogCallback
++{
++    private static final AtomicReference<Consumer<String>> cb = new AtomicReference<Consumer<String>>();
++
++    private KeylogCallback()
++    {
++    }
++
++    /**
++     * Set a global callback for receiving premaster TLS secrets. The receiver
++     * should be thread safe and non-blocking, since it might be called by native
++     * threads handling TLS connection establishment
++     * 
++     * @param callback The global receiver
++     */
++    public static void setCallback(Consumer<String> callback)
++    {
++        cb.set(callback);
++    }
++
++    /**
++     * Clear the callback set with {@link #setCallback(Consumer)}
++     */
++    public static void clearCallback()
++    {
++        cb.set(null);
++    }
++
++    /**
++     * Called from native code after TLS connection establishment
++     * 
++     * @param line A logline containing TLS secrets for the established connection
++     */
++    static final void log(String line)
++    {
++        final Consumer<String> handler = cb.get();
++        if (handler != null)
++        {
++            handler.accept(line);
++        }
++    }
++}
+diff --git a/openssl-classes/src/main/java/io/netty/internal/tcnative/Library.java b/openssl-classes/src/main/java/io/netty/internal/tcnative/Library.java
+index 074162a..786a5c1 100644
+--- a/openssl-classes/src/main/java/io/netty/internal/tcnative/Library.java
++++ b/openssl-classes/src/main/java/io/netty/internal/tcnative/Library.java
+@@ -64,7 +64,9 @@ public final class Library {
+ 
+                 // sslcontext
+                 SSLTask.class, CertificateCallbackTask.class, CertificateCallback.class, SSLPrivateKeyMethodTask.class,
+-                SSLPrivateKeyMethodSignTask.class, SSLPrivateKeyMethodDecryptTask.class
++                SSLPrivateKeyMethodSignTask.class, SSLPrivateKeyMethodDecryptTask.class,
++                //keylog
++                KeylogCallback.class
+                 );
+     }
+ 
+diff --git a/openssl-classes/src/main/java/io/netty/internal/tcnative/SSLContext.java b/openssl-classes/src/main/java/io/netty/internal/tcnative/SSLContext.java
+index e83adbc..e800405 100644
+--- a/openssl-classes/src/main/java/io/netty/internal/tcnative/SSLContext.java
++++ b/openssl-classes/src/main/java/io/netty/internal/tcnative/SSLContext.java
+@@ -760,4 +760,13 @@ public final class SSLContext {
+      * @param size the maximum number of bytes
+      */
+     public static native void setMaxCertList(long ctx, int size);
++    
++    /**
++     * Enable TLS premaster key tracing globally. This functionality is disabled by
++     * default. Use {@link KeylogCallback#setCallback(java.util.function.Consumer)}
++     * to receive traced secrets.
++     * 
++     * @param enabled True if tracing should be enabled, false otherwise
++     */
++    public static native void enableTracing(boolean enabled);
+ }
+diff --git a/openssl-dynamic/src/main/c/sslcontext.c b/openssl-dynamic/src/main/c/sslcontext.c
+index 1d45ca7..ad987cf 100644
+--- a/openssl-dynamic/src/main/c/sslcontext.c
++++ b/openssl-dynamic/src/main/c/sslcontext.c
+@@ -60,10 +60,32 @@ static jmethodID sslPrivateKeyMethodSignTask_init;
+ static jweak    sslPrivateKeyMethodDecryptTask_class_weak;
+ static jmethodID sslPrivateKeyMethodDecryptTask_init;
+ 
++static jclass    sslKeylogCallback_class;
++static jmethodID sslKeylogCallback_log;
++
+ static const char* staticPackagePrefix = NULL;
+ 
+ extern apr_pool_t *tcn_global_pool;
+ 
++apr_uint32_t keylog_enabled = 0;
++
++static void ssl_keylog_callback(const SSL *ssl, const char *logline)
++{
++	if (!apr_atomic_read32(&keylog_enabled)) {
++		return;
++	}
++	JNIEnv *e = NULL;
++	    if (tcn_get_java_env(&e) != JNI_OK) {
++	        return;
++	    }
++	    jstring logline_str = tcn_new_string(e,logline);
++	    (*e)->CallStaticVoidMethod(e, sslKeylogCallback_class, sslKeylogCallback_log, logline_str);
++	     // We need to delete the local references so we not leak memory as this method is called via callback.
++            (*e)->DeleteLocalRef(e, logline_str);
++
++	    return;
++}
++
+ static apr_status_t ssl_context_cleanup(void *data)
+ {
+     tcn_ssl_ctxt_t *c = (tcn_ssl_ctxt_t *)data;
+@@ -378,6 +400,9 @@ TCN_IMPLEMENT_CALL(jlong, SSLContext, make)(TCN_STDARGS, jint protocol, jint mod
+ 
+     SSL_CTX_set_options(c->ctx, SSL_OP_NO_COMPRESSION);
+ 
++    /* Register global keylog callback */
++    SSL_CTX_set_keylog_callback(c->ctx, &ssl_keylog_callback);
++
+     /*
+      * Disallow a session from being resumed during a renegotiation,
+      * so that an acceptable cipher suite can be negotiated.
+@@ -2785,10 +2810,21 @@ TCN_IMPLEMENT_CALL(jint, SSLContext, addCertificateCompressionAlgorithm0)(TCN_ST
+ #endif // OPENSSL_IS_BORINGSSL
+ }
+ 
++TCN_IMPLEMENT_CALL(void, SSLContext, enableTracing)(TCN_STDARGS, jboolean enabled)
++{
++  if(enabled == JNI_TRUE) {
++    apr_atomic_set32(&keylog_enabled,1);
++  }
++  else {
++    apr_atomic_set32(&keylog_enabled,0);
++  }
++}
++
+ // JNI Method Registration Table Begin
+ static const JNINativeMethod fixed_method_table[] = {
+   { TCN_METHOD_TABLE_ENTRY(make, (II)J, SSLContext) },
+   { TCN_METHOD_TABLE_ENTRY(free, (J)I, SSLContext) },
++  { TCN_METHOD_TABLE_ENTRY(enableTracing, (Z)V, SSLContext) },
+   { TCN_METHOD_TABLE_ENTRY(setContextId, (JLjava/lang/String;)V, SSLContext) },
+   { TCN_METHOD_TABLE_ENTRY(setOptions, (JI)V, SSLContext) },
+   { TCN_METHOD_TABLE_ENTRY(getOptions, (J)I, SSLContext) },
+@@ -2992,6 +3028,11 @@ jint netty_internal_tcnative_SSLContext_JNI_OnLoad(JNIEnv* env, const char* pack
+     TCN_REASSIGN(name, combinedName);
+     NETTY_JNI_UTIL_GET_METHOD(env, sslPrivateKeyMethodDecryptTask_class, sslPrivateKeyMethodDecryptTask_init, "<init>", name, error);
+ 
++    //NETTY_JNI_UTIL_PREPEND(packagePrefix, "io/netty/internal/tcnative/KeylogCallback", name, error);
++    NETTY_JNI_UTIL_LOAD_CLASS(env, sslKeylogCallback_class, "io/netty/internal/tcnative/KeylogCallback", error);
++    sslKeylogCallback_log = (*env)->GetStaticMethodID(env, sslKeylogCallback_class,"log", "(Ljava/lang/String;)V");
++    if (sslKeylogCallback_log == NULL) goto error;
++
+     if (packagePrefix != NULL) {
+         staticPackagePrefix = strdup(packagePrefix);
+     }
+@@ -3017,6 +3058,7 @@ void netty_internal_tcnative_SSLContext_JNI_OnUnLoad(JNIEnv* env, const char* pa
+     NETTY_JNI_UTIL_UNLOAD_CLASS_WEAK(env, sslPrivateKeyMethodTask_class_weak);
+     NETTY_JNI_UTIL_UNLOAD_CLASS_WEAK(env, sslPrivateKeyMethodSignTask_class_weak);
+     NETTY_JNI_UTIL_UNLOAD_CLASS_WEAK(env, sslPrivateKeyMethodDecryptTask_class_weak);
++    NETTY_JNI_UTIL_UNLOAD_CLASS(env, sslKeylogCallback_class);
+ 
+     free((void*) staticPackagePrefix);
+     staticPackagePrefix = NULL;

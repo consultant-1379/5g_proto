@@ -1,0 +1,4 @@
+users:
+   - user: user1
+     groups: [system-admin, system-security-admin]
+     encryptedPass: $1$e75Ddck.$d/NvvO3Ns1jxd9JpCLiUM.

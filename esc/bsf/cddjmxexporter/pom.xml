@@ -1,0 +1,72 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>com.ericsson</groupId>
+		<artifactId>esc-parent</artifactId>
+		<version>1.0.29-SNAPSHOT</version>
+		<relativePath>../../../pom.xml</relativePath>
+	</parent>
+
+	<groupId>com.ericsson.bsf</groupId>
+	<artifactId>eric-bsf-worker-cddjmxexporter</artifactId>
+	<version>${revision}</version>
+
+	<properties>
+		<jacoco.skip>true</jacoco.skip>
+		<!-- Redefine to gain access to parent POM dir -->
+		<main.basedir>${project.parent.basedir}</main.basedir>
+		<!-- The main class in produced jar,used by shade plugin -->
+		<mainClass>io.prometheus.jmx.WebServer</mainClass>
+		<!-- Skip compile and test plugin as there are no sources -->
+		<maven.main.skip>true</maven.main.skip>
+		<maven.test.skip>true</maven.test.skip>
+		<revision>${sc.version}</revision>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>io.prometheus.jmx</groupId>
+			<artifactId>jmx_prometheus_httpserver</artifactId>
+			<version>${io.prometheus.jmx.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.dropwizard.metrics</groupId>
+			<artifactId>metrics-jmx</artifactId>
+		</dependency>
+		<!-- This is needed for the logback based logging system.TODO: move
+		logback logging to different POM -->
+		<dependency>
+			<groupId>com.ericsson</groupId>
+			<artifactId>utilities</artifactId>
+		</dependency>
+		<!-- Send java.util.logging logs to logback -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jul-to-slf4j</artifactId>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<!-- Clean the libs folder to avoid including old libraries -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-clean-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<!-- Copy common resources such as docker starter scripts -->
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<!-- Generate dependencies file for FOSS evaluation -->
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+</project>

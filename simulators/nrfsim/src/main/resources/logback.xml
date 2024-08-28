@@ -1,0 +1,14 @@
+<configuration>
+  	<conversionRule conversionWord="pid" converterClass="com.ericsson.utilities.logger.ProcessIdConverter" />
+  	<conversionRule conversionWord="processId" converterClass="com.ericsson.utilities.logger.ProcessIdConverter" />
+  	
+	<appender name="STDOUT"	class="ch.qos.logback.core.ConsoleAppender">     <!-- encoders are assigned the type ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
+		<encoder>
+            <pattern>%date{yyyy-MM-dd HH:mm:ss.SSSZ} nrfsim[%pid]: %-5level|%-20.20thread|%30.30logger{30}:%-4L|%-30.30method|%msg%n</pattern>
+		</encoder>
+	</appender>
+	
+	<root level="INFO">
+		<appender-ref ref="STDOUT" />
+	</root>
+</configuration>

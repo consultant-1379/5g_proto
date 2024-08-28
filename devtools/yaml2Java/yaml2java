@@ -1,0 +1,80 @@
+#!/bin/bash
+
+package="$1"
+
+#Reading file from folder ./resources
+export YAML_FILE="./resources/$(ls ./resources)" 
+#echo "${YAML_FILE}";
+sed -i 's/$//g' ${YAML_FILE}
+cat ${YAML_FILE} | gawk -f remove_description_lines.awk > ${YAML_FILE}.tmp
+mv ${YAML_FILE}.tmp ${YAML_FILE}
+# Extracting the general properties of the yaml
+export DESCRIPTION=$(grep -m1 "description: " $YAML_FILE | cut -d':' -f2 | sed -e "s/'//g" -e "s/ //");
+export TITLE=$(grep -m1 "title: " $YAML_FILE | cut -d':' -f2 | sed -e "s/'//g" -e "s/ //");
+export VERSION=$(grep -m1 "version: " $YAML_FILE | cut -d':' -f2 | sed -e "s/'//g" -e "s/ //");
+export DATE=$(date +%FT%T.$(date +%N | grep -oE '^[0-9]{6}')%:z);
+
+# Fetching the Indexes of the enums
+grep -n "anyOf:" $YAML_FILE | grep -v "#" | cut -d':' -f1  > line_number
+
+i=0; 
+export CURIND=0; 
+PREVIND=0; 
+while read line ; 
+do 
+	export CURIND=$(($line-1)); 
+        # echo "This is the current index being processed: ${CURIND}"
+
+        if [[ $( sed -n "$(( $CURIND + 2 ))p" $YAML_FILE | sed 's/ //g' ) == "-type:string" ]];
+        then
+           # echo "At Index: $(( $CURIND + 2 )), line is matching -type:string";
+           if [[ $( sed -n "$(( $CURIND + 3 ))p" $YAML_FILE | sed 's/ //g' ) == "enum:" ]];
+           then
+              # echo "At Index: $(( $CURIND + 3 )), line is matching enum:";
+              export TYPENAME=$( sed -n "${CURIND}p" $YAML_FILE | sed -e 's/ //g' -e 's/://g' );
+              TYPENAME_MINOR=$(echo $TYPENAME | sed 's/ /_/g' | tr [A-Z] [a-z]);
+
+              echo "The enum class for ${TYPENAME} will be created now."
+              # Generating the java file and exchanging the general properties
+
+              cp ./template/template.java ./java/${TYPENAME}.java
+              sed -i "s/<DESCRIPTION>/${DESCRIPTION}/" ./java/${TYPENAME}.java
+              sed -i "s/<VERSION>/${VERSION}/" ./java/${TYPENAME}.java
+              sed -i "s/<TITLE>/${TITLE}/" ./java/${TYPENAME}.java 
+              sed -i "s/<PACKAGE>/${package}/" ./java/${TYPENAME}.java 
+              sed -i "s/<DATE>/${DATE}/" ./java/${TYPENAME}.java 
+              sed -i "s/<TYPENAME>/${TYPENAME}/" ./java/${TYPENAME}.java 
+
+              export ITERATOR=$(( ${CURIND} + 4 ));
+              #sed -n "${ITERATOR}p" $YAML_FILE | sed 's/ //g' | grep -q "\-type:string"
+              
+              while [[ $( sed -n "${ITERATOR}p" $YAML_FILE | sed 's/ //g' ) != "-type:string" ]];
+              #while (( $? ));
+              do 
+                    ENUMVALUE=$( sed -n "${ITERATOR}p" $YAML_FILE | sed -e 's/^[^a-zA-Z0-9]*//g');
+                    ENUMCONST=$( echo ${ENUMVALUE} | sed -e 's/[- ]/_/g' -e 's/\(^[0-9]\)/_\1/' );
+                    # echo "At Index: ${ITERATOR}, enum is \"${ENUMCONST^^}\"=\"${ENUMVALUE}\"";
+                    export CONSTIND=$(grep -n -m1 "}" ./java/${TYPENAME}.java | cut -d':' -f1);
+                    export INSERTIND=$(( ${CONSTIND} - 1 ));
+
+                    if [[ $( sed -n "$(( ${ITERATOR} + 1 ))p" $YAML_FILE | sed 's/ //g' ) != "-type:string" ]];
+                    then
+                       INSERTLINE="   public static final String ${ENUMCONST^^} = \"${ENUMVALUE}\";";
+                    else
+                       INSERTLINE="   public static final String ${ENUMCONST^^} = \"${ENUMVALUE}\";";
+                    fi;
+                    sed -i "${INSERTIND}i\ ${INSERTLINE}" ./java/${TYPENAME}.java;
+                    
+                    ITERATOR=$(( ${ITERATOR} + 1 ));
+                    #sed -n "${ITERATOR}p" $YAML_FILE | sed 's/ //g' | grep -q "\-type:string"
+
+              done;
+           fi;
+        fi;
+
+	i=$(($i+1)); 
+	PREVIND=$CURIND; 
+
+done <  line_number
+# removing temp helper file
+rm -rf line_number

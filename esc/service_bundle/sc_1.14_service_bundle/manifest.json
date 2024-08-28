@@ -1,0 +1,44 @@
+{
+  "manifest-version": 1.0,
+  "bundle-version": "1.0.0",
+  "enabled": true,
+  "service-name": "SC 1.14  Configuration Service",
+  "served-configurations": [
+    {
+      "name": "General",
+      "id": "general",
+      "with-lld": true,
+      "with-wizard": true,
+      "order": 1
+    },
+    {
+      "name": "Day0 Config",
+      "id": "day0-conf",
+      "edit-mode": [
+        "tree"
+      ],
+      "raw-format": "yaml",
+      "read-only": false,
+      "order": 2
+    },
+    {
+      "name": "Day1 Config",
+      "id": "day1-conf",
+      "edit-mode": [
+        "tree"
+      ],
+      "with-sub-confs": true,
+      "raw-format": "xml",
+      "read-only": false,
+      "order": 3
+    }
+  ],
+  "served-products": [
+    {
+      "name": "sc",
+      "versions": [
+        "1.14"
+      ]
+    }
+  ]
+}

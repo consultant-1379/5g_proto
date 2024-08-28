@@ -1,0 +1,51 @@
+//Not working yet, do not use
+
+def String artifactory = "https://arm.rnd.ki.sw.ericsson.se/artifactory/"
+
+def String cmMediatorName = "eric-cm-mediator"
+def String cmMediatorVersion = "1.1.0-53"
+def String cmMediatorBasedir = "proj-adp-helm-dev-generic-local/cd/management/"
+
+def String documentDatabasePgName = "eric-data-document-database-pg"
+def String documentDatabasePgVersion = "1.1.0-1"
+def String documentDatabasePgBasedir = "proj-adp-helm-dev-generic-local/udm/datamanagement/"
+
+def username = System.getenv("USERNAME")
+def namespace = "5g-bsf-${username}"
+
+def String url = ""
+def String options = ""
+
+ext.fetchComponent = { ->
+	exec{
+    	println "${url}"
+    	commandLine 'wget', "${url}"
+    }
+}
+
+ext.deployComponent = { adpFilename ->
+	exec{
+		println "Installing Helm chart ${adpFilename} in namespace ${namespace}"
+     	//commandLine 'helm', "install --namespace ${namespace} --name ${adpFilename}-${namespace} ${adpFilename} --set backend.hostname=eric-data-document-database-pg-cm.${namespace},service.name=eric-cm-mediator,kafka.hostname=eric-data-message-bus-kf.${namespace},cmm.debug=true"
+		//commandLine 'helm', "install --namespace ${namespace} --name ${adpFilename}-${namespace} ${adpFilename} ${options}     	
+     	commandLine 'helm', 'list'
+     	//commandLine 'ls'
+	}
+}
+
+task deployCmMediator() {
+	doLast{
+		url = "${artifactory}${cmMediatorBasedir}${cmMediatorName}/${cmMediatorName}-${cmMediatorVersion}.tgz"
+		options = "--set backend.hostname=eric-data-document-database-pg-cm.${namespace},service.name=eric-cm-mediator,kafka.hostname=eric-data-message-bus-kf.${namespace},cmm.debug=true"
+    	fetchComponent()
+    	deployComponent("${cmMediatorName}-${cmMediatorVersion}.tgz")
+	}    	    	
+    	
+}
+
+task deployDocumentDatabasePg() {
+	doLast{
+		url = "${artifactory}${documentDatabasePgBasedir}${documentDatabasePgName}/${documentDatabasePgName}-${documentDatabasePgVersion}.tgz"		
+		fetchComponent()
+	}    	
+}

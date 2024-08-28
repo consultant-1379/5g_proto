@@ -1,0 +1,58 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2024-05-28 13:28
+FOSS:
+    # Available in Bazaar
+    FOSSName: Netty
+    # Available in Bazaar
+    FOSSVersion: NETTY-4.1.107.FINAL
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/netty/netty/archive/netty-4.1.107.Final.tar.gz
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 156/CAX1054544
+    # Not Available in Bazaar
+    Primary: Y
+    # Available in Bazaar
+    STAKOCode: General use
+    # Available in Bazaar
+    STAKOReason: ()
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: 'Netty is a NIO client server framework which enables quick and easy development of network applications such as protocol servers and clients.'
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: Apache License 2.0
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency:
+    - 'io.netty:netty-buffer:jar:4.1.107.FINAL'
+    - 'io.netty:netty-codec-dns:jar:4.1.107.FINAL'
+    - 'io.netty:netty-codec-http2:jar:4.1.107.FINAL'
+    - 'io.netty:netty-codec-http:jar:4.1.107.FINAL'
+    - 'io.netty:netty-codec-socks:jar:4.1.107.FINAL'
+    - 'io.netty:netty-codec:jar:4.1.107.FINAL'
+    - 'io.netty:netty-common:jar:4.1.107.FINAL'
+    - 'io.netty:netty-handler-proxy:jar:4.1.107.FINAL'
+    - 'io.netty:netty-handler:jar:4.1.107.FINAL'
+    - 'io.netty:netty-resolver-dns:jar:4.1.107.FINAL'
+    - 'io.netty:netty-resolver:jar:4.1.107.FINAL'
+    - 'io.netty:netty-resolver-dns-classes-macos:jar:4.1.107.FINAL'
+    - 'io.netty:netty-resolver-dns-native-macos:jar:osx-x86_64:4.1.107.FINAL'
+    - 'io.netty:netty-transport-native-epoll:jar:linux-x86_64:4.1.107.FINAL'
+    - 'io.netty:netty-transport-native-unix-common:jar:4.1.107.FINAL'
+    - 'io.netty:netty-transport:jar:4.1.107.FINAL'
+    - 'io.netty:netty-transport-classes-epoll:jar:4.1.107.FINAL'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ZFILARI Aristippos Filippou

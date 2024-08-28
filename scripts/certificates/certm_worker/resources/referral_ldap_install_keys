@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"> 
+    <capabilities> 
+        <capability>urn:ietf:params:netconf:base:1.0</capability> 
+        <capability>urn:ietf:params:netconf:capability:writable-running:1.0</capability> 
+        <capability>urn:ietf:params:netconf:capability:rollback-on-error:1.0</capability> 
+    </capabilities> 
+</hello> 
+]]>]]> 
+<rpc message-id="1" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"> 
+<action xmlns="urn:ietf:params:xml:ns:yang:1" 
+    xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0"> 
+    <keystore xmlns="urn:ietf:params:xml:ns:yang:ietf-keystore"> 
+        <asymmetric-keys> 
+            <install-asymmetric-key-pkcs12 xmlns="urn:rdns:com:ericsson:oammodel:ericsson-keystore-ext"> 
+                <name>sc-referral-ldap-default-key</name> 
+                <certificate-name>sc-referral-ldap-default-cert</certificate-name> 
+                <p12>container-base64.p12</p12> 
+                <p12-password>pkcs12password</p12-password> 
+            </install-asymmetric-key-pkcs12> 
+        </asymmetric-keys> 
+    </keystore> 
+</action> 
+</rpc> 
+]]>]]>
+<rpc message-id="1" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+	<close-session/>
+</rpc>
+]]>]]>

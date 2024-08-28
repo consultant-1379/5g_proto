@@ -1,0 +1,16 @@
+## Feature Description:
+## 1) All container logs are sent to stdout
+
+## Note:
+## 1) This profile is used only for resource reduction in local deployments
+## 2) The direct, indirect and dual log streaming profiles are used in production
+
+global:
+  log:
+    streamingMethod: "indirect"
+  logShipper:
+    deployment:
+      type: ""
+
+eric-dsc-log-shipper:
+  enabled: false

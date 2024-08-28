@@ -1,0 +1,148 @@
+openapi: 3.0.0
+info:
+  version: '1.0.0'
+  title: 'SLF NF Discovery Service'
+  description: |
+    SLF Discovery Service.
+    © 2020, Ericsson GmbH.
+    All rights reserved.
+servers:
+  - url: '{apiRoot}/nslf-disc/v0'
+    variables:
+      apiRoot:
+        default: https://example.com
+        description: apiRoot as defined in clause 4.4 of 3GPP TS 29.501
+security:
+  - {}
+  - oAuth2ClientCredentials:
+      - nslf-disc
+paths:
+  /addresses:
+    get:
+      summary: Search a collection of Addresses
+      operationId: SearchAddresses
+      tags:
+        - Addresses (Store)
+      parameters:
+        - name: nrf-group
+          in: header
+          description: The NRF group to be used for the discovery
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: How many items to return at one time
+          required: false
+          schema:
+            type: integer
+        - name: target-nf-type
+          in: query
+          description: Type of the target NF
+          required: true
+          schema:
+            $ref: '/3gpp/TS29510_Nnrf_NFManagement.yaml#/components/schemas/NFType'
+        - name: requester-nf-type
+          in: query
+          description: Type of the requester NF
+          required: true
+          schema:
+            $ref: '/3gpp/TS29510_Nnrf_NFManagement.yaml#/components/schemas/NFType'
+        - name: service-names
+          in: query
+          description: Names of the services offered by the NF
+          schema:
+            type: array
+            items:
+              type: string
+#              $ref: '/3gpp/TS29510_Nnrf_NFManagement.yaml#/components/schemas/ServiceName'
+            minItems: 1
+            uniqueItems: true
+          style: form
+          explode: false
+        - name: supi
+          in: query
+          description: SUPI of the user
+          schema:
+            $ref: '/3gpp/TS29571_CommonData.yaml#/components/schemas/Supi'
+        - name: gpsi
+          in: query
+          description: GPSI of the user
+          schema:
+            $ref: '/3gpp/TS29571_CommonData.yaml#/components/schemas/Gpsi'
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResult'
+        '400':
+          $ref: '/3gpp/TS29571_CommonData.yaml#/components/responses/400'
+        '401':
+          $ref: '/3gpp/TS29571_CommonData.yaml#/components/responses/401'
+        '403':
+          $ref: '/3gpp/TS29571_CommonData.yaml#/components/responses/403'
+        '404':
+          $ref: '/3gpp/TS29571_CommonData.yaml#/components/responses/404'
+        '406':
+          $ref: '/3gpp/TS29571_CommonData.yaml#/components/responses/406'
+        '411':
+          $ref: '/3gpp/TS29571_CommonData.yaml#/components/responses/411'
+        '413':
+          $ref: '/3gpp/TS29571_CommonData.yaml#/components/responses/413'
+        '415':
+          $ref: '/3gpp/TS29571_CommonData.yaml#/components/responses/415'
+        '429':
+          $ref: '/3gpp/TS29571_CommonData.yaml#/components/responses/429'
+        '500':
+          $ref: '/3gpp/TS29571_CommonData.yaml#/components/responses/500'
+        '501':
+          $ref: '/3gpp/TS29571_CommonData.yaml#/components/responses/501'
+        '503':
+          $ref: '/3gpp/TS29571_CommonData.yaml#/components/responses/503'
+        default:
+          $ref: '/3gpp/TS29571_CommonData.yaml#/components/responses/default'
+components:
+  securitySchemes:
+    oAuth2ClientCredentials:
+      type: oauth2
+      flows: 
+        clientCredentials: 
+          tokenUrl: '/oauth2/token'
+          scopes:
+            nslf-disc: Access to the Nslf_Discovery API
+  schemas:
+    SearchResult:
+      type: object
+      required:
+        - addresses
+      properties:
+        addresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/Address'
+    Address:
+      type: object
+      required:
+        - priority
+#      anyOf:
+#        - required: [ fqdn ]
+#        - required: [ ipv4Addresses ]
+#        - required: [ ipv6Addresses ]
+      properties:
+        fqdn:
+          $ref: '#/components/schemas/Fqdn'
+        ipv4Addresses:
+          type: array
+          items:
+            $ref: '/3gpp/TS29571_CommonData.yaml#/components/schemas/Ipv4Addr'
+          minItems: 1
+        ipv6Addresses:
+          type: array
+          items:
+            $ref: '/3gpp/TS29571_CommonData.yaml#/components/schemas/Ipv6Addr'
+          minItems: 1
+        priority:
+          type: integer
+          minimum: 0
+          maximum: 65535

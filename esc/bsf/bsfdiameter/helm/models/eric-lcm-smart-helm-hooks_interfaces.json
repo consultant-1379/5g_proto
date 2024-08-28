@@ -1,0 +1,29 @@
+{
+  "metadata": {
+    "serviceHelmChartName": "eric-lcm-smart-helm-hooks",
+    "usedSchemaVersion": "1.0.0",
+    "fileVersion": "1.1.0",
+    "dateEdited": "2024-03-27"
+  },
+  "interfaceImpls": [
+    {
+      "id": "IMPL.ADP.SHH.HELM",
+      "container": "hooklauncher",
+      "provides": {
+        "dataIf": [
+          {
+            "id": "IF.ADP.SHH.HELM_VALUES_SCHEMA.V1",
+            "description": "Helm Values Model Schema",
+            "specUri": "values.schema.json",
+            "specVer": "1.0.0",
+            "type": "HelmValues",
+            "scope": "clusterExternal",
+            "roles": [
+              "definer"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

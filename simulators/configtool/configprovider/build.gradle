@@ -1,0 +1,84 @@
+apply plugin: 'java'
+
+group = 'eric-simulator-config'
+version = configproviderVersion 
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+apply plugin: 'application'
+mainClassName = 'com.ericsson.esc.bsf.configtool.ConfigTool'
+
+repositories
+{
+    mavenLocal()
+    mavenCentral()
+}
+
+// library Versions
+ext
+{
+	adpalVersion = '0.0.1'
+	commonVersion = '0.0.1'
+	utilitiesVersion = '0.0.1'
+	vertxVersion = '3.6.0'
+	logbackVersion = '1.2.3'
+	testngVersion = '6.8'
+	jacksonVersion = '2.9.7'
+}
+
+dependencies
+{
+    // Common utilities
+	compile "com.ericsson:utilities:${utilitiesVersion}"
+    
+    // ADP adaptation layer and other common libraries
+    compile "com.ericsson:adpal:${adpalVersion}"
+	compile "com.ericsson.esc:common:${commonVersion}"
+
+    // Logger
+    compile "ch.qos.logback:logback-classic:${logbackVersion}"
+
+    //Vertx
+    compile "io.vertx:vertx-core:${vertxVersion}"
+    compile "io.vertx:vertx-web:${vertxVersion}"
+    compile "io.vertx:vertx-web-client:${vertxVersion}"
+    compile "io.vertx:vertx-web-api-contract:${vertxVersion}"
+    compile "io.vertx:vertx-rx-java2:${vertxVersion}"
+    compile "io.vertx:vertx-rx-java:${vertxVersion}"
+    
+    //Jackson
+    compile "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+    
+    // Swagger 
+    compile("org.threeten:threetenbp:0.7.2")
+    compile("com.squareup.okhttp3:okhttp:3.11.0")
+    compile("com.squareup.okhttp3:logging-interceptor:3.8.0")
+
+    // Generate POJOs out of Swagger codegen (Java) output
+    compile("com.google.code.gson:gson:2.8.2")
+    compile("javax.annotation:javax.annotation-api:1.2")
+    
+    // Test dependencies
+    testCompile "org.testng:testng:${testngVersion}"
+    
+    // Netconf/YANG
+    compile group: 'org.onosproject', name: 'jnc', version: '1.0'
+}
+
+task copyDependencies(type: Copy) \
+{
+    from configurations.compile
+    into "$buildDir/libs/lib"
+}
+
+jar
+{
+    dependsOn 'copyDependencies'
+    manifest
+    {
+        attributes('Main-Class': mainClassName, 'Class-Path': configurations.runtime.collect { " lib/$it.name" }.join())
+    }
+    baseName = "${project.group}-provider"
+}
+

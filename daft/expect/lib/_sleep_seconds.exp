@@ -1,0 +1,58 @@
+################################################################################
+# $Revision: 1.1 $                                                             #
+#   $Author: EUSTONE $                                                         #
+#     $Date: 2015/10/15 12:46:54 $                                             #
+################################################################################
+#                                                                              #
+# (C) COPYRIGHT ERICSSON GMBH 2015                                             #
+#                                                                              #
+# The copyright to the computer program(s) herein is the property of           #
+# Ericsson GmbH, Germany.                                                      #
+#                                                                              #
+# The program(s) may be used and/or copied only with the written permission    #
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in   #
+# the agreement/contract under which the program(s) have been supplied.        #
+#                                                                              #
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Sleep for a specified number of seconds before continuing.
+# Input:
+#  - Number of seconds to sleep
+#  - Status message interval in seconds, default is 10 seconds
+#
+# Output:
+#  - 0: Success
+#
+proc sleep_seconds {delaytime {status_interval 10}} {
+    global spawn_id
+
+    if { $delaytime < 0 } {
+        set delaytime 0
+    }
+    if { $status_interval < 0 } {
+        set status_interval 0
+    }
+    if { $status_interval > $delaytime } {
+        set status_interval $delaytime
+    }
+
+    set secondsleft $delaytime
+    if { $delaytime > 0 } {
+        puts "\nSleeping for $delaytime seconds:"
+        while { $secondsleft > 0 } {
+            # Fetch current time
+            set current_time [clock format [clock seconds] -format "%Y-%m-%d %H:%M:%S"]
+            puts "  $current_time Waiting $secondsleft seconds"
+            sleep $status_interval
+            incr secondsleft -$status_interval
+            if { $status_interval > $secondsleft } {
+                set status_interval $secondsleft
+            }
+        }
+        set current_time [clock format [clock seconds] -format "%Y-%m-%d %H:%M:%S"]
+        puts "  $current_time End of sleep\n"
+    }
+
+    return 0
+}

@@ -1,0 +1,63 @@
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.5
+#  Date     : 2024-04-12 17:31:03
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2023-2024
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+################################################################################
+# This file is used by the daft_sequencer.pl script and it contains commands to
+# be executed one-after-another.
+#
+# The file will upgrade the SC software to the specified version using EVNFM.
+#
+# NOTE:
+# This should be executed on the node.
+################################################################################
+
+# Environment variables
+# ---------------------
+# Change this parameter on the command line if you want to use a different "network-config-option" enabled, e.g. add -e DAFT_NETWORK_CONFIG_OPTION="-o SigDsOamDsDiamDs"
+ENVIRONMENT_VARIABLE: DAFT_NETWORK_CONFIG_OPTION=""
+# Change these on the command line if you want a different value, using -e DAFT_XXXX=yyyy
+ENVIRONMENT_VARIABLE: DAFT_ARTIFACTORY_TOKEN="cmVmdGtuOjAxOjE3NDM3NTYxMjQ6TkhWdmFvMjVmY2xWZkY3QzJORDRTNVFOWGV1"
+ENVIRONMENT_VARIABLE: DAFT_ARTIFACTORY_URL_UPGRADE="https://arm.seli.gic.ericsson.se/artifactory/proj-5g-bsf-generic-local/eiffelesc/"
+ENVIRONMENT_VARIABLE: DAFT_DOWNLOAD_DIR="/home/eccd/download"
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_DOWNLOAD_CSAR=yes
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_UPGRADE_SC=yes
+# Remove the comment (#) from the following lines if you don't want to specify the values on the command line.
+#ENVIRONMENT_VARIABLE: DAFT_NETWORK_CONFIG_FILE=/home/eccd/network_config_files/Snorlax.xml
+#ENVIRONMENT_VARIABLE: DAFT_SC_SOFTWARE_VERSION_UPGRADE=1.13.25+746
+
+# Playlist Variables
+# ------------------
+PLAYLIST_VARIABLE: CREATE_PACKED_WORKSPACE_FILE_AT_FAILURE=yes
+PLAYLIST_VARIABLE: CREATE_PACKED_WORKSPACE_FILE_AT_SUCCESS=yes
+PLAYLIST_VARIABLE: INPUT_AVAILABLE=no
+PLAYLIST_VARIABLE: PACK_TROUBLESHOOTING_LOGS_SEPARATELY=yes
+
+# Script variables
+# ----------------
+# Always stop on error when executing these commands
+SCRIPT_VARIABLE: stop-on-error=yes
+
+# Execute commands
+# ----------------
+# Download the software package
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_DOWNLOAD_CSAR="yes"     download_csar.pl --artifact-token $DAFT_ARTIFACTORY_TOKEN --noprogress --color=no -p $DAFT_SC_SOFTWARE_VERSION_UPGRADE -l $DAFT_ARTIFACTORY_URL_UPGRADE -t $DAFT_DOWNLOAD_DIR
+
+# Upgrade the SC software using EVNFM
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_UPGRADE_SC="yes"        execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE -p 204_EVNFM_Upgrade_SC -j EVNFM_Upgrade_SC_$DAFT_SC_SOFTWARE_VERSION_UPGRADE $DAFT_NETWORK_CONFIG_OPTION -v SOFTWARE_DIR=$DAFT_DOWNLOAD_DIR/$DAFT_SC_SOFTWARE_VERSION_UPGRADE -v ENABLED_CNF=bsf-scp-slf-sepp -v COLLECT_LOGS_AT_SUCCESS=yes -v SKIP_DEPLOY_UPGRADE_CRD=no -o EVNFM

@@ -1,0 +1,10 @@
+eric-log-transformer:
+  egress:
+    syslog:
+      enabled: true
+      certificates:
+        asymmetricKeyCertificateName: syslog-default-key-cert
+        trustedCertificateListName: sc-trusted-default-cas
+      remoteHosts:
+        - host: eric-syslog
+          port: 6514

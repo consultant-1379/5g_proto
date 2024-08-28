@@ -1,0 +1,39 @@
+{{- if .Values.global -}}
+{{- if and .Values.global.networkPolicy .Values.networkPolicy -}}
+{{- if and .Values.global.networkPolicy.enabled .Values.networkPolicy.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ template "eric-scp.name" . }}-worker-allow
+  labels:
+{{- include "eric-scp.labels" . | indent 4 }}
+    app: {{ template "eric-scp.name" . }}-worker
+  annotations:
+{{- include "eric-scp.helm-annotations" . | indent 4 }}
+{{- include "eric-scp.config-annotations" . | indent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ template "eric-scp.name" . }}-worker
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: {{ .Values.adp.pm.server.hostname }}
+    ports:
+      - port: {{ .Values.spec.worker.metricsPort }}
+        protocol: TCP
+      - port: {{ .Values.tapcollector.worker.pmClientPort }}
+        protocol: TCP
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: {{ .Values.sc.common.manager.hostname }}
+    ports:
+      - port: {{ .Values.spec.certnotifier.port }}
+        protocol: TCP
+{{- end }}
+{{- end }}
+{{- end }}

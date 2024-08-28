@@ -1,0 +1,62 @@
+generation:
+  certificates:
+  - name: sepp-worker
+    outputDir: ./sepp1
+    algorithm:
+      bits: 3072
+    expirationDays: 365
+    commonName: sepp.ericsson.se
+    sans: ["sepp.ericsson.se", "*.ericsson.se"]
+    sign:
+      certificateAuthority: ca1               # field is ignored if certificate is self-signed
+      selfSigned: false
+  certificateAuthorities:
+  # the CAs are never overriden if they exist
+  - name: ca1
+    outputDir: ./ca/ca1
+    algorithm:
+      bits: 3072
+    expirationDays: 365
+    commonName: ca1.ericsson.se
+
+installation:
+- name: sepp-worker
+  dir: ./sepp1
+  target:
+    netconf:
+      keyName: sc-traf-default-key1
+      certificateName: sc-traf-default-cert1
+- name: ca1
+  dir: ./ca/ca1
+  target:
+    netconf:
+      listName: sc-traf-root-ca-list1
+      certificateName: CA_cert_1
+- name: ca1
+  dir: ./ca/ca1
+  target:
+    secretName: my-secret
+- name: sepp-worker
+  dir: ./sepp1
+  target:
+    secretName: my-secret2
+
+defaultScenarios:
+  outputDir: /home/eaoknkr/default
+  expirationDays: 365
+
+### Admin field must always exist
+admin:
+  namespace: 5g-bsf-eaoknkr
+  # kubeconfig: /home/eaoknkr/.kube/config 					optional, automatically discovered if not present
+  yangProvider:
+    # ip: 10.120.220.30       								optional, automatically discovered if not present
+    # port: 32756             								optional, automatically discovered if not present
+    username: sec-admin
+    password: secsec
+
+
+# java -jar supreme-0.1.0.jar generate install | jl
+
+
+

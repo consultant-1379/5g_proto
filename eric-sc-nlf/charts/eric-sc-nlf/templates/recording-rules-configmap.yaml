@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "eric-sc-nlf.name" . }}-rr
+  labels:
+{{- include "eric-sc-nlf.labels" . | indent 4 }}
+    app: {{ template "eric-sc-nlf.name" . }}
+  annotations:
+{{- include "eric-sc-nlf.helm-annotations" . | indent 4 }}
+{{- include "eric-sc-nlf.config-annotations" . | indent 4 }}
+data:
+  {{ template "eric-sc-nlf.name" . }}-rr.yml: |
+{{- include "eric-sc-nlf.recording-rules" . | indent 4 }}

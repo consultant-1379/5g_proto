@@ -1,0 +1,12 @@
+# Name of the application that is to be configured.
+# Valid apps are: "statusOverview", "alarmViewer"
+app: "statusOverview"
+# The feature flag of the application.
+# Valid flags are: "status_overview", "alarm_viewer"
+feature: "status_overview"
+dashboardTreeView:
+  # Set this to enable the Dashboard Tree View feature in the app. Note that if you set this and do
+  # not define any "dashboardTreeView.tree" data in the dashboards configurations, the dashboards
+  # will automatically be added under a tree item named "Uncategorized dashboards" in the
+  # Dashboard Tree View.
+  enabled: true

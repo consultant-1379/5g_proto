@@ -1,0 +1,106 @@
+{
+  "nfInstanceId": "2ec8ac0b-265e-4165-86e9-e0735e6ce105",
+  "nfInstanceName": "SCP1",
+  "nfType": "SCP",
+  "fqdn":"scp.ericsson.se",
+  "nfStatus": "REGISTERED",
+  "heartBeatTimer": 50,
+  "plmnList": [
+    {
+      "mcc": "262",
+      "mnc": "72"
+    }
+  ],
+  "sNssais": [
+    {
+      "sst": 151,
+      "sd": "AbB110"
+    }
+  ],
+  "allowedPlmns": [
+    {
+      "mcc": "262",
+      "mnc": "72"
+    }
+  ],
+  "allowedNfTypes": [
+    "SMF",
+    "PCF"
+  ],
+  "allowedNfDomains": [
+    "Domain1",
+    "Domain2"
+  ],
+  "allowedNssais": [
+    {
+      "sst": 151,
+      "sd": "AbB110"
+    }
+  ],
+  "priority": 1,
+  "capacity": 50,
+  "load": 20,
+  "loadTimeStamp": "2022-04-20T16:03:14.764036275+03:00",
+  "locality": "C",
+  "nfProfileChangesSupportInd": false,
+  "nfProfileChangesInd": false,
+  "nfSetIdList": [
+    "nfcaf"
+  ],
+  "lcHSupportInd": false,
+  "olcHSupportInd": false,
+  "scpDomains": [
+    "Domain1"
+  ],
+  "scpInfo": {
+    "scpDomainInfoList": {
+      "ericsson.de": {
+        "scpPrefix": "/1/2/3"
+      },
+      "ericsson.com": {
+        "scpFqdn": "ericsson.com",
+        "scpPorts": {
+          "http": 30512,
+          "https": 31521
+        }
+      }
+    },
+    "scpPrefix": "/a/b/c",
+    "addressDomains": [
+      "^(ericsson+.[a-zA-Z]{2})$",
+      "^(ericsson+.[a-zA-Z]{3})$"
+    ],
+    "ipv4Addresses": [
+      "1.2.3.4",
+      "1.2.3.5"
+    ],
+    "ipv6Prefixes": [
+      "2001:1234:5678:1234::/64",
+      "2001:1234:5678:1235::/64",
+      "2001:1234:5678:1236::/64"
+    ],
+    "ipv4AddrRanges": [
+      {
+        "start": "1.2.3.4",
+        "end": "1.2.3.5"
+      }
+    ],
+    "ipv6PrefixRanges": [
+      {
+        "start": "2001:1234:5678:1234::/64",
+        "end": "2001:1234:5678:1235::/64"
+      }
+    ],
+    "servedNfSetIdList": [
+      "setabc.scpset.5gc.mnc012.mcc345",
+      "setxyz.scpset.5gc.mnc013.mcc346"
+    ],
+    "remotePlmnList": [
+      {
+        "mcc": "262",
+        "mnc": "72"
+      }
+    ],
+    "ipReachability": "IPV4"
+  }
+}

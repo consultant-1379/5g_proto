@@ -1,0 +1,30 @@
+# Copyright 2020 Ericsson GmbH
+#
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ template "eric-sc-monitor.name" . }}
+  annotations:
+{{- include "eric-sc-monitor.helm-annotations" . | indent 4 }}
+{{- include "eric-sc-monitor.config-annotations" . | indent 4 }}
+  labels:
+{{- include "eric-sc-monitor.labels" . | indent 4 }}
+spec:
+  ipFamilyPolicy: PreferDualStack
+  type: ClusterIP
+{{- include "eric-sc-monitor.ipfamilies" . | indent 2 }}
+  ports:
+  - name: external
+    protocol: TCP
+{{- if eq (include "eric-sc-monitor.tls.enabled" .) "true" }}
+    port: {{ .Values.service.external.tlsPort }}
+{{- else }}
+    port: {{ .Values.service.external.port }}
+{{- end }}
+    targetPort: external
+  - name: internal
+    protocol: TCP
+    port: {{ .Values.service.internal.port}}
+    targetPort: internal
+  selector:
+    app: {{ template "eric-sc-monitor.name" . }}

@@ -1,0 +1,564 @@
+# BSF
+
+networkPolicy:
+  enabled: true
+
+egress:
+  nrf:
+    ## default 0, the value range 0..63, 0 is the lowest priority, 63 is the highest priority.
+    ## Any other value is invalid.
+    dscp: 0
+
+# imageCredentials:
+  # pullSecret: ## should NOT be SET according to DR-D1123-115
+  # setupmanager:
+    # repoPath: ## override image repository path according to DR-D1121-106
+    # registry:
+      # url: ## override global registry url according to DR-D1121-104
+      # imagePullPolicy: ## override global imagePullPolicy according to DR-D1121-102
+  # manager:
+    # repoPath: ## override image repository path according to DR-D1121-106
+    # registry:
+      # url: ## override global registry url according to DR-D1121-104
+      # imagePullPolicy: ## override global imagePullPolicy according to DR-D1121-102
+  # worker:
+    # repoPath: ## override image repository path according to DR-D1121-106
+    # registry:
+      # url: ## override global registry url according to DR-D1121-104
+      # imagePullPolicy: ## override global imagePullPolicy according to DR-D1121-102
+  # cddjmxexporter:
+    # repoPath: ## override image repository path according to DR-D1121-106
+    # registry:
+      # url: ## override global registry url according to DR-D1121-104
+      # imagePullPolicy: ## override global imagePullPolicy according to DR-D1121-102
+  # certnotifier:
+    # repoPath: ## override image repository path according to DR-D1121-106
+    # registry:
+      # url: ## override global registry url according to DR-D1121-104
+      # imagePullPolicy: ## override global imagePullPolicy according to DR-D1121-102
+  # tapagent:
+    # repoPath: ## override image repository path according to DR-D1121-106
+    # registry:
+      # url: ## override global registry url according to DR-D1121-104
+      # imagePullPolicy: ## override global imagePullPolicy according to DR-D1121-102
+  # tlskeylogagent:
+    # repoPath: ## override image repository path according to DR-D1121-106
+    # registry:
+      # url: ## override global registry url according to DR-D1121-104
+      # imagePullPolicy: ## override global imagePullPolicy according to DR-D1121-102
+  # tapcollector:
+    # repoPath: ## override image repository path according to DR-D1121-106
+    # registry:
+      # url: ## override global registry url according to DR-D1121-104
+      # imagePullPolicy: ## override global imagePullPolicy according to DR-D1121-102
+
+metrics:
+  manager:
+    enabled: "true"
+  worker:
+    enabled: "true"
+
+service:
+  manager:
+    port: "80"
+    internalIPFamily: "" ## empty, IPv4 or IPv6
+    server:
+      oam:
+        port: "8082"
+        targetPort: "8082"
+    # client:
+      # dcedsc:
+        # tls:
+          # enabled: true ## overwrite global tls, enable/disable tls for dcedsc client
+    # annotations: {}
+    # loadBalancerIP: ''
+  worker:
+    type: "LoadBalancer"
+    allocateLoadBalancerNodePorts: false
+    externalTrafficPolicy: "Cluster"
+    annotations:
+      cloudProviderLB: {}
+      # loadBalancerIPs:
+    externalIPv4:
+      enabled: false
+    externalIPv6:
+      enabled: false
+    port: "80"
+    # loadBalancerIP: ""
+    internalIPFamily: "" ## empty, IPv4 or IPv6
+    ipFamilyPolicy: ## SingleStack or PreferDualStack or RequireDualStack or null
+    portName: "http-port"
+    tlsport: "443"
+    tlsPortName: "https-port"
+    # tls: true ## overwrite global tls, enable/disable tls for all worker clients/servers
+    server:
+      oam:
+        port: "8082"
+        targetPort: "8082"
+    # client:
+      # dcedsc:
+        # tls:
+          # enabled: true ## overwrite global tls, enable/disable tls for dcedsc client
+    # loadBalancerIP: ''
+  cddjmxexporter:
+    port: "5556"
+    whitelist:
+     - "cdd-worker:*"
+    blacklist:
+     - "cdd-worker:name=*ignores*"
+     - "cdd-worker:name=*speculative*"
+     - "cdd-worker:name=*bytes*"
+     - "cdd-worker:name=*connected*"
+     - "cdd-worker:name=*cache*"
+  certnotifier:
+    port: "8088"
+    # annotations: {}
+    # loadBalancerIP: ''
+
+rbac:
+  ## createServiceAccount controls the creation of ServiceAccount, ClusterRole and ClusterRoleBinding.
+  ## The ClusterRole allows bragent POD to read configmaps from kube-system namespace.
+  ## If set to false, the cluster administrator is responsible for creating those entities.
+  ## If set to false, the serviceAccountName field is Mandatory.
+  createServiceAccount: true
+  ## serviceAccountName contains the service account name to use.
+  ## Mandatory, if createServiceAccount is set to false
+  serviceAccountName:
+
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 25%
+    maxSurge: 1
+
+validator:
+  enabled: true
+
+seccompProfile:
+  licenseConsumer:
+    type: ""
+    localhostProfile: ""
+
+spec:
+  setup:
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 0.2
+        ephemeral-storage: ""
+      limits:
+        memory: 256Mi
+        cpu: 0.4
+        ephemeral-storage: ""
+  manager:
+    replicaCount: 2
+    affinity:
+      podAntiAffinity: "soft"
+    tolerations:
+    - key: node.kubernetes.io/not-ready
+      operator: Exists
+      effect: NoExecute
+      tolerationSeconds: 0
+    - key: node.kubernetes.io/unreachable
+      operator: Exists
+      effect: NoExecute
+      tolerationSeconds: 0
+    port: 80
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 0.5
+        ephemeral-storage: ""
+      limits:
+        memory: 1024Mi
+        cpu: 1
+        ephemeral-storage: ""
+  worker:
+    replicaCount: 2
+    affinity:
+      podAntiAffinity: "soft"
+    tolerations:
+    - key: node.kubernetes.io/not-ready
+      operator: Exists
+      effect: NoExecute
+      tolerationSeconds: 0
+    - key: node.kubernetes.io/unreachable
+      operator: Exists
+      effect: NoExecute
+      tolerationSeconds: 0
+    podDisruptionBudget:
+      minAvailable: 1
+    port: 8085
+    tlsport: 8443
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 1
+        ephemeral-storage: ""
+      limits:
+        memory: 1024Mi
+        cpu: 1.5
+        ephemeral-storage: ""
+  cddjmxexporter:
+    port: 5556
+    updateStrategy:
+      type: RollingUpdate
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 50m
+        ephemeral-storage: ""
+      limits:
+        memory: 256Mi
+        cpu: 200m
+        ephemeral-storage: ""
+  certnotifier:
+    port: 8088
+    updateStrategy:
+      type: RollingUpdate
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 80m
+        ephemeral-storage: ""
+      limits:
+        memory: 256Mi
+        cpu: 160m
+        ephemeral-storage: ""
+    nf:
+      name: bsf
+  tapagent:
+    updateStrategy:
+      type: RollingUpdate
+    resources:
+      requests:
+        memory: 100Mi
+        cpu: 100m
+        ephemeral-storage: ""
+      limits:
+        memory: 500Mi
+        cpu: 500m
+        ephemeral-storage: ""
+    configmap:
+      name: eric-sc-tap-config ## TODO: Move to new structure connected with TAP Feature
+    secret:
+      name: sftp-server-config ## TODO: Move to new structure connected with TAP Feature
+  tlskeylogagent:
+    updateStrategy:
+      type: RollingUpdate
+    resources:
+      requests:
+        memory: 100Mi
+        cpu: 100m
+        ephemeral-storage: ""
+      limits:
+        memory: 500Mi
+        cpu: 500m
+        ephemeral-storage: ""
+    configmap:
+      name: eric-sc-tap-config ## TODO: Move to new structure connected with TAP Feature
+    secret:
+      name: sftp-server-config ## TODO: Move to new structure connected with TAP Feature
+    uid: 198596
+    wgid: 169581
+    mgid: 278885
+  tapcollector:
+    updateStrategy:
+      type: RollingUpdate
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 100m
+        ephemeral-storage: ""
+      limits:
+        memory: 2560Mi
+        cpu: 1
+        ephemeral-storage: ""
+
+probes:
+  manager:
+    port: 8081
+    livenessProbe:
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 1
+      successThreshold: 1
+      failureThreshold: 3
+    readinessProbe:
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 1
+      successThreshold: 1
+      failureThreshold: 3
+  worker:
+    port: 8081
+    livenessProbe:
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      timeoutSeconds: 5
+      successThreshold: 1
+      failureThreshold: 5
+    readinessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 5
+      timeoutSeconds: 5
+      successThreshold: 1
+      failureThreshold: 5
+  logshipper:
+    livenessProbe:
+      initialDelaySeconds: 180
+      timeoutSeconds: 10
+      periodSeconds: 10
+      failureThreshold: 3
+
+adp:
+  cm:
+    mediator:
+      hostname: "eric-cm-mediator"
+      port: "5004"
+      subscription:
+        validity: "14400"
+        renewal: "0.25"
+        heartbeat: "300"
+    yangProvider:
+      hostname: "eric-cm-yang-provider"
+  fh:
+    alarmHandler:
+      hostname: "eric-fh-alarm-handler"
+      port: "6006"
+  pm:
+    server:
+      hostname: "eric-pm-server"
+      tlsPort: 9089
+      port: 9090
+  lm:
+    combinedServer:
+      hostname: "eric-lm-combined-server"
+      tlsPort: 18326
+      port: 8080
+  probe:
+    virtualTapBroker:
+      hostname: "eric-probe-virtual-tap-broker"
+      tcpPort: "8827"
+      apiPort: "8080"
+  data:
+    wcdbcd:
+      hostname: "eric-bsf-wcdb-cd"
+  log:
+    transformer:
+      hostname: "eric-log-transformer"
+  sec:
+    kms:
+      hostname: "eric-sec-key-management"
+      port: "8200"
+
+sc:
+  common:
+    manager:
+      hostname: "eric-sc-manager"
+    monitor:
+      hostname: "eric-sc-monitor"
+    etcd:
+      hostname: "eric-data-distributed-coordinator-ed-sc"
+
+cassandra:
+  tls:
+    enabled: true
+    hostnameVerification: false
+  contact_point_replicas: 2
+  keyspace: "nbsf_management_keyspace"
+  gc_grace: "10800"
+  memtable_flush_period: "300000"
+  compaction:
+    sizeTieredCompactionStrategy:
+      bucketHigh: "2.0"
+      bucketLow: "0.5"
+      maxThreshold: "32"
+      minThreshold: "3"
+  defaultZeroBindingTimeout: "2160"
+  throttler:
+    class: "ConcurrencyLimitingRequestThrottler"
+    max_queue_size: "1000"
+    max_concurrent_requests: "50"
+  datacenter: "datacenter1"
+  consistency: "ONE"
+  storage_max_percentage: "85"
+  auth:
+    userSecret: eric-bsf-db-creds
+    adminSecret: eric-bsf-wcdb-cd-day0-creds
+  metrics:
+    sessionName: "s0"
+    domainName: "cdd-worker"
+    cqlRequests:
+      highestLatency: "PT5S"
+      significantDigits: "3"
+      refreshInterval: "PT1M"
+    throttling:
+      highestLatency: "PT5S"
+      significantDigits: "3"
+      refreshInterval: "PT1M"
+    cqlMessages:
+      highestLatency: "PT5S"
+      significantDigits: "3"
+      refreshInterval: "PT1M"
+
+worker:
+  webserverPoolSize: 0
+  maxConcurrentStreams: 5000
+  autoscaling:
+    minReplicas: 1
+    maxReplicas: 10
+    targetAverageUtilization: 50
+  resources:
+    requests:
+      cpu: null
+  checkRecoveryTime: true
+  pcfRecoveryTimeTTL: "2592000"
+  traceSinkPacketBufferSize: "4096" ## same with SCP/SEPP
+  traceSinkSegmentLimitBytes: "64000" ## same with SCP/SEPP
+  oAuth2:
+    validateOptionalParameters: true
+    tokenCacheLenght: 100
+
+manager:
+  leaderElection:
+    enabled: true
+  checkRecoveryTime: true
+  pcfRecoveryTimeTTL: "2592000"
+  bindingDatabaseScan:
+    pageSize: "500"
+    pageThrottlingMillis: "50"
+    deleteThrottlingMillis: "8"
+    autoScanIntervalMinutes: "30"
+
+certificates:
+  nrf:
+    caCertificate: sc-trusted-default-cas
+    key: sc-nrf-default-key
+    certificate: sc-nrf-default-cert
+  traf:
+    caCertificate: sc-trusted-default-cas
+    key: sc-traf-default-key
+    certificate: sc-traf-default-cert
+
+etcd: ## TODO: move to sc.common.etcd
+  endpoint: "https://eric-data-distributed-coordinator-ed-sc:2379" ## TODO: create endpoint uri inside executable
+  username: "root"
+  secretName: "eric-data-distributed-coordinator-creds-sc"
+  passwordKey: "etcdpasswd"
+
+jvm:
+  parameters:
+    worker: "-server -XX:+ErrorFileToStderr -XX:+UseG1GC -XX:MaxRAMPercentage=80 -Dcom.sun.management.jmxremote.port=8090 -Dcom.sun.management.jmxremote.rmi.port=8090 -Djava.rmi.server.hostname=127.0.0.1 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.host=127.0.0.1 -Dsun.net.inetaddr.ttl=0 -Dvertx.cacheDirBase=/vertx/vertx-cache -Dio.netty.native.workdir=/vertx"
+    manager: "-server -XX:+ErrorFileToStderr -XX:+UseG1GC -XX:MaxRAMPercentage=80 -Dcom.sun.management.jmxremote.port=8090 -Dcom.sun.management.jmxremote.rmi.port=8090 -Djava.rmi.server.hostname=127.0.0.1 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.host=127.0.0.1 -Dvertx.cacheDirBase=/vertx/vertx-cache -Dio.netty.native.workdir=/vertx"
+    tlskeylogagent: "-server -XX:+ErrorFileToStderr -XX:+UseG1GC -XX:MaxRAMPercentage=80 -Dcom.sun.management.jmxremote.port=8099 -Dcom.sun.management.jmxremote.rmi.port=8099 -Djava.rmi.server.hostname=127.0.0.1 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.host=127.0.0.1"
+    tapcollector: "-server -XX:+CrashOnOutOfMemoryError -XX:+ErrorFileToStderr -XX:+UseG1GC -XX:MaxRAMPercentage=80 -Dcom.sun.management.jmxremote.port=8100 -Dcom.sun.management.jmxremote.rmi.port=8100 -Djava.rmi.server.hostname=127.0.0.1 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.host=127.0.0.1"
+    licenseConsumer: "-server -XX:+ErrorFileToStderr -XX:+UseG1GC -XX:MaxRAMPercentage=80 -Dcom.sun.management.jmxremote.port=8091 -Dcom.sun.management.jmxremote.rmi.port=8091 -Djava.rmi.server.hostname=127.0.0.1 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.host=127.0.0.1"
+    setup: "-Dvertx.cacheDirBase=/vertx/vertx-cache -Dio.netty.native.workdir=/vertx"
+
+tapagent:
+  worker:
+    enabled: false
+  manager:
+    enabled: false
+
+tlskeylogagent:
+  fileSizeLimit: 1000 ## MB
+
+tapcollector:
+  worker:
+    enabled: false
+    maxBufferedPacketsPerConnection: 20000
+    port: 9000
+    replaceLocalSocketAddress: "true"
+    pmClientPort: 9091
+    pmPath: "/metrics"
+  tappedData:
+    divisionMethod: "truncate"
+    chunkSizeLimit: 61440    
+
+vtap:
+  enabled: false
+  domain: "sc-bsf"
+  protocol: "raw-sbi"
+  pvtbPollingIntervalSeconds: 50
+
+bsfdiameter:
+  enabled: false
+
+## Log Shipper (as a sidecar) configuration
+## Used only if global.log.streamingMethod is "direct" or "dual"
+## Log Shipper also requires Log Transformer
+## TODO: When bsf worker-manager become separate, split the logfiles' paths and the allocated memory size accordingly
+logShipper:
+  logLevel: "info"
+  storage:
+    path: "/logs"
+    size: "1800Mi"
+    medium: "Ephemeral"
+  input:
+    files:
+    - enabled: true
+      skipLongLines: "on"
+      buffer:
+        maxSize: "64k"
+      paths:
+      - "bsf-manager.log"
+      - "bsf-worker.log"
+      - "tapcol.log" ## bsf-worker
+      - "certnotifier.log" ## bsf-worker
+      - "tlskeylogagent.log" ## bsf-worker/manager
+      - "license-consumer.log"
+      multilines:
+      - "java"
+  output:
+    logTransformer:
+      enabled: true
+      host: eric-log-transformer
+
+## License Consumer dynamic sidecar configuration
+licenseConsumer:
+  serviceName: "bsf-manager"
+  licenseDomains:
+    productType: "SIGNALING_CONTROLLER"
+
+annotations: {}
+
+labels: {}
+
+log:
+  volumeName: "logctrl-volume"
+  manager:
+    level: "info"
+  certnotifier:
+    level: "info"
+  worker:
+    level: "info"
+  tlskeylogagent:
+    level: "info"
+  tapcollector:
+    level: "info"
+  licenseConsumer:
+    level: "info"
+
+## Logshipper configured for an average throughput of 100logs/sec (covering the case of debug logs)
+## Refer to the "Sidecar dimensioning recommendations" section of LogShipper
+resources:
+  logshipper:
+    requests:
+      memory: "20Mi"
+      cpu: "33m"
+      ephemeral-storage: ""
+    limits:
+      memory: "36Mi"
+      cpu: "40m"
+      ephemeral-storage: ""
+  licenseConsumer:
+    requests:
+      cpu: "50m"
+      memory: "100Mi"
+      ephemeral-storage: ""
+    limits:
+      cpu: "250m"
+      memory: "500Mi"
+      ephemeral-storage: ""

@@ -1,0 +1,15 @@
+{{- if eq (include "eric-referral-ldap.cr" .) "true" -}}
+{{- if eq (include "eric-referral-ldap.tls" .) "true" -}}
+apiVersion: certm.sec.ericsson.com/v1
+kind: ExternalCertificate
+metadata:
+  name: {{ template "eric-referral-ldap.name" . }}-trusted-cert
+  labels:
+    app: {{ template "eric-referral-ldap.name" . }}
+spec:
+  generated-secret-name: {{ template "eric-referral-ldap.name" . }}-trusted-cert-secret
+  generated-secret-type: opaque
+  trusted-certificates-file-name: "ca-certs-SC.pem"
+  trusted-certificate-list-name: {{ .Values.tls.useCr.trustedCert }}
+{{- end -}}
+{{- end -}}

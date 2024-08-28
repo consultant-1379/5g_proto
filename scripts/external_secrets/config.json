@@ -1,0 +1,12 @@
+//SNMP Alarm Provider config.json 
+{
+	"agentEngineId": "80fa02b804c162d8",
+	"trapTargets": 
+	[
+		{
+			"address": "10.10.10.10",
+			"user": "user1",
+			"securityLevel": "noAuthNoPriv"
+		}
+	]
+}

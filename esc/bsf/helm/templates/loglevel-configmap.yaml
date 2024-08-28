@@ -1,0 +1,59 @@
+# ConfigMap for bsf manager
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "eric-bsf.name" . }}-configmap-log-ctrl
+  labels:
+{{- include "eric-bsf.labels" . | indent 4 }}
+  annotations:
+{{- include "eric-bsf.helm-annotations" . | indent 4 }}
+{{- include "eric-bsf.config-annotations" . | indent 4 }}
+data:
+  logcontrol.json: |-
+    [
+        {
+          "container": {{ .Values.service.manager.name | quote }},
+          "severity": {{ .Values.log.manager.level | quote }}
+        },
+        {
+          "container": "license-consumer",
+          "severity": {{ .Values.log.licenseConsumer.level | quote }}
+        }{{- if eq (include "eric-bsf.tapagent.manager.enabled" .) "true" }},
+        {
+          "container": {{ .Values.tlskeylogagent.name | quote }},
+          "severity": {{ .Values.log.tlskeylogagent.level | quote }}
+        }{{- end }}
+    ]
+
+---
+
+# ConfigMap for bsf worker
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.service.worker.name }}-configmap-log-ctrl
+  labels:
+{{- include "eric-bsf.labels" . | indent 4 }}
+  annotations:
+{{- include "eric-bsf.helm-annotations" . | indent 4 }}
+{{- include "eric-bsf.config-annotations" . | indent 4 }}
+data:
+  logcontrol.json: |-
+    [
+        {
+          "container": {{ .Values.service.certnotifier.name | quote }},
+          "severity": {{ .Values.log.certnotifier.level | quote }}
+        },
+        {
+          "container": {{ .Values.service.worker.name | quote }},
+          "severity": {{ .Values.log.worker.level | quote }}
+        }{{- if eq (include "eric-bsf.tapcollector.worker.enabled" .) "true" }},
+        {
+          "container": {{ .Values.tapcollector.name | quote }},
+          "severity": {{ .Values.log.tapcollector.level | quote }}
+        }{{- end }}{{- if eq (include "eric-bsf.tapagent.worker.enabled" .) "true" }},
+        {
+          "container": {{ .Values.tlskeylogagent.name | quote }},
+          "severity": {{ .Values.log.tlskeylogagent.level | quote }}
+        }{{- end }}
+    ]

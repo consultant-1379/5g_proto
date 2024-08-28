@@ -1,0 +1,84 @@
+################################################################################
+# $Revision: 1.4 $                                                             #
+#   $Author: EUSTONE $                                                         #
+#     $Date: 2017-03-06 14:01:14 $                                             #
+################################################################################
+#                                                                              #
+# (C) COPYRIGHT ERICSSON GMBH 2014                                             #
+#                                                                              #
+# The copyright to the computer program(s) herein is the property of           #
+# Ericsson GmbH, Germany.                                                      #
+#                                                                              #
+# The program(s) may be used and/or copied only with the written permission    #
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in   #
+# the agreement/contract under which the program(s) have been supplied.        #
+#                                                                              #
+################################################################################
+
+source [file join [file dirname [info script]] ../lib/_CLISS_send_command.exp]
+
+# -----------------------------------------------------------------------------
+# Get the ManagedElement name.
+#
+# This subroutine expects that it is already connected to the CLISS prompt.
+#
+# Input:
+#  -
+#
+# Output:
+#  - Name of the ManagedElement, if not changed it is "1"
+#    or the empty string "" on error
+#
+proc CLISS_get_ManagedElement_name {} {
+    global spawn_id
+
+    set errorcnt 0
+    set element_name "1"
+
+    # Go to the top of the object model
+    if { [CLISS_send_command top] != 0 } {
+        # We might be on an old 13A release where top only works in "configure" mode
+        if { [CLISS_send_command configure] != 0 } {
+            return ""
+        } else {
+            if { [CLISS_send_command top] != 0 } {
+                return ""
+            }
+        }
+    }
+
+    # Find the Managed Element name
+    send -- "show\r"
+    expect {
+        -re "ERROR:.+" {
+            # Some invalid command have been given, increment an error counter
+            incr errorcnt
+            exp_continue
+        }
+        -re "ManagedElement=(\[^\r\n\]+)\r*\n" {
+            # Managed Element name found, continue waiting
+            set element_name $expect_out(1,string)
+            exp_continue
+        }
+        "\n" {
+            # New line received, continue waiting
+            exp_continue
+        }
+        -re ">$" {
+            # Ready for next command
+        }
+        timeout {
+            return ""
+        }
+    }
+
+    if { $errorcnt > 0 } {
+        # Some failure occurred
+        return ""
+    } else {
+        # Successful
+        # Remove any double quotes from the beginning and end of the element name
+        set element_name [string trim $element_name '"']
+        return "$element_name"
+    }
+}

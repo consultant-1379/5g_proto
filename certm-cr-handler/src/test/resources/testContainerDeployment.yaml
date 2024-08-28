@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: certm-cr-handler-test
+  labels:
+    app: certm-cr-handler-test
+spec:
+  selector:
+    matchLabels:
+      app: certm-cr-handler-test
+  template:
+    metadata:
+      labels:
+        app: certm-cr-handler-test
+    spec:
+      serviceAccountName: externalcertificateshandler
+      containers:
+      - name: certm-cr-handler-test
+        image: armdocker.rnd.ericsson.se/proj-5g-bsf/userNamespace/certm-cr-handler-test:0.0.5
+        imagePullPolicy: Never
+        volumeMounts:
+        - name: config-volume
+          mountPath: /seppmanager/config/crcm
+      volumes:
+      - name: config-volume
+        configMap:
+          name: test-config-map
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: externalcertificateshandler
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: 5g-bsf-userNamespace
+  name: externalcertificates-crs
+rules:
+- apiGroups: ["certm.sec.ericsson.com"] # "" indicates the core API group
+  resources: ["externalcertificates"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: [""] # "" indicates the core API group
+  resources: ["secrets"]
+  verbs: ["get", "list", "watch", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+# This role binding allows "jane" to read pods in the "default" namespace.
+# You need to already have a Role named "pod-reader" in that namespace.
+kind: RoleBinding
+metadata:
+  namespace: 5g-bsf-userNamespace
+  name: externalcertificates-crs
+subjects:
+# You can specify more than one "subject"
+- kind: ServiceAccount
+  name: externalcertificateshandler
+  namespace: 5g-bsf-userNamespace
+roleRef:
+  # "roleRef" specifies the binding to a Role / ClusterRole
+  kind: Role #this must be Role or ClusterRole
+  name: externalcertificates-crs
+  apiGroup: rbac.authorization.k8s.io

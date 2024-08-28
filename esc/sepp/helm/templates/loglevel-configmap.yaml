@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.service.manager.name }}-loglevel-config
+  labels:
+{{- include "eric-sepp.labels" . | indent 4 }}
+    app: {{ .Values.service.manager.name }}
+  annotations:
+{{- include "eric-sepp.helm-annotations" . | indent 4 }}
+{{- include "eric-sepp.config-annotations" . | indent 4 }}
+data:
+  logcontrol.json: |-
+    [
+        {
+          "container": {{ .Values.service.manager.name | quote }},
+          "severity": {{ .Values.log.manager.level | quote }}
+        },
+        {
+          "container": "license-consumer",
+          "severity": {{ .Values.log.licenseConsumer.level | quote }}
+        }{{- if eq (include "eric-sepp.tapagent.manager.enabled" .) "true" }},
+        {
+          "container": {{ .Values.tlskeylogagent.name | quote }},
+          "severity": {{ .Values.log.tlskeylogagent.level | quote }}
+        }{{- end }}
+    ]
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.service.worker.name }}-loglevel-config
+  labels:
+{{- include "eric-sepp.labels" . | indent 4 }}
+    app: {{ .Values.service.worker.name }}
+  annotations:
+{{- include "eric-sepp.helm-annotations" . | indent 4 }}
+{{- include "eric-sepp.config-annotations" . | indent 4 }}
+data:
+  logcontrol.json: |-
+    [
+        {
+          "container": {{ .Values.service.certnotifier.name | quote }},
+          "severity": {{ .Values.log.certnotifier.level | quote }}
+        },
+        {
+          "container": {{ .Values.service.sds.name | quote }},
+          "severity": {{ .Values.log.sds.level | quote }}
+        }{{- if eq (include "eric-sepp.tapcollector.worker.enabled" .) "true" }},
+        {
+          "container": {{ .Values.tapcollector.name | quote }},
+          "severity": {{ .Values.log.tapcollector.level | quote }}
+        }{{- end }}{{- if eq (include "eric-sepp.tapagent.worker.enabled" .) "true" }},
+        {
+          "container": {{ .Values.tlskeylogagent.name | quote }},
+          "severity": {{ .Values.log.tlskeylogagent.level | quote }}
+        }{{- end }}
+    ]

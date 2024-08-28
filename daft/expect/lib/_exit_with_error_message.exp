@@ -1,0 +1,52 @@
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.5
+#  Date     : 2022-03-11 11:40:39
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2014-2015,2022
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Exit out of Expect and print an error message.
+# Input:
+#  - Exit return value (integer > 0)
+#  - Error message (text that can contain multiple lines)
+#
+# Output:
+#  -
+#
+proc exit_with_error_message { returnvalue errormessage } {
+    global spawn_id
+    global debug_list
+
+    puts ""
+    puts "**********************************************************"
+    puts "** Potential error(s) have occurred, check output above **"
+    puts "**********************************************************"
+    puts "$errormessage"
+    if { [info exists debug_list] } {
+        if { [llength $debug_list] > 0 } {
+            puts "\nThe information printed below can be used as trouble shooting help to find out why the script failed but is probably only useful for the developers of the script.\nThis error was triggered due to the following events:"
+            puts "-----------------------------------------------------"
+            foreach line $debug_list {
+                puts "$line"
+            }
+            puts "-----------------------------------------------------"
+            puts ""
+        }
+    }
+
+    exit $returnvalue
+}

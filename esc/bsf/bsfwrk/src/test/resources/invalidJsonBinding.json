@@ -1,0 +1,11 @@
+{
+	"supi": "imsi-310150123456789",
+	"gpsi": "msisdn-918369110173",
+	"dnn": "valid.ericsson.se",
+	"pcfFqdn": "pcf1.cluster1.5gc.mnc012.mcc345.3gppnetwork.org",
+	"snssai": {
+		"sst": 64,
+		"sd",
+		"e8f44a"
+	}
+}

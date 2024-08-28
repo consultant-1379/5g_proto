@@ -1,0 +1,15 @@
+{{- if eq (include "eric-syslog.cr" .) "true" -}}
+{{- if eq (include "eric-syslog.tls" .) "true" -}}
+apiVersion: certm.sec.ericsson.com/v1
+kind: ExternalCertificate
+metadata:
+  name: {{ template "eric-syslog.name" . }}-trusted-cert
+  labels:
+    app: {{ template "eric-syslog.name" . }}
+spec:
+  generated-secret-name: {{ template "eric-syslog.name" . }}-trusted-cert-secret
+  generated-secret-type: opaque
+  trusted-certificates-file-name: "cacert.pem"
+  trusted-certificate-list-name: {{ .Values.service.tls.useCr.trustedCert }}
+{{- end -}}
+{{- end -}}

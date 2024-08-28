@@ -1,0 +1,251 @@
+#eric-cloud-native-nf-additions
+
+eric-cm-yang-provider:
+  pmMetrics:
+    enabled: false
+  AUM:
+    host: "eric-sec-admin-user-management"
+    authFailureDelayDefault: 10 # in seconds #3
+  resources:
+    initContainer:
+      limits:
+        cpu: 500m
+        memory: 250Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+    yangEngine:
+      requests:
+        memory: 128Mi
+        cpu: 200m
+      limits:
+        memory: 384Mi
+        cpu: 300m
+    yangDbAdapter:
+      requests:
+        memory: 38Mi
+        cpu: 20m
+      limits:
+        memory: 100Mi
+        cpu: 100m
+    sshd:
+      requests:
+        memory: 50Mi
+        cpu: 20m
+      limits:
+        memory: 100Mi
+        cpu: 250m
+    schemaSynchronizer:
+      requests:
+        memory: 32Mi
+        cpu: 50m
+      limits:
+        memory: 100Mi
+        cpu: 200m
+    externalNotifSender:
+      requests:
+        memory: 28Mi
+        cpu: 15m
+      limits:
+        memory: 100Mi
+        cpu: 100m
+    yangLibExt:
+      requests:
+        memory: 16Mi
+        cpu: 15m
+      limits:
+        memory: 128Mi
+        cpu: 250m
+    notificationController:
+      requests:
+        cpu: 20m
+        memory: 28Mi
+      limits:
+        cpu: 100m
+        memory: 100Mi
+    objectStorageAdapter:
+      requests:
+        cpu: 50m
+        memory: 50Mi
+      limits:
+        cpu: 500m
+        memory: 250Mi
+    pmMetrics:
+      requests:
+        cpu: 10m
+        memory: 16Mi
+      limits:
+        cpu: 200m
+        memory: 100Mi
+    cliExtensionCmds:
+      requests:
+        cpu: 15m
+        memory: 18Mi
+      limits:
+        cpu: 250m
+        memory: 64Mi
+    logshipper:
+      requests:
+        cpu: 50m
+        memory: 50Mi
+      limits:
+        cpu: 100m
+        memory: 100Mi
+    hooklauncher:
+      requests:
+        cpu: 50m
+        memory: 20Mi
+      limits:
+        cpu: 100m
+        memory: 50Mi
+
+eric-pm-bulk-reporter:
+  resources:
+    initcontainer:
+      requests:
+        cpu: 50m
+        memory: 50Mi
+      limits:
+        cpu: 200m
+        memory: 200Mi
+    bulkreporter:
+      requests:
+        cpu: 20m
+        memory: 24Mi
+      limits:
+        cpu: 50m
+        memory: 64Mi
+    alarmreporter:
+      requests:
+        cpu: 20m
+        memory: 16Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+    pmsftp:
+      requests:
+        cpu: 25m
+        memory: 50Mi
+      limits:
+        cpu: 50m
+#        memory: 144Mi
+    logshipper:
+      requests:
+        memory: 24Mi
+        cpu: 15m
+      limits:
+        memory: 100Mi
+        cpu: 100m
+  persistentVolumeClaim:
+    enabled: true
+    size: 500Mi
+    storageClassName: local-path
+
+eric-sec-admin-user-management:
+  resources:
+    aum:
+      requests:
+        cpu: 40m
+        memory: 32Mi
+      limits:
+        cpu: 250m
+        memory: 128Mi
+
+eric-sec-ldap-server:
+  brAgent:
+    enabled: true
+  metrics:
+    enabled: false
+  bandwidth:
+    maxEgressRate: ''
+  replicaCount: 1
+  resources:
+    ldap:
+      requests:
+        cpu: 30m
+        memory: 128Mi
+      limits:
+        cpu: 100m
+        memory: 512Mi
+    ldapagent:
+      requests:
+        memory: 128Mi
+        cpu: 25m
+      limits:
+        memory: 256Mi
+        cpu: 100m
+    ldapproxy:
+      requests:
+        cpu: 40m
+        memory: 40Mi
+      limits:
+        cpu: 400m
+        memory: 1Gi
+    metricsExporter:
+      requests:
+        cpu: 10m
+        memory: 50Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+    logshipper:
+      requests:
+        memory: 24Mi
+        cpu: 15m
+      limits:
+        memory: 100Mi
+        cpu: 100m
+    brAgent:
+      requests:
+        cpu: 15m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+  persistentVolumeClaim:
+    storageClassName: local-path
+    size: 500Mi
+
+eric-cnom-server:
+  replicaCount: 1
+  resources:
+    server:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+    logshipper:
+      requests:
+        memory: 24Mi
+        cpu: 15m
+      limits:
+        memory: 45Mi
+        cpu: 30m
+
+eric-cnom-server-db-pg:
+  metrics:
+    enabled: false
+  highAvailability:
+    synchronousModeEnabled: false
+    replicaCount: 1
+  persistentVolumeClaim:
+    enabled: true
+    storageClassName: local-path
+    size: 500Mi
+  resources:
+    postgres:
+      requests:
+        memory: 144Mi
+        cpu: 40m
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    metrics:
+      requests:
+        memory: 20Mi
+        cpu: 20m
+      limits:
+        cpu: 50m
+        memory: 64Mi

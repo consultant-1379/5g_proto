@@ -1,0 +1,7 @@
+server:
+  extraConfigmapMounts:
+    - name: eric-sc-rlf-rr-volume
+      configMap: eric-sc-rlf-rr
+      mountPath: /etc/config/scrlf
+      subPath: ""
+      readOnly: true

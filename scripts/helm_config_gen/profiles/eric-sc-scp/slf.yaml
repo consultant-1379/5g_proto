@@ -1,0 +1,6 @@
+eric-sc-slf:
+  enabled: true
+
+eric-scp:
+  slf:
+    enabled: true

@@ -1,0 +1,32 @@
+global:
+  registry:
+    imagePullPolicy: "Always"
+  pullSecret: regcred
+  
+eric-dsc-wcdb-cd:
+  enabled: true
+  cassandra:
+    jvmOptions:
+      set:
+        - "Dmv_enable_coordinator_batchlog=true"
+        - "XX:+UseG1GC"
+        - "XX:InitialRAMPercentage=50.0"
+        - "XX:MaxRAMPercentage=50.0"
+        - "XX:MaxGCPauseMillis=200"
+        - "XX:InitiatingHeapOccupancyPercent=70"
+      unset:
+        - "Xmn800M"
+        - "Xmn100M"
+        - "Xmn400M"
+        - "XX:+HeapDumpOnOutOfMemoryError"
+        - "XX:+UseParNewGC"
+        - "XX:+UseConcMarkSweepGC"
+        - "XX:+CMSParallelRemarkEnabled"
+        - "XX:SurvivorRatio=8"
+        - "XX:MaxTenuringThreshold=1"
+        - "XX:CMSInitiatingOccupancyFraction=75"
+        - "XX:+UseCMSInitiatingOccupancyOnly"
+        - "XX:CMSWaitDuration=10000"
+        - "XX:+CMSParallelInitialMarkEnabled"
+        - "XX:+CMSEdenChunksRecordAlways"
+        - "XX:+CMSClassUnloadingEnabled"

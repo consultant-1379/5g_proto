@@ -1,0 +1,10 @@
+eric-scp:
+  tapagent:
+    worker:
+      enabled: true
+    manager:
+      enabled: true
+
+eric-sc-slf:
+  tapagent:
+    enabled: true

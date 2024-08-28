@@ -1,0 +1,4 @@
+apiVersion: v1
+description: SEPP Simulator aka Huber. (c) Ericsson GmbH 2020
+name: eric-seppsim
+version: 0.0.1

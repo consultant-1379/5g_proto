@@ -1,0 +1,25 @@
+eric-data-distributed-coordinator-ed-sc:
+  # pods:
+    # etcd:
+      # replicas: 3
+  resources:
+    dced:
+      requests:
+        cpu: '150m' #"400m" (max/min)
+        memory: "192Mi" #"400Mi" (max/min)
+      limits:
+        cpu: '300m' #"1" (max/min)
+        memory: "512Mi" #"1Gi" (max/min)
+    brAgent:
+      limits:
+        cpu: "400m" #"1" (max)
+        memory: "512Mi" #"2Gi" (max)
+      requests:
+        cpu: "100m" #"400m" (max)
+        memory: "256Mi" #"400Mi" (max)
+  # persistence:
+    # persistentVolumeClaim:
+      # size: "1Gi"
+  env:
+    etcd:
+      ETCD_QUOTA_BACKEND_BYTES: "128000000"

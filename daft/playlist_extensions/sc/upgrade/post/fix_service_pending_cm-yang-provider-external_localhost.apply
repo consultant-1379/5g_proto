@@ -1,0 +1,243 @@
+#!/usr/bin/perl
+
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.4
+#  Date     : 2023-11-07 16:34:59
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2023
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+#
+# This script is used as a DAFT playlist extension for upgrades to fix a problem
+# where the eric-cm-yang-provider-external EXTERNAL-IP service address show as
+# <pending> after an upgrade.
+# This script will apply a workaround by adding and removing a dummy annotation
+# on the service.
+#
+# Script was introduced by user story DND-52194 and bug DND-51796.
+# https://eteamproject.internal.ericsson.com/browse/DND-52194
+# https://eteamproject.internal.ericsson.com/browse/DND-51796
+#
+################################################################################
+
+use strict;
+use Cwd qw(abs_path cwd);
+use File::Basename qw(dirname);
+
+my $debug_cmd = "";    # Modify this to read "echo " to enable debugging of script without changing data
+my $daft_script_path = "";
+my $job_log_file = "";
+my $job_params_file = "";
+my %job_params_hash;
+
+my $command;
+my $current_dir;
+my $error_cnt = 0;
+my $new_sc_release_version;
+my $nodename;
+my $nodetype;
+my $old_sc_release_version;
+my $kubectl_command;
+my $rc = 0;
+my @result;
+my $sc_namespace;
+my @service_to_annotate;
+
+# Check if the needed environment variables exist
+print "Reading environment variables\n";
+if (exists $ENV{'TOOL_PATH_DAFT'} && $ENV{'TOOL_PATH_DAFT'} ne "") {
+    $daft_script_path = $ENV{'TOOL_PATH_DAFT'};
+} else {
+    print "The environment variable TOOL_PATH_DAFT does not exist or is empty\n";
+    exit 1;
+}
+if (exists $ENV{'JOB_WORKSPACE_PATH_DAFT'} && $ENV{'JOB_WORKSPACE_PATH_DAFT'} ne "") {
+    $job_params_file = "$ENV{'JOB_WORKSPACE_PATH_DAFT'}/job_parameters.conf";
+    $job_log_file = "$ENV{'JOB_WORKSPACE_PATH_DAFT'}/all.log";
+} else {
+    print "The environment variable JOB_WORKSPACE_PATH_DAFT does not exist or is empty\n";
+    exit 1;
+}
+
+# Check if the job parameters file exist
+unless (-f "$job_params_file") {
+    print "The job parameters file '$job_params_file' does not exist\n";
+    exit 1;
+}
+
+# Update the Perl library path to allow this script to use existing library files
+use lib abs_path $ENV{'TOOL_PATH_DAFT'} . '/perl/lib';
+
+# Import existing library files
+use ADP::Kubernetes_Operations;
+use General::Logging;
+use General::Message_Generation;
+use General::OS_Operations;
+use General::Playlist_Operations;
+
+# Read the job parameters file into an hash
+print "Reading job variables from file: $job_params_file\n";
+if (General::Playlist_Operations::job_parameters_read($job_params_file, \%job_params_hash) != 0) {
+    print "Failure to read the job parameters file '$job_params_file'\n";
+    exit 1;
+}
+
+# Check for job parameters to see if we should skip this playlist extension script
+if (exists $job_params_hash{'SKIP_DEPLOY_UPGRADE_SC'} && $job_params_hash{'SKIP_DEPLOY_UPGRADE_SC'} eq "yes") {
+    print "Job parameter SKIP_DEPLOY_UPGRADE_SC=yes, we shall not execute this script\n";
+    exit 0;
+}
+
+# Check for job parameters needed by this script
+if (exists $job_params_hash{'SC_RELEASE_VERSION'}) {
+    $new_sc_release_version = $job_params_hash{'SC_RELEASE_VERSION'};
+    print "New Software Version: $new_sc_release_version\n";
+} else {
+    print "Job parameter SC_RELEASE_VERSION does not exist in the job parameter file\n";
+    exit 1;
+}
+if (exists $job_params_hash{'OLD_SC_RELEASE_VERSION'}) {
+    $old_sc_release_version = $job_params_hash{'OLD_SC_RELEASE_VERSION'};
+    print "Old Software Version: $old_sc_release_version\n";
+} else {
+    print "Job parameter OLD_SC_RELEASE_VERSION does not exist in the job parameter file\n";
+    exit 1;
+}
+if (exists $job_params_hash{'SC_NAMESPACE'}) {
+    $sc_namespace = $job_params_hash{'SC_NAMESPACE'};
+    print "SC Namespace: $sc_namespace\n";
+} else {
+    print "Job parameter SC_NAMESPACE does not exist in the job parameter file\n";
+    exit 1;
+}
+if (exists $job_params_hash{'KUBECTL_EXECUTABLE'}) {
+    $kubectl_command = $job_params_hash{'KUBECTL_EXECUTABLE'};
+    print "kubectl Command: $kubectl_command\n";
+} else {
+    print "Job parameter KUBECTL_EXECUTABLE does not exist in the job parameter file\n";
+    exit 1;
+}
+if (exists $job_params_hash{'nodetype'}) {
+    # Should be something that is a comma separated list of e.g. bsf, scp, setc etc.
+    $nodetype = $job_params_hash{'nodetype'};
+    print "Node Type: $nodetype\n";
+}
+
+# Try to find the name of the node.
+if (exists $job_params_hash{'eric_sc_values_hash_parameter_eric-sc.routes.nbi.fqdn'}) {
+    if ($job_params_hash{'eric_sc_values_hash_parameter_eric-sc.routes.nbi.fqdn'} =~ /^nbi\.([^.]+)\..+/) {
+        $nodename = $1;
+        print "Node Name: $nodename\n";
+    }
+}
+
+# Enable logging of all executed commands to the job all.log file
+General::Logging::log_enable($job_log_file);
+
+# *********
+# * Check *
+# *********
+
+print "Fetching service information for namespace '$sc_namespace'\n";
+$command = "$kubectl_command get svc -n $sc_namespace";
+$rc = General::OS_Operations::send_command(
+    {
+        "command"       => $command,
+        "hide-output"   => 1,
+        "return-output" => \@result,
+    }
+);
+my $service_name = "";
+if ($rc == 0) {
+    my $ext_ip = "";
+    for (@result) {
+        if (/^((\S+-)(external|ipv4|ipv6))\s+LoadBalancer\s+\S+\s+(\S+)\s+\S+\s+\S+/) {
+            # eric-cm-yang-provider-external  LoadBalancer   10.209.71.24  <pending>  830:30241/TCP,22:31470/TCP   3d17h
+            $service_name = $1;
+            $ext_ip = $4;
+            if ($ext_ip eq "<pending>") {
+                print "The service '$service_name' does not seem to be up, we need to annotate this service\n";
+                push @service_to_annotate, $service_name;
+            } elsif ($ext_ip eq "<none>") {
+                # No external IP specified
+                print "The service '$service_name' does not seem to have any external IP-address assigned, we shall not annotate this service\n";
+            } else {
+                # The address seems to be valid
+                print "The service '$service_name' seem to have a valid external IP-address ($ext_ip), we shall not annotate this service\n";
+            }
+        }
+    }
+} else {
+    print "Failed to fetch the service list\n";
+    exit 1;
+}
+
+if (scalar @service_to_annotate == 0) {
+    print "All expected services has a valid IP-address, no need to annotate any service\n";
+    exit 0;
+}
+
+my $failure_cnt = 0;
+for $service_name (@service_to_annotate) {
+
+    # *****************
+    # * Add annotaion *
+    # *****************
+
+    print "Adding dummy annotation for service '$service_name'\n";
+    $command = "$debug_cmd$kubectl_command annotate svc $service_name dummy=dummy -n $sc_namespace";
+    $rc = General::OS_Operations::send_command(
+        {
+            "command"       => $command,
+            "hide-output"   => 1,
+            "return-output" => \@result,
+        }
+    );
+    if ($rc != 0) {
+        print "The annotate of service '$service_name' failed, rc=$rc\n" . (join "\n", @result) . "\n";
+        $failure_cnt++;
+        next;
+    }
+
+    # ********************
+    # * Remove annotaion *
+    # ********************
+
+    print "Removing dummy annotation for service '$service_name'\n";
+    $command = "$debug_cmd$kubectl_command annotate svc $service_name dummy- -n $sc_namespace";
+    $rc = General::OS_Operations::send_command(
+        {
+            "command"       => $command,
+            "hide-output"   => 1,
+            "return-output" => \@result,
+        }
+    );
+    if ($rc != 0) {
+        print "The annotate removal of service '$service_name' failed, rc=$rc\n" . (join "\n", @result) . "\n";
+        $failure_cnt++;
+    }
+
+}
+
+# Disable logging
+General::Logging::log_disable();
+
+if ($failure_cnt == 0) {
+    print "The workaround was successful\n";
+    exit 0;
+} else {
+    printf "The workaround failed for %d out of %d service%s\n", $failure_cnt, scalar @service_to_annotate, $failure_cnt > 1 ? "s" : "";
+    exit 1;
+}

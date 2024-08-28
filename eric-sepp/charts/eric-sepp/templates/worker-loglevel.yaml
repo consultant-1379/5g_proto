@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "eric-sepp.name" . }}-worker-loglevel-config
+  labels:
+{{- include "eric-sepp.labels" . | indent 4 }}
+    app: {{ template "eric-sepp.name" . }}-worker
+  annotations:
+{{- include "eric-sepp.helm-annotations" . | indent 4 }}
+{{- include "eric-sepp.config-annotations" . | indent 4 }}
+data:
+  logcontrol.json: |-
+    [
+        {
+          "container": "eric-sepp-cert-notifier",
+          "severity": {{ .Values.log.certnotifier.level | quote }}
+        },
+        {
+          "container": "eric-sepp-sds",
+          "severity": {{ .Values.log.sds.level | quote }}
+        }{{- if eq (include "eric-sepp.tapcollector.worker.enabled" .) "true" }},
+        {
+          "container": "tapcollector",
+          "severity": {{ .Values.log.tapcollector.level | quote }}
+        }{{- end }}{{- if eq (include "eric-sepp.tapagent.worker.enabled" .) "true" }},
+        {
+          "container": "tlskeylogagent",
+          "severity": {{ .Values.log.tlskeylogagent.level | quote }}
+        }{{- end }}
+    ]

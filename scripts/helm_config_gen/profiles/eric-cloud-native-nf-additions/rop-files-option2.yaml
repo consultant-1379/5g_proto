@@ -1,0 +1,10 @@
+eric-data-sftp-server:
+  enabled: true
+  imageCredentials:
+    sftp:
+      registry:
+        url: serodocker.sero.gic.ericsson.se
+
+eric-pm-bulk-reporter:
+  objectStorage:
+    enabled: true

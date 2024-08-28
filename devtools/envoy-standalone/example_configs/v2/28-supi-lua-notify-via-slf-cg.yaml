@@ -1,0 +1,287 @@
+# Scenario 27:
+# - 3 clusters, each with one ChfSim representing one province
+# - error handling
+# - notify-handling
+# - loop-protection with via-header
+# - NRF-Interrogation to SLF with query parameters
+
+admin:
+  access_log_path: /tmp/admin_access.log
+  address:
+    socket_address:
+      protocol: TCP
+      address: localhost
+      port_value: 9901
+static_resources:
+  listeners:
+  - name: listener_0
+    address:
+      socket_address:
+        protocol: TCP
+        address: 0.0.0.0
+        port_value: 80
+    filter_chains:
+    - filters:
+      - name: envoy.http_connection_manager
+        config:
+          stat_prefix: chf_ingress_http
+          access_log:
+            name: "envoy.file_access_log"
+            config:
+              path: "/dev/stdout"
+          via: "eric-scp-worker-5fa3c"
+          route_config:
+            name: local_route
+            virtual_hosts:
+            - name: provinceB
+              domains: ["eric-chfsim-7"]
+              routes:
+              - match:
+                  prefix: "/"
+                  headers:
+                    name: "via"
+                    safe_regex_match:
+                      google_re2:
+                        max_program_size: 1000
+                      regex: ".*eric-scp-worker-5fa3c.*eric-scp-worker-5fa3c.*"
+                direct_response:
+                  status: 508
+              - match:
+                  prefix: /
+                route:
+                  auto_host_rewrite: false
+                  cluster: provinceB
+                  prefix_rewrite: "http://eric-chfsim-7/"
+                  retry_policy:
+                    host_selection_retry_max_attempts: '3'
+                    num_retries: 5
+                    per_try_timeout: 0.500s
+                    retry_on: 5xx
+            - name: local_province
+              domains: ["*"]
+              routes:
+              - match:
+                  prefix: "/"
+                  headers:
+                    name: "via"
+                    safe_regex_match:
+                      google_re2:
+                        max_program_size: 1000
+                      regex: ".*eric-scp-worker-5fa3c.*eric-scp-worker-5fa3c.*"
+                direct_response:
+                  status: 508
+              - match:
+                  prefix: /nchf-convergedcharging/notify-cg/v2/chargingdata/
+                route:
+                  auto_host_rewrite: true
+                  cluster: notify
+                  retry_policy:
+                    host_selection_retry_max_attempts: '3'
+                    num_retries: 5
+                    per_try_timeout: 0.500s
+                    retry_on: 5xx
+              - match:
+                  prefix: "/"
+                route:
+                  cluster_header: "x-province"
+          http_filters:
+          - name: envoy.lua
+            config:
+              inline_code: |
+                function envoy_on_request(request_handle)
+                  request_handle:logInfo("Request")
+                  local json = require "/json" -- this is /json.lua in the container
+                  if (request_handle:body())
+                  then
+                    local raw_body_buffer = request_handle:body()
+                    local raw_body = raw_body_buffer:getBytes(0, raw_body_buffer:length())
+                    local body = json.decode(raw_body) 
+                    if (body)
+                    then
+                      local supi = body["subscriberIdentifier"]["supi"]
+                      if (supi)
+                      then
+                        request_handle:logInfo(string.format("LUA: SUPI: %s", supi))
+                        local slf_req_headers = {
+                          [":method"] = "GET",
+                          [":path"] = string.format("/nslf-disc/v0/provinces?requester-nf-type=SMF&target-nf-type=CHF&supi=imsi-%s", supi),
+                          [":authority"] = "eric-sc-slf",
+                        }
+                        local slf_resp_headers, raw_slf_resp_body = request_handle:httpCall("eric-sc-slf", slf_req_headers, "", 10000)
+                        if (slf_resp_headers)
+                        then
+                          local status = slf_resp_headers[":status"]
+                          if (status == "200")
+                          then
+                            local slf_resp_body = json.decode(raw_slf_resp_body)
+                            if (slf_resp_body)
+                            then
+                              local provinces = slf_resp_body["provinces"]
+                              if (provinces)
+                              then
+                                local province = get_province(provinces)
+                                request_handle:logInfo(string.format("LUA: Received province: %s", province))
+                                request_handle:headers():add("x-province", province)
+                              else
+                                request_handle:logInfo("LUA: province name not found in 200 reply")
+                              end
+                            else
+                              request_handle:logInfo("LUA: body returned from SLF is not in JSON format")
+                            end
+                          elseif (status == "404")
+                            then
+                            request_handle:logInfo(string.format("LUA: 404 Province not found for SUPI %s", supi))
+                          elseif (status == "503")
+                            then
+                            request_handle:logInfo(string.format("LUA: 503 Cannot connect to SLF (SUPI %s)", supi))
+                          elseif (status == "504")
+                            then
+                            request_handle:logInfo(string.format("LUA: 504 Timeout (SUPI %s)", supi))
+                          else
+                            request_handle:logInfo(string.format("LUA: status %s received from SLF, not handled. (SUPI %s)", status, supi))
+                          end
+                        else
+                          request_handle:logInfo("LUA: no headers in reply from SLF")
+                        end
+                      else
+                        request_handle:logInfo("LUA: SUPI not found")
+                      end
+                    end
+                  end
+                end
+                function get_province(provinces)
+                    local province = "unknown-province"
+                    local priority_min
+                    local i
+                    local prov_pri
+                    for i, prov_pri in ipairs(provinces) do
+                        local pri = prov_pri["priority"]
+                        print(prov_pri["name"])
+                        print(pri)
+                        if (pri)
+                        then
+                          if ((not priority_min) or pri < priority_min)
+                          then
+                            priority_min = pri
+                            province = prov_pri["name"]
+                          end
+                        end
+                    end
+                    return province
+                end
+
+          - name: envoy.filters.http.dynamic_forward_proxy
+            typed_config:
+              '@type': type.googleapis.com/envoy.config.filter.http.dynamic_forward_proxy.v2alpha.FilterConfig
+              dns_cache_config:
+                name: dynamic_forward_proxy_cache_config
+                dns_lookup_family: V4_ONLY
+          - name: envoy.router
+  clusters:
+  - name: eric-sc-slf
+    connect_timeout: 0.25s
+    type: STRICT_DNS
+    # Comment out the following line to test on v6 networks
+    dns_lookup_family: V4_ONLY
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: eric-sc-slf
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: eric-sc-slf
+                port_value: 80
+
+  - name: eric-sc-slf-sim
+    connect_timeout: 0.25s
+    type: STRICT_DNS
+    # Comment out the following line to test on v6 networks
+    dns_lookup_family: V4_ONLY
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: eric-sc-slf
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: nrf-interrogator
+                port_value: 80
+
+  - name: provinceA
+    connect_timeout: 0.25s
+    type: STRICT_DNS
+    # Comment out the following line to test on v6 networks
+    dns_lookup_family: V4_ONLY
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: chf-provinceA
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: eric-chfsim-1
+                port_value: 80
+
+  - name: provinceB
+    connect_timeout: 0.25s
+    type: STRICT_DNS
+    # Comment out the following line to test on v6 networks
+    dns_lookup_family: V4_ONLY
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: chf-provinceB
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: eric-chfsim-2
+                port_value: 80
+
+  - name: provinceC
+    connect_timeout: 0.25s
+    type: STRICT_DNS
+    # Comment out the following line to test on v6 networks
+    dns_lookup_family: V4_ONLY
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: chf-provinceC
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: eric-chfsim-3
+                port_value: 80
+
+  - name: Shanghai
+    connect_timeout: 0.25s
+    type: STRICT_DNS
+    # Comment out the following line to test on v6 networks
+    dns_lookup_family: V4_ONLY
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: Shanghai
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: eric-chfsim-3
+                port_value: 80
+
+  - name: notify
+    connect_timeout: 1s
+    lb_policy: CLUSTER_PROVIDED
+    cluster_type:
+      name: envoy.clusters.dynamic_forward_proxy
+      typed_config:
+        "@type": type.googleapis.com/envoy.config.cluster.dynamic_forward_proxy.v2alpha.ClusterConfig
+        dns_cache_config:
+          name: dynamic_forward_proxy_cache_config
+          dns_lookup_family: V4_ONLY
+

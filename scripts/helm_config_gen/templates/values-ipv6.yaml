@@ -1,0 +1,75 @@
+global:
+  internalIPFamily: "IPv6"
+
+eric-bsf:
+  service:
+    worker:
+      externalIPv6:
+        enabled: true
+
+eric-bsf-diameter:
+  initialConfig:
+    dsl:
+      enableIPv6: true
+
+eric-cm-yang-provider:
+  ldap:
+    ipv6Enabled: true
+
+eric-cnom-document-database-mg:
+  mongodbEnableIPv6: true
+
+eric-data-search-engine:
+  service:
+    network:
+      protocol:
+        IPv6: true
+
+eric-data-sftp-server:
+  userManagement:
+    ldap:
+      lookupFamilyOrder: ipv6_first ## <empty>/ipv4_first/ipv6_first/ipv4_only/ipv6_only
+
+eric-data-wide-column-database-cd:
+  resources:
+    cassandra:
+      network:
+        useIPv6: true
+
+eric-fh-snmp-alarm-provider:
+  service:
+    externalIPv6:
+      enabled: true
+
+eric-pm-bulk-reporter:
+  service:
+    externalIPv6:
+      enabled: true
+
+eric-scp:
+  service:
+    worker:
+      externalIPv6:
+        enabled: true
+
+eric-sepp:
+  service:
+    worker:
+      externalIPv6:
+        enabled: true
+      multiVpn:
+         externalIPv6:
+           enabled: true
+
+eric-stm-diameter:
+  initialConfig:
+    dsl:
+      enableIPv6: true
+  service:
+    externalIPv6:
+      enabled: true
+
+eric-tm-ingress-controller-cr:
+  service:
+    externalIPv6 :
+      enabled: true

@@ -1,0 +1,34 @@
+{{- if .Values.global -}}
+{{- if and .Values.global.networkPolicy .Values.networkPolicy -}}
+{{- if and .Values.global.networkPolicy.enabled .Values.networkPolicy.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ template "eric-sepp.name" . }}-worker-external-access
+  labels:
+{{- include "eric-sepp.labels" . | indent 4 }}
+    app: {{ template "eric-sepp.name" . }}-worker
+  annotations:
+{{- include "eric-sepp.helm-annotations" . | indent 4 }}
+{{- include "eric-sepp.config-annotations" . | indent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ template "eric-sepp.name" . }}-worker
+  policyTypes:
+  - Ingress
+  ingress:
+  - ports: #traffic ports have to be open because requests can come from external sources
+    - port: {{ .Values.service.worker.portName }}
+      protocol: TCP
+    - port: {{ .Values.service.worker.tlsPortName }}
+      protocol: TCP
+     {{- if .Values.service.worker.multiVpn.enabled }}
+    - port:  {{ .Values.service.worker.multiVpn.port2Name }}
+      protocol: TCP
+    - port: {{ .Values.service.worker.multiVpn.tlsPort2Name }}
+      protocol: TCP
+    {{ end }}
+{{- end }}
+{{- end }}
+{{- end }}

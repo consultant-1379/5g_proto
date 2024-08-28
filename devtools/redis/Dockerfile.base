@@ -1,0 +1,57 @@
+ARG DOCKER_BASE_IMG
+FROM $DOCKER_BASE_IMG as builder
+
+ENV CC=gcc-11
+ENV CXX=g++-11
+
+ARG ADP_DEV_REPO
+ARG CBOS_REPO
+#ARG CBOS_REPO_DEVEL
+RUN zypper addrepo --gpgcheck-strict $CBOS_REPO CBOS_REPO &&\
+    zypper addrepo --gpgcheck-strict $ADP_DEV_REPO ADP_DEV_REPO &&\
+    zypper --gpg-auto-import-keys refresh -f &&\
+    zypper  --no-refresh --quiet install --no-recommends --auto-agree-with-licenses --no-confirm CBOS_REPO:awk \
+                                                                                                 CBOS_REPO:diffutils \
+                                                                                                 CBOS_REPO:git-core \
+                                                                                                 CBOS_REPO:jemalloc \
+                                                                                                 CBOS_REPO:python3 \
+                                                                                                 ADP_DEV_REPO:gcc11 \
+                                                                                                 ADP_DEV_REPO:gcc11-c++ \
+                                                                                                 ADP_DEV_REPO:make &&\
+	zypper clean -a &&\
+	zypper removerepo ADP_DEV_REPO &&\
+    zypper removerepo CBOS_REPO &&\
+    ln -s /usr/bin/gcc-11 /usr/bin/gcc &&\
+    ln -s /usr/bin/g++-11 /usr/bin/g++
+
+ARG REDIS_VERSION
+RUN git clone --depth 1 https://github.com/redis/redis.git --branch $REDIS_VERSION
+
+WORKDIR /redis
+RUN make CC=gcc &&\
+    make install
+
+FROM $DOCKER_BASE_IMG
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+#Create the redis user/group and remove the RPM again so that it's not in the final image
+ARG CBOS_REPO
+RUN zypper addrepo --gpgcheck-strict $CBOS_REPO CBOS_REPO &&\
+    zypper --gpg-auto-import-keys refresh -f &&\
+    zypper  --no-refresh --quiet install --no-recommends --auto-agree-with-licenses --no-confirm CBOS_REPO:shadow \
+                                                                                                 CBOS_REPO:sudo &&\
+    groupadd -g 1000 redis &&\
+    useradd -G redis -u 999 redis &&\
+    zypper --no-refresh --quiet remove --no-confirm  CBOS_REPO:shadow &&\
+	zypper clean -a &&\
+    zypper removerepo CBOS_REPO
+
+RUN mkdir /data &&\
+    chown redis:redis /data
+
+VOLUME [/data]
+WORKDIR /data
+
+COPY docker-entrypoint.sh /usr/local/bin
+
+ENTRYPOINT ["docker-entrypoint.sh"]

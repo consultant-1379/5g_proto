@@ -1,0 +1,45 @@
+{ 
+   "nfInstanceId":"1111c4c2-03ec-4983-86ef-6e00c52d6e41",
+   "nfType":"CHF",
+   "nfStatus":"REGISTERED",
+   "fqdn":"eric-chfsim-1",
+   "nfServices":[ 
+      { 
+         "serviceInstanceId":"DynPool1.Test.chfsim1",
+         "serviceName":"nchf-spendinglimitcontrol",
+         "versions":[ 
+            { 
+               "apiVersionInUri":"v1",
+               "apiFullVersion":"1.0.1",
+               "expiry":"2021-07-21T17:32:28Z"
+            }
+         ],
+         "scheme":"http",
+         "nfServiceStatus":"REGISTERED",
+         "fqdn":"eric-chfsim-1"
+      },
+      { 
+         "serviceInstanceId":"DynPool1.Test.chfsim1",
+         "serviceName":"nchf-convergedcharging",
+         "versions":[ 
+            { 
+               "apiVersionInUri":"v2",
+               "apiFullVersion":"2.0.1",
+               "expiry":"2021-07-21T17:32:28Z"
+            }
+         ],
+         "scheme":"http",
+         "nfServiceStatus":"REGISTERED",
+         "fqdn":"eric-chfsim-1"
+      }	  
+   ],
+   "customInfo": 
+      { 
+         "poolid":"DPool1",
+         "hostname":"occ1"
+      }
+   ,
+   "load":85,
+   "capacity":590
+}
+

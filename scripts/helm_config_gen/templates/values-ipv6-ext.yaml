@@ -1,0 +1,58 @@
+global:
+  externalIPv4:
+    enabled: false
+  externalIPv6:
+    enabled: true
+
+# ADP
+eric-cm-yang-provider:
+  service:
+    externalIPv6:
+      enabled: false
+
+eric-data-sftp-server:
+  service:
+    externalIPv6:
+      enabled: false
+
+eric-data-wide-column-database-cd:
+  service:
+    externalIPv6:
+      enabled: false
+
+eric-fh-snmp-alarm-provider:
+  service:
+    externalIPv6:
+      enabled: false
+
+eric-pm-bulk-reporter:
+  service:
+    externalIPv6:
+      enabled: false
+
+eric-tm-ingress-controller-cr:
+#  listeners:
+#    ipv4Only: false
+    externalIPv6:
+      enabled: false
+
+eric-stm-diameter:
+    externalIPv6:
+      enabled: false
+
+
+# NFs
+eric-bsf:
+  service:
+    worker:
+      ipFamilyPolicy: SingleStack
+
+eric-scp:
+  service:
+    worker:
+      ipFamilyPolicy: SingleStack
+
+eric-sepp:
+  service:
+    worker:
+      ipFamilyPolicy: SingleStack

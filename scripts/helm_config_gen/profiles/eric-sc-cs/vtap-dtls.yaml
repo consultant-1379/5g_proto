@@ -1,0 +1,9 @@
+eric-probe-virtual-tap-broker:
+  dtls:
+    enabled: true
+  resources:
+    VirtualTapBroker:
+      requests:
+        cpu: 2600m
+      limits:
+        cpu: 7800m

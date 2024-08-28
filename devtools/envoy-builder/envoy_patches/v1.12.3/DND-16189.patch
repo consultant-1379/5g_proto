@@ -1,0 +1,15 @@
+diff --git a/source/common/upstream/outlier_detection_impl.cc b/source/common/upstream/outlier_detection_impl.cc
+index 6d0a7ac6c..4d7992864 100644
+--- a/source/common/upstream/outlier_detection_impl.cc
++++ b/source/common/upstream/outlier_detection_impl.cc
+@@ -780,6 +780,10 @@ void EventLoggerImpl::setCommonEventParams(
+   }
+   event.set_cluster_name(host->cluster().name());
+   event.set_upstream_url(host->address()->asString());
++  //DND-16189: include the unresolved address in outlier detection events
++  std::string upstream_url = host->address()->asString();
++  upstream_url.append("|").append(host->hostname());
++  event.set_upstream_url(upstream_url);
+   event.set_num_ejections(host->outlierDetector().numEjections());
+   TimestampUtil::systemClockToTimestamp(time_source_.systemTime(), *event.mutable_timestamp());
+ }

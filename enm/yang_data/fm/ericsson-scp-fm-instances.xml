@@ -1,0 +1,225 @@
+<?xml version="1.0" ?>
+<!-- ericsson-scp-fm-instances 0.1.8 -->
+<!-- modified: 2021-08-26 -->
+<!-- Copyright (c) 2021 Ericsson AB. All rights reserved.     -->
+<config xmlns="http://tail-f.com/ns/config/1.0">
+    <fm xmlns="urn:rdns:com:ericsson:oammodel:ericsson-fm">
+		<alarm-model>
+            <id>eric-scp-fm</id>
+            <alarm-type>
+                <id>Test</id>
+                <major-type>193</major-type>
+                <minor-type>‭9306112</minor-type>
+                <specific-problem>Test Alarm</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>This is a test alarm, please ignore.</additional-text>
+                <configured-severity/>
+                <default-severity>warning</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>ScpNrfGroupUnavailable</id>
+                <major-type>193</major-type>
+                <minor-type>9306113</minor-type>
+                <specific-problem>SCP, NRF Group Unavailable</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>The NRF-group is unavailable</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+			<alarm-type>
+                <id>ScpBadConfiguration</id>
+                <major-type>193</major-type>
+                <minor-type>9306114</minor-type>
+                <specific-problem>SCP, Bad Configuration</specific-problem>
+                <event-type>processing-error-alarm</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>The configuration provided is faulty</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+			<alarm-type>
+                <id>ScpUnresolvableHosts</id>
+                <major-type>193</major-type>
+                <minor-type>9306118</minor-type>
+                <specific-problem>SCP, Unresolvable Hosts</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>One or more hostnames cannot be resolved</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+			<alarm-type>
+                <id>MissingCertificate</id>
+                <major-type>193</major-type>
+                <minor-type>9306119</minor-type>
+                <specific-problem>SCP, Certificate Missing</specific-problem>
+                <event-type>other</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>An asymmetric key or/and a certificate authority are unavailable which can result in the failure of the secure connection that uses them.</additional-text>
+                <configured-severity/>
+                <default-severity>critical</default-severity>
+            </alarm-type>
+			<alarm-type>
+                <id>ScpNfServiceInstanceNotReachable</id>
+                <major-type>193</major-type>
+                <minor-type>9306120</minor-type>
+                <specific-problem>SCP, NF Service Instance Not Reachable</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>The NF Service Instance is not reachable for service requests</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>ScpHighLoad</id>
+                <major-type>193</major-type>
+                <minor-type>9306121</minor-type>
+                <specific-problem>SCP, High Load</specific-problem>
+                <event-type>other</event-type>
+                <probable-cause>207</probable-cause>
+                <is-stateful>true</is-stateful>
+                <additional-text>SCP load has passed a defined threshold</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>ScpHighNumberOfIngressTcpConnections</id>
+                <major-type>193</major-type>
+                <minor-type>9306122</minor-type>
+                <specific-problem>SCP, High number of open incoming TCP connections</specific-problem>
+                <event-type>other</event-type>
+                <probable-cause>207</probable-cause>
+                <is-stateful>true</is-stateful>
+                <additional-text>The open incoming TCP connections have passed a defined threshold</additional-text>
+                <configured-severity/>
+                <default-severity>minor</default-severity>
+            </alarm-type>            
+            <alarm-type>
+                <id>ScpSlfHighLoad</id>
+                <major-type>193</major-type>
+                <minor-type>9306123</minor-type>
+                <specific-problem>SCP, SLF High Load</specific-problem>
+                <event-type>other</event-type>
+                <probable-cause>207</probable-cause>
+                <is-stateful>true</is-stateful>
+                <additional-text>SLF load has passed a defined threshold</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>ScpMessagesDroppedByGlobalRateLimiting</id>
+                <major-type>193</major-type>
+                <minor-type>9306124</minor-type>
+                <specific-problem>SCP, Messages Dropped by Global Rate Limiting</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <is-stateful>false</is-stateful>
+                <additional-text>The percentage of dropped messages forwarded from SCP to RLF has exceeded the predefined limit</additional-text>
+                <configured-severity/>
+                <default-severity>warning</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>ScpMessagesRejectedByGlobalRateLimiting</id>
+                <major-type>193</major-type>
+                <minor-type>9306125</minor-type>
+                <specific-problem>SCP, Messages Rejected by Global Rate Limiting</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <is-stateful>true</is-stateful>
+                <additional-text>The percentage of rejected messages forwarded from SCP to RLF has exceeded the predefined limit</additional-text>
+                <configured-severity/>
+                <default-severity>warning</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>ScpEnvoySegmentsDroppedRatio</id>
+                <major-type>193</major-type>
+                <minor-type>9306126</minor-type>
+                <specific-problem>SCP, Envoy segments dropped ratio</specific-problem>
+                <event-type>other</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>Envoy segments dropped ratio</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>ScpInvalidDiscoveredNfInstance</id>
+                <major-type>193</major-type>
+                <minor-type>9306127</minor-type>
+                <specific-problem>SCP, Invalid discovered NF instance</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause/>
+                <is-stateful>false</is-stateful>
+                <additional-text>Invalid discovered NF instance not updated in database</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>ScpNfDiscoveryDataUpdateError</id>
+                <major-type>193</major-type>
+                <minor-type>9306128</minor-type>
+                <specific-problem>SCP, NF discovery data update error</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause/>
+                <is-stateful>false</is-stateful>
+                <additional-text>Unable to update discovered data in database</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+			<alarm-type>
+                <id>ScpSlfUnresolvableHosts</id>
+                <major-type>193</major-type>
+                <minor-type>9306129</minor-type>
+                <specific-problem>SCP, SLF Unresolvable Hosts</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>One or more hostnames cannot be resolved</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>ScpSlfNrfGroupUnavailable</id>
+                <major-type>193</major-type>
+                <minor-type>9306130</minor-type>
+                <specific-problem>SCP, SLF NRF Group Unavailable</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>The NRF-group is unavailable</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>ScpNfInstanceUnavailable</id>
+                <major-type>193</major-type>
+                <minor-type>9306131</minor-type>
+                <specific-problem>SCP, NF Instance Unavailable</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>The NF Failures have exceeded the configured threshold</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>ScpNfServiceInstanceActiveHealthCheckFailed</id>
+                <major-type>193</major-type>
+                <minor-type>9306132</minor-type>
+                <specific-problem>SCP, NF Service Instance active health check failed</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>The active health check for the NF Service Instance failed</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+        </alarm-model>
+    </fm>
+</config>

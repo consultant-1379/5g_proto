@@ -1,0 +1,9 @@
+eric-data-search-engine:
+  service:
+    network:
+      protocol:
+        IPv6: true
+
+eric-fh-snmp-alarm-provider:
+  sourceIdentifierType: 2
+  sourceIdentifier: "::1"

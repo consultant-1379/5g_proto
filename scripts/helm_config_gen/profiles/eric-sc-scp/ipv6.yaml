@@ -1,0 +1,8 @@
+global:
+  internalIPFamily: "IPv6"
+
+eric-scp:
+  service:
+    worker:
+      externalIPv6:
+        enabled: true

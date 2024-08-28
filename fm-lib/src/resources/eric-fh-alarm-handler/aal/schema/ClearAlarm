@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "id": "file://schema/ClearAlarm#",
+  "title": "Clear alarm",
+  "description": "Definition of a Alarm Clearance.",
+  "type": "object",
+  "properties": {
+    "description": {
+      "description": "Extra information providing further insight about the fault.",
+      "type": "string",
+      "default": "REST based clearance"
+    }
+  },
+  "required": [
+    "description"
+  ]
+}

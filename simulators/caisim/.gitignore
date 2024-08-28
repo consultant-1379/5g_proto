@@ -1,0 +1,5 @@
+__pycache__/
+.venv/
+.vscode/
+Sim_API/Service_Sim_API/__pycache__/
+Sim_Objects/__pycache__/

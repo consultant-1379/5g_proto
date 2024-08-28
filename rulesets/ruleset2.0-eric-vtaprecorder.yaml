@@ -1,0 +1,123 @@
+modelVersion: 2.0
+
+import:
+  base: ruleset2.0-eric-base.yaml
+
+description: "vTAP Recorder Simulator"
+
+properties:
+  - SERVICE_NAME: eric-vtaprecorder
+  - IMAGE_NAME: ${SERVICE_NAME}
+  - EXPORT_DIR: ${base.OUTPUT_DIR}/export-vtaprecorder
+
+env:
+ - BOB_FORCE_IMAGE_PULL (default=false)
+ - IP_VERSION (default=4)
+ - RELEASE (default=false)
+ - TEST_TYPE (default=)
+ - VTAPRECORDER_REPLICAS (default=1)
+
+var:
+ - vtaprecorder-version
+
+rules:
+  init:
+    - task: base.init:create-output-dir
+    - task: base.init:set-namespace
+    - task: base.init:set-kube-config
+    - task: base.init:set-build-proxy
+    - task: base.init:api-tokens
+    - task: version
+      docker-image: base.adp-release-auto
+      cmd: generate-version --is-release ${env.RELEASE} --output vtaprecorder-version
+
+  dtlsServer:
+    - task: createBinary
+      cmd: /bin/bash -c "
+           docker run --rm -v $PWD:/workspace --entrypoint bash armdockerhub.rnd.ericsson.se/golang:1.20.1 -c 'cd /workspace/simulators/vtaprecorder/dtls; go mod init example.com/m/v2; go mod tidy; go build /workspace/simulators/vtaprecorder/dtls/dtlsServer.go'
+           ";
+
+  image:
+    - task: compile
+      docker-image: base.java-maven-builder
+      cmd: mvn --no-snapshot-updates --no-transfer-progress -s ${var.base.build-proxy} -Duser.home=. -am -pl simulators/vtaprecorder ${base.MVN_ARGS} package
+    - task: build-eric-vtaprecorder
+      cmd: docker build ./simulators/vtaprecorder/
+           --build-arg DOCKER_BASE_IMG=${base.SC_CBOS_ZYPPER_IMG}
+           --build-arg CBOS_REPO=${base.CBOS_REPO}
+           --build-arg ADP_DEV_REPO=${base.ADP_DEV_REPO}
+           --tag ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${IMAGE_NAME}:${var.vtaprecorder-version}
+
+  lint:
+    - task: helm
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: helm lint ${base.OUTPUT_DIR}/${SERVICE_NAME}
+
+  package:
+    - task: helm-chart
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "
+           rm -rf ${base.OUTPUT_DIR}/eric-vtaprecorder*.tgz;
+           mkdir -p ${base.OUTPUT_DIR}/${SERVICE_NAME};
+           cp -r simulators/vtaprecorder/helm/* ${base.OUTPUT_DIR}/${SERVICE_NAME};
+           update_values.rb ${base.OUTPUT_DIR}/${SERVICE_NAME}/values.yaml
+           imageCredentials:registry:url=${base.DOCKER_REGISTRY_URL} imageCredentials:repoPath=${base.DOCKER_REPO_PATH}/${env.base.USER}
+           spec:image=${IMAGE_NAME} spec:tag=${var.vtaprecorder-version} > ${base.OUTPUT_DIR}/${SERVICE_NAME}/values.tmp.yaml;
+           mv ${base.OUTPUT_DIR}/${SERVICE_NAME}/values.tmp.yaml ${base.OUTPUT_DIR}/${SERVICE_NAME}/values.yaml;
+           helm package --version ${var.vtaprecorder-version} ${base.OUTPUT_DIR}/${SERVICE_NAME}/ -d ${base.OUTPUT_DIR}/";
+
+  push:
+    - task: docker-image
+      cmd: docker push ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${IMAGE_NAME}:${var.vtaprecorder-version}
+    - task: helm-chart
+      cmd: "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\" --upload-file ${base.OUTPUT_DIR}/${SERVICE_NAME}-${var.vtaprecorder-version}.tgz \"${base.HELM_CHART_REPO}/${SERVICE_NAME}-${var.vtaprecorder-version}.tgz\""
+
+  deploy:
+    - task: all
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: /bin/bash -c 'if [[ "${env.TEST_TYPE}" = "IaaS_Stability_tools_on_separate_workers" ]];
+                        then
+                            helm install --namespace ${var.base.namespace} --set usage=tools ${SERVICE_NAME}-${env.base.USER} ${base.OUTPUT_DIR}/${SERVICE_NAME}-${var.vtaprecorder-version}.tgz --set spec.replicas=${env.VTAPRECORDER_REPLICAS} --set spec.ipVersion=${env.IP_VERSION};
+                        else
+                            helm install --namespace ${var.base.namespace} ${SERVICE_NAME}-${env.base.USER} ${base.OUTPUT_DIR}/${SERVICE_NAME}-${var.vtaprecorder-version}.tgz --set spec.replicas=${env.VTAPRECORDER_REPLICAS} --set spec.ipVersion=${env.IP_VERSION};
+                        fi;
+                        '
+
+  undeploy:
+    - task: all
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: helm uninstall --namespace ${var.base.namespace} ${SERVICE_NAME}-${env.base.USER}
+
+  export:
+    - task: clean:export
+    - task: folders
+      cmd: /bin/bash -c "mkdir -p ${EXPORT_DIR}; mkdir -p ${EXPORT_DIR}/helm; mkdir -p ${EXPORT_DIR}/docker;";
+    - task: helm
+      cmd: /bin/bash -c 'cp ${base.OUTPUT_DIR}/${SERVICE_NAME}-${var.vtaprecorder-version}.tgz ${EXPORT_DIR}/helm'
+    - task: image
+      cmd: /bin/bash -c "docker save ${base.DOCKER_REGISTRY_URL}/${base.DOCKER_REPO_PATH}/${env.base.USER}/${IMAGE_NAME}:${var.vtaprecorder-version} > ${EXPORT_DIR}/docker/${IMAGE_NAME}-${var.vtaprecorder-version}.tar";
+
+  clean:
+    - task: base.init:create-output-dir
+    - task: base.init:set-build-proxy
+    - task: export
+      cmd: rm -rf ${EXPORT_DIR}
+    - task: helm
+      cmd:
+        - rm -f ${base.OUTPUT_DIR}/${SERVICE_NAME}-*.tgz
+        - rm -rf ${base.OUTPUT_DIR}/${SERVICE_NAME}
+    - task: maven
+      docker-image: base.java-maven-builder
+      cmd: mvn -s ${var.base.build-proxy} -Duser.home=. -DskipTests -am -pl :vtaprecorder ${base.MVN_ARGS} clean
+    - task: version
+      cmd: rm -f ${base.OUTPUT_DIR}/var.vtaprecorder-version

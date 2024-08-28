@@ -1,0 +1,45 @@
+# https://bazaar.internal.ericsson.com/component.php?componentid=930080
+Version: v2
+Decription: FOSS list
+LastUpdate: 2019-06-21 12:24
+FOSS:
+    # Available in Bazaar
+    FOSSName: jnr-a64asm
+    # Available in Bazaar
+    FOSSVersion: 1.0.0
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://search.maven.org/remotecontent?filepath=com/github/jnr/jnr-a64asm/1.0.0/jnr-a64asm-{{FOSSVersion}}-sources.jar
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 1/CTX1027879 
+    # Not Available in Bazaar
+    Primary: N
+    # Available in Bazaar
+    STAKOCode: Restricted use
+    # Available in Bazaar
+    STAKOReason: No frequent releases. Version older than 18 months.
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: Java Foreign Function Interface
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: (GPL GNU General Public License V3, LGPL GNU Lesser General Public License V3, Apache License 2.0)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'com.github.jnr:jnr-a64asm:jar:{{FOSSVersion}}'
+    - 'com.github.jnr:jffi:jar:{{FOSSVersion}}'
+    - 'com.github.jnr:jffi:jar:native:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: EKONPAP Konstantinos Papadopoulos

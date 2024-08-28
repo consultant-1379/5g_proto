@@ -1,0 +1,566 @@
+String findCommitters() {
+	catchError(buildResult: currentBuild.result, message: 'Error in subroutine findCommitters', stageResult: 'UNSTABLE') {
+		// get the changes for the actual build from URL and store it in a json file
+		sh "curl --netrc  ${env.BUILD_URL}api/json -o culprits.json"
+		// get the authors' full name or eMail from the json file, and remove ][ brackets from the string
+		sh 'cat culprits.json | jq -c \'[.changeSets[].items[].author.fullName]\' | tr -d "][" > culprits_tmp.txt';
+		sh 'cat culprits.json | jq -c \'[.changeSets[].items[].authorEmail]\' | tr -d "][" > culprits_email_tmp.txt';
+		sh 'echo "Temporary Culprits: "; cat culprits_tmp.txt; echo " Emails: "; cat culprits_email_tmp.txt';
+		// remove (eE)iffel commit
+		//	awk: print each committer if string doesn't contain (eE)iffel, also remove double-squotes; this introduces line breaks
+		//	sort -u: remove double entries
+		sh 'cat culprits_tmp.txt | awk -F"," \'{for (i=1; i<=NF; i++) {if($i !~ ".iffel"){gsub("\\"",""); print $i}}}\' | sort -u > culprits.txt; rm -f culprits_tmp.txt'
+		sh 'cat culprits_email_tmp.txt | awk -F"," \'{for (i=1; i<=NF; i++) {if($i !~ ".iffel"){gsub("\\"",""); print $i}}}\' | sort -u > culprits_email.txt; rm -f culprits_email_tmp.txt'
+		sh 'echo "Culprits: "; cat culprits.txt; echo " Emails: "; cat culprits_email.txt';
+	} //catchError
+}
+if (env.AGENT_LABEL != null && env.AGENT_LABEL != '') {
+	AGENT_LABEL = "${env.AGENT_LABEL}"
+} else {
+	AGENT_LABEL = '5G-SC'
+}
+pipeline {
+	agent {
+		node {
+			label "${AGENT_LABEL}"
+		}
+	}
+	options {
+		timeout(time: 90, unit: 'MINUTES')
+		timestamps()
+	}
+	environment {
+		// Variables needed for the ruleset
+		PRODUCTION = true
+		// Variables only used in Build-job
+		KUBE_HOST = "${env.KUBE_HOST}"
+		TEAMNAME = "${env.TEAMNAME}"
+		PROJECT = "${env.PROJECT}" // only used in Smoke-build, not in TeamCI-build
+		ARTIFACTORY_TOKEN = "${env.ARTIFACTORY_TOKEN}"
+	}
+	stages {
+		stage('Init') {
+			steps {
+				//sh './bob/bob base.init' // replaced by sc.init
+				//sh './bob/bob init:set-ingressHost'
+				//sh './bob/bob sc.generate-versions'
+				//sh './bob/bob init:product-info' // to be moved inside new SC NF IHCs
+				//sh './bob/bob init:cxp-number' // hardcode to each chart eric-product-info.yaml
+				//sh './bob/bob init:cxp-rev-number' // hardcode to each chart eric-product-info.yaml
+				//sh './bob/bob sc.generate-cx-numbers'
+				//sh './bob/bob init:set-dirty-package'
+				//sh './bob/bob init:set-mvn-args' // replaced by sc.init
+				//sh './bob/bob sc.init:copy-helm-credentials'  // included in base.init called by sc.init
+				//sh './bob/bob sc.init:set-branch'
+				
+				sh './bob/bob sc.init' // base.init and set-mvn-args
+				
+				// init common parameters (image repo and version)
+				sh './bob/bob sc.cddjmxexp.init'
+				sh './bob/bob sc.certntf.init'
+				sh './bob/bob sc.tapagent.init'
+				sh './bob/bob sc.tapcol.init'
+				sh './bob/bob sc.tlskeylogagent.init'
+				sh './bob/bob sc.sds.init'
+				sh './bob/bob sc.logfwdr.init'
+				sh './bob/bob sc.envoywrk.init'
+				
+				// init common chart parameters (image repo, chart repo, version and cxc numbers)
+				sh './bob/bob sc.scrlf.init'
+				sh './bob/bob sc.scmonitor.init'
+				
+				// init BSF parameters (image repo, chart repo, version and cxc numbers)
+				sh './bob/bob sc.scbsf.bsf.init'
+				sh './bob/bob sc.scbsf.bsfdiameter.init'
+				
+				// init SCP parameters (image repo, chart repo, version and cxc numbers)
+				sh './bob/bob sc.scscp.scp.init'
+				sh './bob/bob sc.scscp.scslf.init'
+				sh './bob/bob sc.scscp.scnlf.init'
+				
+				// init SCP parameters (image repo, chart repo, version and cxc numbers)
+				sh './bob/bob sc.scsepp.sepp.init'
+				
+				// the esc-version is available after bob init
+				script{
+					// set the displayed build name to "BUILD_NUMBER - COMMIT"
+					currentBuild.displayName = "#${env.BUILD_NUMBER} - ${env.COMMIT}"
+					// set displayed description to "NODE_NAME, KUBE_HOST, CHART_VERSION"
+					currentBuild.description = "node: ${env.NODE_NAME}, committer: ${env.COMMITTER}<br/>";
+					
+					env.CDDJMXEXPORTER_VERSION = sh( returnStdout: true, script: "cat ./.bob/var.cddjmxexporter-image-version | tr -d '\n'")
+					env.CERTNOTIFIER_VERSION = sh( returnStdout: true, script: "cat ./.bob/var.certnotifier-image-version | tr -d '\n'")
+					env.TAPAGENT_VERSION = sh( returnStdout: true, script: "cat ./.bob/var.tapagent-image-version | tr -d '\n'")
+					env.TAPCOLLECTOR_VERSION = sh( returnStdout: true, script: "cat ./.bob/var.tapcollector-image-version | tr -d '\n'")
+					env.TLSKEYLOGAGENT_VERSION = sh( returnStdout: true, script: "cat ./.bob/var.tlskeylogagent-image-version | tr -d '\n'")
+					env.SDS_VERSION = sh( returnStdout: true, script: "cat ./.bob/var.sds-image-version | tr -d '\n'")
+					env.LOGFWDR_VERSION = sh( returnStdout: true, script: "cat ./.bob/var.logfwdr-image-version | tr -d '\n'")
+					env.ENVOYWORKER_VERSION = sh( returnStdout: true, script: "cat ./.bob/var.envoywrk-image-version | tr -d '\n'")
+					currentBuild.description += "Common Docker Image versions:<br/>";
+					currentBuild.description += "eric-sc-cddjmxexporter: ${env.CDDJMXEXPORTER_VERSION}<br/>";
+					currentBuild.description += "eric-sc-certnotifier: ${env.CERTNOTIFIER_VERSION}<br/>";
+					currentBuild.description += "eric-sc-tapagent: ${env.TAPAGENT_VERSION}<br/>";
+					currentBuild.description += "eric-sc-tapcollector: ${env.TAPCOLLECTOR_VERSION}";
+					currentBuild.description += "eric-sc-tlskeylogagent: ${env.TLSKEYLOGAGENT_VERSION}<br/>";
+					currentBuild.description += "eric-sc-sds: ${env.SDS_VERSION}<br/>";
+					currentBuild.description += "eric-sc-logfwdr: ${env.LOGFWDR_VERSION}<br/>";
+					currentBuild.description += "eric-sc-envoyworker: ${env.ENVOYWORKER_VERSION}<br/>";
+					
+					env.SCRLF_VERSION = sh( returnStdout: true, script: "cat ./.bob/var.rlf-version | tr -d '\n'")
+					env.SCMONITOR_VERSION = sh( returnStdout: true, script: "cat ./.bob/var.monitor-version | tr -d '\n'")
+					currentBuild.description += "Common Sub-Chart versions:<br/>";
+					currentBuild.description += "eric-sc-cddjmxexporter: ${env.SCRLF_VERSION}<br/>";
+					currentBuild.description += "eric-sc-certnotifier: ${env.SCMONITOR_VERSION}<br/>";
+					
+					env.BSF_VERSION = sh( returnStdout: true, script: "cat ./.bob/var.bsf-version | tr -d '\n'")
+					env.BSF_DIAMETER_VERSION = sh( returnStdout: true, script: "cat ./.bob/var.bsf-diameter-version | tr -d '\n'")
+					currentBuild.description += "BSF Sub-Chart versions:<br/>";
+					currentBuild.description += "eric-bsf: ${env.BSF_VERSION}<br/>";
+					currentBuild.description += "eric-bsf-diameter: ${env.BSF_DIAMETER_VERSION}<br/>";
+					
+					env.SCP_VERSION = sh( returnStdout: true, script: "cat ./.bob/var.scp-version | tr -d '\n'")
+					env.SCSLF_VERSION = sh( returnStdout: true, script: "cat ./.bob/var.slf-version | tr -d '\n'")
+					env.SCNLF_VERSION = sh( returnStdout: true, script: "cat ./.bob/var.nlf-version | tr -d '\n'")
+					currentBuild.description += "SCP Sub-Chart versions:";
+					currentBuild.description += "eric-scp: ${env.SCP_VERSION}<br/>";
+					currentBuild.description += "eric-sc-slf: ${env.SCSLF_VERSION}<br/>";
+					currentBuild.description += "eric-sc-nlf: ${env.SCNLF_VERSION}<br/>";
+					
+					env.SEPP_VERSION = sh( returnStdout: true, script: "cat ./.bob/var.sepp-version | tr -d '\n'")
+					currentBuild.description += "SEPP Sub-Chart versions:<br/>";
+					currentBuild.description += "eric-sepp: ${env.SEPP_VERSION}<br/>";
+					
+					// the commit is the one that has been checked out by Jenkins
+					//	if COMMIT was set to "origin/branch" then COMMIT gets the hash here (latest of the branch)
+					//	if COMMIT was set to a hash already then it gets the same value again here
+					//env.COMMIT = sh( returnStdout: true, script: "git log --format=\"%h\" | head -1 | tr -d '\n'")
+					//env.SUBCHART_VERSION = sh( returnStdout: true, script: "cat ./.bob/var.sc-version | tr -d '\n'")
+					// findCommitters() writes commiter names und eMails to files
+					findCommitters();
+					env.COMMITTER = sh( returnStdout: true, script: "cat culprits.txt | sed ':a;N;\$!ba;s/\\n/, /g' ")
+					env.EMAIL_COMMITTER = sh( returnStdout: true, script: "cat culprits_email.txt | sed ':a;N;\$!ba;s/\\n/, /g' ")
+					// sed: see https://stackoverflow.com/questions/1251999/how-can-i-replace-each-newline-n-with-a-space-using-sed
+
+					// set the displayed build name to "BUILD_NUMBER - COMMIT"
+					//currentBuild.displayName = "#${env.BUILD_NUMBER} - ${env.COMMIT}"
+					// set displayed description to "NODE_NAME, KUBE_HOST, CHART_VERSION"
+					//currentBuild.description = "node: ${env.NODE_NAME}, committer: ${env.COMMITTER}, commit: ${env.GIT_COMMIT}, subchart version: ${env.SUBCHART_VERSION}";
+				} // script
+				sh 'printenv | sort'
+			} // steps
+		} // stage
+		stage('Build Source Code') {
+			steps{
+				sh './bob/bob sc.build'
+				//echo 'Running: bob build actions'
+				//sh './bob/bob build:esc-parent'
+				//sh './bob/bob build:logfwdr'
+				//sh './bob/bob build:copy-ericsson-libs-to-user-mvn-repo'
+			} // steps
+		} // stage
+		stage('Build Docker Images') {
+			// conditions are needed after proper split of NFs source code
+			steps {
+				parallel (
+					"sc-cddjmxexporter" : {
+						sh './bob/bob sc.cddjmxexp.image'
+					},
+					"sc-certnotifier" : {
+						sh './bob/bob sc.certntf.image'
+					},
+					"sc-tapagent" : {
+						sh './bob/bob sc.tapagent.image'
+					},
+					"sc-tapcollector" : {
+						sh './bob/bob sc.tapcol.image'
+					},
+					"sc-tlskeylogagent" : {
+						sh './bob/bob sc.tlskeylogagent.image'
+					},
+					"sc-sds" : {
+						sh './bob/bob sc.sds.image'
+					},
+					"sc-logfwdr" : {
+						sh './bob/bob sc.logfwdr.image'
+					},
+					"sc-envoywrk" : {
+						sh './bob/bob sc.envoywrk.image'
+					},
+					"sc-rlf" : {
+						sh './bob/bob sc.scrlf.images'
+					},
+					"sc-monitor" : {
+						sh './bob/bob sc.scmonitor.images'
+					},
+					"bsf" : {
+						sh './bob/bob sc.scbsf.bsf.images:build-manager'
+						sh './bob/bob sc.scbsf.bsf.images:build-worker'
+					},
+					"bsf-diameter" : {
+						sh './bob/bob sc.scbsf.bsfdiameter.images'
+					},
+					"scp" : {
+						sh './bob/bob sc.scscp.scp.images'
+					},
+					"sc-slf" : {
+						sh './bob/bob sc.scscp.scslf.images'
+					},
+					"sc-nlf" : {
+						sh './bob/bob sc.scscp.scnlf.images'
+					},
+					"sepp" : {
+						sh './bob/bob sc.scsepp.sepp.images'
+					}
+				) // parallel
+			} // steps
+		} //stage
+		// TODO: check new images?
+		stage('Package sub-charts') {
+			steps {
+				parallel (
+					"sc-rlf" : {
+						sh './bob/bob sc.scrlf.package'
+					},
+					"sc-monitor" : {
+						sh './bob/bob sc.scmonitor.package'
+					},
+					"bsf" : {
+						sh './bob/bob sc.scbsf.bsf.package'
+					},
+					"bsf-diameter" : {
+						sh './bob/bob sc.scbsf.bsfdiameter.package'
+					},
+					"scp" : {
+						sh './bob/bob sc.scscp.scp.package'
+					},
+					"sc-slf" : {
+						sh './bob/bob sc.scscp.scslf.package'
+					},
+					"sc-nlf" : {
+						sh './bob/bob sc.scscp.scnlf.package'
+					},
+					"sepp" : {
+						sh './bob/bob sc.scsepp.sepp.package'
+					}
+				) // parallel
+			} // steps
+		} // stage
+//		stage('Update Helm Chart values') {
+//			steps {
+//				parallel (
+//					"bsf" : {
+//						sh './bob/bob update-helm:bsf'
+//					},
+//					"bsf-dameter" : {
+//						sh './bob/bob update-helm:bsf-diameter'
+//					},
+//					"nlf" : {
+//						sh './bob/bob update-helm:nlf'
+//					},
+//					"scp" : {
+//						sh './bob/bob update-helm:scp'
+//					},
+//					"sepp" : {
+//						sh './bob/bob update-helm:sepp'
+//					},
+//					"slf" : {
+//						sh './bob/bob update-helm:slf'
+//					},
+//					"rlf" : {
+//						sh './bob/bob update-helm:rlf'
+//					},
+//					"monitor" : {
+//						sh './bob/bob update-helm:monitor'
+//					}
+//				) // parallel
+//			} // steps
+//		} //stage
+		stage('Generate JSON Schemas and Yang Archives'){
+			steps{
+				script {
+					def comps = ['BSF', 'SCP', 'SEPP', 'PVTB']
+					for (int i = 0; i < comps.size(); ++i) {
+						env.COMPONENT = "${comps[i]}"
+						echo "Component is: ${env.COMPONENT}"
+						echo "Executing: Generating JSON Schemas and Yang Archives for ${comps[i]} Manager"
+						sh """
+							./bob/bob -r rulesets/ruleset2.0-yang.yaml init;
+							./bob/bob -r rulesets/ruleset2.0-yang.yaml generate;
+							./bob/bob -r rulesets/ruleset2.0-yang.yaml copy-output;
+						"""
+					} // for
+				} // script
+			} // steps
+		} // stage
+//		stage('Lint') {
+//			steps {
+//				parallel (
+//					"bsf" : {
+//						sh './bob/bob lint:bsf'
+//					},
+//					"bsf-dameter" : {
+//						sh './bob/bob lint:bsf-diameter'
+//					},
+//					"nlf" : {
+//						sh './bob/bob lint:nlf'
+//					},
+//					"scp" : {
+//						sh './bob/bob lint:scp'
+//					},
+//					"sepp" : {
+//						sh './bob/bob lint:sepp'
+//					},
+//					"slf" : {
+//						sh './bob/bob lint:slf'
+//					},
+//					"rlf" : {
+//						sh './bob/bob lint:rlf'
+//					},
+//					"monitor" : {
+//						sh './bob/bob lint:monitor'
+//					}
+//				) // parallel
+//			} // steps
+//		} // stage
+		// TODO: check new sub-charts?
+		stage('Upload sub-charts') {
+			steps {
+				parallel (
+					"sc-rlf" : {
+						sh './bob/bob sc.scrlf.publish'
+					},
+					"sc-monitor" : {
+						sh './bob/bob sc.scmonitor.publish'
+					},
+					"bsf" : {
+						sh './bob/bob sc.scbsf.bsf.publish'
+					},
+					"bsf-diameter" : {
+						sh './bob/bob sc.scbsf.bsfdiameter.publish'
+					},
+					"scp" : {
+						sh './bob/bob sc.scscp.scp.publish'
+					},
+					"sc-slf" : {
+						sh './bob/bob sc.scscp.scslf.publish'
+					},
+					"sc-nlf" : {
+						sh './bob/bob sc.scscp.scnlf.publish'
+					},
+					"sepp" : {
+						sh './bob/bob sc.scsepp.sepp.publish'
+					}
+				) // parallel
+			} // steps
+		} // stage
+		//stage('Create Integration Helm Charts') {
+			//parallel {
+				stage('Create BSF IHC') {
+					//when {
+						//environment name: 'BSF', value: 'true'
+					//}
+					steps {
+						sh './bob/bob sc.scbsf.update-chart'
+						script {
+							// TeamCI = prepare-dev-ci, Smoke/PRA = publish, CSAR/RV/ManualTest = only deploy
+							withCredentials([usernamePassword(credentialsId: 'eiffelesc-credentials', usernameVariable: 'GERRIT_USERNAME', passwordVariable: 'GERRIT_PASSWORD'),
+											usernamePassword(credentialsId: 'eiffelesc-armsero-token-credentials', usernameVariable: 'HELM_USER', passwordVariable: 'HELM_TOKEN')]) {
+								switch (env.TEST_TYPE) {
+								case [ 'SmokeTest', 'PRA' ]:
+									sh './bob/bob sc.scbsf.package:publish'
+									break
+								default:
+									sh './bob/bob sc.scbsf.package:prepare-dev-ci'
+									break
+								} //switch
+							} // withCredentials
+						} // script
+						sh './bob/bob sc.scbsf.package:chart-version'
+					} // steps
+				} // stage
+				stage('Create SCP IHC') {
+					//when {
+						//environment name: 'SCP', value: 'true'
+					//}
+					steps {
+						sh './bob/bob sc.scscp.update-chart'
+						script {
+							// TeamCI = prepare-dev-ci, Smoke/PRA = publish, CSAR/RV/ManualTest = only deploy
+							withCredentials([usernamePassword(credentialsId: 'eiffelesc-credentials', usernameVariable: 'GERRIT_USERNAME', passwordVariable: 'GERRIT_PASSWORD'),
+											usernamePassword(credentialsId: 'eiffelesc-armsero-token-credentials', usernameVariable: 'HELM_USER', passwordVariable: 'HELM_TOKEN')]) {
+								switch (env.TEST_TYPE) {
+								case [ 'SmokeTest', 'PRA' ]:
+									sh './bob/bob sc.scscp.package:publish'
+									break
+								default:
+									sh './bob/bob sc.scscp.package:prepare-dev-ci'
+									break
+								} //switch
+							} // withCredentials
+						} // script
+						sh './bob/bob sc.scscp.package:chart-version'
+					} //steps
+				} // stage
+				stage('Create SEPP IHC') {
+					//when {
+						//environment name: 'SEPP', value: 'true'
+					//}
+					steps {
+						sh './bob/bob sc.scsepp.update-chart'
+						script {
+							// TeamCI = prepare-dev-ci, Smoke/PRA = publish, CSAR/RV/ManualTest = only deploy
+							withCredentials([usernamePassword(credentialsId: 'eiffelesc-credentials', usernameVariable: 'GERRIT_USERNAME', passwordVariable: 'GERRIT_PASSWORD'),
+											usernamePassword(credentialsId: 'eiffelesc-armsero-token-credentials', usernameVariable: 'HELM_USER', passwordVariable: 'HELM_TOKEN')]) {
+								switch (env.TEST_TYPE) {
+								case [ 'SmokeTest', 'PRA' ]:
+									sh './bob/bob sc.scsepp.package:publish'
+									break
+								default:
+									sh './bob/bob sc.scsepp.package:prepare-dev-ci'
+									break
+								} //switch
+							} // withCredentials
+						} // script
+						sh './bob/bob sc.scsepp.package:chart-version'
+					} // steps
+				} // stage
+			//} // parallel
+		//} //stage
+//		stage('Upload Helm Charts') {
+//			steps {
+//				parallel (
+//					"bsf" : {
+//						sh './bob/bob sc.push-charts:bsf'
+//					},
+//					"bsf-dameter" : {
+//						sh './bob/bob sc.push-charts:bsf-diameter'
+//					},
+//					"nlf" : {
+//						sh './bob/bob sc.push-charts:nlf'
+//					},
+//					"scp" : {
+//						sh './bob/bob sc.push-charts:scp'
+//					},
+//					"sepp" : {
+//						sh './bob/bob sc.push-charts:sepp'
+//					},
+//					"slf" : {
+//						sh './bob/bob sc.push-charts:slf'
+//					},
+//					"rlf" : {
+//						sh './bob/bob sc.push-charts:rlf'
+//					},
+//					"monitor" : {
+//						sh './bob/bob sc.push-charts:monitor'
+//					}
+//				) // parallel
+//			} // steps
+//		} //stage
+//		stage('Create SC IHC') {
+//			steps {
+//				sh "./bob/bob sc.update-sc-chart:copy sc.update-sc-chart:dependencies"
+//				withCredentials([usernamePassword(credentialsId: 'eiffelesc-credentials', usernameVariable: 'GERRIT_USERNAME', passwordVariable: 'GERRIT_PASSWORD'),
+//								usernamePassword(credentialsId: 'eiffelesc-armsero-token-credentials', usernameVariable: 'HELM_USER', passwordVariable: 'HELM_TOKEN')]) {
+//					sh "./bob/bob sc.sc-ihc:prepare-dev-ci"
+//				} // withCredentials
+//				sh "./bob/bob sc.update-spider-chart:extract-sc-version"
+//			} // steps
+//		} // stage
+		stage('Cleanup & Archiving') {
+			steps {
+				sh """
+					echo "Deleting docker images:"
+					docker images -a | grep proj-sc-all-internal;
+					docker rmi -f \$(docker images -q --filter=reference="armdocker.rnd.ericsson.se/proj-sc-all-internal/eric-sc-cddjmxexporter:${env.CDDJMXEXPORTER_VERSION}") || true;
+					docker rmi -f \$(docker images -q --filter=reference="armdocker.rnd.ericsson.se/proj-sc-all-internal/eric-sc-cert-notifier:${env.CERTNOTIFIER_VERSION}") || true;
+					docker rmi -f \$(docker images -q --filter=reference="armdocker.rnd.ericsson.se/proj-sc-all-internal/eric-sc-tapagent:${env.TAPAGENT_VERSION}") || true;
+					docker rmi -f \$(docker images -q --filter=reference="armdocker.rnd.ericsson.se/proj-sc-all-internal/eric-sc-tapcollector:${env.TAPCOLLECTOR_VERSION}") || true;
+					docker rmi -f \$(docker images -q --filter=reference="armdocker.rnd.ericsson.se/proj-sc-all-internal/eric-sc-tlskeylogagent:${env.TLSKEYLOGAGENT_VERSION}") || true;
+					docker rmi -f \$(docker images -q --filter=reference="armdocker.rnd.ericsson.se/proj-sc-all-internal/eric-sc-sds:${env.SDS_VERSION}") || true;
+					docker rmi -f \$(docker images -q --filter=reference="armdocker.rnd.ericsson.se/proj-sc-all-internal/eric-sc-logfwdr:${env.LOGFWDR_VERSION}") || true;
+					docker rmi -f \$(docker images -q --filter=reference="armdocker.rnd.ericsson.se/proj-sc-all-internal/eric-sc-envoywrk:${env.ENVOYWORKER_VERSION}") || true;
+					docker rmi -f \$(docker images -q --filter=reference="armdocker.rnd.ericsson.se/proj-sc-all-internal/eric-sc-rlf:${env.SCRLF_VERSION}") || true;
+					docker rmi -f \$(docker images -q --filter=reference="armdocker.rnd.ericsson.se/proj-sc-all-internal/eric-sc-monitor:${env.SCMONITOR_VERSION}") || true;
+					docker rmi -f \$(docker images -q --filter=reference="armdocker.rnd.ericsson.se/proj-sc-all-internal/eric-bsf-manager:${env.BSF_VERSION}") || true;
+					docker rmi -f \$(docker images -q --filter=reference="armdocker.rnd.ericsson.se/proj-sc-all-internal/eric-bsf-worker:${env.BSF_VERSION}") || true;
+					docker rmi -f \$(docker images -q --filter=reference="armdocker.rnd.ericsson.se/proj-sc-all-internal/eric-bsf-diameter:${env.BSF_DIAMETER_VERSION}") || true;
+					docker rmi -f \$(docker images -q --filter=reference="armdocker.rnd.ericsson.se/proj-sc-all-internal/eric-scp-manager:${env.SCP_VERSION}") || true;
+					docker rmi -f \$(docker images -q --filter=reference="armdocker.rnd.ericsson.se/proj-sc-all-internal/eric-sc-slf:${env.SCSLF_VERSION}") || true;
+					docker rmi -f \$(docker images -q --filter=reference="armdocker.rnd.ericsson.se/proj-sc-all-internal/eric-sc-nlf:${env.SCNLF_VERSION}") || true;
+					docker rmi -f \$(docker images -q --filter=reference="armdocker.rnd.ericsson.se/proj-sc-all-internal/eric-sepp-manager:${env.SEPP_VERSION}") || true;
+					docker images -a | grep proj-sc-all-internal || true;
+				"""
+				script{
+					env.SC_SCP_INT_CHART_VERSION = sh( returnStdout: true, script: "cat ./.bob/var.sc-scp-version | tr -d '\n'")
+					env.SC_SEPP_INT_CHART_VERSION = sh( returnStdout: true, script: "cat ./.bob/var.sc-sepp-version | tr -d '\n'")
+					env.SC_BSF_INT_CHART_VERSION = sh( returnStdout: true, script: "cat ./.bob/var.sc-bsf-version | tr -d '\n'")
+					// update displayed description with integration chart version
+					currentBuild.description += "SC Integration Helm Charts:<br/>";
+					currentBuild.description += "eric-sc-scp: ${env.SC_SCP_INT_CHART_VERSION}<br/>";
+					currentBuild.description += "eric-sc-sepp: ${env.SC_SEPP_INT_CHART_VERSION}<br/>";
+					currentBuild.description += "eric-sc-bsf: ${env.SC_BSF_INT_CHART_VERSION}";
+				} // script
+				archiveArtifacts artifacts: 'artifact.properties', onlyIfSuccessful: true
+			} // steps
+		} // stage
+
+		//stage('Trigger Spinnaker Pipeline'){
+			//when{
+				//beforeAgent true
+				//allOf {
+					//expression { env.TEST_TYPE == "SmokeTest" }
+ 					//anyOf {
+						//expression { env.COMMITTER != "jnkadm" }
+						//expression { env.COMMITTER != "eiffeldsc" }
+					 //} // anyOf
+				//} // allOf
+			//} // when
+
+			//steps{
+				//build job: "2-Spinnaker-trigger-${env.TEST_TYPE}-${env.TEAMNAME}",
+					//parameters: [
+						//string(name: 'CHART_VERSION', value: "${env.CHART_VERSION}"), 
+						//string(name: 'TEAMNAME', value: "${env.TEAMNAME}"),
+						//string(name: 'BRANCH', value: "${env.BRANCH}"),
+						//string(name: 'COMMIT', value: "${env.COMMIT}"),
+						//string(name: 'COMMITTER', value: "${env.COMMITTER}"),
+						//string(name: 'EMAIL_COMMITTER', value: "${env.EMAIL_COMMITTER}"),
+						//string(name: 'PROJECT', value: "${env.PROJECT}"),
+						//string(name: 'KUBE_HOST', value: "${env.KUBE_HOST}")],
+					 // wait: false
+			//} // steps
+		//} // stage
+	} // stages
+
+	post {
+		success {
+			cleanWs()
+		} // success
+		failure {
+			script {
+				// only send mail for smoketest
+				if ( env.TEST_TYPE == 'SmokeTest' ) {
+					COLOR = "<body style=\"background-color: LightYellow;\">"
+
+					//echo "${env.PROJECT}"
+					//echo "${env.COMMIT}"
+					//echo "${env.COMMITTER}"
+					//echo "${env.EMAIL_COMMITTER}"
+
+					emailext body: "$COLOR" + "Hi ${env.COMMITTER},\n" +
+											  "<p>the build failed, maybe due to your commit?\n" +
+											  "<p>Please check:\n" +
+											  "<br>${env.BUILD_URL}\n" +
+											  "<br><br>Thank you for pushing.\n" +
+											  "<br><br>BR,<br>SCCI",
+
+						mimeType: 'text/html',
+						subject: "5G Smoke-test build failed for ${env.PROJECT} : ${env.COMMIT}",
+						to: "${env.EMAIL_COMMITTER}, ${env.EMAIL_OTHER}"  // mail to committers and respective Teams channel
+						//to: "${env.EMAIL_COMMITTER}, DSCAteam@ericsson.onmicrosoft.com, f37b6763.ericsson.onmicrosoft.com@emea.teams.ms"  //Teams: Master Channel
+						//to: "${env.EMAIL_COMMITTER}, DSCAteam@ericsson.onmicrosoft.com, 7352f6e6.ericsson.onmicrosoft.com@emea.teams.ms"  //Teams: Release Channel
+				} //if
+			} //script
+		} //failure
+	} //post
+} //pipeline

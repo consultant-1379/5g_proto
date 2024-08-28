@@ -1,0 +1,115 @@
+eric-sc-rlf:
+  spec:
+    rlf:
+      resources:
+        requests:
+          memory: 384Mi #1
+          cpu: 100m  #1500m
+        limits:
+          memory: 1Gi #2Gi
+          cpu: 500m #3
+
+eric-sc-nlf:
+  resources:
+    nlf:
+      requests:
+        memory: "384Mi"
+        cpu: "100m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+    tapagent:
+      requests:
+        memory: 64Mi
+        cpu: 50m
+      limits:
+        memory: 256Mi
+        cpu: 250m
+
+eric-sc-monitor:
+  spec:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 200Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+#    logshipper:
+#      requests:
+#        memory: 24Mi
+#        cpu: 15m
+#      limits:
+#        memory: 100Mi
+#        cpu: 100m
+
+eric-sc-hcagent:
+  resources:
+    hcagent:
+      requests:
+        cpu: 25m #"50m"
+        memory: "128Mi" #"100Mi"
+      limits:
+        cpu: 150m #"250m"
+        memory: "500Mi"
+
+eric-sc-manager:
+  spec:
+    scmanager:
+      resources:
+        requests:
+          memory: 192Mi #100Mi
+          cpu: 20m #100m
+#        limits:
+#          memory: 356Mi
+#          cpu: 200m
+#    lmconsumer:
+#      resources:
+#        requests:
+#          cpu: "20m" #"50m"
+#          memory: "192Mi" "100Mi"
+#        limits:
+#          cpu: "250m"
+#          memory: "500Mi"
+
+eric-data-distributed-coordinator-ed-sc:
+  resources:
+#    init:
+#      requests:
+#        cpu: "100m" #"200m"
+#        memory: "200Mi"
+#      limits:
+#        cpu: "250m" #"500m"
+#        memory: "500Mi"
+    dced:
+      requests:
+        cpu: '100m' #400m
+        memory: 128Mi #400Mi
+      limits:
+        cpu: '200m' #1
+        memory: 256Mi #1Gi
+    metricsexporter:
+      requests:
+        cpu: "50m" #"100m"
+        memory: "8Mi"
+      limits:
+        cpu: "100m" #"200m"
+        memory: "32Mi"
+    brAgent:
+      requests:
+        cpu: 100m
+#        memory: 192Mi
+      limits:
+        cpu: 200m
+        memory: 1Gi
+
+#Overridden by resource setting in esc-ruleset
+eric-probe-virtual-tap-broker:
+  resources:
+    VirtualTapBroker:
+      requests:
+        cpu: 200m #4000m
+        memory: 256Mi #512Mi
+      limits:
+        cpu: 1000m #4000m
+        memory: 512Mi

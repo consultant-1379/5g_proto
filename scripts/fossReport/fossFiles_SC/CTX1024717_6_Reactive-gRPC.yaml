@@ -1,0 +1,44 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2023-10-26 15:20
+FOSS:
+    # Available in Bazaar
+    FOSSName: Reactive-gRPC
+    # Available in Bazaar
+    FOSSVersion: V1.2.4
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/salesforce/reactive-grpc/archive/v1.2.4.zip
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 6/CTX1024717
+    # Not Available in Bazaar
+    Primary: Y
+    # Available in Bazaar
+    STAKOCode: Retricted Use
+    # Available in Bazaar
+    STAKOReason: Low Community Activity
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: "Reactive stubs for gRPC"
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: BSD 3-Clause "New" or "Revised" License (BSD-3-Clause)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: BSD 3-Clause "New" or "Revised" License (BSD-3-Clause)
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'com.salesforce.servicelibs:reactive-grpc-common:jar:1.2.4'
+    - 'com.salesforce.servicelibs:reactor-grpc-stub:jar:1.2.4'
+    - 'com.salesforce.servicelibs:rxgrpc-stub:jar:1.2.4'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: No
+    ReportAuthor: ZARISAR Aristeidis Sarras

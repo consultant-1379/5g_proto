@@ -1,0 +1,35 @@
+# Copyright 2019 Ericsson GmbH
+
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+# START. DND-27025: DR-D1121-121 & DR-D1121-144 & DR-D1121-065 & DR-D1121-068
+# START CNCS/NF-SPLIT
+  name: {{ template "eric-stm-diameter-proxy-grpc.name" . }}-mediator-client-certificate
+# STOP CNCS/NF-SPLIT
+  labels:
+    app.kubernetes.io/name: {{ template "eric-stm-diameter-proxy-grpc.name" . }}
+    app.kubernetes.io/version: {{ template "eric-stm-diameter-proxy-grpc.version" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- include "eric-stm-diameter-proxy-grpc.config-labels" . | indent 4 }}
+  annotations:
+{{- include "eric-stm-diameter-proxy-grpc.config-annotations" . | indent 4 }}
+{{- include "eric-stm-diameter-proxy-grpc.product-info" . | indent 4 }}
+# STOP. DND-27025: DR-D1121-121 & DR-D1121-144 & DR-D1121-065 & DR-D1121-068
+spec:
+  kubernetes:
+# START CNCS/NF-SPLIT
+    generatedSecretName: {{ template "eric-stm-diameter-proxy-grpc.name" . }}-mediator-client-certificate
+# STOP CNCS/NF-SPLIT
+  certificate:
+    subject:
+# START CNCS/NF-SPLIT
+      cn: {{ template "eric-stm-diameter-proxy-grpc.name" . }}
+# STOP CNCS/NF-SPLIT
+    issuer:
+# START CNCS/NF-SPLIT
+      reference: {{ .Values.adp.cm.mediator.hostname }}-ca
+# STOP CNCS/NF-SPLIT
+    extendedKeyUsage:
+      tlsClientAuth: true
+      tlsServerAuth: false

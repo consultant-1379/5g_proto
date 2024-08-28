@@ -1,0 +1,26 @@
+{{- if eq (include "eric-stm-diameter-proxy-grpc.tls" .) "true" }}
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+  name: {{ template "eric-stm-diameter-proxy-grpc.name" . }}-pm-server-target-certificate
+  labels:
+{{- if (include "eric-stm-diameter-proxy-grpc.labels" .) }}
+{{- include "eric-stm-diameter-proxy-grpc.labels" . | nindent 4 }}
+{{- end }}
+  annotations:
+{{- if (include "eric-stm-diameter-proxy-grpc.annotations" .) }}
+{{- include "eric-stm-diameter-proxy-grpc.annotations" . | nindent 4 }}
+{{- end }}
+spec:
+  kubernetes:
+    generatedSecretName: {{ template "eric-stm-diameter-proxy-grpc.name" . }}-pm-server-target-certificate-secret
+  certificate:
+    subject:
+      cn: {{ template "eric-stm-diameter-proxy-grpc.name" . }}
+    subjectAlternativeName:
+      dns:
+        - certified-scrape-target
+    extendedKeyUsage:
+      tlsClientAuth: true
+      tlsServerAuth: true
+{{- end }}

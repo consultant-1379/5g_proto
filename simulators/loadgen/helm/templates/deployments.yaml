@@ -1,0 +1,110 @@
+# Copyright 2018 The DSC Evo Team
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ .Values.service.name }}
+  labels:
+{{- include "eric-loadgen.labels" . | indent 4 }}
+  annotations:
+{{- include "eric-loadgen.helm-annotations" . | indent 4 }}
+{{- include "eric-loadgen.config-annotations" . | indent 4 }}
+spec:
+  {{- include "eric-loadgen.ipfamilies" . | indent 2 }}
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+    targetPort: rest-api
+  - name: https
+    protocol: TCP
+    port: 443
+    targetPort: rest-api-tls
+  selector:
+    app: {{ .Values.service.name }}
+  type: {{ .Values.service.type }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.service.name }}
+  labels:
+{{- include "eric-loadgen.labels" . | indent 4 }}
+    app: {{ .Values.service.name }}
+  annotations:
+{{- include "eric-loadgen.helm-annotations" . | indent 4 }}
+{{- include "eric-loadgen.config-annotations" . | indent 4 }}
+spec:
+  serviceName: {{ .Values.service.name }}
+  replicas: {{ .Values.spec.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.service.name }}
+  template:
+    metadata:
+      labels:
+{{- include "eric-loadgen.labels" . | indent 8 }}
+        app: {{ .Values.service.name }}
+      annotations:
+        prometheus.io/method: "http"
+        prometheus.io/path: "/metrics"
+        prometheus.io/scrape: "true"
+{{- include "eric-loadgen.helm-annotations" . | indent 8 }}
+{{- include "eric-loadgen.config-annotations" . | indent 8 }}
+    spec:
+      serviceAccountName: eric-loadgen
+      {{- if include "eric-loadgen.pullSecrets" . }}
+      imagePullSecrets:
+      - name: {{ template "eric-loadgen.pullSecrets" . }}
+      {{- end }}
+      containers:
+      - name: {{ .Values.service.name }}
+        image: {{ template "eric-loadgen.registryUrl" . }}/{{ .Values.imageCredentials.repoPath }}/{{ .Values.spec.image }}:{{ .Values.spec.tag }}
+        imagePullPolicy: {{ .Values.imageCredentials.pullPolicy | quote }}
+        ports:
+        - name: "metrics"
+          protocol: TCP
+          containerPort: 8080
+        - name: rest-api
+          protocol: TCP
+          containerPort: 80
+        - name: rest-api-tls
+          containerPort: 443
+        {{   if  (eq .Values.certificates.enabled true) }}
+        volumeMounts:
+        - name: secrets
+          mountPath: /root/certificates
+          readOnly: true
+        {{  end }}
+        env:
+        - name: IP_FAMILY
+          value: {{ template "eric-loadgen.ipfamily" . }}
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+         {{   if  (eq .Values.certificates.enabled true) }}
+        - name: CERTIFICATES_PATH
+          value: /root/certificates
+        {{  end }}
+        - name: JVM_PARAMS
+          value: {{ .Values.jvm.parameters.loadgen | quote }}
+        resources:
+           requests:
+            memory: {{ .Values.spec.resources.requests.memory | quote }}
+            cpu: {{ .Values.spec.resources.requests.cpu | quote }}
+           limits:
+            memory: {{ .Values.spec.resources.limits.memory | quote }}
+            cpu: {{ .Values.spec.resources.limits.cpu | quote }}
+      {{   if  (eq .Values.certificates.enabled true) }}
+      volumes:
+        - name: secrets
+          secret:
+            secretName: {{ .Values.certificates.secret }}
+            items:
+              - key: {{ .Values.certificates.certificate }}
+                path: certificate.pem
+              - key: {{ .Values.certificates.key }}
+                path: key.pem
+              - key: {{ .Values.certificates.ca }}
+                path: ca.pem
+     {{  end }}
+

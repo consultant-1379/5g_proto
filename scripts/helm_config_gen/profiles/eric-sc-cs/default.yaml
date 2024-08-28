@@ -1,0 +1,7 @@
+global:
+  registry:
+    imagePullPolicy: "Always"
+  pullSecret: regcred
+
+eric-sc-monitor:
+  replicaCount: 1

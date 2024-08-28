@@ -1,0 +1,42 @@
+Version: v1
+Decription: FOSS list
+LastUpdate: 2023-03-22 15:44
+FOSS:
+    # Available in Bazaar
+    FOSSName: Javassist, JBoss
+    # Available in Bazaar
+    FOSSVersion: 3.27.0-GA
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/jboss-javassist/javassist/archive/refs/tags/rel_3_27_0_ga.zip
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 30/CAX1053456
+    # Not Available in Bazaar
+    Primary: N
+    # Available in Bazaar
+    STAKOCode: Not for a New Design
+    # Available in Bazaar
+    STAKOReason: Product version is older than 18 months. Newer versions exists
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: Javassist (Java Programming Assistant) makes Java bytecode manipulation simple. It is a class library for editing bytecodes in Java; it enables Java programs to define a new class at runtime and to modify a class file when the JVM loads it. 
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: (GNU Lesser General Public License v2.1 only (LGPL-2.1-only), Apache License 2.0 (Apache-2.0), Mozilla Public License 1.1 (MPL-1.1))
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0 
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'org.javassist:javassist:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ZIMPAND Dimitra Panagiotou

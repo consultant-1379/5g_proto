@@ -1,0 +1,7 @@
+{{- if eq (include "eric-stm-diameter-proxy-grpc.log-streaming-activated" .) "true" }}
+{{- if  eq (default "" ((((.Values).global).logShipper).deployment).model) "static" }}
+  {{- include "eric-stm-diameter-proxy-grpc.logshipper-sidecar-configmap" . }}
+{{- else }}
+  {{- include "eric-log-shipper-sidecar.logshipper-sidecar-configmap" . }}
+{{- end }}
+{{- end }}

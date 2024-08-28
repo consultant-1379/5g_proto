@@ -1,0 +1,41 @@
+Version: v3
+Decription: FOSS list
+LastUpdate: 2023-08-25T08:40:31Z
+FOSS:
+    # Available in Bazaar
+    FOSSName: certifi
+    # Available in Bazaar
+    FOSSVersion: 2023.7.22
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/certifi/python-certifi/archive/refs/tags/2023.07.22.tar.gz 
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 37/CTX1020628
+    # Not Available in Bazaar
+    Primary: N
+    # Available in Bazaar
+    STAKOCode: ESW2
+    # Available in Bazaar
+    STAKOReason: NA
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct:  A carefully curated collection of Root Certificates for validating the trustworthiness of SSL certificates while verifying the identity of TLS hosts
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: MPL-2.0
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense:  MPL-2.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: NO
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ZDOIKON Konstantinos Doios

@@ -1,0 +1,430 @@
+#!/usr/bin/perl -w
+#
+# Test program for SCP
+#
+# Usage:
+#  -c              only converged charging (default is both CC and SL)
+#  -s              only spending limit control (default is both CC and SL)
+#  -1              only CREATE or SUBSCRIBE (default is -1 -2 -3 -4)
+#  -2 location     only UPDATE or MODIFY (default is -1 -2 -3 -4)
+#  -3 location     only RELEASE or UNSUBSCRIBE (default is -1 -2 -3 -4)
+#  -4              only NOTIFY
+#  -q [1|2]        converged charging: use v1 or v2
+#  -Q [1|2]        spending limit control: use v1 or v2
+#  -n number       number of iterations for each request (default is one)
+#  -o              no colors
+#  -v              verbose mode: print curl requests and replies
+#  -w              worker service name, default is 'eric-scp-worker'
+#  -N node_ip
+#  -W worker port
+#  -C chfsim_port  for notify
+#  -O notifyUrl    for notify
+#  -T notifyUrl    for SL-TERMINATE
+#  -E envoyDomain  default is "csa.ericsson.se"
+#  -P              prompt after each request
+#
+# Send for Converged Charging:
+#   CREATE
+#   UPDATE to the chargingDataRef obtained with CREATE
+#   RELEASE to the chargingDataRef obtained with CREATE
+#   NOTIFY for a NotifyUri sent with a CREATE
+# Send for Spending Limit Control:
+#   SUBSCRIBE
+#   MODIFY to the subscriptionId obtained with SUBSCRIBE
+#   UNSUBSCRIBE to the subscriptionId obtained with SUBSCRIBE
+#   NOTIFY for a NotifUri sent with a SUBSCRIBE
+#
+# eedala, 2019-05-08
+
+use strict;
+use Getopt::Std;
+
+getopts("12:3:4hC:cE:N:n:oO:Pq:Q:sT:vw:W:");
+$::opt_h = $::opt_h;
+$::opt_C = $::opt_C;
+$::opt_E = $::opt_E;
+$::opt_n = $::opt_n;
+$::opt_N = $::opt_N;
+$::opt_o = $::opt_o;
+$::opt_O = $::opt_O;
+$::opt_T = $::opt_T;
+$::opt_W = $::opt_W;
+
+if ($::opt_h) {
+print"
+Test program for SCP
+
+Usage:
+ -c              only converged charging (default is both CC and SL)
+ -s              only spending limit control (default is both CC and SL)
+ -1              only CREATE or SUBSCRIBE (default is -1 -2 -3 -4)
+ -2 location     only UPDATE or MODIFY (default is -1 -2 -3 -4)
+ -3 location     only RELEASE or UNSUBSCRIBE (default is -1 -2 -3 -4)
+ -4              only NOTIFY
+ -5              only TERMINATE (only for SLC)
+ -q [1|2]        converged charging: use v1 or v2
+ -Q [1|2]        spending limit control: use v1 or v2
+ -n number       number of iterations for each request (default is one)
+ -o              no colors
+ -v              verbose mode: print curl requests and replies
+ -w              worker service name, default is 'eric-scp-worker'
+ -N node_ip
+ -W worker port
+ -C chfsim_port  for notify
+ -O notifyUrl    for notify
+ -T notifyUrl    for SL-TERMINATE
+ -E envoyDomain  default is \"csa.ericsson.se\"
+ -P              prompt after each request
+
+Send for Converged Charging:
+  CREATE
+  UPDATE to the chargingDataRef obtained with CREATE
+  RELEASE to the chargingDataRef obtained with CREATE
+  NOTIFY for a NotifyUri sent with a CREATE
+Send for Spending Limit Control:
+  SUBSCRIBE
+  MODIFY to the subscriptionId obtained with SUBSCRIBE
+  UNSUBSCRIBE to the subscriptionId obtained with SUBSCRIBE
+  NOTIFY for a NotifUri sent with a SUBSCRIBE
+  TERMINATE for a NotifUri sent with a SUBSCRIBE
+";
+exit;
+
+}
+
+
+# If neither -s nor -c are given, then enable both:
+if ((! $::opt_c) && (! $::opt_s))
+{
+  $::opt_c = 1;
+  $::opt_s = 1;
+}
+if ((! $::opt_1) && (! $::opt_2) && (! $::opt_3) && (! $::opt_4) && (! $::opt_5))
+{
+  $::opt_1 = 1;
+  $::opt_2 = 1;
+  $::opt_3 = 1;
+  $::opt_4 = 1;
+  $::opt_5 = 1;
+}
+$::opt_n ||= 1;
+$::opt_w ||= 'eric-scp-worker';
+my $worker_svc = $::opt_w;
+
+my $location;
+# If CC and only UPDATE (no CREATE), then we need the location from the user:
+if ($::opt_c && ($::opt_2 && !$::opt_1))
+{
+  $location = $::opt_2;
+}
+# If CC and only DELETE (no CREATE and no UPDATE), then we need the location from the user:
+if ($::opt_c && ($::opt_3 && !$::opt_1))
+{
+  $location = $::opt_3;
+}
+
+# Protocol versions:
+$::opt_q ||= 1; # Converged Charging
+$::opt_Q ||= 1; # Spending Limit Control
+
+##------------------------------------------------------------------------
+## Colors!!
+if ($::opt_o)
+{
+  $::red     = "";
+  $::green   = "";
+  $::yellow  = "";
+  $::blue    = "";
+  $::magenta = "";
+  $::reset   = "";
+}
+else
+{
+  $::red     = "\e[31m";
+  $::green   = "\e[32m";
+  $::yellow  = "\e[33m";
+  $::blue    = "\e[34m";
+  $::magenta = "\e[35m";
+  $::reset   = "\e[0m";
+}
+
+$::yellow  = $::yellow;
+$::blue    = $::blue;
+$::magenta = $::magenta;
+
+##------------------------------------------------------------------------
+my $user = $ENV{"USER"};
+my $worker_port = $::opt_W || `kubectl get --namespace 5g-bsf-$user -o jsonpath="{.spec.ports[0].nodePort}" services $worker_svc`;
+my $chfsim1_port = $::opt_C || `kubectl get --namespace 5g-bsf-$user -o jsonpath="{.spec.ports[0].nodePort}" services eric-chfsim-1`;
+my $node_ip = $::opt_N || `kubectl get nodes --namespace 5g-bsf-$user -o jsonpath="{.items[3].status.addresses[0].address}"`;
+#my $worker_name = `kubectl get pods --namespace 5g-bsf-$user | awk '/eric-scp-worker/ { print $1 } '`;
+my $notify_uri_cc = $::opt_O || "http://eric-chfsim-1:80/nchf-convergedcharging/v$::opt_q/chargingdata/notify_cc_receiver";
+my $notify_uri_sl = $::opt_O || "http://eric-chfsim-2:80/nchf-spendinglimitcontrol/v$::opt_Q/subscriptions/notify";
+my $terminate_uri_sl = $::opt_T || "http://eric-chfsim-2:80/nchf-spendinglimitcontrol/v$::opt_Q/subscriptions/terminate";
+my $envoy_domain = $::opt_E || "csa.ericsson.se";
+
+##------------------------------------------------------------------------
+# CONVERGED CHARGING
+if($::opt_c)
+{
+  print "Using protocol version v$::opt_q for Converged Charging\n";
+  if ($::opt_1)
+  {
+    # Send CC-CREATE
+    my $createCmdCC = <<EOCCC;
+docker run --rm curlnew -vsS -o /dev/null --stderr - --resolve $envoy_domain:$worker_port:$node_ip --http2-prior-knowledge -X POST -H "Content-Type: application/json" -d '{"notifyUri":"$notify_uri_cc"}' "http://$envoy_domain:$worker_port/nchf-convergedcharging/v$::opt_q/chargingdata?a=[1-$::opt_n]"
+EOCCC
+    print "CC CREATE:\n$createCmdCC" if $::opt_v;
+
+    my $createCC = `$createCmdCC`;
+    print "$createCC" if $::opt_v;
+
+    if ($createCC !~ m/HTTP\/2 201/)  # CREATE failed
+    {
+      print $::red . "CC CREATE failed: \n$::reset$createCmdCC\n$createCC\n";
+      exit 1;
+    }
+
+    # CREATE succeeded:
+    if ($createCC !~ m/location: (\S+)/)
+    {
+      print $::red . "CC CREATE failed: no 'location:'-header found in reply\n$::reset$createCmdCC\n$createCC\n";
+      exit 1;
+    }
+
+    # CREATE returned a location header. Good.
+    $location = $1;
+    print $::green . "CC CREATE OK  ". $::reset;
+    print "Location: $location\n";
+  }
+
+  if ($::opt_P)
+  {
+    print "Press Enter to continue\n";
+    <STDIN>;
+  }
+
+  #--------------------------
+  if ($::opt_2)
+  {
+    # Send CC-UPDATE:
+    my $updateCmdCC = <<EOUCC;
+docker run --rm curlnew -vsS -o /dev/null --stderr - --resolve $envoy_domain:$worker_port:$node_ip --http2-prior-knowledge -H "Content-Type: application/json" -d '{"notifyUri":"$notify_uri_cc"}' -X POST "$location/update"
+EOUCC
+    print "CC UPDATE\n$updateCmdCC" if $::opt_v;
+
+    my $updateCC = `$updateCmdCC`;
+    print "$updateCC" if $::opt_v;
+
+    if ($updateCC !~ m/HTTP\/2 20\d/)  # UPDATE failed
+    {
+      print $::red . "CC UPDATE failed:\n$::reset$updateCmdCC\n$updateCC\n";
+      exit 1;
+    }
+    print $::green . "CC UPDATE OK\n" . $::reset;
+  }
+
+  if ($::opt_P)
+  {
+    print "Press Enter to continue\n";
+    <STDIN>;
+  }
+
+  ##------------------------------
+  if ($::opt_4)
+  {
+    # Send NOTIFY for CC
+    my $notifyCmdCC = <<EONCC;
+docker run --rm curlnew -vsS -o /dev/null --stderr - -X POST --resolve $envoy_domain:$worker_port:$node_ip --http2-prior-knowledge -H "x-notify-uri: $notify_uri_cc" http://$envoy_domain:$worker_port/nchf-convergedcharging/v$::opt_q/chargingdata/notify
+EONCC
+    print "CC NOTIFY:\n$notifyCmdCC" if $::opt_v;
+
+    my $notifyCC = `$notifyCmdCC`;
+    print "$notifyCC" if $::opt_v;
+
+    if ($notifyCC !~ m/HTTP\/2 204/)
+    {
+      print $::red . "CC NOTIFY failed:\n$::reset$notifyCC\n";
+      exit 1;
+    }
+    print $::green . "CC NOTIFY OK\n" . $::reset;
+  }
+
+  if ($::opt_P && $::opt_s)
+  {
+    print "Press Enter to continue\n";
+    <STDIN>;
+  }
+
+  #--------------------------
+  if ($::opt_3)
+  {
+    # Send CC-RELEASE:
+    my $releaseCmdCC = <<EORCC;
+docker run --rm curlnew -vsS -o /dev/null --stderr - --resolve $envoy_domain:$worker_port:$node_ip --http2-prior-knowledge -X POST "$location/release"
+EORCC
+    print "CC RELEASE:\n$releaseCmdCC" if $::opt_v;
+
+    my $releaseCC = `$releaseCmdCC`;
+    print "$releaseCC" if $::opt_v;
+    
+    if ($releaseCC !~ m/HTTP\/2 204/)
+    {
+      print $::red . "CC RELEASE failed:\n$::reset$releaseCC\n";
+      exit 1;
+    }
+    print $::green . "CC RELEASE OK\n" . $::reset;
+  }
+
+}
+
+
+
+##------------------------------------------------------------------------
+# SPENDING LIMIT CONTROL
+#
+if ($::opt_s)
+{
+  print "Using protocol version v$::opt_Q for Spending Limit Control\n";
+  my $locationSL;
+  if ($::opt_1)
+  {
+    # Send SL-SUBSCRIBE
+# Query-parameter ?a= commented out because ChfSim cannot handle it
+    my $subscribeCmdSL = <<EOCSL;
+docker run --rm curlnew -vsS -o /dev/null --stderr - --resolve $envoy_domain:$worker_port:$node_ip --http2-prior-knowledge -X POST -H "Content-Type: application/json" -d '{"notifUri":"$notify_uri_cc"}' "http://$envoy_domain:$worker_port/nchf-spendinglimitcontrol/v$::opt_Q/subscriptions?a=[1-$::opt_n]"
+EOCSL
+    print "SL SUBSCRIBE\n$subscribeCmdSL" if $::opt_v;
+
+    my $subscribeSL = `$subscribeCmdSL`;
+    print "$subscribeSL" if $::opt_v;
+
+    if ($subscribeSL !~ m/HTTP\/2 201/)  # CREATE failed
+    {
+      print $::red . "SL SUBSCRIBE failed: \n$::reset$subscribeCmdSL\n$subscribeSL\n";
+      exit 1;
+    }
+
+    # SUBSCRIBE succeeded:
+    if ($subscribeSL !~ m/location: (\S+)/)
+    {
+      print $::red . "SL SUBSCRIBE failed: no 'location:'-header found in reply\n$::reset$subscribeCmdSL\n$subscribeSL\n";
+      exit 1;
+    }
+
+    # SUBSCRIBE returned a location header. Good.
+    $locationSL = $1;
+    print $::green . "SL SUBSCRIBE OK  ". $::reset;
+    print "Location: $locationSL\n";
+  }
+
+  if ($::opt_P)
+  {
+    print "Press Enter to continue\n";
+    <STDIN>;
+  }
+
+  #-----------------------------
+  if ($::opt_2)
+  {
+    # Send SL-MODIFY
+
+    my $modifyCmdSL = <<EOCSL;
+docker run --rm curlnew -vsS -o /dev/null --stderr - --resolve $envoy_domain:$worker_port:$node_ip --http2-prior-knowledge -X PUT -H "Content-Type: application/json" -d '{"notifUri":"$notify_uri_sl"}' "$locationSL?a=[1-$::opt_n]"
+EOCSL
+    print "SL MODIFY:\n$modifyCmdSL" if $::opt_v;
+
+    my $modifySL = `$modifyCmdSL`;
+    print "$modifySL" if $::opt_v;
+
+    if ($modifySL !~ m/HTTP\/2 200/)  # SL-MODIFY failed
+    {
+      print $::red . "SL MODIFY failed: \n$::reset$modifyCmdSL\n$modifySL\n";
+      #exit 1;
+    }
+    else
+    {
+      print $::green . "SL MODIFY OK\n". $::reset;
+    }
+  }
+
+  if ($::opt_P)
+  {
+    print "Press Enter to continue\n";
+    <STDIN>;
+  }
+  #
+  ##------------------------------
+  if ($::opt_4)
+  {
+    # Send NOTIFY for SLC
+    my $notifyCmdSL = <<EONSL;
+docker run --rm curlnew -vsS -o /dev/null --stderr - -X POST --resolve $envoy_domain:$worker_port:$node_ip --http2-prior-knowledge -H "x-notify-uri: $notify_uri_sl" http://$envoy_domain:$worker_port/nchf-spendinglimitcontrol/v$::opt_Q/subscriptions/notify
+EONSL
+    print "SL NOTIFY:\n$notifyCmdSL" if $::opt_v;
+
+    my $notifySL = `$notifyCmdSL`;
+    print "$notifySL" if $::opt_v;
+
+    if ($notifySL !~ m/HTTP\/2 204/)
+    {
+      print $::red . "SL NOTIFY failed:\n$::reset$notifySL\n";
+      exit 1;
+    }
+    print $::green . "SL NOTIFY OK\n" . $::reset;
+  }
+ 
+  if ($::opt_P)
+  {
+    print "Press Enter to continue\n";
+    <STDIN>;
+  }
+  
+  #
+  ##------------------------------
+  if ($::opt_5)
+  { 
+    # Send TERMINATE for SLC
+    my $terminateCmdSL = <<EOTSL;
+docker run --rm curlnew -vsS -o /dev/null --stderr - -X POST --resolve $envoy_domain:$worker_port:$node_ip --http2-prior-knowledge -H "x-notify-uri: $terminate_uri_sl" http://$envoy_domain:$worker_port/nchf-spendinglimitcontrol/v$::opt_Q/subscriptions/notify
+EOTSL
+    print "SL TERMINATE\n$terminateCmdSL" if $::opt_v;
+
+    my $terminateSL = `$terminateCmdSL`;
+    print "$terminateSL" if $::opt_v;
+
+    if ($terminateSL !~ m/HTTP\/2 204/)
+    {
+      print $::red . "SL TERMINATE failed:\n$::reset$terminateSL\n";
+      exit 1;
+    }
+    print $::green . "SL TERMINATE OK\n" . $::reset;
+  }
+  
+  if ($::opt_P)
+  {
+    print "Press Enter to continue\n";
+    <STDIN>;
+  }
+  #-----------------------------
+  if ($::opt_3)
+  {
+    # Send SL-UNSUBSCRIBE
+# Query-parameter ?a= commented out because ChfSim cannot handle it
+    my $unsubscribeCmdSL = <<EOCSL;
+docker run --rm curlnew -vsS -o /dev/null --stderr - --resolve $envoy_domain:$worker_port:$node_ip --http2-prior-knowledge -X DELETE "$locationSL?a=[1-$::opt_n]"
+EOCSL
+    print "SL UNSUBSCRIBE:\n$unsubscribeCmdSL" if $::opt_v;
+
+    my $unsubscribeSL = `$unsubscribeCmdSL`;
+    print "$unsubscribeSL" if $::opt_v;
+
+    if ($unsubscribeSL !~ m/HTTP\/2 204/)  # SL-UNSUBSCRIBE failed
+    {
+      print $::red . "SL UNSUBSCRIBE failed: \n$::reset$unsubscribeCmdSL\n$unsubscribeSL\n";
+      exit 1;
+    }
+    print $::green . "SL UNSUBSCRIBE OK\n". $::reset;
+  }
+}
+

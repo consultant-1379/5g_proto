@@ -1,0 +1,38 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2019-07-03 16:00
+FOSS:
+    # Available in Bazaar
+    FOSSName: jaxrs-api, for RESTeasy
+    # Available in Bazaar
+    FOSSVersion: 3.0.12.FINAL
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://repository.jboss.org/nexus/content/repositories/releases/org/jboss/resteasy/jaxrs-api/{{FOSSVersion}}/jaxrs-api-{{FOSSVersion}}-sources.jar
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 4/CAX1056750
+    # Not Available in Bazaar
+    PRIMNumber(CTC): CTC 101 5295
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: JAX-RS is a new JCP specification that provides a Java API for RESTful Web Services over the HTTP protocol.
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: (GNU General Public License with classpath exception 2, CDDL Common Development and Distribution License 1.1)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: CDDL Common Development and Distribution License 1.1
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'org.jboss.resteasy:jaxrs-api:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ENTNGRG Georgios Antoniou

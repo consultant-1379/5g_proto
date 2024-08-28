@@ -1,0 +1,320 @@
+#!/bin/bash -e
+
+## incase of an IPv6 cluster select the LB instead of the k8s worker IP
+#IPV6_NODE=`kubectl get configmap/calico-config -o jsonpath='{.data.cni_network_config}' -n kube-system | grep -v CNI_MTU | jq -r '.plugins[0].ipam.assign_ipv6' `
+#sleep 10
+
+#if [ $IPV6_NODE == "true" ];
+#then
+#    echo "The node is IPv6, fetch ipaddress and port from loadbalancer" 
+#    export CMM_IP=$(kubectl get svc --namespace $NAMESPACE eric-cm-yang-provider-ipv6 -o jsonpath="{.status.loadBalancer.ingress[0].ip}")
+#    export CMM_PORT=$(kubectl get svc --namespace $NAMESPACE eric-cm-yang-provider-ipv6 -o jsonpath="{.spec.ports[0].port}")
+#    export CSA_WRKR_PORT=$(kubectl get svc --namespace $NAMESPACE eric-csa-worker-ipv6 -o jsonpath="{.spec.ports[0].port}")
+#    export CSA_WRKR_TLS_PORT=$(kubectl get svc --namespace $NAMESPACE eric-csa-worker-ipv6 -o jsonpath="{.spec.ports[1].port}")
+#    export DEFAULTCONFIG="./Jenkins/PipeConfig/sample_config_rcc_nrf_ipv6.netconf"
+#
+#else
+#    echo "The node is not ipv6"
+#    export CMM_IP=$(kubectl get nodes --kubeconfig=$KUBECONFIG --namespace $NAMESPACE -l '!node-role.kubernetes.io/master' -o jsonpath="{.items[0].status.addresses[0].address}")
+#    export CMM_PORT=$(kubectl get --kubeconfig=$KUBECONFIG --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-cm-yang-provider)
+#    export CSA_WRKR_PORT=$(kubectl get --kubeconfig=$KUBECONFIG --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-csa-worker)
+#    export CSA_WRKR_TLS_PORT=$(kubectl get --kubeconfig=$KUBECONFIG --namespace $NAMESPACE -o jsonpath="{.spec.ports[1].nodePort}" services eric-csa-worker)
+#    export DEFAULTCONFIG="./Jenkins/PipeConfig/sample_config_nrf_csa.netconf"
+#fi; 
+
+#export CMM_IP=$(kubectl get nodes --kubeconfig=$KUBECONFIG --namespace $NAMESPACE -l node-role.kubernetes.io/node -o jsonpath="{.items[0].status.addresses[0].address}")
+#export CMM_PORT=$(kubectl get --kubeconfig=$KUBECONFIG --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-cm-yang-provider)
+#export CSA_WRKR_PORT=$(kubectl get --kubeconfig=$KUBECONFIG --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-csa-worker)
+#export CSA_WRKR_TLS_PORT=$(kubectl get --kubeconfig=$KUBECONFIG --namespace $NAMESPACE -o jsonpath="{.spec.ports[1].nodePort}" services eric-csa-worker)
+
+
+export SUFFIXES="0 -ipv4 -ipv6";
+echo $SUFFIXES;
+
+##################
+# Extract CMM_IP #
+##################
+export SVC_BASE_NAME="eric-cm-yang-provider";
+
+for SUFFIX in $SUFFIXES;
+do
+    if [ "$SUFFIX" == "0" ];
+    then
+        export SUFFIX="";
+    fi;
+
+    export VSUF=$(echo $SUFFIX | tr 'a-z,-' 'A-Z,_' );
+    export SVC_NAME="${SVC_BASE_NAME}${SUFFIX}";
+    export SVC_AVAIL=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE}`;
+
+    if [ "${SVC_AVAIL}" != "" ];
+    then
+        ################################
+        # Determining the Service Type #
+        ################################
+
+        export SVC_TYPE=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o 'jsonpath={.spec.type}'`;
+
+        if [ "${SVC_TYPE}" == "LoadBalancer" ];
+        then
+
+            export CMM_IP$VSUF=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o jsonpath='{.status.loadBalancer.ingress[*].ip}'`;
+            export CMM_PORT$VSUF=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"netconf\")].port}"`;
+
+            if [ "${CMM_IP}$VSUF" == "" ];
+            then
+                echo "LoadBalancer seems to be in state <Pending> due to port conflicts on 80 or 443. Falling back to combination of <NodeIP>:<NodePort>.";
+                export CMM_IP$VSUF=`kubectl get nodes --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -l '!node-roleEscTestPropertiesrnetes.io/master' -o jsonpath='{.items[0].status.addresses[?(@.type == "InternalIP" )].address}'`;
+                export CMM_PORT$VSUF=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"netconf\")].nodePort}"`;
+            fi;
+
+        elif [ "${SVC_TYPE}" == "NodePort" ];
+        then
+
+            export CMM_IP$VSUF=`kubectl get nodes --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -l '!node-roleEscTestPropertiesrnetes.io/master' -o jsonpath='{.items[0].status.addresses[?(@.type == "InternalIP" )].address}'`;
+            export CMM_PORT$VSUF=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"netconf\")].nodePort}"`;
+
+        else
+
+                echo "Error: The service seems not to be accessible from outside the cluster."; exit 1;
+        fi;
+    fi;
+
+done;
+
+
+#####################
+# Extract CSA Ports #
+#####################
+export SVC_BASE_NAME="eric-csa-worker";
+
+for SUFFIX in $SUFFIXES;
+do
+    if [ "$SUFFIX" == "0" ];
+    then
+        export SUFFIX="";
+    fi;
+
+    export VSUF=$(echo $SUFFIX | tr 'a-z,-' 'A-Z,_' );
+    export SVC_NAME="${SVC_BASE_NAME}${SUFFIX}";
+    export SVC_AVAIL=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE}`;
+
+    if [ "${SVC_AVAIL}" != "" ];
+    then
+        ################################
+        # Determining the Service Type #
+        ################################
+
+        export SVC_TYPE=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o 'jsonpath={.spec.type}'`;
+
+        if [ "${SVC_TYPE}" == "LoadBalancer" ];
+        then
+
+            export CSA_IP$VSUF=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o jsonpath='{.status.loadBalancer.ingress[*].ip}'`;
+            export CSA_WRKR_PORT$(echo $VSUF)=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"unencrypted-port\")].port}"`;
+            export CSA_WRKR_TLS_PORT$(echo $VSUF)=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"encrypted-port\")].port}"`;
+
+            if [ "${CSA_IP}$VSUF" == "" ];
+            then
+                echo "LoadBalancer seems to be in state <Pending> due to port conflicts on 80 or 443. Falling back to combination of <NodeIP>:<NodePort>.";
+                export CSA_IP$VSUF=`kubectl get nodes --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -l '!node-roleEscTestPropertiesrnetes.io/master' -o jsonpath='{.items[0].status.addresses[?(@.type == "InternalIP" )].address}'`;
+                export CSA_WRKR_PORT$VSUF=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"unencrypted-port\")].nodePort}"`;
+                export CSA_WRKR_TLS_PORT$VSUF=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"encrypted-port\")].nodePort}"`;
+            fi;
+
+        elif [ "${SVC_TYPE}" == "NodePort" ];
+        then
+
+            export CSA_IP$VSUF=`kubectl get nodes --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -l '!node-roleEscTestPropertiesrnetes.io/master' -o jsonpath='{.items[0].status.addresses[?(@.type == "InternalIP" )].address}'`;
+            export CSA_WRKR_PORT$VSUF=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"unencrypted-port\")].nodePort}"`;
+            export CSA_WRKR_TLS_PORT$VSUF=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"encrypted-port\")].nodePort}"`;
+
+        else
+
+                echo "Error: The service seems not to be accessible from outside the cluster."; exit 1;
+        fi;
+    fi;
+
+done;
+
+if [ "$IP_VERSION" == "6" ];
+then
+    export DEFAULTCONFIG="./Jenkins/PipeConfig/sample_config_rcc_nrf_ipv6.netconf";
+    export CMM_IP="${CMM_IP_IPV6}";
+    export CMM_PORT="${CMM_PORT_IPV6}";
+    export CSA_WRKR_IP="${CSA_WRKR_IP_IPV6}";
+    export CSA_WRKR_PORT="${CSA_WRKR_PORT_IPV6}";
+    export CSA_WRKR_TLS_PORT="${CSA_WRKR_TLS_PORT_IPV6}";
+else
+    export DEFAULTCONFIG="./Jenkins/PipeConfig/sample_config_nrf_csa.netconf"
+    if [ ! -z ${CMM_IP_IPV4} ] && [ ! -z ${CSA_WRKR_PORT_IPV4} ];
+    then
+            export CMM_IP="${CMM_IP_IPV4}";
+            export CMM_PORT="${CMM_PORT_IPV4}";
+            export CSA_WRKR_IP="${CSA_WRKR_IP_IPV4}";
+            export CSA_WRKR_PORT="${CSA_WRKR_PORT_IPV4}";
+            export CSA_WRKR_TLS_PORT="${CSA_WRKR_TLS_PORT_IPV4}";
+    else
+
+            export CMM_IP="${CMM_IP_EXTERNAL}";
+            export CMM_PORT="${CMM_PORT_EXTERNAL}";
+            export CSA_WRKR_IP="${CSA_WRKR_IP}";
+            export CSA_WRKR_PORT="${CSA_WRKR_PORT}";
+            export CSA_WRKR_TLS_PORT="${CSA_WRKR_TLS_PORT}";
+    fi;
+fi;
+
+
+echo http://$CMM_IP:$CMM_PORT
+echo CSA-WorkerPorts:$CSA_WRKR_IP:$CSA_WRKR_PORT/$CSA_WRKR_TLS_PORT
+
+ssh-keygen -R [$CMM_IP]:$CMM_PORT
+
+sleep 3
+
+#################
+# Load Config ###
+#################
+
+pwd
+#sed "s/<CSA_WRKR_PORT>/$CSA_WRKR_PORT/g" ./Jenkins/PipeConfig/sample_config_nrf.netconf > tempConfig.netconf
+sed "s/<CSA_WRKR_PORT>/$CSA_WRKR_PORT/g" $DEFAULTCONFIG > tempConfig.netconf
+sed -i "s/<CSA_WRKR_TLS_PORT>/$CSA_WRKR_TLS_PORT/g" tempConfig.netconf
+
+#sed "s/<port>30000<\/port>/<port>$CSA_WRKR_PORT<\/port>/g" $DEFAULTCONFIG > tempConfig.netconf
+#sed -i "s/<tls-port>30002<\/tls-port>/<tls-port>$CSA_WRKR_TLS_PORT<\/tls-port>/g" tempConfig.netconf
+
+/usr/bin/expect <( cat << EOS
+
+exp_internal 0
+set timeout 120
+
+spawn ssh -t -p $CMM_PORT csa-admin@$CMM_IP -s netconf
+
+expect {
+         "continue connecting (yes/no" {
+          send "yes\r"
+          expect "*Password: "
+          send "csacsa\r"}
+
+        "*Password: " {
+        send "csacsa\r" }
+        }
+
+
+                                                                                                                                                                   
+sleep 10
+                                                                                                                                                                   
+expect "]]>]]>"
+
+send [ exec cat ./Jenkins/PipeConfig/hello.netconf ]
+
+set foundOk "false"
+set wait_time 2
+set timeout 20
+
+send_user "This is the value of foundOK: \$foundOk ##### Zing ####"
+
+while { [string compare \$foundOk "false"] == 0 } {
+
+	send_user " Now in the while loop ###### Zong ####### "
+        send_user "The value of foundOk is: \$foundOk"
+
+	send [ exec cat tempConfig.netconf ]
+        sleep 8
+	expect { 
+                 "<ok/></rpc-reply>]]>]]>" {
+			set foundOk "true" }
+
+                 "</rpc-error></rpc-reply>]]>]]>" {
+                        puts "Received an error while loading the configuration. Exiting" }
+               }
+
+        send_user " The waiting time is: \$wait_time "
+        
+        sleep \$wait_time
+        set wait_time "[expr 2 * \$wait_time]"
+
+        if { \$wait_time > 128 } {
+           send_user " Waiting Time exceed 4 min. The deploy will be aborted. Please check the ADP logs. "
+           send [ exec cat ./Jenkins/PipeConfig/close.netconf ]
+	   expect "]]>]]>"
+           exit 1
+        } 
+}
+
+send [ exec cat ./Jenkins/PipeConfig/close.netconf ]
+expect "]]>]]>"
+
+EOS
+)
+
+rm -rf tempConfig.netconf
+
+sleep 9
+##################
+# Check Config ###i
+##################
+#cat ./Jenkins/PipeConfig/hello.netconf > tempConfig.netconf
+cat ./Jenkins/PipeConfig/getConfCsa.netconf >> tempConfig.netconf
+
+/usr/bin/expect <( cat << EOS
+exp_internal 0
+set timeout 120
+
+spawn ssh -t -p $CMM_PORT csa-admin@$CMM_IP -s netconf
+
+expect {
+        "continue connecting (yes/no" {
+        send "yes\r"
+        expect "*Password: "
+        send "csacsa\r" }
+                                                                                                                                                                   
+        "*Password: " {
+        send "csacsa\r" }
+        }
+                                                                                                                                                                   
+sleep 10
+                                                                                                                                                                   
+expect "]]>]]>"
+
+send [ exec cat ./Jenkins/PipeConfig/hello.netconf ]
+
+set foundOk "false"
+set wait_time 2
+set timeout 20
+
+while { [string compare \$foundOk "false"] == 0 } { 
+                                                                                                                                                                   
+	send [ exec cat tempConfig.netconf ]
+        sleep 8
+	expect {
+		"</scp-function></data></rpc-reply>]]>]]>" {
+				set foundOk "true"
+			}
+		"<data></data></rpc-reply>]]>]]>" {
+				puts "No config found. Aborting."
+			}
+	       }
+																					   
+	sleep \$wait_time
+	set wait_time "[expr 2 * \$wait_time]"
+
+
+        if { \$wait_time > 128 } {
+           send_user "Waiting Time exceed 4 min. The deploy will be aborted. Please check the ADP logs."
+           send [ exec cat ./Jenkins/PipeConfig/close.netconf ]
+           expect "]]>]]>"
+           exit 1
+        }
+
+}
+
+send [ exec cat ./Jenkins/PipeConfig/close.netconf ]
+expect "]]>]]>"
+
+EOS
+)
+
+rm -rf tempConfig.netconf
+

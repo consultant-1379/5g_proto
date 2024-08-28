@@ -1,0 +1,48 @@
+#!/bin/bash
+#Script that will fetch only needed dependencies, not those, that are already existing.
+#It looks at the dep available inside the umbrella folder and checks with the requirements.yaml if anything is missing/ wrong version.
+
+destination=.bob/eric-sc-umbrella
+output=$(helm dep list $destination | grep -Ev 'ok')
+
+while read -r line; do
+	[ -z "$line" ] && continue
+	# the following line is used only for debugging purposes
+	# echo "line: $line" 
+	if [[ $line == *"WARNING"* ]]
+	then
+		IFS='"' read -a tmp <<< $line
+		IFS='/' read -a chart <<< ${tmp[1]}
+		echo "Removing ${chart[-1]} "
+		rm -f $destination/charts/${chart[-1]}
+		continue
+	fi
+	# TODO: The following should become dynamic
+	IFS='	' read -a array <<< $line
+	if [ ${array[0]} != "NAME" ]
+	then
+		if [[ ${array[2]} == *"proj-5g-bsf-helm"* ]]
+		then
+			url=$(echo "${array[2]}${array[0]}-${array[1]}.tgz" | tr -d '[:space:]')
+		else
+			url=$(echo "${array[2]}${array[0]}/${array[0]}-${array[1]}.tgz" | tr -d '[:space:]')
+		fi
+		if [[ ${array[2]} == *"proj-adp-eric-data-object-stor"* ]]
+		then
+			url="https://arm.sero.gic.ericsson.se/artifactory/proj-adp-eric-data-object-storage-mn-released-helm/eric-data-object-storage-mn/eric-data-object-storage-mn-1.11.0+19.tgz"
+		fi
+		if [[ ${array[2]} == *"proj-pc-rs-released-helm/"* ]]
+		then
+			url=" https://arm.sero.gic.ericsson.se/artifactory/proj-pc-rs-released-helm/eric-cnom-server/eric-cnom-server-1.60.2+1.tgz"
+		fi
+		# echo "helm fetch $url"
+
+		rm -f $destination/charts/$(echo "${array[0]}" | tr -d '[:space:]')-[0-9]*
+		IFS='/' read -a repository <<< ${array[2]} #get address of repository
+		username=$(python scripts/helm_repositories.py -u --repository ${repository[2]})
+		password=$(python scripts/helm_repositories.py -p --repository ${repository[2]})
+		echo "url: $url"
+		helm fetch $url --destination $destination/charts/ --username $username --password $password
+
+	fi
+done <<< "$output"

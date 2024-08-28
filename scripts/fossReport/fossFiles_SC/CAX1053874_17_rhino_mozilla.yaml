@@ -1,0 +1,42 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2023-02-09 12:28
+FOSS:
+    # Available in Bazaar
+    FOSSName: Rhino, Mozilla
+    # Available in Bazaar
+    FOSSVersion: 1.7.14
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://repo1.maven.org/maven2/org/mozilla/rhino/{{FOSSversion}}/rhino-{{FOSSversion}}-sources.zip
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 17/CAX1053874
+    # Not Available in Bazaar
+    Primary: Y
+    # Available in Bazaar
+    STAKOCode: Restricted Use
+    # Available in Bazaar
+    STAKOReason: Product version is older than 18 months
+    # Not Available in Bazaar
+    FunctionalityUsedInTheEricssonProduct: "Not available"
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: Mozilla Public License 2.0 (MPL-2.0)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Mozilla Public License 2.0 (MPL-2.0)
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: NotLinked
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'org.mozilla:rhino:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ZVOGDIM Dimitris Vogas

@@ -1,0 +1,143 @@
+if (env.AGENT_LABEL != null && env.AGENT_LABEL != '') {
+    AGENT_LABEL = "${env.AGENT_LABEL}"
+} else {
+    AGENT_LABEL = '5G-SC'
+}
+pipeline {
+    agent {
+        node {
+            label "${AGENT_LABEL}"
+        } // node
+    } // agent
+    options {
+        timeout(time: 15, unit: 'MINUTES')
+        timestamps()
+    } // options
+    parameters {
+        string(name: 'CHART_NAME', description: 'The sub-chart name (e.g. eric-sc-certnotifier)')
+        string(name: 'RELEASE_CANDIDATE', description: 'The helm chart release candidate version (e.g. 1.0.0-7)')
+        choice(name: 'VERSION_UPDATE', choices: ['MINOR', 'PATCH', 'MAJOR'], description: 'Type of release version update (e.g. MAJOR, MINOR, PATCH)')
+        booleanParam(name: 'DRY_RUN', defaultValue: false, description: 'Enable dry-run')
+        string(name: 'COMMITTER_EMAIL', description: 'Email of the committer to be used for VERSION_PREFIX update')
+    } // parameters
+    stages {
+        stage('Cleaning WS on Buildcomputes'){
+            // only if no other instance of the same job is running in parallel
+            // if another instance is running this procedure would delete its WS and make it failing
+            when {
+                expression { currentBuild.getPreviousBuildInProgress() == null }
+            }
+            steps{
+                catchError(message: "Timeout while cleaning WS on Buildcomputes", buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                // remove all (!) content (including the git repo)
+        
+                    script {
+                        env.AGENT_LABEL="${AGENT_LABEL}"
+                        env.LOCAL_PATH = sh(returnStdout: true, script: 'pwd').trim()
+                        println "LOCAL PATH: ${LOCAL_PATH}"
+                        println "WORKSPACE: ${WORKSPACE}"
+                        println "JOB_NAME: ${JOB_NAME}"
+                        withCredentials([usernamePassword(credentialsId: 'eiffelesc-user-password', usernameVariable: 'USER', passwordVariable: 'PASSWORD')]) {
+                            def NODE_NAMES_LABEL = sh(returnStdout: true, script: 'curl -s -u $USER:$PASSWORD ${JENKINS_URL}/label/${AGENT_LABEL}/api/json?pretty=true | jq -r ".nodes[].nodeName"').trim().split("\n");
+                            println "LABEL: ${AGENT_LABEL}, ${NODE_NAMES_LABEL}"
+                            for (NODE_NAME_LABEL in NODE_NAMES_LABEL) {
+                                env.NODE_NAME_LABEL = "${NODE_NAME_LABEL}"
+                                def NODE_OFFLINE = sh(returnStdout: true, script: 'curl -s -u $USER:$PASSWORD ${JENKINS_URL}/computer/${NODE_NAME_LABEL}/api/json?pretty=true | jq -r ".offline"').trim();
+                                if ("${NODE_OFFLINE}" == "false" && env.NODE_NAME != "${NODE_NAME_LABEL}" && env.NODE_NAME != "") {
+                                    def NODE_ADDRESS_LABEL = sh(returnStdout: true, script: 'curl -s -u $USER:$PASSWORD ${JENKINS_URL}/computer/${NODE_NAME_LABEL}/config.xml | awk -F\'[<>]\' \'/<host>/{print $3;exit}\'').trim();
+                                    env.NODE_ADDRESS_LABEL = "${NODE_ADDRESS_LABEL}"
+                                    if (env.LOCAL_PATH == env.WORKSPACE && env.WORKSPACE != "" && (env.WORKSPACE.endsWith("${JOB_NAME}"))) {
+                                        sh '''#!/bin/bash -x
+                                        echo "PATH: ${WORKSPACE}"
+                                        echo "REMOTE NODE: ${NODE_NAME_LABEL}"
+                                        timeout 60 ssh eiffelesc@${NODE_ADDRESS_LABEL} "if [ -d ${WORKSPACE} ]; then rm -rf ${WORKSPACE}/; else echo \"Nothing to clean\"; fi;"
+                                        '''
+                                    } //if
+                                } //if
+                            } //for
+                        } //withCredentials
+                    } //script
+                } //catchError
+            } //steps
+        } //stage
+        stage('Init') {
+            steps {
+                // prepare git submodules
+                sh 'git submodule update --init --recursive'
+                
+                // base init
+                sh './bob/bob sc.base.init:create-output-dir'
+                //sh './bob/bob sc.base.init:policy-api-version' // chart lint
+                
+                // chart init
+                sh "./bob/bob -r ${env.CHART_NAME}/ruleset2.0-pra.yaml init"
+                
+                // print env parameters
+                sh 'printenv | sort'
+                
+                script {
+                    // set displayed build name
+                    currentBuild.displayName = "#${BUILD_NUMBER} - ${env.CHART_NAME}/${RELEASE_CANDIDATE}"
+                    
+                    // set displayed description
+                    currentBuild.description = "node: ${env.NODE_NAME}, \n"
+                    currentBuild.description += "candidate version: ${env.RELEASE_CANDIDATE}, \n";
+                    currentBuild.description += "version update: ${env.VERSION_UPDATE}";
+                    
+                    // Log current job
+                    if ( fileExists("/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh") ) {
+                        sh "/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh -start"
+                    } // if
+                } //script
+            } // steps
+        } // stage
+        stage('Pre-publish') {
+            steps {
+                sh "./bob/bob -r ${env.CHART_NAME}/ruleset2.0-pra.yaml pre-publish" // fetch candidate chart and unpack
+            } // steps
+        } // stage
+        stage('Publish PRA') {
+            when {
+                expression {
+                    env.DRY_RUN == "false"
+                } // expression
+            } // when
+            steps {
+                sh "./bob/bob -r ${env.CHART_NAME}/ruleset2.0-pra.yaml publish" // tag new image and push both image and chart to released repo
+            } // steps
+        } // stage
+        stage('Git Tag') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'eiffelesc-credentials', usernameVariable: 'GERRIT_USERNAME', passwordVariable: 'GERRIT_PASSWORD')]) {
+                    sh "./bob/bob -r ${env.CHART_NAME}/ruleset2.0-pra.yaml post-publish:pra-git-tag" // git tag of new pra version
+                } // withCredentials
+            } // steps
+        } // stage
+        stage('Update Version Prefix') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'eiffelesc-credentials', usernameVariable: 'GERRIT_USERNAME', passwordVariable: 'GERRIT_PASSWORD')]) {
+                    sh "./bob/bob -r ${env.CHART_NAME}/ruleset2.0-pra.yaml post-publish:version-prefix-increment" // update version prefix
+                } // withCredentials
+            } // steps
+        } // stage
+        stage('Archive') {
+            steps {
+                sh "./bob/bob -r ${env.CHART_NAME}/ruleset2.0-pra.yaml post-publish:archive" // add new image/repo/version on artifact.properties
+                archiveArtifacts artifacts: 'artifact.properties', onlyIfSuccessful: true
+            } // steps
+        } // stage
+    } // stages
+    post {
+        always {
+            script{
+                // Log current job completion
+                if ( fileExists("/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh") ) {
+                    sh "/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh -stop"
+                } // if
+            } // script
+        } // always
+        success {
+            cleanWs()
+        } // success
+    } // post
+} // pipeline

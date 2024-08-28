@@ -1,0 +1,8 @@
+eric-pm-server:
+  server:
+    extraConfigmapMounts:
+      - name: eric-sc-cs-pvtb-rr-volume
+        configMap: eric-sc-cs-pvtb-rr
+        mountPath: /etc/config/scpvtb
+        subPath: ""
+        readOnly: true

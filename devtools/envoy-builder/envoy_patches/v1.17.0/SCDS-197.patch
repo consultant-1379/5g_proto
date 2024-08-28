@@ -1,0 +1,18 @@
+diff --git a/source/common/upstream/upstream_impl.cc b/source/common/upstream/upstream_impl.cc
+index 18025dfca..f219e36e6 100644
+--- a/source/common/upstream/upstream_impl.cc
++++ b/source/common/upstream/upstream_impl.cc
+@@ -1485,7 +1485,12 @@ bool BaseDynamicClusterImpl::updateDynamicHostList(const HostVector& new_hosts,
+         hosts_added_to_current_priority.emplace_back(existing_host->second);
+       }
+ 
+-      existing_host->second->weight(host->weight());
++      // Did the weight change?
++      if (host->weight() != existing_host->second->weight()) {
++        existing_host->second->weight(host->weight());
++        hosts_changed = true;
++      }
++
+       final_hosts.push_back(existing_host->second);
+       updated_hosts[existing_host->second->address()->asString()] = existing_host->second;
+     } else {

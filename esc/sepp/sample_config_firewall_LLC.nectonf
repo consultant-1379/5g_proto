@@ -1,0 +1,282 @@
+<hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <capabilities>
+    <capability>urn:ietf:params:netconf:base:1.0</capability>
+  </capabilities>
+</hello>]]>]]>
+
+<?xml version="1.0"?>
+<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:ns2="urn:com:ericsson:ecim:1.0"
+  xmlns:ns3="http://tail-f.com/ns/netconf/actions/1.0"
+  xmlns:ns4="urn:ietf:params:xml:ns:yang:ietf-netconf-monitoring"
+  xmlns:ns5="urn:ietf:params:xml:ns:netconf:notification:1.0" message-id="0">
+  <edit-config>
+    <target>
+      <running />
+    </target>
+    <config>
+      <sepp-function operation="replace" xmlns="urn:rdns:com:ericsson:oammodel:ericsson-sepp">
+        <nf-instance xmlns="urn:rdns:com:ericsson:oammodel:ericsson-sepp">
+          <name>instance_1</name>
+          <ingress-connection-profile>
+            <name>default_ingress_profile</name>
+            <hpack-table-size>0</hpack-table-size>
+          </ingress-connection-profile>
+          <ingress-connection-profile-ref>default_ingress_profile</ingress-connection-profile-ref>
+          <egress-connection-profile>
+            <name>default_egress_profile</name>
+            <hpack-table-size>0</hpack-table-size>
+          </egress-connection-profile>
+          <egress-connection-profile-ref>default_egress_profile</egress-connection-profile-ref>
+          <!-- SEPP requires two service addresses one referenced by own and
+            one by external network. If multiVPN is disabled each service-
+            address gets one port (usually non tls for internal / tls for external)
+            If multiVpn enabled, each k8s service can be mapped to a service-address
+            and they can both get port, tls-port or both -->
+          <service-address>
+            <name>internalAddress</name>
+            <!-- change based on your deployment -->
+            <port>30393</port>
+            <fqdn>sepp.ericsson.se</fqdn>
+            <!-- change based on your deployment -->
+            <ipv4-address>10.139.248.10</ipv4-address>
+            <asymmetric-key-ref>internalAddressKey</asymmetric-key-ref>
+          </service-address>
+          <service-address>
+            <name>externalAddress</name>
+            <!-- change based on your deployment -->
+            <tls-port>32343</tls-port>
+            <fqdn>sepp.ericsson.se</fqdn>
+            <!-- change based on your deployment -->
+            <ipv4-address>10.139.248.10</ipv4-address>
+            <asymmetric-key-ref>externalAddressKey</asymmetric-key-ref>
+          </service-address>
+          <own-network>
+            <name>internalNetwork</name>
+            <service-address-ref>internalAddress</service-address-ref>
+            <routing-case-ref>routing_from_internal</routing-case-ref>
+            <ingress-connection-profile-ref>default_ingress_profile</ingress-connection-profile-ref>
+            <trusted-certificate-list>sc-traf-root-ca-list1</trusted-certificate-list>
+          </own-network>
+          <external-network>
+            <name>externalNetwork</name>
+            <service-address-ref>externalAddress</service-address-ref>
+            <routing-case-ref>routing_from_external</routing-case-ref>
+            <roaming-partner>
+              <name>RP_1</name>
+              <domain-name>sepp.ericsson.se</domain-name>
+              <supports-target-apiroot>true</supports-target-apiroot>
+              <trusted-certificate-list>sc-traf-root-ca-list2</trusted-certificate-list>
+              <firewall-profile-ref>firewall_profile_RP_1</firewall-profile-ref>
+            </roaming-partner>
+            <ingress-connection-profile-ref>default_ingress_profile</ingress-connection-profile-ref>
+          </external-network>
+          <message-body-limits>
+            <max-bytes>4096</max-bytes>
+            <max-leaves>1024</max-leaves>
+            <max-nesting-depth>32</max-nesting-depth>
+          </message-body-limits>
+          <asymmetric-key>
+            <name>internalAddressKey</name>
+            <certificate>sc-traf-default-cert1</certificate>
+            <private-key>sc-traf-default-key1</private-key>
+          </asymmetric-key>
+          <asymmetric-key>
+            <name>externalAddressKey</name>
+            <certificate>sc-traf-default-cert2</certificate>
+            <private-key>sc-traf-default-key2</private-key>
+          </asymmetric-key>
+          <firewall-profile>
+            <name>firewall_profile_RP_1</name>
+            <request>
+              <validate-message-headers>
+                <!-- <denied>
+                  <denied-header>3gpp-Sbi-bad-header</denied-header>
+                </denied> -->
+                <allowed />
+                <report-event>true</report-event>
+                <action-reject-message>
+                  <status>400</status>
+                  <title>Forbidden Request</title>
+                  <detail>Restricted headers found in request.</detail>
+                  <cause>ForbiddenRequestHeadersError</cause>
+                  <format>json</format>
+                </action-reject-message>
+                <!-- <action-drop-message /> -->
+                <!-- <action-forward-unmodified-message /> -->
+                <!-- <action-forward-modified-message /> -->
+              </validate-message-headers>
+              <validate-message-body-size>
+                <max-bytes>1024</max-bytes>
+                <report-event>true</report-event>
+                <action-reject-message>
+                  <status>413</status>
+                  <title>Forbidden Request</title>
+                  <detail>Message body size exceeds limits.</detail>
+                  <cause>ForbiddenRequestSizeError</cause>
+                  <format>json</format>
+                </action-reject-message>
+              </validate-message-body-size>
+              <validate-message-json-body-syntax>
+                <report-event>true</report-event>
+                <action-reject-message>
+                  <status>400</status>
+                  <title>Forbidden Request</title>
+                  <detail>Message json body syntax error.</detail>
+                  <cause>ForbiddenRequestJsonSyntaxError</cause>
+                  <format>json</format>
+                </action-reject-message>
+                <!-- <action-forward-unmodified-message /> -->
+              </validate-message-json-body-syntax>
+              <validate-message-json-body-leaves>
+                <report-event>true</report-event>
+                <max-leaves>16</max-leaves>
+                <action-reject-message>
+                  <status>400</status>
+                  <title>Forbidden Request</title>
+                  <detail>Message json body leaves exceed limit.</detail>
+                  <cause>ForbiddenRequestJsonLeavesError</cause>
+                  <format>json</format>
+                </action-reject-message>
+              </validate-message-json-body-leaves>
+              <validate-message-json-body-depth>
+                <report-event>true</report-event>
+                <max-nesting-depth>4</max-nesting-depth>
+                <action-reject-message>
+                  <status>400</status>
+                  <title>Forbidden Request</title>
+                  <detail>Message json body depth exceeds limit.</detail>
+                  <cause>ForbiddenRequestJsonDepthError</cause>
+                  <format>json</format>
+                </action-reject-message>
+              </validate-message-json-body-depth>
+            </request>
+            <response>
+              <validate-message-headers>
+                <denied>
+                  <denied-header>x-origin</denied-header>
+                </denied>
+                <report-event>true</report-event>
+                <action-respond-with-error>
+                  <status>500</status>
+                  <title>Forbidden Response</title>
+                  <detail>Restricted headers found in response.</detail>
+                  <cause>ForbiddenResponseHeadersError</cause>
+                  <format>json</format>
+                </action-respond-with-error>
+              </validate-message-headers>
+            </response>
+          </firewall-profile>
+          <message-data>
+            <name>apiRoot_data</name>
+            <header>3gpp-Sbi-target-apiRoot</header>
+            <extractor-regex>eric-chfsim-\d+-mnc-(?P&lt;mnc&gt;\d+)-mcc-(?P&lt;mcc&gt;\d+)</extractor-regex>
+          </message-data>
+          <message-data>
+            <name>chfsim_data</name>
+            <header>3gpp-Sbi-target-apiRoot</header>
+            <extractor-regex>eric-(?P&lt;chfsim&gt;chfsim-\d+?)-.+</extractor-regex>
+          </message-data>
+          <routing-case>
+            <name>routing_from_internal</name>
+            <message-data-ref>apiRoot_data</message-data-ref>
+            <message-data-ref>chfsim_data</message-data-ref>
+            <routing-rule>
+              <name>routing_to_RP_1</name>
+              <condition>var.mnc=='123' and var.mcc=='123'</condition>
+              <routing-action>
+                <name>internal_to_RP</name>
+                <action-route-round-robin>
+                  <target-roaming-partner>
+                    <roaming-partner-ref>RP_1</roaming-partner-ref>
+                  </target-roaming-partner>
+                </action-route-round-robin>
+              </routing-action>
+            </routing-rule>
+          </routing-case>
+          <routing-case>
+            <name>routing_from_external</name>
+            <message-data-ref>apiRoot_data</message-data-ref>
+            <message-data-ref>chfsim_data</message-data-ref>
+            <routing-rule>
+              <name>external_to_own</name>
+              <condition>var.mnc=='456' and var.mcc=='456'</condition>
+              <routing-action>
+                <name>RP_to_internal</name>
+                <action-route-round-robin>
+                  <target-nf-pool>
+                    <nf-pool-ref>occ</nf-pool-ref>
+                  </target-nf-pool>
+                </action-route-round-robin>
+              </routing-action>
+            </routing-rule>
+          </routing-case>
+          <static-nf-instance-data>
+            <name>static_sepp_RP_1</name>
+            <static-nf-instance>
+              <name>sepp1-chfsim1</name>
+              <static-nf-service>
+                <name>nchf-convergedcharging</name>
+                <address>
+                  <scheme>http</scheme>
+                  <fqdn>eric-chfsim-1-mnc-123-mcc-123</fqdn>
+                </address>
+              </static-nf-service>
+            </static-nf-instance>
+            <static-nf-instance>
+              <name>sepp1-chfsim2</name>
+              <static-nf-service>
+                <name>nchf-convergedcharging</name>
+                <address>
+                  <scheme>http</scheme>
+                  <fqdn>eric-chfsim-2-mnc-123-mcc-123</fqdn>
+                </address>
+              </static-nf-service>
+            </static-nf-instance>
+          </static-nf-instance-data>
+          <static-nf-instance-data>
+            <name>static_occ</name>
+            <static-nf-instance>
+              <name>occ-chfsim3</name>
+              <static-nf-service>
+                <name>nchf-convergedcharging</name>
+                <address>
+                  <scheme>http</scheme>
+                  <fqdn>eric-chfsim-3-mnc-456-mcc-456</fqdn>
+                </address>
+                <priority>10</priority>
+              </static-nf-service>
+            </static-nf-instance>
+            <static-nf-instance>
+              <name>occ-chfsim4</name>
+              <static-nf-service>
+                <name>nchf-convergedcharging</name>
+                <address>
+                  <scheme>http</scheme>
+                  <fqdn>eric-chfsim-4-mnc-456-mcc-456</fqdn>
+                </address>
+                <priority>10</priority>
+              </static-nf-service>
+            </static-nf-instance>
+          </static-nf-instance-data>
+          <nf-pool>
+            <name>pool_RP_1</name>
+            <nf-pool-discovery>
+              <name>pool_discovery_RP_1</name>
+              <static-nf-instance-data-ref>static_sepp_RP_1</static-nf-instance-data-ref>
+            </nf-pool-discovery>
+            <roaming-partner-ref>RP_1</roaming-partner-ref>
+          </nf-pool>
+          <nf-pool>
+            <name>occ</name>
+            <nf-pool-discovery>
+              <name>occ_pool</name>
+              <static-nf-instance-data-ref>static_occ</static-nf-instance-data-ref>
+            </nf-pool-discovery>
+            <own-network-ref>internalNetwork</own-network-ref>
+          </nf-pool>
+        </nf-instance>
+      </sepp-function>
+    </config>
+  </edit-config>
+</rpc>
+]]>]]>

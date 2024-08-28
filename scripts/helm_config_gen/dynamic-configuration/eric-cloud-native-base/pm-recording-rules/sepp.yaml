@@ -1,0 +1,8 @@
+eric-pm-server:
+  server:
+    extraConfigmapMounts:
+      - name: eric-sepp-rr-volume
+        configMap: eric-sepp-rr
+        mountPath: /etc/config/scsepp
+        subPath: ""
+        readOnly: true

@@ -1,0 +1,27 @@
+# Domain Name
+domainName: "ericsson.com"
+
+# BaseDN
+baseDN: "dc=ericsson,dc=com"
+
+# Admin Password
+adminPassword: "challengers_2021"
+
+# Proxy Password
+proxyPassword: "challengers_2021"
+
+# TLS
+tls:
+  enabled: false
+  certsSecret: "eric-referral-ldap-certs"
+  saslAuthRegex: "cn=eric-sec-admin-user-management"
+    ## secret names:
+    ## eric-referral-ldap-trusted-cert with ca-cert in data "ca-certs-SC.pem"
+    ## eric-referral-ldap-asymmetric-key-cert-secret with
+    ##   certificate in data "tls.crt"
+    ##   private key in data "tls.key"
+  useCr:
+    enabled: true
+    trustedCert: "sc-trusted-default-cas"
+    clientCert: "sc-referral-ldap-default-cert"
+    clientKey: "sc-referral-ldap-default-key"

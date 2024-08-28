@@ -1,0 +1,11 @@
+productName: "eric-monitor"
+productNumber: product_number
+productRevision: product_revision
+images:
+  monitor:
+    productName: "Monitor"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+    name: monitor_image_name
+    tag: monitor_image_tag

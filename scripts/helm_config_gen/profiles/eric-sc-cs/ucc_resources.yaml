@@ -1,0 +1,45 @@
+# This file is intended to be used for UCC deployments
+# It contains settings to reduce memory, cpu,
+# disk space requests and limits.
+# Original base is the cloud native small footprint located
+# inside eric-sc-cs/profiles/small_footprint_resources.yaml
+# If values have been modified from this template,
+# the original values are mentioned in the same line after ##.
+
+#Currently used eric-sc-cs IHC has no entries iin small_footpring_resources and noHa.yaml for this component.
+#eric-sc-cs-2.0.0-8
+eric-data-distributed-coordinator-ed-sc:
+  pods:
+    dced:
+      replicaCount: 1
+  affinity:
+    podAntiAffinity: "soft"
+  resources:
+    init:
+      requests:
+        cpu: 100m
+        memory: 150Mi
+      limits:
+        cpu: 150m
+        memory: 250Mi
+    brAgent:
+      limits:
+        cpu: 200m
+        memory: 400Mi
+      requests:
+        cpu: 100m
+        memory: 400Mi
+    dced:
+      limits:
+        cpu: 300m
+        memory: 250Mi
+      requests:
+        cpu: 150m
+        memory: 150Mi
+    logshipper:
+      limits:
+        cpu: 30m
+        memory: 45Mi
+      requests:
+        cpu: 20m
+        memory: 35Mi

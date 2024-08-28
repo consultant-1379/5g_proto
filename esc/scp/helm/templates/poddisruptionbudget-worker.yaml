@@ -1,0 +1,32 @@
+{{- if int .Values.spec.worker.replicaCount }}
+{{- if (gt (int .Values.spec.worker.replicaCount) 1) }}
+{{- if .Values.spec.worker.podDisruptionBudget}}
+{{- if (or .Values.spec.worker.podDisruptionBudget.minAvailable .Values.spec.worker.podDisruptionBudget.maxUnavailable) }}
+{{- if .Capabilities.APIVersions.Has "policy/v1/PodDisruptionBudget" }}
+apiVersion: policy/v1
+{{- else }}
+apiVersion: policy/v1beta1
+{{- end }}
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Values.service.worker.name | quote }}
+  annotations:
+{{- include "eric-scp.helm-annotations" . | indent 4 }}
+{{- include "eric-scp.config-annotations" . | indent 4 }}
+  labels:
+{{- include "eric-scp.labels" . | indent 4 }}
+spec:
+  {{- if .Values.spec.worker.podDisruptionBudget.minAvailable }}
+  minAvailable: {{ .Values.spec.worker.podDisruptionBudget.minAvailable }}
+  {{- else if .Values.spec.worker.podDisruptionBudget.maxUnavailable }}
+  maxUnavailable: {{ .Values.spec.worker.podDisruptionBudget.maxUnavailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ .Values.service.worker.name | quote }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+

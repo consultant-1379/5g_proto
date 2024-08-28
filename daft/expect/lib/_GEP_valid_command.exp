@@ -1,0 +1,102 @@
+################################################################################
+# $Revision: 1.1 $                                                             #
+#   $Author: EUSTONE $                                                         #
+#     $Date: 2015/04/17 13:34:49 $                                             #
+################################################################################
+#                                                                              #
+# (C) COPYRIGHT ERICSSON GMBH 2014                                             #
+#                                                                              #
+# The copyright to the computer program(s) herein is the property of           #
+# Ericsson GmbH, Germany.                                                      #
+#                                                                              #
+# The program(s) may be used and/or copied only with the written permission    #
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in   #
+# the agreement/contract under which the program(s) have been supplied.        #
+#                                                                              #
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Check if a command is a valid command (in the PATH).
+#
+# This subroutine expects that it is already connected to the GEP Linux prompt.
+#
+# Input:
+#  - Command to check
+#
+# Output:
+#  -  0: Success, command is valid
+#    >0: Failure, command is not valid
+#    -1: Timeout
+#
+proc GEP_valid_command {command} {
+    global spawn_id
+
+    set errorcnt 0
+
+    # Send the command
+    send -- "which $command\r"
+
+    expect {
+        -re "which: no \[a-zA-Z_0-9\]+ in \[^\n\]\r*\n" {
+            # The command does not exist in the path, increment an error counter
+            incr errorcnt
+            exp_continue
+        }
+        -re "command not found\r*\n" {
+            # Some invalid command have been given, increment an error counter
+            incr errorcnt
+            exp_continue
+        }
+        "\n" {
+            # New line received, continue waiting
+            exp_continue
+        }
+        -re "SC-\[12\]\[^\n\]*$" {
+            # Ready for next command
+        }
+        -re "PL-\[0-9\]+\[^\n\]*$" {
+            # Ready for next command
+        }
+        timeout {
+            return -1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    set exitcode 0
+
+    # Check exitcode from previous command
+    send -- "echo \$?\r"
+
+    expect {
+        -re "^(\[0-9\]+)\r*\n" {
+            # Exit status returned
+            set exitcode $expect_out(1,string);
+            exp_continue
+        }
+        "\n" {
+            # New line received, continue waiting
+            exp_continue
+        }
+        -re "SC-\[12\]\[^\n\]*$" {
+            # Ready for next command
+        }
+        -re "PL-\[0-9\]+\[^\n\]*$" {
+            # Ready for next command
+        }
+        timeout {
+            return -1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    if { $exitcode != 0 } {
+        incr errorcnt
+    }
+
+    return $errorcnt
+}

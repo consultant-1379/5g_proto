@@ -1,0 +1,4 @@
+#!/bin/bash
+
+source ~/fiveshell-venv/bin/activate 
+./fiveshell.py

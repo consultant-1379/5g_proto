@@ -1,0 +1,31 @@
+apiVersion: v2
+appVersion: 1.1.0-5
+dependencies:
+- condition: eric-scp.enabled
+  name: eric-scp
+  repository: https://arm.sero.gic.ericsson.se/artifactory/proj-sc-all-internal-helm
+  version: 1.13.0-h0254bf4
+- condition: eric-sc-slf.enabled
+  name: eric-sc-slf
+  repository: https://arm.sero.gic.ericsson.se/artifactory/proj-sc-all-internal-helm
+  version: 1.13.0-h0254bf4
+- alias: eric-sc-scp-license-consumer
+  condition: eric-sc-scp-license-consumer.enabled
+  import-values:
+  - child: licenseconsumer.config
+    parent: global.licenseconsumer.config
+  name: eric-sc-license-consumer
+  repository: https://arm.sero.gic.ericsson.se/artifactory/proj-sc-license-consumer-released-helm/
+  version: 1.1.0+9
+- alias: eric-sc-scp-log-shipper
+  condition: eric-sc-scp-log-shipper.enabled
+  import-values:
+  - child: logShipper.config
+    parent: global.logShipper.config
+  name: eric-log-shipper
+  repository: https://arm.sero.gic.ericsson.se/artifactory/proj-adp-gs-all-helm/
+  version: 19.1.0+16
+description: SCP app. (c) Ericsson AB 2023.
+name: eric-sc-scp
+type: application
+version: 1.1.0-5

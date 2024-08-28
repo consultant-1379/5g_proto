@@ -1,0 +1,33 @@
+eric-log-transformer:
+  labels:
+    eric-log-transformer-access: "true"
+  egress:
+    lumberjack:
+      enabled: true
+      certificates:
+        asymmetricKeyCertificateName:
+        trustedCertificateListName: sc-trusted-default-cas
+      remoteHosts:
+        - id: ext-lj-1
+          host: eric-ext-log-transformer-1
+          port: 5044
+          codec: json
+          inclusions:
+            - field: "[extra_data][asi][log_plane]"
+              value: "alarm"
+        - id: ext-lj-2
+          host: eric-ext-log-transformer-2
+          port: 5044
+          codec: json
+          inclusions:
+            - field: "[facility]"
+              contains: "security"
+        - id: ext-lj-3
+          host: eric-ext-log-transformer-3
+          port: 5044
+          codec: json
+          exclusions:
+            - field: "[extra_data][asi][log_plane]"
+              value: "alarm"
+            - field: "[facility]"
+              contains: "security"

@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "id": "file:///schema/Message#",
+  "title": "Message",
+  "description": "Definition of a message",
+  "type": "object",
+  "properties": {
+    "message": {
+      "description": "A readable message that describes the result of a certain action",
+      "type": "string"
+    }
+  },
+  "required": ["message"]
+}

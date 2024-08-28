@@ -1,0 +1,1 @@
+{ "trapTargets": [{ "address": "10.228.219.9", "port": 30655, "community": "ericsson" }], "heartbeatInterval": 60 }13:31:51

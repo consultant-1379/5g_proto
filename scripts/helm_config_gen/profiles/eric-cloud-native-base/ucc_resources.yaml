@@ -1,0 +1,85 @@
+# This file is intended to be used for UCC deployments
+# It contains settings to reduce memory, cpu,
+# disk space requests and limits.
+# Original base is the cloud native small footprint located
+# inside eric-cloud-native-base/profiles/small_footprint_resources.yaml
+# If values have been modified from this template,
+# the original values are mentioned in the same line after ##.
+
+#last update: eric-cloud-native-base-179.4.0-EP1+CCP
+eric-ctrl-bro:
+  resources:
+    backupAndRestore:
+      limits:
+        memory: 1000Mi ## 600Mi
+      requests:
+        memory: 800Mi ## 600Mi
+
+eric-data-coordinator-zk:
+  resources:
+    datacoordinatorzk:
+      limits:
+        cpu: 600m ## 250m
+        memory: 1Gi ## 500Mi
+      requests:
+        cpu: 200m ## 100m
+        memory: 768Mi ## 500Mi
+
+eric-data-distributed-coordinator-ed:
+  affinity:
+    podAntiAffinity: "soft"
+
+eric-data-document-database-pg:
+  resources:
+    bra:
+      limits:
+        memory: 320Mi ## 200Mi
+      requests:
+        memory: 256Mi ## 180Mi
+
+eric-fh-alarm-handler:
+  affinity:
+    podAntiAffinity: "soft"
+
+eric-lm-combined-server:
+  affinity:
+    podAntiAffinity: "soft"
+  resources:
+    eric-lm-license-server-client:
+      limits:
+        memory: 768Mi #512Mi
+      requests:
+        memory: 544Mi #512Mi
+
+eric-pm-server:
+  resources:
+    eric-pm-server:
+      limits:
+        memory: 4Gi ## 768Mi
+      requests:
+        memory: 2Gi ## 512Mi
+
+eric-sec-sip-tls:
+  tolerations:
+    sip-tls:
+## If SIP-TLS is deployed as a single replica, it is mandatory to use the following tolerations,
+## with a suitable tolerationSeconds value (recommended: 0)
+      - key: node.kubernetes.io/not-ready
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 0
+      - key: node.kubernetes.io/unreachable
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 0
+
+eric-tm-ingress-controller-cr:
+  replicaCount:
+    envoy: 1 ## Missing from noHA.yaml in current IHC
+  resources:
+    contour:
+      requests:
+        memory: 350Mi ## 250Mi
+      limits:
+        memory: 400Mi ## 300Mi
+

@@ -1,0 +1,235 @@
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.0
+#  Date     : 2017-02-03 16:57:00
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2017
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Change user to root on GEP.
+#
+# This subroutine expects that it is already connected to the UNIX/Linux prompt.
+#
+# Input:
+#  - Password for root user
+#
+# Output:
+#  -  0: Success
+#     1: Timeout or other error
+#
+proc UNIX_su_root {root_psw} {
+    global spawn_id
+    global timeout
+
+    set errorcnt 0
+
+    # Save currently set timeout value
+    set default_timeout $timeout
+
+    set potential_prompt 0
+    set prompt ""
+
+    # Check what user is currently logged in
+    set current_user ""
+    send -- "whoami\r"
+
+    expect {
+        -re "^(\[^\r\n\])*\r*\n" {
+            # New line received, check contents and then continue waiting
+            set line $expect_out(1,string);
+
+            if { [regexp "^whoami$" $line junk] == 1 } {
+                # Command echoed back, ignore it and continue waiting
+            } elseif { [regexp "^(\[^ \]+)$" $line junk current_user] == 1 } {
+                # Current user, store it and continue waiting
+            } else {
+                # Some other information received, just ignore it
+            }
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt ""
+
+            exp_continue
+        }
+        -re "(\[^\r\n\]+)$" {
+            # We have received a potential prompt, wait max 1 second for something more to come
+            set timeout 1
+            set potential_prompt 1
+            set prompt $expect_out(1,string);
+
+            exp_continue
+        }
+        eof {
+            puts "\nWe lost the connection to the node\n"
+            set timeout $default_timeout
+            return 1
+        }
+        timeout {
+            if { $potential_prompt == 1 } {
+                # Treat this as a success but first restore timeout value
+                set timeout $default_timeout
+            } else {
+                puts "\nWe were unable to login to the node due to a timeout\n"
+                set timeout $default_timeout
+                return 1
+            }
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    if { $current_user == "root" } {
+        # No need to switch to root
+        return 0
+    }
+
+    set potential_prompt 0
+    set prompt ""
+    set attempt 0
+
+    # Switch user id to root
+    send -- "su - root\r"
+
+    # Wait for password request from SCXB
+    expect {
+        "assword:" {
+            incr attempt
+            if { $attempt > 2 } {
+                # Failed twice, Send CTRL-C to exit
+                send "\x03"
+            } else {
+                send "$root_psw\r"
+            }
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt ""
+
+            exp_continue
+        }
+        -re "^(\[^\r\n\]*)\r*\n" {
+            # New line received, check contents and then continue waiting
+            set line $expect_out(1,string);
+
+            if { [regexp "^su - root$" $line junk] == 1 } {
+                # Command echoed back, ignore it and continue waiting
+            } elseif { [regexp "^(\[^ \]+)$" $line junk current_user] == 1 } {
+                # Current user, store it and continue waiting
+            } else {
+                # Some other information received, just ignore it
+            }
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt ""
+
+            exp_continue
+        }
+        -re "(\[^\r\n\]+)$" {
+            # We have received a potential prompt, wait max 1 second for something more to come
+            set timeout 1
+            set potential_prompt 1
+            set prompt $expect_out(1,string);
+
+            exp_continue
+        }
+        eof {
+            puts "\nWe lost the connection to the node\n"
+            set timeout $default_timeout
+            return 1
+        }
+        timeout {
+            if { $potential_prompt == 1 } {
+                # Treat this as a success but first restore timeout value
+                set timeout $default_timeout
+            } else {
+                puts "\nWe were unable to login to the node due to a timeout\n"
+                set timeout $default_timeout
+                return 1
+            }
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    set potential_prompt 0
+    set prompt ""
+
+    # Check that switch to root was successful
+    set current_user ""
+    send -- "whoami\r"
+
+    expect {
+        -re "^(\[^\r\n\]*)\r*\n" {
+            # New line received, check contents and then continue waiting
+            set line $expect_out(1,string);
+
+            if { [regexp "^whoami$" $line junk] == 1 } {
+                # Command echoed back, ignore it and continue waiting
+            } elseif { [regexp "^(\[^ \]+)$" $line junk current_user] == 1 } {
+                # Current user, store it and continue waiting
+            } else {
+                # Some other information received, just ignore it
+            }
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt ""
+
+            exp_continue
+        }
+        -re "(\[^\r\n\]+)$" {
+            # We have received a potential prompt, wait max 1 second for something more to come
+            set timeout 1
+            set potential_prompt 1
+            set prompt $expect_out(1,string);
+
+            exp_continue
+        }
+        eof {
+            puts "\nWe lost the connection to the node\n"
+            set timeout $default_timeout
+            return 1
+        }
+        timeout {
+            if { $potential_prompt == 1 } {
+                # Treat this as a success but first restore timeout value
+                set timeout $default_timeout
+            } else {
+                puts "\nWe were unable to login to the node due to a timeout\n"
+                set timeout $default_timeout
+                return 1
+            }
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    if { $current_user == "root" } {
+        # Success
+        return 0
+    } else {
+        return 1
+    }
+}

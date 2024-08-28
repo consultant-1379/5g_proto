@@ -1,0 +1,210 @@
+{
+    "namespace": "sc",
+    "widgets": [
+        {
+            "_id": "sc:pod_table",
+            "widgetType": "table",
+            "variables": {
+                "podListFilterProp": "metadata.name",
+                "podListFilterRegex": ".*"
+            },
+            "title": "Pod status",
+            "filterColumn": "Name",
+            "identityColumn": "Name",
+            "showFieldSelection": "columns",
+            "sources": [
+                {
+                    "source": "sc_pod_data"
+                }
+            ],
+            "columns": [
+                {
+                    "heading": "Name",
+                    "sortable": true
+                },
+                {
+                    "heading": "Ready",
+                    "sortable": true
+                },
+                {
+                    "heading": "Status",
+                    "sortable": true
+                },
+                {
+                    "heading": "Restarts",
+                    "sortable": true,
+                    "formatter": "d3",
+                    "formatterOptions": {
+                        "specifier": ","
+                    },
+                    "align": "right"
+                },
+                {
+                    "heading": "Age",
+                    "sortable": true,
+                    "formatter": "duration",
+                    "align": "right"
+                },
+                {
+                    "heading": "CPU usage",
+                    "sortable": true,
+                    "formatter": "d3",
+                    "formatterOptions": {
+                        "specifier": ",.2f",
+                        "suffix": " %"
+                    },
+                    "align": "right"
+                },
+                {
+                    "heading": "CPU used",
+                    "display": "hidden",
+                    "sortable": true,
+                    "formatter": "d3",
+                    "formatterOptions": {
+                        "specifier": ",.2f",
+                        "suffix": " millicores"
+                    },
+                    "align": "right"
+                },
+                {
+                    "heading": "CPU requests",
+                    "display": "hidden",
+                    "sortable": true,
+                    "formatter": "d3",
+                    "formatterOptions": {
+                        "specifier": ",.2f",
+                        "multiplier": 1000,
+                        "suffix": " millicores"
+                    },
+                    "align": "right"
+                },
+                {
+                    "heading": "CPU limits",
+                    "display": "hidden",
+                    "sortable": true,
+                    "formatter": "d3",
+                    "formatterOptions": {
+                        "specifier": ",.2f",
+                        "multiplier": 1000,
+                        "suffix": " millicores"
+                    },
+                    "align": "right"
+                },
+                {
+                    "heading": "Memory usage",
+                    "sortable": true,
+                    "formatter": "d3",
+                    "formatterOptions": {
+                        "specifier": ",.2f",
+                        "suffix": " %"
+                    },
+                    "align": "right"
+                },
+                {
+                    "heading": "Memory used",
+                    "display": "hidden",
+                    "sortable": true,
+                    "formatter": "d3",
+                    "formatterOptions": {
+                        "specifier": ",.2f",
+                        "suffix": " MB"
+                    },
+                    "align": "right"
+                },
+                {
+                    "heading": "Memory requests",
+                    "display": "hidden",
+                    "sortable": true,
+                    "formatter": "d3",
+                    "formatterOptions": {
+                        "specifier": ",.2f",
+                        "multiplier": 0.000001,
+                        "suffix": " MB"
+                    },
+                    "align": "right"
+                },
+                {
+                    "heading": "Memory limits",
+                    "display": "hidden",
+                    "sortable": true,
+                    "formatter": "d3",
+                    "formatterOptions": {
+                        "specifier": ",.2f",
+                        "multiplier": 0.000001,
+                        "suffix": " MB"
+                    },
+                    "align": "right"
+                }
+            ]
+        }
+    ],
+    "sources": [
+        {
+            "_id": "sc_pod_data",
+            "sourceType": "tableAggregation",
+            "sources": [
+                {
+                    "source": {
+                        "sourceType": "kubernetes",
+                        "sourceFields": {
+                            "Name": "metadata.name",
+                            "Status": "status.phase"
+                        },
+                        "constructedProperties": {
+                            "Age": "age",
+                            "Restarts": "restarts",
+                            "CPU requests": "cpurequest",
+                            "CPU limits": "cpulimit",
+                            "Memory requests": "memoryrequest",
+                            "Memory limits": "memorylimit",
+                            "Ready": "readycontainers"
+                        },
+                        "filter": [
+                            {
+                                "property": "$podListFilterProp",
+                                "regex": "$podListFilterRegex"
+                            },
+                            {
+                                "property": "status.phase",
+                                "regex": "^(?!Succeeded).*$"
+                            }
+                        ]
+                    },
+                    "key": "Name"
+                },
+                {
+                    "source": {
+                        "sourceType": "prometheus",
+                        "query": "instance_job:pod_cpu_usage",
+                        "splitByLabelName": "pod"
+                    },
+                    "key": "CPU used"
+                },
+                {
+                    "source": {
+                        "sourceType": "prometheus",
+                        "query": "job:pod_cpu_usage_100",
+                        "splitByLabelName": "pod"
+                    },
+                    "key": "CPU usage"
+                },
+                {
+                    "source": {
+                        "sourceType": "prometheus",
+                        "query": "instance_job:pod_memory_usage",
+                        "splitByLabelName": "pod"
+                    },
+                    "key": "Memory used"
+                },
+                {
+                    "source": {
+                        "sourceType": "prometheus",
+                        "query": "job:pod_memory_usage_100",
+                        "splitByLabelName": "pod"
+                    },
+                    "key": "Memory usage"
+                }
+            ]
+        }
+    ]
+}

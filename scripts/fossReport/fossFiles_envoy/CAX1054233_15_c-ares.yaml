@@ -1,0 +1,42 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: Nov 14, 2023
+FOSS:
+    # Available in Bazaar
+    FOSSName: c-ares
+    # Available in Bazaar
+    FOSSVersion: C-ARES-1.19.1
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://c-ares.org/download/c-ares-1.19.1.tar.gz
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 15/CAX1054233
+    # Not Available in Bazaar
+    Primary: N
+    # Available in Bazaar
+    STAKOCode: ESW2
+    # Available in Bazaar
+    STAKOReason: ()
+    # Not Available in Bazaar
+    FunctionalityUsedInTheEricssonProduct: "c-ares is a C library for asynchronous DNS requests (including name resolves) C89 compatibility, MIT licensed, builds for and runs on POSIX, Windows, Netware, Android and many more operating systems."
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: NTP License (NTP)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: NTP License (NTP)
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Statically
+    # Not Available in Bazaar
+    MavenDependency: NO
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    #Comments
+    Comments: NA
+    ReportAuthor: ERAPRPA Prashant Pratik

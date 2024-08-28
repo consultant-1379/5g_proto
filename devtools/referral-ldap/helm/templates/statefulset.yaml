@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Chart.Name }}
+  labels:
+    app: {{ .Chart.Name }}
+spec:
+  serviceName: {{ .Chart.Name }}
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name | quote }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name | quote }}
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      initContainers:
+      - name: init-ldif
+        image: selndocker.mo.sw.ericsson.se/proj-pc-3pp-images/busybox:1.32.0
+        command: ['sh', '-c', 'cp /ldifssrc/* /ldifs']
+        volumeMounts:
+        - name: ldifssrc
+          mountPath: /ldifssrc
+        - name: ldifs
+          mountPath: /ldifs
+{{- if .Values.tls.enabled }}
+      - name: init-tls
+        image: selndocker.mo.sw.ericsson.se/proj-pc-3pp-images/busybox:1.32.0
+        command: ['sh', '-c', 'cp /caCerts/* /certs; cp /privCerts/* /certs']
+        volumeMounts:
+        - name: {{ .Chart.Name }}-ca
+          mountPath: /caCerts
+        - name: {{ .Chart.Name }}-cert
+          mountPath: /privCerts
+        - name: certs
+          mountPath: /certs
+{{ end }}
+      containers:
+      - image: selndocker.mo.sw.ericsson.se/proj-pc-3pp-images/openldap:1.4.0
+        name: ldap
+        resources: {}
+        envFrom:
+        - configMapRef:
+            name: {{ .Chart.Name }}-env
+        - secretRef:
+            name: {{ .Chart.Name }}-creds
+        volumeMounts:
+{{ if .Values.tls.enabled }}
+        - name: certs
+          mountPath: "/container/service/slapd/assets/certs"
+{{ end }}
+        - name: ldifs
+          mountPath: "/container/service/slapd/assets/config/bootstrap/ldif/custom"
+      volumes:
+{{- if .Values.tls.enabled }}
+        - name: {{ .Chart.Name }}-ca
+          secret:
+            secretName: {{ .Chart.Name }}-trusted-cert-secret
+        - name: {{ .Chart.Name }}-cert
+          secret:
+            secretName: {{ .Chart.Name }}-asymmetric-key-cert-secret
+            items:
+              - key: tls.crt
+                path: certificate.pem
+              - key: tls.key
+                path: key.pem
+        - name: certs
+          emptyDir: {}
+{{ end }}
+        - name: ldifssrc
+          configMap:
+            name: {{ .Chart.Name }}-ldifs
+        - name: ldifs
+          emptyDir: {}

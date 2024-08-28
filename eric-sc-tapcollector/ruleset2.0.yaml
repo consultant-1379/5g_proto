@@ -1,0 +1,85 @@
+modelVersion: 2.0
+
+description: "Tapcollector"
+
+import:
+  base: ../rulesets/ruleset2.0-eric-base.yaml
+
+properties:
+  - DOCKER_REPO_INTERNAL: "proj-sc-all-internal"
+  - DOCKER_REPO_DROP: "proj-sc-all-drop"
+  - IMAGE_NAME: "eric-sc-tapcollector"
+  - DOCKERFILE_PATH: "./esc/eric-sc-tapcollector"
+
+env:
+  # the GERRIT username
+  - GERRIT_USERNAME
+  # the GERRIT password (Gerrit HTTP password)
+  - GERRIT_PASSWORD
+  # Run git related actions in dry-run
+  - DRY_RUN (default=true)
+
+var:
+  - tapcollector-image-repo
+  - tapcollector-image-version
+  - commithash
+  - branch
+
+rules:
+
+  all-local:
+    - rule: init
+    - rule: image
+
+  all-ci:
+    - rule: init
+    - rule: image
+    - rule: post-publish
+
+  init:
+    - task: image-repo
+      cmd: /bin/bash -c 'if [ \"${env.base.RELEASE}\" == \"false\" ];
+                         then
+                            echo ${DOCKER_REPO_INTERNAL} > ${base.OUTPUT_DIR}/var.tapcollector-image-repo;
+                         else
+                            echo ${DOCKER_REPO_DROP} > ${base.OUTPUT_DIR}/var.tapcollector-image-repo;
+                         fi;'
+    - task: image-version
+      docker-image: base.adp-release-auto
+      cmd: version-handler generate
+            --is-release ${env.base.RELEASE}
+            --user ${env.base.USER}
+            --output tapcollector-image-version
+            --git-repo-path .
+            --version-prefix-file ${IMAGE_NAME}/VERSION_PREFIX
+
+  image:
+    - task: build
+      cmd: docker build ${DOCKERFILE_PATH}/
+            --file ${DOCKERFILE_PATH}/Dockerfile
+            --build-arg DOCKER_BASE_IMG=${base.SC_CBOS_TAPCOLLECTOR_IMG}
+            --tag ${base.DOCKER_REGISTRY_URL}/${var.tapcollector-image-repo}/${IMAGE_NAME}:${var.tapcollector-image-version}
+    - task: push
+      cmd: docker push ${base.DOCKER_REGISTRY_URL}/${var.tapcollector-image-repo}/${IMAGE_NAME}:${var.tapcollector-image-version}
+
+  post-publish:
+    - task: get-commit
+      docker-image: base.adp-release-auto
+      cmd: git rev-parse --short HEAD > .bob/var.commithash
+    - task: get-branch
+      docker-image: base.adp-release-auto
+      cmd: git rev-parse --abbrev-ref HEAD > .bob/var.branch
+    - task: git-tag
+      docker-image: base.adp-release-auto
+      description: Create and push git tag. Example "eric-sc-tapcollector/1.0.0-55"
+      docker-envs:
+        - GERRIT_USERNAME
+        - GERRIT_PASSWORD
+      cmd: version-handler create-git-tag
+           --git-repo-url ${base.GIT_REPO_URL}
+           --tag ${IMAGE_NAME}/${var.tapcollector-image-version}
+           --message "Release ${var.tapcollector-image-version}"
+           --commitid ${var.commithash}
+           --branch ${var.branch}
+           --dry-run ${env.DRY_RUN}
+           --debug

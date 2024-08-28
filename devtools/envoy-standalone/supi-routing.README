@@ -1,0 +1,52 @@
+Extract the SUPI from an incoming request in the LUA script.
+Then send a HTTP request to the NRF-Interrogator to get the province.
+Store the province in a header of the original request and use
+this header as a routing key to the correct cluster. Each of the three
+ChfSim simulates one province.
+
+The NRF-Interrogator simulator is in devtools/nrf-interrogator
+Deploy via "make deploy", then log into the container and run
+python ./app.py
+
+
+NAME                      TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
+envoy-standalone          NodePort    10.104.162.177   <none>        80:32578/TCP                 47h
+eric-chfsim-1             NodePort    10.102.92.5      <none>        80:31571/TCP,443:31134/TCP   23d
+eric-chfsim-2             NodePort    10.102.93.220    <none>        80:32460/TCP,443:31650/TCP   23d
+eric-chfsim-3             NodePort    10.101.7.87      <none>        80:31419/TCP,443:30075/TCP   23d
+eric-chfsim-redis         NodePort    10.97.60.61      <none>        6379:31373/TCP               23d
+eric-nrfsim               NodePort    10.101.231.163   <none>        80:31135/TCP,443:30489/TCP   23d
+eric-snmp-trap-receiver   ClusterIP   10.111.78.202    <none>        162/UDP                      17d
+nrf-interrogator          NodePort    10.103.191.26    <none>        80:30753/TCP                 10d
+
+
+Single requests:
+----------------
+
+Use Envoy configuration 21-supi-lua.yaml
+
+export NODE_IP=$(kubectl get nodes --namespace 5g-bsf-$USER -o jsonpath="{.items[3].status.addresses[0].address}")
+export ENVOY_PORT=$(kubectl get --namespace 5g-bsf-$USER -o jsonpath="{.spec.ports[0].nodePort}" services envoy-standalone)
+export ENVOY_POD=$(kubectl get pods --namespace 5g-bsf-$USER -l "app=envoy-standalone" -o jsonpath="{.items[0].metadata.name}")
+
+curl -vs -X POST -H "Content-Type: application/json" -d '@create-body.json' "http://$NODE_IP:$ENVOY_PORT/nchf-convergedcharging/v1/chargingdata"
+
+Tcpdump printout is in supi-routing-measurement-01-tcpdump.txt
+
+Measurement evaluation is in SUPI-SCP-Prototype-Measurements.xlsx, first tab.
+
+
+Benchmarks (send 1000 requests)
+-------------------------------
+Use Envoy configuration 23-supi-no-lua.yaml to get a baseline (this configuration
+does not have a LUA script and just routes everything to chfsim-2.
+
+Use Envoy configuration 22-supi-lua-no-logging.yaml to make the measurements with
+SUPI-based routing.
+
+The same curl command is used for both:
+
+time curl -Ss -o /dev/null -X POST -H "Content-Type: application/json" -d '@create-body.json' "http://$NODE_IP:$ENVOY_PORT/nchf-convergedcharging/v1/chargingdata?a=[1-1000]"
+
+Measurement results are in SUPI-SCP-Prototype-Measurements.xlsx, second tab.
+

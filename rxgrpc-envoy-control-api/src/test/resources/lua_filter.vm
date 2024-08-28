@@ -1,0 +1,277 @@
+## NOTE: The Velocity templates seem to remove the newline-character at the end
+##       of comment lines. It wouldn't matter in HTML (which is what Velocity
+##       templates are probably made for), but here it does.
+##       That's why comments are always on their own line, never at the end of a line.
+
+function envoy_on_request(request_handle)
+  local path = request_handle:headers():get(":path")
+  request_handle:logDebug("Path: " .. path)
+  local operation
+  ## Converged Charging
+#if ( $config.convergedCharging )
+  if (string.find(path, '$config.convergedCharging.apiRoot$config.convergedCharging.apiName/$config.convergedCharging.apiVersion/$config.convergedCharging.apiSRUP'))   
+  ## The previous line is equivalent to:  if (string.find(path, 'nchf%-convergedcharging/v1/chargingdata'))
+  then
+    request_handle:logDebug("Converged Charging")
+    local chargingDataRef, operation = string.match(path, '$config.convergedCharging.apiRoot$config.convergedCharging.apiName/$config.convergedCharging.apiVersion/$config.convergedCharging.apiSRUP/(.+)/(.+)$')
+    ## local prefix, operation = string.match(path, 'nchf%-convergedcharging/v1/chargingdata/([^-]+)-[^/]+/(.+)$')
+    if (chargingDataRef)
+    then
+      request_handle:logDebug("CC operation=" .. operation .. ", charging data ref=" .. chargingDataRef)
+      local prefix = string.match(chargingDataRef, '$config.convergedCharging.labelSelector')
+      if (prefix)
+      then
+        request_handle:logDebug("  prefix=" .. prefix)
+        if (operation == "update")
+        then
+          ## CC UPDATE
+          request_handle:headers():add("x-chf-dest", prefix)
+        elseif (operation == "delete" or operation == "release")
+        then
+          ## CC RELEASE
+          request_handle:headers():add("x-chf-dest", prefix)
+        end
+      end
+    end
+  end
+#end
+
+#if ( $config.convergedCharging || $config.spendingLimitControl)
+  ## Notify CC and SLC
+  local dest = request_handle:headers():get("x-notify-uri")
+  if (dest)
+  then	
+    ## CC or SL NOTIFY
+    local hostPort, schema, newAuthority, route = string.match(dest, "((.+)://([^/]+))(.*)")
+    ## malformed notifyURI?
+    if (hostPort == nil or newAuthority == nil)
+    then
+      request_handle:logWarn(string.format("Malformed Notify URI: >%s<", dest))
+      request_handle:respond({[":status"] = "400", ["content-type"] = "application/problem+json"}, "{\"title\": \"Malformed notify-uri\", \"status\": \"400\", \"detail\": \"The notify-uri cannot be parsed as a valid URI\"}")
+    else
+      if (route == "")
+      then
+        ## add a / to the NotifyUri in case there is none
+        route = "/"
+      end
+      request_handle:logDebug(string.format("Notify Req: x-notify-uri: %s", dest))
+      request_handle:logDebug(string.format("Notify Req: schema: %s, hostPort: %s, newAuthority: %s, route: %s", schema, hostPort, newAuthority, route))
+      request_handle:headers():remove(":path")
+      request_handle:headers():add(":path", route)
+      request_handle:headers():remove("x-notify-uri")
+      request_handle:headers():add("x-notify-uri", hostPort)    
+      request_handle:headers():remove(":authority")
+      request_handle:headers():add(":authority", newAuthority)
+      if (schema == "http")
+      then
+        request_handle:headers():add("x-notify-no-tls", "")
+      else
+        request_handle:headers():add("x-notify-tls", "")
+      end 
+    end
+  end
+#end
+  
+    ## Regional Converged Charging
+  #if ( $config.regionalConvergedCharging )
+   if (string.find(path, '$config.regionalConvergedCharging.apiRoot$config.regionalConvergedCharging.apiName/$config.regionalConvergedCharging.apiVersion/$config.regionalConvergedCharging.apiSRUP'))   
+  ## The previous line is equivalent to:  if (string.find(path, 'nchf%-convergedcharging/v1/chargingdata'))
+   then
+     request_handle:logInfo("RCC Request")
+     if (request_handle:body())
+     then
+       local raw_body_buffer = request_handle:body()
+       ## Make sure that we have a body:
+       if (raw_body_buffer:length() > 20)
+       then
+         local raw_body = raw_body_buffer:getBytes(0, raw_body_buffer:length())
+         local json = require "/json"
+         local body = json.decode(raw_body)
+         if (body)
+         then
+           local supi = body["subscriberIdentifier"]
+           if (supi)
+           then
+             request_handle:logInfo(string.format("LUA: SUPI: %s", supi))
+             local slf_req_headers = {
+               [":method"] = "GET",
+               [":path"] = string.format("/nslf-disc/v0/addresses?requester-nf-type=SMF&target-nf-type=CHF&supi=%s&limit=1", supi),
+               [":authority"] = "$config.regionalConvergedCharging.slfHostname",
+             }
+             local slf_resp_headers, raw_slf_resp_body = request_handle:httpCall("$config.regionalConvergedCharging.slfClustername", slf_req_headers, "", 10000)
+             if (slf_resp_headers)
+             then
+               local status = slf_resp_headers[":status"]
+               if (status == "200")
+               then
+                 local slf_resp_body = json.decode(raw_slf_resp_body)
+                 if (slf_resp_body)
+                 then
+                   local regions = slf_resp_body["addresses"]
+                   if (regions)
+                   then
+                     local region = get_region(regions)
+                     request_handle:logInfo(string.format("LUA: Received region: %s", region))
+                     local cluster = "$config.regionalConvergedCharging.clusterPrefix" .. region .. "$config.regionalConvergedCharging.clusterSuffix"
+                     request_handle:logInfo(string.format("LUA: Select cluster: %s", cluster))
+                     request_handle:headers():add("$config.regionalConvergedCharging.clusterHeaderName", cluster)
+                   else
+                     request_handle:logInfo("LUA: region name not found in 200 reply")
+                   end
+                 else
+                   request_handle:logInfo("LUA: body returned from SLF is not in JSON format")
+                 end
+               elseif (status == "404")
+                 then
+                 request_handle:logInfo(string.format("LUA: 404 Region not found for SUPI %s", supi))
+               elseif (status == "503")
+                 then
+                 request_handle:logInfo(string.format("LUA: 503 Cannot connect to SLF (SUPI %s)", supi))
+               elseif (status == "504")
+                 then
+                 request_handle:logInfo(string.format("LUA: 504 Timeout (SUPI %s)", supi))
+               else
+                 request_handle:logInfo(string.format("LUA: status %s received from SLF, not handled. (SUPI %s)", status, supi))
+               end
+             else
+               request_handle:logInfo("LUA: no headers in reply from SLF")
+             end
+           else
+             request_handle:logInfo("LUA: SUPI not found")
+           end
+         else
+           request_handle:logInfo("LUA: SUPI not found (no json body?)")
+         end
+       else
+         request_handle:logInfo("LUA: SUPI not found (body empty?)")
+       end
+     else
+       request_handle:logInfo("LUA: SUPI not found (no body)")
+     end
+   end
+#end
+end
+
+
+-- ------------------------------------------------------------------------------------------------
+## Return the region with the highest priority
+#if ( $config.regionalConvergedCharging )
+function get_region(regions)
+    local region = "unknown-region"
+    local priority_min
+    local i
+    local reg_pri
+    for i, reg_pri in ipairs(regions) do
+        local pri = reg_pri["priority"]
+        print(reg_pri["fqdn"])
+        print(pri)
+        if (pri)
+        then
+          if ((not priority_min) or pri < priority_min)
+          then
+            priority_min = pri
+            region = reg_pri["fqdn"]
+          end
+        end
+    end
+    return region
+end
+#end
+
+
+-- ------------------------------------------------------------------------------------------------
+function envoy_on_response(response_handle)
+#if ( $config.convergedCharging || $config.spendingLimitControl)
+  local connection = response_handle:connection()
+  local location = response_handle:headers():get("location")
+  if (location)
+  then
+    ## a CC CREATE, SL SUBSCRIBE, or NfRegister response
+    ## NOTE NOTE NOTE: Regular expressions in LUA are special (dash is special, (abc)+ doesn't work, ...)
+    local prefix, ip, midfix, cdr = string.match(location, "(.+//)([^/]+)(/.+/.+chargingdata/)([^/]+)")
+    response_handle:logDebug(location)
+    if (prefix)
+    then
+      ## CC CREATE
+      response_handle:logTrace(string.format("Create Repl: Prefix: %s", prefix))
+      response_handle:logTrace(string.format("Create Repl: IP:     %s", ip))
+      response_handle:logTrace(string.format("Create Repl: Midfix: %s", midfix))
+      response_handle:logTrace(string.format("Create Repl: ChDRef: %s", cdr))
+      ## KubeProxy address and NodePort of the eric-csa-worker service
+      local ownIp = "$config.common.ownIp"
+      local ownPort = "$config.common.ownPort"
+      local ownTlsPort = "$config.common.ownTlsPort"
+      local port
+      ## use TLS port if connection uses TLS
+      if connection:ssl() == nil then
+        port = ownPort
+        prefix = "http://"
+      else
+        port = ownTlsPort
+        prefix = "https://"
+      end
+      local locationHeader = string.format("%s%s:%s%s%s", prefix, ownIp, port, midfix, cdr)
+      response_handle:logDebug(string.format("Create Repl: New Location Header: %s", locationHeader));
+      response_handle:headers():remove("location")
+      response_handle:headers():add("location", locationHeader)
+    else
+      local prefixSL, ipSL,  midfixSL, cdrSL = string.match(location, "(.+//)([^/]+)(/.+/.+subscriptions/)([^/]+)")
+      if (prefixSL)
+      then
+        ## SLC SUBSCRIBE
+        response_handle:logTrace(string.format("Subscribe Repl: Prefix: %s", prefixSL))
+        response_handle:logTrace(string.format("Subscribe Repl: IP:     %s", ipSL))
+        response_handle:logTrace(string.format("Subscribe Repl: Midfix: %s", midfixSL))
+        response_handle:logTrace(string.format("Subscribe Repl: ChDRef: %s", cdrSL))
+        ## KubeProxy address and NodePort of the eric-csa-worker service
+        local ownIp = "$config.common.ownIp"
+        local ownPort = "$config.common.ownPort"
+        local ownTlsPort = "$config.common.ownTlsPort"
+        local port
+        ## use TLS port if connection uses TLS
+        if connection:ssl() == nil then
+          port = ownPort
+          prefixSL = "http://"
+        else
+          port = ownTlsPort
+          prefixSL = "https://"
+        end
+        local locationHeader = string.format("%s%s:%s%s%s", prefixSL, ownIp, port, midfixSL, cdrSL)
+        response_handle:logDebug(string.format("Subscribe Repl: New Location Header: %s", locationHeader));
+        response_handle:headers():remove("location")
+        response_handle:headers():add("location", locationHeader)
+   	  else
+    	local prefixR, ipR,  midfixR, cdrR = string.match(location, "(.+//)([^/]+)(/.+/nf.instances/)(.*)")
+        if (prefixR)
+        then
+          ## Dynamic Producer Registration
+          response_handle:logTrace(string.format("Register Repl: Prefix: %s", prefixR))
+          response_handle:logTrace(string.format("Register Repl: IP:     %s", ipR))
+          response_handle:logTrace(string.format("Register Repl: Midfix: %s", midfixR))
+          response_handle:logTrace(string.format("Register Repl: InstID: %s", cdrR))
+          ## KubeProxy address and NodePort of the spr-frontend service
+          local ownIp = "$config.common.ownIp"
+          local ownPort = "$config.common.ownPort"
+          local ownTlsPort = "$config.common.ownTlsPort"
+          local port
+          ## use TLS port if connection uses TLS
+          if connection:ssl() == nil then
+            port = ownPort
+            prefixR = "http://"
+          else
+            port = ownTlsPort
+            prefixR = "https://"
+          end
+          local locationHeader = string.format("%s%s:%s%s%s", prefixR, ownIp, port, midfixR, cdrR)
+          response_handle:logDebug(string.format("Register Repl: New Location Header: %s", locationHeader));
+          response_handle:headers():remove("location")
+          response_handle:headers():add("location", locationHeader)
+        else
+          response_handle:logInfo("Create/Subs/Reg Repl: cannot modify location header (no match): " .. location)
+        end
+      end
+    end
+  end
+#end
+end
+

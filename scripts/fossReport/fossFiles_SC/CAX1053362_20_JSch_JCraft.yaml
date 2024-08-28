@@ -1,0 +1,42 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2023-11-14 13:30
+FOSS:
+    # Available in Bazaar
+    FOSSName: JSch, JCraft
+    # Available in Bazaar
+    FOSSVersion: 0.1.55
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://sourceforge.net/projects/jsch/files/jsch/{{FOSSVersion}}/jsch-{{FOSSVersion}}.zip
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 20/CAX1053362
+    # Not Available in Bazaar
+    Primary: Y
+    # Available in Bazaar
+    STAKOCode: Not for a new Design
+    # Available in Bazaar
+    STAKOReason: Product verison is older than 54 months
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: "JSch is a pure Java implementation of SSH2. JSch allows you to connect to an sshd server and use port forwarding, X11 forwarding, file transfer, etc., and you can integrate its functionality into your own Java programs."
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: BSD 3-Clause "New" or "Revised" License (BSD-3-Clause)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: BSD 3-Clause "New" or "Revised" License (BSD-3-Clause)
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'com.jcraft:jsch:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ZARISAR Aristeidis Sarras

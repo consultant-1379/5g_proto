@@ -1,0 +1,248 @@
+openapi: 3.0.0
+info:
+  description: Binding Support Management Service API
+  version: "1.PreR15.0.0"
+  title: Nbsf_Management
+servers:
+  - url: '{apiRoot}/nbsf-management/v1'
+    variables:
+      apiRoot:
+        default: https://demohost.com
+        description: apiRoot as defined in subclause 4.4 of 3GPP TS 29.501.
+paths:
+  /pcfBindings:
+    post:
+      operationId: postPcfBindings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PcfBinding'
+      responses:
+        '201':
+          description: The creation of an individual PCF session binding.
+        '400':
+          $ref: '#/components/responses/401'
+        '401':
+          $ref: '#/components/responses/401'
+        '404':
+          $ref: '#/components/responses/404'
+        '411':
+          $ref: '#/components/responses/411'
+        '413':
+          $ref: '#/components/responses/413'
+        '415':
+          $ref: '#/components/responses/415'
+        '500':
+          $ref: '#/components/responses/500'
+        '503':
+          $ref: '#/components/responses/503'
+        default:
+          $ref: '#/components/responses/default'
+    get:
+      operationId: getPcfBindings
+      parameters:
+        - name: ipv4Addr
+          in: query
+          description: The IPv4 Address of the served UE.
+          required: false
+          schema:
+            type: string 
+        - name: ipv6Prefix
+          in: query
+          description: The IPv6 Address Prefix of the served UE.
+          required: false
+          schema:
+            type: string 
+        - name: macAddr48
+          in: query
+          description: The MAC Address of the served UE.
+          required: false
+          schema:
+            type: string 
+        - name: dnn
+          in: query
+          description: DNN.
+          required: false
+          schema:
+            type: string 
+        - name: supi
+          in: query
+          description: Subscription Permanent Identifier.
+          required: false
+          schema:
+            type: string 
+        - name: gpsi
+          in: query
+          description: Generic Public Subscription Identifier
+          required: false
+          schema:
+            type: string 
+        - name: snssai
+          in: query
+          description: The identification of slice.
+          required: false
+          schema:
+            type: string          
+        - name: ipDomain
+          in: query
+          description: The IPv4 address domain identifier.
+          required: false
+          schema:
+            type: string
+        - name: supp-feat
+          in: query
+          description: To filter irrelevant responses related to unsupported features
+          schema:
+            type: string        
+      responses:
+        '200':
+          description: The individual PCF session binding session binding information resource matching the query parameter(s) is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PcfBinding'
+        '204':
+          description: There is no PCF session binding information matching the query parameter(s).        
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '404':
+          $ref: '#/components/responses/404'
+        '414':
+          $ref: '#/components/responses/414'
+        '500':
+          $ref: '#/components/responses/500'
+        '503':
+          $ref: '#/components/responses/503'
+        default:
+          $ref: '#/components/responses/default'
+  /pcfBindings/{bindingId}:
+    delete:
+      operationId: deletePcfBindings
+      parameters:
+        - name: bindingId
+          in: path
+          description: Represents the individual PCF Session Binding.
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: No Content. The Individual PCF session binding information resource is deleted.
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+        '503':
+          $ref: '#/components/responses/503'
+        default:
+          $ref: '#/components/responses/default'
+components:
+  schemas:
+    PcfBinding:
+      type: object
+    ProblemDetails:
+      type: object
+    
+#
+# HTTP responses
+#
+  responses:
+    '400':
+      description: Bad request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    '401':
+      description: Unauthorized
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    '403':
+      description: Forbidden
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    '404':
+      description: Not Found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    '405':
+      description: Method Not Allowed
+    '408':
+      description: Request Timeout
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    '409':
+      description: Conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    '410':
+      description: Gone
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    '411':
+      description: Length Required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    '413':
+      description: Payload Too Large
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    '414':
+      description: URI Too Long
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    '415':
+      description: Unsupported Media Type
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    '500':
+      description: Internal Server Error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    '501':
+      description: Not Implemented
+    '503':
+      description: Service Unavailable
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    '504':
+      description: Gateway Timeout
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    default:
+      description: Generic Error
+          

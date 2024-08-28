@@ -1,0 +1,16 @@
+## Feature Description:
+## 1) All container logs are NOT sent to stdout
+## 2) All services send logs directly to Log Transformer via a logshipper sidecar, syslog client, TCP etc.
+## 3) Log Shipper is deployed as a sidecar container only in the services that use a sidecar (not in those using syslog client etc.)
+
+## Note: All SC services use logshipper sidecar.
+
+global:
+  log:
+    streamingMethod: "direct" # enables direct log streaming
+  logShipper:
+    deployment:
+      type: "sidecar" # deploys Log Shipper as sidecar
+
+eric-cloud-native-nf-additions-log-shipper:
+  enabled: true

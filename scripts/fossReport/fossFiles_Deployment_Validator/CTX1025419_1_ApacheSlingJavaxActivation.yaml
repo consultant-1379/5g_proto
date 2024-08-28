@@ -1,0 +1,38 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2019-07-03 16:00
+FOSS:
+    # Available in Bazaar
+    FOSSName: Apache Sling Javax Activation
+    # Available in Bazaar
+    FOSSVersion: 0.1.0
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://repo1.maven.org/maven2/org/apache/sling/org.apache.sling.javax.activation/{{FOSSVersion}}/org.apache.sling.javax.activation-{{FOSSVersion}}-source-release.zip
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 1/CTX1025419
+    # Not Available in Bazaar
+    PRIMNumber(CTC): CTC 101 5216
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: This module is part of the Apache Sling project. The Apache Sling Javax Activation bundle contributes an OSGi-compatible activation bundle.
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: Apache License 2.0
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'org.apache.sling:org.apache.sling.javax.activation:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ENTNGRG Georgios Antoniou

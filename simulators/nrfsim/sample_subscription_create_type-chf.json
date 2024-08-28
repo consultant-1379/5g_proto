@@ -1,0 +1,1 @@
+{"subscriptionId":"000000-subs0000000","nfStatusNotificationUri":"http://eric-sepp-manager/nnrf-nfm/v1/notifications/nf-status/subscription-type-chf","subscrCond":{"nfType":"CHF"},"reqNotifEvents":["NF_REGISTERED","NF_DEREGISTERED","NF_PROFILE_CHANGED"],"notifCondition":{"monitoredAttributes": [ "/nfType" ]}}

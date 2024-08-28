@@ -1,0 +1,39 @@
+#Copyright 2022 Ericsson GmbH
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "eric-scp.name" . }}-manager
+  labels:
+{{- include "eric-scp.labels" . | indent 4 }}
+    app: {{ template "eric-scp.name" . }}-manager
+  annotations:
+{{- include "eric-scp.helm-annotations" . | indent 4 }}
+{{- include "eric-scp.config-annotations" . | indent 4 }}
+{{- if .Values.metrics.manager.enabled }}
+    prometheus.io/scrape: {{ .Values.metrics.manager.enabled | quote }}
+    prometheus.io/port: {{ .Values.service.manager.server.oam.port | quote }}
+{{- if eq (include "eric-scp.tls" .) "true" }}
+    prometheus.io/scheme: https
+{{- else }}
+    prometheus.io/scheme: http
+{{- end }}
+{{- end }}
+spec:
+  ipFamilyPolicy: PreferDualStack
+  type: ClusterIP
+{{- include "eric-scp.ipfamilies" . | indent 2 }}
+  ports:
+  - protocol: TCP
+    port: {{ .Values.service.manager.server.nrf.port }}
+    targetPort: {{ .Values.service.manager.server.nrf.targetPort }}
+    name: metrics
+  - protocol: TCP
+    port: {{ .Values.service.manager.server.oam.port }}
+    targetPort: {{ .Values.service.manager.server.oam.targetPort }}
+    name: oam-server
+  selector:
+  {{- if .Values.manager.leaderElection.enabled }}
+    leader: {{ template "eric-scp.name" . }}-manager-leader
+  {{- else }}
+    app: {{ template "eric-scp.name" . }}-manager
+  {{- end }}

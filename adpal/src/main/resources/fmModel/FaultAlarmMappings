@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "file://schema/FaultAlarmMappings#",
+  "title": "Fault to Alarm Mappings",
+  "description": "Definition of fault to alarm mappings per service.",
+  "type": "array",
+  "minItems": 1,
+  "items": {
+    "type": "object",
+    "properties": {
+      "faultName": {
+        "description": "This is an identifier uniquely identifying the fault.",
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9_]+$"
+      },
+      "createAlarm": {
+        "description": "Specifies if faults with this name should generate alarms or not.",
+        "type": "boolean",
+        "default": true
+      },
+      "defaultDescription": {
+        "description": "Human readable text providing further insight about the alarm cause and fault reason to ease the problem resolution. This is a default value that can be superseded by run-time information included in fault indications.",
+        "type": "string"
+      },
+      "defaultExpiration": {
+        "description": "The expiration time of the fault in seconds. The fault will automatically be cleared if no new fault indications of the same type within the expiration time. Value 0 means no expiration. This is a default value that can be superseded by run-time information included in fault indications.",
+        "type": "integer",
+        "minimum": 0,
+        "default": 0
+      },
+      "defaultSeverity": {
+        "description": "The perceived severity level of the alarm. This is a default value that can be superseded by run-time information included in fault indications.",
+        "type": "string",
+        "enum": [
+          "Warning",
+          "Minor",
+          "Major",
+          "Critical"
+        ],
+        "default": "Warning"
+      },
+      "vendor": {
+        "description": "The vendor specifies a private enterprise number maintained by IANA (Internet Assigned Numbers Authority) as listed by the URL http://www.iana.org/assignments/enterprise-numbers/enterprise-numbers. In combination with the code, this provides a unique identification of the alarm type. The default value is 193 which is the Ericsson vendor.",
+        "type": "integer",
+        "minimum": 0,
+        "default": 193
+      },
+      "code": {
+        "description": "The code is an unsigned integer. The combination of this number with the vendor number is unique per alarm type.",
+        "type": "integer",
+        "minimum": 0
+      },
+      "category": {
+        "description":"The event type as defined in X.733/X.736. The default value is ProcessingErrorAlarm which could be used with probableCause; 'ApplicationSubsystemError' which has number 158. CommunicationsAlarm is another common category and it could be used with together with probableCause; 'Communications protocol error' which has number 305.",
+        "type": "string",
+        "enum": ["Other",
+          "CommunicationsAlarm",
+          "QualityOfServiceAlarm",
+          "ProcessingErrorAlarm",
+          "EquipmentAlarm",
+          "EnvironmentalAlarm",
+          "IntegrityViolation",
+          "OperationalViolation",
+          "PhysicalViolation",
+          "SecurityServiceOrMechanismViolation",
+          "TimeDomainViolation"],
+        "default": "ProcessingErrorAlarm"
+      },
+      "probableCause": {
+        "description": "Probable cause based on ITU recommendations M.3100, X.733 and X.736, and in ETSI recommendation GSM 12.11. Values are specified in the ERICSSON-ALARM-PC-MIB module (12/155 19-CAA 901 2587/2 Uen A). The default value is 158 which is ApplicationSubsystemError.",
+        "type": "integer",
+        "minimum": 0,
+        "default": 158
+      }
+    },
+    "required": [
+      "faultName"
+    ],
+    "additionalProperties": false
+  }
+}

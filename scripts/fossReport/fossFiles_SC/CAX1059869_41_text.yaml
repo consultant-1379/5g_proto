@@ -1,0 +1,43 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2024-02-16 10:52
+FOSS:
+    # Available in Bazaar
+    FOSSName: text
+    # Available in Bazaar
+    FOSSVersion: 0.14.0
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/golang/text/archive/v0.14.0.tar.gz
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 41/CAX1059869
+    # Not Available in Bazaar
+    Primary: Y
+    # Available in Bazaar
+    STAKOCode: ESW2
+    # Available in Bazaar
+    STAKOReason: ()
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: Text is the repository that holds supplementary Go libraries for text processing, many involving Unicode.
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: BSD 3-Clause (BSD-3-Clause)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: BSD 3-Clause (BSD-3-Clause)
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Statically
+    # Not Available in Bazaar
+    MavenDependency: NO
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    #Comments
+    Comments: NA
+    ReportAuthor: ERAPRPA Prashant Pratik

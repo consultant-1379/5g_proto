@@ -1,0 +1,9 @@
+# Password is set to "rootroot"
+users:
+ - user: admin1
+   groups: [system-admin, system-security-admin, pm-sftp-users]
+   encryptedPass: $1$VKwKcFpi$hhGkUMmYNUJZaNIri1JSb/
+
+ - user: user1
+   groups: [pm-sftp-users]
+   encryptedPass: $1$VKwKcFpi$hhGkUMmYNUJZaNIri1JSb/

@@ -1,0 +1,210 @@
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.23
+#  Date     : 2022-01-20 17:15:00
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2014-2017, 2020-2022
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Exit out of all shells.
+# Input:
+#  -
+#
+# Output:
+#  - 0: Success
+#
+proc exit_all {} {
+    global spawn_id
+    global timeout
+
+    set errorcnt 0
+    set abortcnt 0
+    set endcnt 0
+    set default_timeout $timeout
+    set exitcnt 0
+
+    # Set timeout value to a much lower value to speed up the exit in case of problems
+    # to communicate with the node.
+    set timeout 10
+
+    while 1 {
+        set potential_prompt 0
+        incr exitcnt
+        if {$exitcnt > 50} {
+            puts "It looks like a loop is happening because more than 50 'exit' commands has been sent, to avoid sending >10000 commands in 10 seconds we break the loop here"
+            incr errorcnt
+            break
+        }
+        send -- "exit\r"
+        expect {
+            "Discard changes and continue\? \\\[yes,no\\\]" {
+                # The user have changed something but forgot to commit the changes
+                # for now just discard the changes but step error counter.
+                incr errorcnt
+                send -- "yes\r"
+                exp_continue
+            }
+            "Please type 'yes' or 'no':" {
+                # The user have ended up on a prompt where it needs an answer that we don't know
+                # how to answer, so in order not to end up with a never ending repeating of the
+                # prompt when sending 'exit' we just mark it as an error and drop out of the
+                # 'while 1' loop which might result in dropping the connection.
+                incr errorcnt
+                break
+            }
+            -re "ERROR: At top node, use 'end' to leave configuration mode.*" {
+                # Error from CLISS, the user forgot to do "commit" or "abort" before doing "exit"
+                send -- "end\r"
+                incr errorcnt
+                exp_continue
+            }
+            -re "ERROR: Unable to exit from incomplete object.*" {
+                # Error from CLISS, the user forgot to do "commit" or "abort" before doing "exit"
+                send -- "abort\r"
+                incr errorcnt
+                exp_continue
+            }
+            -re "ERROR: Command not found.*" {
+                # Error from CLISS, something was missing that causes "commit" to fail
+                if { $abortcnt == 0 } {
+                    send -- "abort\r"
+                    incr errorcnt
+                    incr abortcnt
+                    exp_continue
+                } else {
+                    if { $endcnt == 0 } {
+                        send -- "end\r"
+                        incr errorcnt
+                        incr endcnt
+                        exp_continue
+                    } else {
+                        # Just drop the connection
+                    }
+                }
+            }
+            -re "ERROR: Current cardinality of .*" {
+                # Error from CLISS, something went wrong while loading PBR rules
+                send -- "abort\r"
+                incr errorcnt
+                exp_continue
+            }
+            -re "The configuration contains unsaved changes, use \"FORCE\" to quit without saving.*" {
+                # Error from signmcli, something went wrong while loading SS7CAF data
+                send -- "exit:force;\r"
+                incr errorcnt
+                exp_continue
+            }
+            "\n" {
+                # New line received, continue waiting
+                set potential_prompt 0
+                exp_continue
+            }
+            "expert@blade_0_*" {
+                # New prompt, send exit again
+            }
+            "advanced@blade_0_*" {
+                # New prompt, send exit again
+            }
+            "advanced@localhost*" {
+                # New prompt, send exit again
+            }
+            "root@blade_0_*" {
+                # New prompt, send exit again
+            }
+            "blade_0_0 login:*" {
+                # Login prompt for left SCXB, time to get out
+                break
+            }
+            "blade_0_25 login:*" {
+                # Login prompt for right SCXB, time to get out
+                break
+            }
+            "blade_0_*" {
+                # New prompt, send exit again
+            }
+            -re "CMX\[-_\]0\[-_\]\[0-9\]+.*\[#>\]$" {
+                # New prompt, send exit again
+            }
+            -re "CMX_\[LR\]_.+\[#>\]$" {
+                # New prompt, send exit again
+            }
+            -re "blade_0_\[0-9\]+.*\[#>\]$" {
+                # New prompt, send exit again
+            }
+            -re "SC-2-\[1-2\]:.+\[#$\]\[^\n\]*$" {
+                # New BSP, send exit again
+            }
+            -re "^\[\r\]*dmx\[^\n\]*#\[^\n\]*$" {
+                # ISS prompt, send exit again
+            }
+            -re "SC-\[12\] login:.*" {
+                # Login prompt for controller node, time to get out
+                break
+            }
+            -re "PL-\[0-9\]+ login:.*" {
+                # Login prompt for payload node, time to get out
+                break
+            }
+            -re "SC-2-\[12\] login:.*" {
+                # Login prompt for BSP node, time to get out
+                break
+            }
+            -re "SC-\[12\]\[^\n\]*\[\$#\]\[^\n\]*$" {
+                # New prompt, send exit again
+            }
+            -re "PL-\[0-9\]+\[^\n\]*\[\$#\]\[^\n\]*$" {
+                # New prompt, send exit again
+            }
+            -re ">\[^\n\]*$" {
+                # New CLISS prompt, send exit again
+            }
+            -re "bash-\[0-9\]+\.\[0-9\]+\[\$#\] $" {
+                # E.g. bash-3.2#
+                # Special CMX prompt when started from CMX bridge with "start-shell"
+                # Send exit again
+            }
+            -re "^\[^\r\n\]+#$" {
+                # New CMYP CLI prompt, send exit again
+            }
+            -re "(\[^\r\n\]+)$" {
+                # We have received a potential prompt, wait max 1 second for something more to come
+                set timeout 1
+                set potential_prompt 1
+
+                exp_continue
+            }
+            timeout {
+                if { $potential_prompt == 1 } {
+                    # Treat this as a success but first restore timeout value
+                    set timeout 10
+                } else {
+                    # We have either received a "timeout" or "eof" where the spawned
+                    # process have terminated.
+                    break
+                }
+            }
+            eof {
+                # We lost connect where the spawned process have terminated.
+                break
+            }
+        }
+    }
+
+    # Set back the default timeout value
+    set timeout $default_timeout
+
+    return $errorcnt
+}

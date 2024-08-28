@@ -1,0 +1,103 @@
+dn: uid=user1,ou=people,dc=la,dc=adp,dc=ericsson
+changetype: modify
+delete: pwdReset
+
+dn: uid=expert,ou=people,dc=la,dc=adp,dc=ericsson
+changetype: modify
+delete: pwdReset
+
+dn: uid=sys-admin,ou=people,dc=la,dc=adp,dc=ericsson
+changetype: modify
+delete: pwdReset
+
+dn: uid=sec-admin,ou=people,dc=la,dc=adp,dc=ericsson
+changetype: modify
+delete: pwdReset
+
+dn: uid=sys-read,ou=people,dc=la,dc=adp,dc=ericsson
+changetype: modify
+delete: pwdReset
+
+dn: uid=scp-read,ou=people,dc=la,dc=adp,dc=ericsson
+changetype: modify
+delete: pwdReset
+
+dn: uid=scp-sec-admin,ou=people,dc=la,dc=adp,dc=ericsson
+changetype: modify
+delete: pwdReset
+
+dn: uid=scp-admin,ou=people,dc=la,dc=adp,dc=ericsson
+changetype: modify
+delete: pwdReset
+
+dn: uid=user2,ou=people,dc=la,dc=adp,dc=ericsson
+changetype: modify
+delete: pwdReset
+
+dn: uid=bsf-read,ou=people,dc=la,dc=adp,dc=ericsson
+changetype: modify
+delete: pwdReset
+
+dn: uid=bsf-sec-admin,ou=people,dc=la,dc=adp,dc=ericsson
+changetype: modify
+delete: pwdReset
+
+dn: uid=bsf-admin,ou=people,dc=la,dc=adp,dc=ericsson
+changetype: modify
+delete: pwdReset
+
+dn: uid=user-diam,ou=people,dc=la,dc=adp,dc=ericsson
+changetype: modify
+delete: pwdReset
+
+dn: uid=user3,ou=people,dc=la,dc=adp,dc=ericsson
+changetype: modify
+delete: pwdReset
+
+dn: uid=sepp-read,ou=people,dc=la,dc=adp,dc=ericsson
+changetype: modify
+delete: pwdReset
+
+dn: uid=sepp-sec-admin,ou=people,dc=la,dc=adp,dc=ericsson
+changetype: modify
+delete: pwdReset
+
+dn: uid=sepp-admin,ou=people,dc=la,dc=adp,dc=ericsson
+changetype: modify
+delete: pwdReset
+
+dn: uid=user4,ou=people,dc=la,dc=adp,dc=ericsson
+changetype: modify
+delete: pwdReset
+
+dn: uid=csa-read,ou=people,dc=la,dc=adp,dc=ericsson
+changetype: modify
+delete: pwdReset
+
+dn: uid=csa-sec-admin,ou=people,dc=la,dc=adp,dc=ericsson
+changetype: modify
+delete: pwdReset
+
+dn: uid=csa-admin,ou=people,dc=la,dc=adp,dc=ericsson
+changetype: modify
+delete: pwdReset
+
+dn: uid=sc-admin,ou=people,dc=la,dc=adp,dc=ericsson
+changetype: modify
+delete: pwdReset
+
+dn: uid=sc-oam-admin,ou=people,dc=la,dc=adp,dc=ericsson
+changetype: modify
+delete: pwdReset
+
+dn: uid=sc-oam-sec-admin,ou=people,dc=la,dc=adp,dc=ericsson
+changetype: modify
+delete: pwdReset
+
+dn: uid=sc-oam-read-only,ou=people,dc=la,dc=adp,dc=ericsson
+changetype: modify
+delete: pwdReset
+
+dn: uid=oam-internal,ou=people,dc=la,dc=adp,dc=ericsson
+changetype: modify
+delete: pwdReset

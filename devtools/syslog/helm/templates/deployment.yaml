@@ -1,0 +1,96 @@
+# Copyright 2020 5G ESC Challengers Team
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.service.name }}
+  labels:
+    app: {{ .Values.service.name }}
+    role: {{ .Values.service.name }}
+spec:
+  replicas: {{ .Values.spec.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.service.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.service.name }}
+        a: {{ .Values.service.name }}
+    spec:
+      volumes:
+        - name: {{ template "eric-syslog.name" . }}-config-volume
+          configMap:
+            name: {{ template "eric-syslog.name" . }}-configmap
+{{ if .Values.service.tls.enabled }}
+        - name: {{ template "eric-syslog.name" . }}-ca
+          secret:
+            secretName: {{ template "eric-syslog.name" . }}-trusted-cert-secret
+        - name: {{ template "eric-syslog.name" . }}-cert
+          secret:
+            secretName: {{ template "eric-syslog.name" . }}-asymmetric-key-cert-secret
+            items:
+              - key: tls.crt
+                path: servercert.pem
+              - key: tls.key
+                path: serverkey.pem
+{{ end }}
+        - name: cacerts
+          emptyDir: {}
+      {{ if .Values.service.tls.enabled }}      
+      initContainers:
+      - name: setup
+        image: armdockerhub.rnd.ericsson.se/busybox
+        command:
+               - /bin/sh
+               - -c
+               - while true ; do if [ $(cat /run/certs/cert.d/servercert.pem | wc -l) -gt 0 ] ; then echo -e "Found cert  \n $(cat /run/certs/cert.d/servercert.pem)"; exit 0; else echo Retry to find certs after 10 secs ; sleep 10; fi;  done;
+              #  - while true ; do if [ -s /run/certs/cert.d/servercert.pem ];then exit 0; else echo Retry to find certs after 10 secs ; sleep 10; fi;  done;
+        volumeMounts:
+            - name: {{ template "eric-syslog.name" . }}-ca
+              mountPath: /run/certs/ca
+            - name: cacerts
+              mountPath: /run/certs/ca.d
+            - name: {{ template "eric-syslog.name" . }}-cert
+              mountPath: "/run/certs/cert.d"
+      {{ end }}
+      containers:
+        - name: {{ .Values.service.name }}
+          image: {{ template "eric-syslog.registryUrl" . }}/{{ template "eric-syslog.repoPath" . }}/{{ template "eric-syslog.image" . }}:{{ template "eric-syslog.tag" . }}
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                - /bin/sh
+                - -c
+                - cp /run/certs/ca/cacert.pem /run/certs/ca.d; cd /run/certs/ca.d; hash_key=$(openssl x509 -noout -hash -in cacert.pem); ln -sf cacert.pem ${hash_key}.0
+          imagePullPolicy: {{ template "eric-syslog.imagePullPolicy" . }}
+          ports:
+            - containerPort: {{ .Values.service.syslogPort }}
+          {{ if .Values.spec.resources.requests.cpu }}
+          resources:
+            requests:
+              cpu: {{ .Values.spec.resources.requests.cpu | quote }}
+              memory: {{ .Values.spec.resources.requests.memory | quote }}
+            limits:
+              cpu: {{ .Values.spec.resources.limits.cpu | quote }}
+              memory: {{ .Values.spec.resources.limits.memory | quote }}            
+          {{ end }}
+          volumeMounts:
+            - name: {{ template "eric-syslog.name" . }}-config-volume
+              mountPath: "/etc/syslog-ng/"
+{{ if .Values.service.tls.enabled }}
+            - name: {{ template "eric-syslog.name" . }}-ca
+              mountPath: /run/certs/ca
+            - name: cacerts
+              mountPath: /run/certs/ca.d
+            - name: {{ template "eric-syslog.name" . }}-cert
+              mountPath: "/run/certs/cert.d"
+          livenessProbe:
+            exec:
+              command:
+               - /bin/sh
+               - -c
+               - cd /run/certs/cert.d; \[ -s servercert.pem \]
+            periodSeconds: 3
+            failureThreshold: 0
+{{ end }}

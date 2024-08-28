@@ -1,0 +1,24 @@
+# Copyright 2019 Ericsson GmbH
+{{- if and (eq (include "eric-sc-rlf.tls" .) "true") (eq (include "eric-sc-rlf.dcedsc.tls" .) "true") }}
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+  name: eric-sc-rlf-dced-client-cert
+  labels:
+{{- include "eric-sc-rlf.labels" . | indent 4 }}
+    app: {{ .Values.service.rlf.name | quote }}
+  annotations:
+{{- include "eric-sc-rlf.helm-annotations" . | indent 4 }}
+{{- include "eric-sc-rlf.config-annotations" . | indent 4 }}
+spec:
+  kubernetes:
+    generatedSecretName: eric-sc-rlf-dced-client-cert
+  certificate:
+    subject:
+      cn: root
+    issuer:
+      reference: eric-data-distributed-coordinator-ed-sc-ca
+    extendedKeyUsage:
+      tlsClientAuth: true
+      tlsServerAuth: false
+{{- end }}

@@ -1,0 +1,207 @@
+#!/bin/bash 
+
+######### 000) HELP MENU                                          ############
+
+HELP="############ Welcome to the HELP Menu ############## 
+
+      NAME
+             uploadSharedLibs
+
+      SYNOPSIS
+             uploadSharedLibs -l lib_name [-v version]
+             uploadSharedLibs -a 
+
+      DESCRIPTION
+             uploadSharedLibs uploads the libs commonly shared by the dev and test repo 
+             to the maven repository.
+             The script is executed as described in the SYNOPSIS.
+                 
+      OPTIONS
+             -h/--help              Print this help Menu 
+             -l/--lib               Name of the library to be uploaded
+             -a/--all               Flag to upload all libraries and simulators
+             -v/--version           Optional Parameter to specify the version.
+                                    If not specified the version will be automatically
+                                    calculated based on the previous version."
+
+
+if [ "$1" == "-h" ]; then echo -e "$HELP"; exit 1; fi;
+if [ "$1" == "--help" ]; then echo -e "$HELP"; exit 1; fi;
+if [ "$#" == "0" ]; then echo -e "$HELP"; exit 1; fi;
+
+######### 00) SETTING OF THE VARIABLES                            ############
+
+while (( "$#" )); 
+do
+        case "$1" in
+                -l|--lib)
+                export OPTION="$1";
+                case "$2" in
+                        -a|--all|-v|--version|"") echo -e "The parameter succeeding the -l|--lib parameter is not set properly. Aborting."; exit 1; ;;
+                        *) export LIB_NAME="$2"; shift; shift; ;;
+                esac
+                ;;
+                -v|--version)
+                case "$2" in
+                        -a|--all|-l|--lib|"") echo -e "The parameter succeeding the -l|--lib parameter is not set properly. Aborting."; exit 1; ;;
+                        *) export LIB_NAME="$2"; shift; shift; ;;
+                esac
+                ;;
+                -a|--all)
+                export OPTION="$1"; shift; shift;
+                case "$2" in
+                        "") ;;
+                        *) echo "No values allowed after -a/--all parameter"; exit 1 ; shift; shift; ;;
+                esac
+                ;;
+                *) echo -e "'$1' is an invalid parameter."; echo -e "$HELP"; exit 1 ;;
+        esac
+
+done;
+
+
+function uploadLib {
+
+echo "$LIB_NAME";
+
+export LIB_PATH="";
+export LIB_VER_SUF="";
+
+if [ "$LIB_NAME" == "common" ];
+then
+
+	export LIB_PATH="esc/";
+#	export LIB_NAME="esc/$LIB_NAME";
+
+elif [ "$LIB_NAME" == "eric-nrfsim" ] || [ "$LIB_NAME" == "eric-chfsim" ];
+then
+
+	#export LIB_NAME="sim/$LIB_NAME";
+	export LIB_PATH="sim/";
+        export LIB_VER_SUF="-SNAPSHOT"
+
+else
+	echo "no adaptation of LIB_NAME needed"
+fi;
+
+#export REV=$(curl -f -k -H "X-JFrog-Art-Api:${ARM_ARTIFACTORY_TOKEN}" "https://arm.rnd.ki.sw.ericsson.se/artifactory/api/storage/proj-bsf-test-generic-local/com/ericsson/${LIB_PATH}/${LIB_NAME}/?" | tac | grep -m1 -A1 "folder" | grep "uri" | grep -oE "0.[0-9]{1,2}.[0-9]{1,3}-[0-9]{1,3}" | grep -oE "^0.[0-9]{1,2}.[0-9]{1,3}-");
+curl -f -k -H "X-JFrog-Art-Api:${ARM_ARTIFACTORY_TOKEN}" "https://arm.rnd.ki.sw.ericsson.se/artifactory/api/storage/proj-bsf-test-generic-local/com/ericsson/${LIB_PATH}/${LIB_NAME}/?" | tac | grep -A1 "folder" | grep "uri" | grep -oE "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}-[0-9]{1,3}" | sort -n -r > foundVersions;
+
+#export STEP=$(curl -f -k -H "X-JFrog-Art-Api:${ARM_ARTIFACTORY_TOKEN}" "https://arm.rnd.ki.sw.ericsson.se/artifactory/api/storage/proj-bsf-test-generic-local/com/ericsson/${LIB_PATH}/${LIB_NAME}/?" | tac | grep -m1 -A1 "folder" | grep "uri" | grep -oE "0.[0-9]{1,2}.[0-9]{1,3}-[0-9]{1,3}" | grep -oE "[0-9]{1,3}$");
+extractHighest;
+
+export STEP=$((STEP+1));
+
+if [ "$LIB_NAME" != "esc-parent" ];
+then
+
+	$(curl -f -k -H "X-JFrog-Art-Api:${ARM_ARTIFACTORY_TOKEN}" -T "./.m2/repository/com/ericsson/${LIB_PATH}${LIB_NAME}/0.0.1${LIB_VER_SUF}/${LIB_NAME}-0.0.1${LIB_VER_SUF}.jar" "https://arm.rnd.ki.sw.ericsson.se/artifactory/proj-bsf-test-generic-local/com/ericsson/${LIB_PATH}${LIB_NAME}/${MAJ}.${MIN}.${PATCH}-${STEP}/${LIB_NAME}-${MAJ}.${MIN}.${PATCH}-${STEP}.jar")
+
+fi;
+
+$(curl -f -k -H "X-JFrog-Art-Api:${ARM_ARTIFACTORY_TOKEN}" -T "./.m2/repository/com/ericsson/${LIB_PATH}${LIB_NAME}/0.0.1${LIB_VER_SUF}/${LIB_NAME}-0.0.1${LIB_VER_SUF}.pom" "https://arm.rnd.ki.sw.ericsson.se/artifactory/proj-bsf-test-generic-local/com/ericsson/${LIB_PATH}${LIB_NAME}/${MAJ}.${MIN}.${PATCH}-${STEP}/${LIB_NAME}-${MAJ}.${MIN}.${PATCH}-${STEP}.pom")
+
+echo "<${LIB_NAME}.version>${MAJ}.${MIN}.${PATCH}-${STEP}</${LIB_NAME}.version>" >> versionfile.txt
+
+}
+
+function uploadAll {
+
+	for i in adpal cnal utilities common esc-parent eric-chfsim eric-nrfsim;
+	do
+		echo $i;
+                export LIB_NAME="$i";
+                uploadLib;
+	done;
+
+}
+
+function extractHighest {
+
+MAJ="0";
+MIN="0";
+PATCH="0";
+STEP="0";
+
+
+while read line; 
+do
+        TMP_MAJ=`echo $line | cut -d'.' -f1`;
+        echo "TMP_MAJ:$TMP_MAJ";
+        TMP_MIN=`echo $line | cut -d'.' -f2`;
+        echo "TMP_MIN:$TMP_MIN";
+        TMP_PATCH=`echo $line | cut -d'.' -f3 | cut -d'-' -f1`;
+        echo "TMP_PATCH:$TMP_PATCH";
+        TMP_STEP=`echo $line | cut -d'.' -f3 | cut -d'-' -f2`;
+        echo "TMP_STEP:$TMP_STEP";
+
+        if (($TMP_MAJ == $MAJ));
+        then
+            MAJ=$TMP_MAJ
+            if (( $TMP_MIN == $MIN ));
+            then
+                MIN=$TMP_MIN
+                if (( $TMP_PATCH == $PATCH ));
+                then
+                    PATCH=$TMP_PATCH
+                    if (( $TMP_STEP > $STEP ));
+                    then
+                        STEP=$TMP_STEP
+                    fi;
+                elif (( $TMP_PATCH > $PATCH ));
+                then
+                    PATCH=$TMP_PATCH
+                    STEP=$TMP_STEP
+                fi;
+             elif (( $TMP_MIN > $MIN ));
+            then
+                MIN=$TMP_MIN
+                PATCH=$TMP_PATCH
+                STEP=$TMP_STEP
+            fi;
+        elif (( $TMP_MAJ > $MAJ ));
+        then
+            MAJ=$TMP_MAJ
+            MIN=$TMP_MIN
+            PATCH=$TMP_PATCH
+            STEP=$TMP_STEP
+
+        fi;
+
+
+done < ./foundVersions
+
+echo "The highest version found is: $MAJ.$MIN.$PATCH-$STEP"
+  
+}
+
+
+touch versionfile.txt
+
+echo "------------------------" > versionfile.txt
+echo "| New versions for pom |" >> versionfile.txt
+echo "------------------------" >> versionfile.txt
+#echo "| eric-chfsim | 0.0.1-      | 0.0.1-      |"
+
+
+if [ "$OPTION" == "-l" ];
+then
+	uploadLib;
+
+elif [ "$OPTION" == "-a" ];
+then
+
+	echo "Now executing the upload!";
+	uploadAll;
+
+else
+
+	echo "BLA BLA"
+	exit 1
+fi;
+
+cat versionfile.txt
+
+rm -rf versionfile.txt
+
+exit 0;

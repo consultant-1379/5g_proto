@@ -1,0 +1,70 @@
+global:
+  timezone: UTC
+  pullSecret: ""
+  registry:
+    url: "armdocker.rnd.ericsson.se"
+    imagePullPolicy: IfNotPresent
+  externalIPv4:
+    enabled:
+  externalIPv6:
+    enabled:
+  internalIPFamily: ""
+  networkPolicy:
+    enabled: true
+  log:
+    streamingMethod: "indirect" ## supports direct, indirect or dual
+  logShipper:
+    deployment:
+      type: "" # supports sidecar or empty
+  security:
+    tls:
+      enabled: true
+  licenseConsumer:
+    features:
+      monitoring:
+        licenses:
+           enabled: true
+
+eric-sepp:
+  manager:
+    leaderElection:
+      enabled: true
+  tapagent:
+    worker:
+      enabled: false
+    manager:
+      enabled: false
+  tapcollector:
+    worker:
+      enabled: false
+  rlf:
+    enabled: false
+  vtap:
+    enabled: false
+  service:
+    worker:
+      multiVpn:
+        enabled: true
+
+eric-sc-sepp-license-consumer:
+  enabled: true
+
+eric-sc-sepp-log-shipper:
+  # This alias chart name avoids conflicts with the Log Shipper chart defined in other integration charts.
+  # The default values below can be overridden for deployment specific values.
+  # In case sidecar deployment needs to be enabled for LS service, the below 'enabled' parameter is to be set to 'true'
+  # together with the global log streaming parameter
+  enabled: false
+
+# Used for sc-sepp alarm severities configmap
+severities:
+  - service-name: "eric-sepp-manager"
+    highest-severity-reported: "Critical"
+    replication-controller-type: "deployment"
+    minimum-replicas-required: 1
+    high-availability-replicas-required: 0
+  - service-name: "eric-sepp-worker"
+    highest-severity-reported: "Critical"
+    replication-controller-type: "deployment"
+    minimum-replicas-required: 2
+    high-availability-replicas-required: 0

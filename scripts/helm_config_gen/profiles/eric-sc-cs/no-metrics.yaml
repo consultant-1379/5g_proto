@@ -1,0 +1,3 @@
+eric-data-distributed-coordinator-ed-sc:
+  metricsexporter:
+    enabled: false

@@ -1,0 +1,43 @@
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.0
+#  Date     : 2022-03-11 09:50:00
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2022
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Update the global error_list variable with a time stamped message to aid
+# trouble shooting errors.
+#
+# Input:
+#  - Error message (text that can contain multiple lines)
+#
+# Output:
+#  -
+#
+proc debug_message { message } {
+    global debug_list
+
+    set microseconds [clock clicks -microseconds]
+    set length [string length $microseconds]
+    set seconds [string range $microseconds 0 $length-7]
+    set subseconds [string range $microseconds $length-6 $length-1]
+    set time_stamp [clock format $seconds -format {%Y-%m-%d %H:%M:%S}]
+
+    lappend debug_list "\[$time_stamp.$subseconds\] $message"
+
+    return 0
+}

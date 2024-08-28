@@ -1,0 +1,89 @@
+data:
+  Corefile: |
+    .:53 {
+        log
+        errors
+        health {
+            lameduck 5s
+        }
+        ready
+        prometheus :9153
+        kubernetes cluster.local in-addr.arpa ip6.arpa {
+            pods insecure
+            fallthrough in-addr.arpa ip6.arpa
+            ttl 30
+        }
+        file /etc/coredns/psepp1.db 5gc.mnc012.mcc210.3gppnetwork.org
+        file /etc/coredns/psepp21.db pSepp21.5gc.mnc123.mcc321.3gppnetwork.org
+        file /etc/coredns/psepp31.db pSepp31.5gc.mnc234.mcc432.3gppnetwork.org
+        file /etc/coredns/nfudm.db 5gc.mnc567.mcc765.3gppnetwork.org
+        file /etc/coredns/osepp12.db region1.udm.5gc.mnc073.mcc262.3gppnetwork.org
+        file /etc/coredns/osepp3.db region1.amf.5gc.mnc073.mcc262.3gppnetwork.org
+        file /etc/coredns/osepp5.db region1.sepp.5gc.mnc033.mcc206.3gppnetwork.org
+        file /etc/coredns/osepp8.db region1.sepp.5gc.mnc060.mcc240.3gppnetwork.org
+        hosts {
+            fallthrough
+        }
+        forward . dns://10.221.16.10 dns://10.221.16.11 {
+            prefer_udp
+        }
+        cache 30 {
+            success 9984 30
+            denial 9984 30
+        }
+        rewrite name k8s-registry.eccd.local ingress-nginx.ingress-nginx.svc.cluster.local
+        rewrite name auth.eccd.local ingress-nginx.ingress-nginx.svc.cluster.local
+        loop
+        reload
+        loadbalance
+    }
+  nfudm.db: |
+    ; 5gc.mnc567.mcc765.3gppnetwork.org test file
+    5gc.mnc567.mcc765.3gppnetwork.org.            IN      SOA     sns.dns.icann.org. noc.dns.icann.org. 2022082541 7200 3600 1209600 3600
+    nfUdm11.5gc.mnc567.mcc765.3gppnetwork.org.            IN      A       <worker_ip_ipv4>
+    nfUdm12.5gc.mnc567.mcc765.3gppnetwork.org.            IN      A       <worker_ip_ipv4>
+    nfUdm13.5gc.mnc567.mcc765.3gppnetwork.org.            IN      A       <worker_ip_ipv4>
+    nfUdm14.5gc.mnc567.mcc765.3gppnetwork.org.            IN      A       <worker_ip_ipv4>
+    nfUdm11.5gc.mnc567.mcc765.3gppnetwork.org.            IN      AAAA    <worker_ip_ipv6>
+    nfUdm12.5gc.mnc567.mcc765.3gppnetwork.org.            IN      AAAA    <worker_ip_ipv6>
+    nfUdm13.5gc.mnc567.mcc765.3gppnetwork.org.            IN      AAAA    <worker_ip_ipv6>
+    nfUdm14.5gc.mnc567.mcc765.3gppnetwork.org.            IN      AAAA    <worker_ip_ipv6>
+  osepp3.db: |
+    ; region1.amf.5gc.mnc073.mcc262.3gppnetwork.org test file
+    region1.amf.5gc.mnc073.mcc262.3gppnetwork.org.    IN      SOA     sns.dns.icann.org. noc.dns.icann.org. 2022082541 7200 3600 1209600 3600
+    nfamf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org.    IN      A     <worker_ip_ipv4>
+    nfamf.region1.amf.5gc.mnc073.mcc262.3gppnetwork.org.    IN      AAAA  <worker_ip_ipv6>
+  osepp5.db: |
+    ; region1.sepp.5gc.mnc033.mcc206.3gppnetwork.org test file
+    region1.sepp.5gc.mnc033.mcc206.3gppnetwork.org.  IN      SOA     sns.dns.icann.org. noc.dns.icann.org. 2022082541 7200 3600 1209600 3600
+    sepp-be.region1.sepp.5gc.mnc033.mcc206.3gppnetwork.org. IN      A     <worker_ip_ipv4>
+    sepp-be.region1.sepp.5gc.mnc033.mcc206.3gppnetwork.org. IN      AAAA  <worker_ip_ipv6>
+  osepp8.db: |
+    ; region1.sepp.5gc.mnc060.mcc240.3gppnetwork.org test file
+    region1.sepp.5gc.mnc060.mcc240.3gppnetwork.org.  IN      SOA     sns.dns.icann.org. noc.dns.icann.org. 2022082541 7200 3600 1209600 3600
+    sepp-se.region1.sepp.5gc.mnc060.mcc240.3gppnetwork.org. IN      A     <worker_ip_ipv4>
+    sepp-se.region1.sepp.5gc.mnc060.mcc240.3gppnetwork.org. IN      AAAA  <worker_ip_ipv6>
+  osepp12.db: |
+    ; region1.udm.5gc.mnc073.mcc262.3gppnetwork.org test file
+    region1.udm.5gc.mnc073.mcc262.3gppnetwork.org.    IN      SOA     sns.dns.icann.org. noc.dns.icann.org. 2022082541 7200 3600 1209600 3600
+    nfudm1.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org.  IN      A      <worker_ip_ipv4>
+    nfudm2.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org.  IN      A      <worker_ip_ipv4>
+    nfudm1.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org.  IN      AAAA   <worker_ip_ipv6>
+    nfudm2.region1.udm.5gc.mnc073.mcc262.3gppnetwork.org.  IN      AAAA   <worker_ip_ipv6>
+  psepp1.db: |
+    ; 5gc.mnc012.mcc210.3gppnetwork.org test file
+    5gc.mnc012.mcc210.3gppnetwork.org.            IN      SOA     sns.dns.icann.org. noc.dns.icann.org. 2022082541 7200 3600 1209600 3600
+    pSepp11.5gc.mnc012.mcc210.3gppnetwork.org.            IN      A       <worker_ip_ipv4>
+    pSepp11.5gc.mnc012.mcc210.3gppnetwork.org.            IN      AAAA    <worker_ip_ipv6>
+    pSepp12.5gc.mnc012.mcc210.3gppnetwork.org.            IN      A       <worker_ip_ipv4>
+    pSepp12.5gc.mnc012.mcc210.3gppnetwork.org.            IN      AAAA    <worker_ip_ipv6>
+  psepp21.db: |
+    ; psepp21.5gc.mnc123.mcc321.3gppnetwork.org test file
+    psepp21.5gc.mnc123.mcc321.3gppnetwork.org.            IN      SOA     sns.dns.icann.org. noc.dns.icann.org. 2022082541 7200 3600 1209600 3600
+    pSepp21.5gc.mnc123.mcc321.3gppnetwork.org.            IN      A       <worker_ip_ipv4>
+    pSepp21.5gc.mnc123.mcc321.3gppnetwork.org.            IN      AAAA    <worker_ip_ipv6>
+  psepp31.db: |
+    ; pSepp31.5gc.mnc234.mcc432.3gppnetwork.org test file
+    pSepp31.5gc.mnc234.mcc432.3gppnetwork.org.            IN      SOA     sns.dns.icann.org. noc.dns.icann.org. 2022082541 7200 3600 1209600 3600
+    pSepp31.5gc.mnc234.mcc432.3gppnetwork.org.            IN      A       <worker_ip_ipv4>
+    pSepp31.5gc.mnc234.mcc432.3gppnetwork.org.            IN      AAAA    <worker_ip_ipv6>

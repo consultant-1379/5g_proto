@@ -1,0 +1,26 @@
+
+eedcla, 26.05.2020:
+-------------------
+The build/deploy/verification/conclude-pipeline.groovy files are copies of the BsfAppStaging... files.
+Once the migration to the new files is completed the BsfAppStaging... files will be removed.
+
+eedjoz, 23.06.2020:
+-------------------
+
+For the creation of the csar package, 3 scripts have been created: build-csar-pipeline.groovy, deploy-csar-pipeline.groovy and conclude-csar-pipeline.groovy.
+
+Currently they based on the following existing files (column "base scripts", see table below). The new ones are quite similar to the "base scripts" ones; only slightly deviations have taken place where it was needed.
+
+In order for the csar related scripts to work, any change done in any of the "base scripts" ones has to be done as well in the corresponding script for handling csar.
+
+csar related scripts             base scripts
+====================             ============
+build-csar-pipeline.groovy ----> build-pipeline-eedcla.groovy
+deploy-csar-pipeline.groovy ---> BsfAppStagingFile
+conclude-csar-pipeline.groovy -> BsfAppStagingConclude
+
+
+
+
+
+

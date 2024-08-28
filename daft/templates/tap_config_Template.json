@@ -1,0 +1,58 @@
+[
+       {
+            "ServiceName": "eric-bsf-manager",
+            "TAP_ENABLED": false,
+            "TracingMode": "sftp",
+            "TAP_INT": "eth0",
+            "NF_TYPE": "bsf",
+            "TAP_FILTER": "port 80"
+       },
+       {
+            "ServiceName": "eric-bsf-worker",
+            "TAP_ENABLED": false,
+            "TracingMode": "sftp",
+            "TAP_INT": "eth0",
+            "NF_TYPE": "bsf",
+            "TAP_FILTER": "port 80"
+       },
+       {
+            "ServiceName": "eric-scp-manager",
+            "TAP_ENABLED": false,
+            "TracingMode": "sftp",
+            "TAP_INT": "eth0",
+            "NF_TYPE": "scp",
+            "TAP_FILTER": "port 80"
+       },
+       {
+            "ServiceName": "eric-scp-worker",
+            "TAP_ENABLED": false,
+            "TracingMode": "sftp",
+            "TAP_INT": "eth0",
+            "NF_TYPE": "scp",
+            "TAP_FILTER": "port 80"
+       },
+       {
+            "ServiceName": "eric-sepp-manager",
+            "TAP_ENABLED": false,
+            "TracingMode": "sftp",
+            "TAP_INT": "eth0",
+            "NF_TYPE": "sepp",
+            "TAP_FILTER": "port 80"
+       },
+       {
+            "ServiceName": "eric-sepp-worker",
+            "TAP_ENABLED": false,
+            "TracingMode": "sftp",
+            "TAP_INT": "eth0",
+            "NF_TYPE": "sepp",
+            "TAP_FILTER": "port 80"
+       },
+       {
+            "ServiceName": "eric-sc-slf",
+            "TAP_ENABLED": false,
+            "TracingMode": "sftp",
+            "TAP_INT": "eth0",
+            "NF_TYPE": "slf",
+            "TAP_FILTER": "port 80"
+       }
+]

@@ -1,0 +1,95 @@
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.4
+#  Date     : 2018-06-15 13:40:53
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2014,2015,2018
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+source [file join [file dirname [info script]] ../lib/_GEP_send_command.exp]
+
+# -----------------------------------------------------------------------------
+# Connect to the specified node.
+#
+# This subroutine expects that it is already connected to the GEP Linux prompt.
+#
+# Input:
+#  - node name e.g. SC-1, SC-2, PL-3, PL-4 etc.
+#  - root password
+#
+# Output:
+#  -  0: Success, Connected to node
+#     1: Failure, Not able to connect to node
+#    -1: Timeout
+#
+proc GEP_connect_to_node {nodename root_password} {
+    global spawn_id
+
+    set connected 0
+    set errorcnt 0
+
+    # Convert the node name to uppercase
+    set nodename [string toupper $nodename]
+
+    # Connect to the peer node
+    send -- "ssh $nodename\r"
+
+    # Wait for password request from GEP
+    expect {
+        "Connection closed by foreign host*" {
+            # Login failed for some reason
+            incr errorcnt
+            exp_continue
+        }
+        "Could not resolve" {
+            # Login failed for some reason
+            incr error
+            exp_continue
+        }
+        "assword:" {
+            send "$root_password\r"
+            exp_continue
+        }
+        -re "$nodename:\[^\n\]*$" {
+            # We successfully logged in to the wanted node
+            set connected 1
+        }
+        -re "(SC-\[12\]|PL-\[0-9\]+):\[^\n\]*$" {
+            # We didn't log in to wanted node
+            set connected 0
+        }
+        "(yes/no)?" {
+            send "yes\r"
+            exp_continue
+        }
+        timeout {
+            return -1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    # Remove nasty colors by redefining the PS1 prompt
+    GEP_send_command "export PS1='\\h:\\w \\$ '"
+
+    if { $errorcnt > 0 } {
+        return 1
+    } elseif { $connected == 1 } {
+        return 0
+    } else {
+        return 1
+    }
+}

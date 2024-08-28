@@ -1,0 +1,34 @@
+# NRF Simulator
+
+service:
+  name: "eric-nrfsim"
+  type: "NodePort"
+  
+imageCredentials:
+  nrfsim:
+    repoPath: # Overrides repoPath from eric-product-info
+    registry: # Overrides registry from eric-product-info
+      url: # overrides global registry url
+      pullSecret: "regcred" # overrides global image pull policy
+    pullPolicy: Always
+
+spec:
+  replicas: "1"
+  resources:
+    requests:
+      cpu: 0.7
+      memory: 1Gi     
+    limits:
+      cpu: 1
+      memory: 4Gi
+
+certificates:
+   enabled: true
+   secret: nrf-certificates
+   certificate: cert.pem   
+   key: key.pem
+   ca: rootCA.crt
+
+jvm:
+  parameters:
+    nrfsim: "-server -XX:+ErrorFileToStderr -XX:+UseG1GC -XX:MaxRAMPercentage=80"

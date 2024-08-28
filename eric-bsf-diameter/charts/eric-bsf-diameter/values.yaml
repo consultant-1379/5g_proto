@@ -1,0 +1,446 @@
+# Default values for BSF Diameter.
+# This is a YAML-formatted file.
+
+# START. Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC
+adp:
+  data:
+    wcdbcd:
+      hostname: "eric-bsf-wcdb-cd"
+  pm:
+    server:
+      hostname: "eric-pm-server"
+  cm:
+    mediator:
+      hostname: "eric-cm-mediator"
+      port: "5004"
+      subscription:
+        validity: "14400"
+        renewal: "0.25"
+        heartbeat: "300"
+    yangProvider:
+      hostname: "eric-cm-yang-provider"
+  log:
+    transformer:
+      hostname: "eric-log-transformer"
+
+sc:
+  common:
+    etcd:
+      hostname: "eric-data-distributed-coordinator-ed-sc"
+# STOP. Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC
+
+# Container Image & Repository related settings
+
+# START CNCS/NF-SPLIT
+imageCredentials:
+  pullSecret: ""
+  diameterproxygrpc:
+    registry:
+      magePullPolicy:
+      url:
+    repoPath:
+  dsl:
+    registry:
+      imagePullPolicy:
+      url:
+    repoPath:
+  hooklauncher:
+    registry:
+      imagePullPolicy:
+      url:
+    repoPath:
+  logshipper:
+    registry:
+      imagePullPolicy:
+      url:
+    repoPath:
+#START. Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC
+  bsfdiameter:
+    registry:
+      url:
+      imagePullPolicy:
+    repoPath:
+  cddjmxexporter:
+    registry:
+      url: # overrides global registry url
+      imagePullPolicy: # overrides global image pull policy
+    repoPath:
+# STOP. Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC
+# STOP CNCS/NF-SPLIT
+
+# Life Cycle Management related settings
+# START. Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC
+replicaCount: 2
+# STOP. Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC
+
+updateStrategy:
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 1
+  type: RollingUpdate
+
+# START. Addition of cddjmxexpoter + bsfdiameter container
+spec:
+  checkRecoveryTime: true
+  pcfRecoveryTimeTTL: "2592000"
+  cddjmxexporter:
+    image:
+    tag:
+    port: 5556
+    updateStrategy:
+      type: RollingUpdate
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 50m
+      limits:
+        memory: 256Mi
+        cpu: 200m
+
+etcd:
+  endpoint: "https://eric-data-distributed-coordinator-ed-sc:2379"
+  username: "root"
+  secretName: "eric-data-distributed-coordinator-creds-sc"
+  passwordKey: "etcdpasswd"
+# STOP. Addition of cddjmxexpoter container
+# Resource Use related settings
+resources:
+  diameterproxygrpc:
+  # START. Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC
+    limits:
+      cpu: "4"
+      ephemeral-storage:
+      memory: "4Gi"
+    requests:
+      cpu: "0.3"
+      ephemeral-storage:
+      memory: "384Mi"
+  dsl:
+    limits:
+      cpu: "2"
+      ephemeral-storage:
+      memory: "4Gi"
+    requests:
+      cpu: "0.25"
+      ephemeral-storage:
+      memory: "100Mi"
+  bsfdiameter:
+    requests:
+      cpu: "0.35"
+      memory: "320Mi"
+    limits:
+      cpu: "2"
+      memory: "3Gi"
+  # STOP. Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC
+  hooklauncher:
+    limits:
+      cpu: "100m"
+      ephemeral-storage:
+      memory: "100Mi"
+    requests:
+      cpu: "50m"
+      ephemeral-storage:
+      memory: "50Mi"
+  logshipper:
+    limits:
+      cpu: 250m
+      ephemeral-storage:
+      memory: 500Mi
+    requests:
+      cpu: 100m
+      ephemeral-storage:
+      memory: 100Mi
+
+initialConfig:
+  diameterproxygrpc:
+    logFileCount: "2"
+    logFileSize: "1048576"
+  dsl:
+    enableIPv6:
+    linkConnectTimeout: "5000"
+    linkReconnectDeadline: "1000"
+    linkReconnectTimeout: "500"
+    linkTimeout: "5000"
+    logFileCount: "2"
+    logFileSize: "1048576"
+    promclnt:
+      provideLDN: true
+    quic:
+      clientInitialRTT: "100"
+      receiveBufferSize: "0"
+      receiveBufferSizeMax: "2097152"
+      sendBufferSize: "0"
+      sendBufferSizeMax: "2097152"
+      serverInitialRTT: "150"
+    # START. Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC
+    serviceName: "eric-stm-diameter-dsl"  # it should be eric-stm-diameter-dsl if enableControlPlane is true in diameter HC
+    # STOP. Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC
+    tcpKeepAliveEnabled: true
+    transportType: "tcprouter"
+
+configuration:
+  logSeverity:
+    diameterproxygrpc: info
+    dsl: info
+# START. Additions/Changes for BSF
+    bsfdiameter: info
+# STOP. Additions/Changes for BSF
+
+service:
+  endpoints:
+    grpc:
+      tls:
+      # START. Additions/Changes for BSF
+        enforced: optional
+        verifyClientCertificate: optional
+      # STOP. Additions/Changes for BSF
+  port: "20190"
+  portName: "tcp-port"
+  tlsPort: "20191"
+  tlsPortName: "tls-port"
+  # START. Additions/Changes for BSF. CM/DCED TLS Interface, DND-31959
+  diameter:
+    internalIPFamily: "" ## empty, IPv4 or IPv6
+    server:
+      oam:
+        port: "8082"
+        targetPort: "8082"
+# START CNCS/NF-SPLIT
+    # client:
+      # dcedsc:
+        # tls:
+          # enabled: true ## overwrite global tls, enable/disable tls for dcedsc client
+# STOP CNCS/NF-SPLIT
+  # STOP. Additions/Changes for BSF. CM/DCED TLS Interface, DND-31959
+  # START. Addition of cddjmxexpoter container
+  cddjmxexporter:
+    port: "5556"
+    whitelist:
+     - "cdd-diameter:*"
+    blacklist:
+     - "cdd-diameter:name=*ignores*"
+     - "cdd-diameter:name=*speculative*"
+     - "cdd-diameter:name=*bytes*"
+     - "cdd-diameter:name=*connected*"
+     - "cdd-diameter:name=*cache*"
+   # STOP. Addition of cddjmxexpoter container
+
+affinity:
+  podAntiAffinity: "soft"
+  topologyKey: "kubernetes.io/hostname"
+
+annotations: {}
+
+appArmorProfile:
+  diameterproxygrpc:
+    type: ""
+  dsl:
+    type: ""
+  hooklauncher:
+    type: ""
+  logshipper:
+    type: ""
+  type: ""
+
+bandwidth:
+  eric-stm-diameter-proxy-grpc:
+    maxEgressRate:
+
+dslStatisticsStreamerConfig: ""
+
+# New PM scraping pattern, will be deprecated soon (ADPPRG-162182)
+enableNewScrapePattern: false
+
+labels: {}
+
+
+# START - logshipper sidecar
+## Log Shipper (as a sidecar) configuration
+## Used only if global.log.streamingMethod is "direct" or "dual"
+## Log Shipper also requires Log Transformer
+
+log:
+  streamingMethod:
+
+logShipper:
+  input:
+    files:
+      - enabled: true
+        paths:
+          - "dsl/*.json"
+          - "diameterproxygrpc/*.json"
+          - "bsf-diameter.log"
+  logLevel: info
+  output:
+    logTransformer:
+      enabled: true
+      host: eric-log-transformer
+  runAndExit: false
+  shutdownDelay: 0
+  storage:
+    medium: "Memory"
+    path: "/logs"
+    size: "500Mi"
+# STOP - logshipper sidecar
+
+# START. Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC
+networkPolicy:
+  enabled: true
+# STOP. Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC
+
+nodeSelector:
+  eric-stm-diameter-proxy-grpc: {}
+  hooklauncher: {}
+
+pmserver:
+  enableNewScrapePattern:
+  hostname: eric-pm-server
+
+podDisruptionBudget:
+  maxUnavailable: "10%"
+# START. Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC
+  minAvailable: 1
+# STOP. Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC
+# START. Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC
+jvm:
+  parameters:
+    bsfdiameter: "-server -XX:+ErrorFileToStderr -XX:MaxRAMPercentage=50 -XX:+UseG1GC -Dcom.sun.management.jmxremote.port=8090 -Dcom.sun.management.jmxremote.rmi.port=8090 -Djava.rmi.server.hostname=127.0.0.1 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.host=127.0.0.1 -Dsun.net.inetaddr.ttl=0 -Dvertx.cacheDirBase=/vertx/vertx-cache -Dio.netty.native.workdir=/vertx"
+# STOP. Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC
+
+podPriority:
+  diameter-proxy-grpc:
+    priorityClassName: ""
+  hooklauncher:
+    priorityClassName: ""
+
+podSecurityContext:
+  supplementalGroups: []
+
+probes:
+  diameterproxygrpc:
+    livenessProbe:
+      failureThreshold: 3
+      initialDelaySeconds: 1
+      periodSeconds: 5
+      timeoutSeconds: 4
+    startupProbe:
+      failureThreshold: 60
+      initialDelaySeconds: 2
+      periodSeconds: 5
+      timeoutSeconds: 4
+  dsl:
+    livenessProbe:
+      failureThreshold: 3
+      initialDelaySeconds: 1
+      periodSeconds: 5
+      timeoutSeconds: 4
+    startupProbe:
+      failureThreshold: 60
+      initialDelaySeconds: 2
+      periodSeconds: 5
+      timeoutSeconds: 4
+  logshipper:
+    livenessProbe:
+      failureThreshold: 3
+      initialDelaySeconds: 1
+      periodSeconds: 10
+      timeoutSeconds: 10
+# START. Restructure probes according to DR-D1120-012
+  bsfdiameter:
+    port: 8081
+    livenessProbe:
+      initialDelaySeconds: 2
+      periodSeconds: 10
+      timeoutSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+    readinessProbe:
+      initialDelaySeconds: 2
+      periodSeconds: 10
+      timeoutSeconds: 1
+      successThreshold: 1
+      failureThreshold: 3
+# STOP. Restructure probes according to DR-D1120-012
+
+seccompProfile:
+  diameterproxygrpc:
+    type: ""
+  dsl:
+    type: ""
+  hooklauncher:
+    type: ""
+  logshipper:
+    type: ""
+  type: ""
+
+securityPolicy:
+  eric-stm-diameter-proxy-grpc:
+    rolename: eric-stm-diameter-proxy-grpc
+  hooklauncher:
+    rolename: eric-stm-diameter-proxy-grpc
+
+terminationGracePeriodSeconds: 30
+
+tolerations: []
+
+# START. Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC
+cassandra:
+  tls:
+    enabled: true
+    hostnameVerification: false
+  contact_point_replicas: 2
+  keyspace: "nbsf_management_keyspace"
+  throttler:
+    class: "ConcurrencyLimitingRequestThrottler"
+    max_queue_size: "1000"
+    max_concurrent_requests: "50"
+  datacenter: "datacenter1"
+  consistency: "ONE"
+  auth:
+    userSecret: eric-bsf-db-creds
+  metrics:
+    sessionName: "s1"
+    domainName: "cdd-diameter"
+    cqlRequests:
+      highestLatency: "PT5S"
+      significantDigits: "3"
+      refreshInterval: "PT1M"
+    throttling:
+      highestLatency: "PT5S"
+      significantDigits: "3"
+      refreshInterval: "PT1M"
+    cqlMessages:
+      highestLatency: "PT5S"
+      significantDigits: "3"
+      refreshInterval: "PT1M"
+# STOP. Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC
+
+topologySpreadConstraints: []
+
+eric-stm-diameter:
+  enabled: true
+  service:
+    certificates:
+      asymmetricKeyCertificateName: "diameter-key-cert"
+      trustedCertificateListName: "sc-trusted-default-cas"
+  initialConfig:
+    dsl:
+      enableControlPlane: true
+      serviceName: "eric-stm-diameter-dsl"  # it should be eric-stm-diameter-dsl if enableControlPlane is true
+    dsl-pvtb-client:
+      pvtbBaseURI: "http://eric-probe-virtual-tap-broker:8080"
+      domain: "sc-bsf"
+  annotations:
+    ericsson.com/nf-name: "BSF"
+  ah:
+    fiapi:
+      enable: true
+  kafka:
+    hostname: ""
+  resources:
+    diameter:
+      limits:
+        cpu: 2
+    dsl:
+      limits:
+        cpu: 2

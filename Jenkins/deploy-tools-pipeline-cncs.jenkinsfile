@@ -1,0 +1,357 @@
+node('SERO_GIC') {
+	stage('Set agent'){
+		if (env.AGENT_LABEL != null && env.AGENT_LABEL != '') {
+			AGENT_LABEL = "${env.AGENT_LABEL}"
+		} else {
+			if (env.IP_VERSION.contains('6')) {	// move to IPv6 buildslave(s)
+				AGENT_LABEL = '5G-SC-IPv6'
+			} else	{				// move to IPv4 buildslave(s)
+				AGENT_LABEL = '5G-SC'
+			} //if
+		} //if
+	} // stage
+} // node
+
+def HELM_CMD
+def GIT_CMD
+def PYTHON_CMD
+def values
+
+pipeline {
+
+	agent { label "${AGENT_LABEL}"   } // set label according to IP_VERSION parameter
+
+	options{
+		//timeout(time: 30, unit: 'MINUTES')
+		timestamps()
+	} // options
+
+	environment {
+		// Variables needed for the ruleset
+
+		// If no Jenkins job-parameter and no environment variable is defined an access to ${env.<param>} is still possible within the pipe without an exception
+		// because its value is 'null'. But accessing ${<param>} would throw an exception.
+		// The below definitions are therefore not needed, but left in for an easy assignemt of value for test-purposes.
+		NELS = "${env.NELS}"
+		SFTP = "${env.SFTP}"
+		K6 = "${env.K6}"
+		BSFLOAD = "${env.BSFLOAD}"
+		DSCLOAD = "${env.DSCLOAD}"
+		INFLUXDB = "${env.INFLUXDB}"
+		CHFSIM = "${env.CHFSIM}"
+		NRFSIM = "${env.NRFSIM}"
+		SEPPSIM = "${env.SEPPSIM}"
+		REDIS = "${env.REDIS}"
+		SYSLOG = "${env.SYSLOG}"
+		LUMBERJACK = "${env.LUMBERJACK}"
+
+		// Pipe Variables Used in Jenkins
+		DOCKER_RUN="docker run --rm  --user \$(id -u):\$(id -g) "
+		BUILDER_WORK_DIR = " -w ${env.WORKSPACE} "
+		BUILDER_DOCKER_IMAGE = "armdocker.rnd.ericsson.se/sandbox/adp-staging/adp-cicd/bob-py3kubehelmbuilder:fd49f94"
+		BUILDER_DOCKER_VOLUMES ="-v ${env.WORKSPACE}/helm-home:/home/jenkins/.helm -v ${env.WORKSPACE}:${env.WORKSPACE}"
+		BUILDER_DOCKER_ENV = "--env KUBECONFIG=${env.WORKSPACE}/.bob/${env.KUBE_HOST}.admin.conf"
+		HELM_ARGS="--home /home/jenkins/.helm"
+		HELM_RELEASE_NAME="bsf-app-staging-trial"
+		OUTPUT_DIR=".bob"
+
+		KUBE_HOST = "${KUBE_HOST}"
+		NAMESPACE = "${NAMESPACE}"
+	} // environment
+
+	stages {
+		stage('Print env vars') {
+			steps {
+				sh 'printenv | sort'
+				script{
+					// set displayed build name to "BUILD_NUMBER - COMMIT"
+					currentBuild.displayName = "#${BUILD_NUMBER} - ${env.COMMIT}"
+					// set displayed description to "NODE_NAME, KUBE_HOST, CHART_VERSION"
+					currentBuild.description = "${env.NODE_NAME}, ${env.KUBE_HOST}";
+					if ( fileExists("/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh") ) {
+						// Log current job
+						sh "/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh -start"
+					} // if
+				} //script
+			} //steps
+		} //stage
+		stage('Cleaning WS on Buildcomputes'){
+			// only if no other instance of the same job is running in parallel
+			// if another instance is running this procedure would delete its WS and make it failing
+			when {
+				expression { currentBuild.getPreviousBuildInProgress() == null && !(env.NODE_NAME =~ /5G-LMVL/) }
+			}
+			steps{
+				catchError(message: "Timeout while cleaning WS on Buildcomputes", buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+				// remove all (!) content (including the git repo)
+		
+					script {
+						env.AGENT_LABEL="${AGENT_LABEL}"
+						env.LOCAL_PATH = sh(returnStdout: true, script: 'pwd').trim()
+						println "LOCAL PATH: ${LOCAL_PATH}"
+						println "WORKSPACE: ${WORKSPACE}"
+						println "JOB_NAME: ${JOB_NAME}"
+						withCredentials([usernamePassword(credentialsId: 'eiffelesc-user-password', usernameVariable: 'USER', passwordVariable: 'PASSWORD')]) {
+							def NODE_NAMES_LABEL = sh(returnStdout: true, script: 'curl -s -u $USER:$PASSWORD ${JENKINS_URL}/label/${AGENT_LABEL}/api/json?pretty=true | jq -r ".nodes[].nodeName"').trim().split("\n");
+							println "LABEL: ${AGENT_LABEL}, ${NODE_NAMES_LABEL}"
+							for (NODE_NAME_LABEL in NODE_NAMES_LABEL) {
+								env.NODE_NAME_LABEL = "${NODE_NAME_LABEL}"
+								def NODE_OFFLINE = sh(returnStdout: true, script: 'curl -s -u $USER:$PASSWORD ${JENKINS_URL}/computer/${NODE_NAME_LABEL}/api/json?pretty=true | jq -r ".offline"').trim();
+								if ("${NODE_OFFLINE}" == "false" && env.NODE_NAME != "${NODE_NAME_LABEL}" && env.NODE_NAME != "") {
+									def NODE_ADDRESS_LABEL = sh(returnStdout: true, script: 'curl -s -u $USER:$PASSWORD ${JENKINS_URL}/computer/${NODE_NAME_LABEL}/config.xml | awk -F\'[<>]\' \'/<host>/{print $3;exit}\'').trim();
+									env.NODE_ADDRESS_LABEL = "${NODE_ADDRESS_LABEL}"
+									if (env.LOCAL_PATH == env.WORKSPACE && env.WORKSPACE != "" && (env.WORKSPACE.endsWith("${JOB_NAME}"))) {
+										sh '''#!/bin/bash -x
+										echo "PATH: ${WORKSPACE}"
+										echo "REMOTE NODE: ${NODE_NAME_LABEL}"
+										timeout 60 ssh eiffelesc@${NODE_ADDRESS_LABEL} "if [ -d ${WORKSPACE} ]; then rm -rf ${WORKSPACE}/; else echo \"Nothing to clean\"; fi;"
+										'''
+									} //if
+								} //if
+							} //for
+						} //withCredentials
+					} //script
+				} //catchError
+			} //steps
+		} //stage
+		stage('Initialize') {
+			steps {
+				echo ("BRANCH: $BRANCH \n"+
+					"COMMIT: $COMMIT \n"+
+					"KUBE HOST: $KUBE_HOST \n"+
+					"NAMESPACE: $NAMESPACE \n"+
+					"NELS: ${env.NELS}\n"+
+					"SFTP: ${env.SFTP}\n"+
+					"K6: ${env.K6}\n"+
+					"BSFLOAD: ${env.BSFLOAD}\n"+
+					"DSCLOAD: ${env.DSCLOAD}\n"+
+					"INFLUXDB: ${env.INFLUXDB}\n"+
+					"CHFSIM: ${env.CHFSIM}\n"+
+					"NRFSIM: ${env.NRFSIM}\n"+
+					"SEPPSIM: ${env.SEPPSIM}\n"+
+					"REDIS: ${env.REDIS}\n"+
+					"SYSLOG: ${env.SYSLOG}\n"+
+					"LUMBERJACK: ${env.LUMBERJACK}")
+					
+				script {
+					PYTHON_CMD = "${DOCKER_RUN} ${BUILDER_DOCKER_VOLUMES} -w ${env.WORKSPACE} ${BUILDER_DOCKER_ENV} ${BUILDER_DOCKER_IMAGE} python "
+					HELM_CMD = "${DOCKER_RUN} ${BUILDER_DOCKER_VOLUMES} ${BUILDER_DOCKER_ENV} ${BUILDER_DOCKER_IMAGE} helm"
+				} // script
+			} // steps
+		} // stage
+
+		stage('Init bob') {
+			steps {
+				sh 'pwd; ls -ltrh; git submodule update --init --recursive'
+				sh './bob/bob base.clean' // clean .bob and .certificates directory
+				sh './bob/bob base.init:create-output-dir'
+				sh './bob/bob base.init:set-kube-config'
+				sh './bob/bob base.init:set-build-proxy'
+				sh './bob/bob base.init:set-namespace' // align namespace, use namespace from build pipeline or user input
+				sh './bob/bob base.init:set-supreme-properties'
+				sh './bob/bob base.init:api-tokens'
+			} // steps
+		} // stage
+		stage('Check if node deployed'){
+			steps {
+				script{
+					NODE_K6 = (sh(returnStatus: true, script: '(helm list --namespace $NAMESPACE --kubeconfig ~/.kube/$KUBE_HOST.config | grep eric-k6)'))
+					NODE_atmoz_sftp = (sh(returnStatus: true, script: '(helm list --namespace $NAMESPACE --kubeconfig ~/.kube/$KUBE_HOST.config | grep eric-atmoz)'))
+					NODE_nels_simulator = (sh(returnStatus: true, script: '(helm list --namespace $NAMESPACE --kubeconfig ~/.kube/$KUBE_HOST.config | grep eric-test-nels)'))
+					NODE_vtap_recorder = (sh(returnStatus: true, script: '(helm list --namespace $NAMESPACE --kubeconfig ~/.kube/$KUBE_HOST.config | grep eric-vtaprecorder)'))
+				}
+				echo ("Node_K6: $NODE_K6 \n"+
+					"Node_atmoz_sftp: $NODE_atmoz_sftp \n"+
+					"Node_nels: $NODE_nels_simulator \n"+
+					"Node_vtap_recorder: $NODE_vtap_recorder")
+			 } // steps
+		} // stage
+		stage("Install NeLS simulator") {
+			when {
+				allOf {
+					expression { NODE_nels_simulator != 0 }
+					environment name: 'NELS', value: 'true'
+				} // allOf
+			} // when
+			steps {
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-nels.yaml create-nels-dir"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-nels.yaml get-nels"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-nels.yaml deploy"
+			} // steps
+		} // stage
+		stage("Install SFTP atmoz") {
+			when {
+				allOf {
+					expression { NODE_atmoz_sftp != 0 }
+					environment name: 'SFTP', value: 'true'
+				} //allOf
+			} // when
+			steps {
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-sftp.yaml init:sftp-version"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-sftp.yaml image package"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-sftp.yaml push"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-sftp.yaml deploy"
+			 } // steps
+		 } // stage
+		stage("Install k6") {
+			when {
+				allOf {
+					expression { NODE_K6 != 0 }
+					environment name: 'K6', value: 'true'
+				} //allOf
+			} // when
+			steps {
+				// the certificates are installed before packaged into a docker image
+				// init:create-output-dir done already in stage 'Init bob', rule init:set-build-proxy
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-k6.yaml install-certs"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-k6.yaml init:k6-version"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-k6.yaml image:create-certs-dir image:build-k6 push:docker-image-k6"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-k6.yaml package:helm-chart-k6 push:helm-chart-k6"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-k6.yaml deploy:deploy-k6"
+				// The default of 4 replica will be deployed. The number of replica will be scaled-in/out in the verification pipeleine
+				// according to the selected stability suite.
+				// deploy-k6:    4 replica (default)
+				// bsf needs:    1 replica
+				// scp needs:    9 replica
+				// ci  needs:    2 replica
+			} // steps
+		} // stage
+		stage("Install VTAP Recorder") {
+			when {
+				allOf {
+					expression { NODE_vtap_recorder != 0 }
+					environment name: 'VTAP', value: 'true'
+				} // allOf
+			} // when
+			steps {
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-vtaprecorder.yaml init:version"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-vtaprecorder.yaml dtlsServer image package"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-vtaprecorder.yaml push"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-vtaprecorder.yaml deploy"
+			 } // steps
+		 } // stage
+		stage("Install Bsf Load") {
+			when {
+				environment name: 'BSFLOAD', value: 'true'
+			} // when
+			steps {
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-bsf-load.yaml init:bsf-load-version"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-bsf-load.yaml build:bsf-load"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-bsf-load.yaml image:build-bsf-load push:bsf-load-image"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-bsf-load.yaml package:helm-bsf-load push:helm-bsf-load"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-bsf-load.yaml lint:helm-bsf-load"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-bsf-load.yaml deploy:deploy-cert-secrets"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-bsf-load.yaml deploy:bsf-load"
+			} // steps
+		} // stage
+		stage("Install dscload") {
+			when {
+				environment name: 'DSCLOAD', value: 'true'
+			} // when
+			steps {
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-dscload.yaml init:dscload-version"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-dscload.yaml init:set-artifactory-token"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-dscload.yaml image:build-dscload; ./bob/bob -r rulesets/ruleset2.0-eric-dscload.yaml push:docker-image-dscload"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-dscload.yaml package:helm-chart-dscload; ./bob/bob -r rulesets/ruleset2.0-eric-dscload.yaml push:helm-chart-dscload"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-dscload.yaml deploy:deploy-dscload"
+			} // steps
+		} // stage
+		stage("Install influxDB") {
+			when {
+				environment name: 'INFLUXDB', value: 'true'
+			} // when
+			steps {
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-k6.yaml init:influxdb-version"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-k6.yaml image:build-influxdb; ./bob/bob -r rulesets/ruleset2.0-eric-k6.yaml push:docker-image-influxdb"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-k6.yaml package:helm-chart-influxdb; ./bob/bob -r rulesets/ruleset2.0-eric-k6.yaml push:helm-chart-influxdb"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-k6.yaml deploy:deploy-influxdb"
+			} // steps
+		} // stage
+		stage("Install CHFsim") {
+			when {
+				environment name: 'CHFSIM', value: 'true'
+			} // when
+			steps {
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-chfsim.yaml init:chfsim-version"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-chfsim.yaml build"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-chfsim.yaml image:build-eric-chfsim"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-chfsim.yaml package:copy-helm-chart-chfsim"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-chfsim.yaml download:download-chfsim;"
+				sh "./bob/bob -r ruleset2.0-eric-esc.yaml install-certificates:chfsim"
+				sh "cp eric-chfsim-* .bob/.; ./bob/bob -r rulesets/ruleset2.0-eric-chfsim.yaml deploy:deploy-chfsim;"
+			} // steps
+		} // stage
+		stage("Install NRFsim") {
+			// Stability test: CSA, SCP, SCP+SLF+RLF, SEPP
+			when {
+				environment name: 'NRFSIM', value: 'true'
+			} // when
+			steps {
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-nrfsim.yaml init:version init:nrfsim-cxu-number init:nrfsim-cxu-rev-number"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-nrfsim.yaml build"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-nrfsim.yaml image"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-nrfsim.yaml package-full"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-nrfsim.yaml push:docker-image"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-nrfsim.yaml push:helm-chart"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-nrfsim.yaml download:download-nrfsim"
+				sh "./bob/bob -r ruleset2.0-eric-esc.yaml install-certificates:nrfsim"
+				sh "cp eric-nrfsim-* .bob/.; ./bob/bob -r rulesets/ruleset2.0-eric-nrfsim.yaml deploy;"
+			} // steps
+		} // stage
+		stage("Install SEPPsim") {
+			// Stability test: CSA or SCP
+			when {
+				environment name: 'SEPPSIM', value: 'true'
+			} // when
+			steps {
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-seppsim.yaml init:version init:seppsim-cxu-number init:seppsim-cxu-rev-number"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-seppsim.yaml build"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-seppsim.yaml image"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-seppsim.yaml package-full"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-seppsim.yaml push:docker-image"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-seppsim.yaml push:helm-chart"
+				sh "./bob/bob -r rulesets/ruleset2.0-eric-seppsim.yaml download:download-seppsim;"
+				sh "./bob/bob -r ruleset2.0-eric-esc.yaml install-certificates:seppsim"
+				sh "cp eric-seppsim-* .bob/.; ./bob/bob -r rulesets/ruleset2.0-eric-seppsim.yaml deploy;"
+			} // steps
+		} // stage
+	} // stages
+	post{
+		always {
+			script {
+				// Log current job
+				if ( fileExists("/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh") ) {
+					sh "/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh -stop"
+				} // if
+			} // script
+		} // always
+		success {
+			cleanWs()
+		} // success
+		failure {
+			script {
+				sh "./scripts/collect_ADP_logs.sh -c ~/.kube/${env.KUBE_HOST}.config -n `cat .bob/var.namespace`"
+				archiveArtifacts allowEmptyArchive: true, artifacts: 'logs_*.tgz', onlyIfSuccessful: false
+				// do not undeploy for troubleshooting purposes
+				if ((env.CLEANCLUSTER != 'FALSE') || ("$TEST_TYPE".contains("SmokeTest"))) {
+					sh "./scripts/force-clean.sh --cluster ${env.KUBE_HOST} --namespace `cat .bob/var.namespace` --delete-namespace --debug"
+					//cleanCluster(env.KUBE_HOST, env.NAMESPACE);
+				} // if
+				// only send mail for smoketest
+				if ("$TEST_TYPE".contains("SmokeTest")) {
+					COLOR = "<body style=\"background-color: LightYellow;\">"
+					emailext body: "$COLOR" + "Hi ${env.COMMITTER},<p> the deploy failed, maybe due to your commit? <p> Please check:<br>${env.BUILD_URL}<br><br>Thank you for pushing.<br><br>BR,<br>SC CICD Auto",
+					mimeType: 'text/html',
+					subject: "5G Smoke-test deploy failed for ${env.PROJECT} : ${COMMIT}",
+					to: "${env.EMAIL_COMMITTER}, ${env.EMAIL_OTHER}"  // mail to committers and respective Teams channel
+				} // if
+			} // script
+		} // failure
+		aborted {
+			script {
+				//cleanCluster(env.KUBE_HOST, env.NAMESPACE);
+				sh "./scripts/force-clean.sh --cluster ${env.KUBE_HOST} --namespace `cat .bob/var.namespace` --delete-namespace --debug"
+			} // script
+		} // aborted
+	} // post
+} // pipeline

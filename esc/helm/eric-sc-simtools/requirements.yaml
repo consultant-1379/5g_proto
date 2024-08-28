@@ -1,0 +1,49 @@
+dependencies:
+  - condition: global.k6.enabled
+    name: eric-k6
+    repository: https://armdocker.rnd.ericsson.se/artifactory/proj-5g-bsf-generic-local/ 
+    version: 1.5.25-ha4d05e825.dirty
+  - condition: global.sftp.enabled
+    name: eric-atmoz-sftp
+    repository: https://armdocker.rnd.ericsson.se/artifactory/proj-5g-bsf-generic-local/
+    version: 1.5.25-ha4d05e825.dirty
+  - condition: global.syslog.enabled
+    name: eric-syslog
+    repository: https://armdocker.rnd.ericsson.se/artifactory/proj-5g-bsf-generic-local/
+    version: 1.5.25-ha4d05e825.dirty
+  - condition: global.nrfsim.enabled
+    name: eric-nrfsim
+    repository: https://armdocker.rnd.ericsson.se/artifactory/proj-5g-bsf-generic-local/
+    version: 1.5.25-ha4d05e825.dirty
+  - condition: global.chfsim.enabled
+    name: eric-chfsim
+    repository: https://armdocker.rnd.ericsson.se/artifactory/proj-5g-bsf-generic-local/ 
+    version: 1.5.25-ha4d05e825.dirty
+  - condition: global.seppsim.enabled
+    name: eric-seppsim
+    repository: https://armdocker.rnd.ericsson.se/artifactory/proj-5g-bsf-generic-local/ 
+    version: 1.5.25-ha4d05e825.dirty
+  - condition: global.chfsim.enabled 
+    name: eric-chfsim-redis
+    repository: https://armdocker.rnd.ericsson.se/artifactory/proj-5g-bsf-generic-local/ 
+    version: 1.5.25-ha4d05e825.dirty
+  - condition: global.dscload.enabled
+    name: eric-dscload
+    repository: https://armdocker.rnd.ericsson.se/artifactory/proj-5g-bsf-generic-local/
+    version: 1.5.25-ha4d05e825.dirty
+  - condition: global.influxdb2.enabled
+    alias: eric-influxdb2
+    name: influxdb2
+    repository: https://armdocker.rnd.ericsson.se/artifactory/proj-5g-bsf-generic-local/
+    version: 1.5.25-ha4d05e825.dirty
+  - condition: global.telegraf.enabled
+    alias: eric-telegraf
+    name: telegraf
+    repository: https://armdocker.rnd.ericsson.se/artifactory/proj-5g-bsf-generic-local/
+    version: 1.5.25-ha4d05e825.dirty
+  - condition: global.grafana.enabled
+    alias: eric-grafana
+    name: grafana
+    repository: https://armdocker.rnd.ericsson.se/artifactory/proj-5g-bsf-generic-local/
+    version: 1.5.25-ha4d05e825.dirty
+

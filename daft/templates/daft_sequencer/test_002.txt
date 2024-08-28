@@ -1,0 +1,67 @@
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.0
+#  Date     : 2023-12-05 10:05:00
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2023
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+################################################################################
+# This file is used by the daft_sequencer.pl script and it contains commands to
+# be executed one-after-another.
+#
+# The file will test some remote commands.
+#
+# NOTE:
+# This should be executed on the VDI.
+################################################################################
+
+# Environment variables
+# ---------------------
+
+# Change these on the command line if you want a different value, using -e DAFT_XXXX=yyyy
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_CMD_001=yes
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_CMD_002=yes
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_CMD_003=yes
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_CMD_004=yes
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_CMD_005=yes
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_CMD_006=yes
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_CMD_007=yes
+ENVIRONMENT_VARIABLE: DAFT_SLEEP_DELAY=5
+ENVIRONMENT_VARIABLE: DAFT_SSH_CMD="ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o BatchMode=Yes -o loglevel=ERROR"
+ENVIRONMENT_VARIABLE: DAFT_SSH_USER="eccd"
+
+# The used IP-address should normally be the one from the network config parameter 'cluster_ssh_vip'
+#ENVIRONMENT_VARIABLE: DAFT_SSH_IP_SC="10.155.195.148"
+
+# The used IP-address should normally be the one from the network config parameter 'cluster_ssh_vip_tools'
+#ENVIRONMENT_VARIABLE: DAFT_SSH_IP_TOOLS="10.155.195.148"
+
+# Script variables
+# ----------------
+
+# Always stop on error when executing these commands
+SCRIPT_VARIABLE: stop-on-error=yes
+
+# Execute commands
+# ----------------
+
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_CMD_001="yes"     $DAFT_SSH_CMD $DAFT_SSH_USER@$DAFT_SSH_IP_SC     hostname && date && sleep $DAFT_SLEEP_DELAY && date
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_CMD_002="yes"     $DAFT_SSH_CMD $DAFT_SSH_USER@$DAFT_SSH_IP_TOOLS  hostname && date && sleep $DAFT_SLEEP_DELAY && date
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_CMD_003="yes"                                                      hostname && date && sleep $DAFT_SLEEP_DELAY && date
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_CMD_004="yes"     send_command_to_ssh.exp --user=$DAFT_SSH_USER --ip=$DAFT_SSH_IP_SC --password='notneeded' --command="/home/eccd/daft/perl/bin/execute_playlist.pl -p 001_Deploy_SC -h"
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_CMD_005="yes"     send_command_to_ssh.exp --user=$DAFT_SSH_USER --ip=$DAFT_SSH_IP_SC --password='notneeded' --command="/home/eccd/daft/perl/bin/execute_playlist.pl -p 001_Deploy_SC -j Show_Help_For_001_Playlist -h" --command="hostname"
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_CMD_006="yes"     send_command_to_ssh.exp --user=$DAFT_SSH_USER --ip=$DAFT_SSH_IP_TOOLS --password='notneeded' --command='/home/eccd/daft/perl/bin/execute_playlist.pl -p 001_Deploy_SC -h'
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_CMD_007="yes"     send_command_to_ssh.exp --user=$DAFT_SSH_USER --ip=$DAFT_SSH_IP_TOOLS --password='notneeded' --command='/home/eccd/daft/perl/bin/execute_playlist.pl -p 001_Deploy_SC -j Show_Help_For_001_Playlist -h' --command='hostname'

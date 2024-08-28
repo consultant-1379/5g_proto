@@ -1,0 +1,163 @@
+[
+  {
+    "faultName": "MissingCertificate",
+    "vendor": 193,
+    "code": 12124161,
+    "defaultSeverity": "Critical",
+    "defaultDescription": "An asymmetric key or/and a certificate authority are unavailable which can result in the failure of the secure connection that uses them.",
+    "category": "Other",
+    "specificProblem": "SEPP, Certificate Missing"
+  },
+  {
+    "faultName": "SeppNfServiceInstanceNotReachable",
+    "vendor": 193,
+    "code": 12124162,
+    "defaultSeverity": "Major",
+    "defaultDescription": "The NF Service Instance is not reachable for service requests",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SEPP, NF Service Instance Not Reachable"
+  },
+  {
+    "faultName": "SeppHighLoad",
+    "createAlarm" : true,
+    "vendor": 193,
+    "code": 12124163,
+    "defaultExpiration" : 0,
+    "defaultSeverity": "Major",
+    "defaultDescription": "SEPP load has passed a defined threshold",
+    "probableCause": 207,
+    "category": "Other",
+    "specificProblem": "SEPP, High Load"
+  },
+  {
+    "faultName": "SeppNrfGroupUnavailable",
+    "vendor": 193,
+    "code": 12124164,
+    "defaultSeverity": "Major",
+    "defaultDescription": "The NRF-group is unavailable",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SEPP, NRF Group Unavailable"
+  },
+  {
+    "faultName": "SeppBadConfiguration",
+    "vendor": 193,
+    "code": 12124165,
+    "defaultSeverity": "Major",
+    "defaultDescription": "The configuration provided is faulty",
+    "category": "ProcessingErrorAlarm",
+    "specificProblem": "SEPP, Bad Configuration"
+  },
+  {
+    "faultName": "SeppUnresolvableHosts",
+    "vendor": 193,
+    "code": 12124166,
+    "defaultSeverity": "Major",
+    "defaultDescription": "One or more hostnames cannot be resolved",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SEPP, Unresolvable Hosts"
+   },
+  {
+    "faultName": "SeppHighNumberOfIngressTcpConnections",
+    "createAlarm" : true,
+    "vendor": 193,
+    "code": 12124167,
+    "defaultExpiration" : 0,
+    "defaultSeverity": "Minor",
+    "defaultDescription": "The open incoming TCP connections have passed a defined threshold",
+    "probableCause": 207,
+    "category": "Other",
+    "specificProblem": "SEPP, High number of open incoming TCP connections"
+  },
+  {
+    "faultName": "SeppMessagesDroppedByGlobalRateLimiting",
+    "createAlarm" : true,
+    "vendor": 193,
+    "code": 12124168,
+    "defaultExpiration" : 0,
+    "defaultSeverity": "Warning",
+    "defaultDescription": "The percentage of dropped messages forwarded from SEPP to RLF has exceeded the predefined limit",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SEPP, Messages Dropped by Global Rate Limiting"
+  },
+  {
+    "faultName": "SeppMessagesRejectedByGlobalRateLimiting",
+    "createAlarm" : true,
+    "vendor": 193,
+    "code": 12124169,
+    "defaultExpiration" : 0,
+    "defaultSeverity": "Warning",
+    "defaultDescription": "The percentage of rejected messages forwarded from SEPP to RLF has exceeded the predefined limit",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SEPP, Messages Rejected by Global Rate Limiting"
+  },
+  {
+    "faultName": "SeppEnvoySegmentsDroppedRatio",
+    "createAlarm" : true,
+    "vendor": 193,
+    "code": 12124170,
+    "defaultExpiration" : 0,
+    "defaultSeverity": "Major",
+    "defaultDescription": "Envoy segments dropped ratio",
+    "probableCause": 207,
+    "category": "Other",
+    "specificProblem": "SEPP, Envoy segments dropped ratio"
+  },
+  {
+    "faultName": "SeppInvalidDiscoveredNfInstance",
+    "createAlarm" : true,
+    "vendor": 193,
+    "code": 12124171,
+    "defaultExpiration" : 0,
+    "defaultSeverity": "Major",
+    "defaultDescription": "Invalid discovered NF instance not updated in database",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SEPP, Invalid discovered NF instance"
+  },
+  {
+    "faultName": "SeppNfDiscoveryDataUpdateError",
+    "createAlarm" : true,
+    "vendor": 193,
+    "code": 12124172,
+    "defaultExpiration" :0,
+    "defaultSeverity": "Major",
+    "defaultDescription": "Unable to update discovered data in database",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SEPP, NF discovery data update error"
+  },
+  {
+    "faultName": "SeppNfInstanceUnavailable",
+    "vendor": 193,
+    "code": 12124173,
+    "defaultSeverity": "Major",
+    "defaultDescription": "The NF failures have exceeded the configured threshold",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SEPP, NF Instance Unavailable"
+  },
+  {
+    "faultName": "SeppSecurityCapabilityNegotiationFailure",
+    "vendor": 193,
+    "code": 12124174,
+    "defaultSeverity": "Critical",
+    "defaultDescription": "The Security Capability Negotiation for the SEPP Instance failed",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SEPP, Security Capability Negotiation Failure"
+  },
+  {
+    "faultName": "SeppNfServiceInstanceActiveHealthCheckFailed",
+    "vendor": 193,
+    "code": 12124175,
+    "defaultSeverity": "Major",
+    "defaultDescription": "The active health check for the NF Service Instance failed",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SEPP, NF Service Instance active health check failed"
+  },
+  {
+    "faultName": "MissingExternalCertificate",
+    "vendor": 193,
+    "code": 12124176,
+    "defaultSeverity": "Critical",
+    "defaultDescription": "An asymmetric key or/and a certificate authority used by a SEPP external connection are unavailable which can result in the failure of the secure connection that uses them.",
+    "category": "Other",
+    "specificProblem": "SEPP, External Certificate Missing"
+  }
+]

@@ -1,0 +1,12 @@
+* Added sepp.ericsson.se:30017:10.63.136.180 to DNS cache
+* Could not resolve host: POST
+* Closing connection 0
+curl: (6) Could not resolve host: POST
+* RESOLVE sepp.ericsson.se:30017 is - old addresses discarded!
+* Added sepp.ericsson.se:30017:10.63.136.180 to DNS cache
+* Hostname sepp.ericsson.se was found in DNS cache
+*   Trying 10.63.136.180:30017...
+* connect to 10.63.136.180 port 30017 failed: Connection refused
+* Failed to connect to sepp.ericsson.se port 30017: Connection refused
+* Closing connection 1
+curl: (7) Failed to connect to sepp.ericsson.se port 30017: Connection refused

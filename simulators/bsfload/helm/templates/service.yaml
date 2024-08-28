@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.service.name }}
+  labels:
+    app: {{ .Values.service.name }}
+    role: {{ .Values.service.name }}
+spec:
+  {{ if eq (int (index .Values.configuration "ip-version")) 4}}
+  ipFamilies:
+  - IPv4
+  {{ else }}
+  ipFamilies:
+  - IPv6
+  {{ end }}
+  ports:
+  - name: "http-port"
+    port: {{ .Values.spec.port }}
+    protocol: TCP
+    targetPort: {{ .Values.spec.port }}
+  {{- if .Values.metrics.enabled }}
+  - name: "metrics"
+    port: {{ .Values.metrics.port }}
+    protocol: TCP
+    targetPort: {{ .Values.metrics.port }}
+  {{- end }}
+  selector:
+    app: eric-bsf-load
+  type: {{ .Values.service.type }}
+status:
+  loadBalancer: {}

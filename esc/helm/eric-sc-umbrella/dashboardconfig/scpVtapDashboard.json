@@ -1,0 +1,200 @@
+{
+    "namespace": "sc",
+    "dashboards": [
+        {
+            "_id": "scp_vtap_traffic",
+            "title": "SCP vTAP View",
+            "order": 28,
+            "apps": [
+                "statusOverview"
+            ],
+            "dashboardTreeView": { "tree": [["SCP"]] },
+            "tiles": [
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "scp_pvtb_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "scp_pvtb_rate_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "scp_tapcollector_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "scp_tapcollector_rate_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "scp_envoy_tap_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "scp_envoy_tap_rate_timeline"
+                },
+                {
+                    "xSize": 10,
+                    "ySize": 2,
+                    "variables": {
+                      "podListFilterProp": "metadata.name",
+                      "podListFilterRegex": "^eric-scp-|^eric-probe-virtual-tap-broker-"
+                    },
+                    "widget": "sc:pod_table"
+                }
+            ]
+        }
+    ],
+    "widgets": [
+        {
+            "_id": "scp_pvtb_timeline",
+            "widgetType": "timeline",
+            "title": "Timeline [MPS] - Tapped Packets in Probe Virtual Tap Broker (PVTB)",
+            "sources": [
+                {
+                    "source": "scp_pvtb_received_total"
+                },
+                {
+                    "source": "scp_pvtb_send_total"
+                }
+            ]
+        },
+        {
+            "_id": "scp_pvtb_rate_timeline",
+            "widgetType": "timeline",
+            "title": "Timeline [%] - Tapping Failures in Probe Virtual Tap Broker (PVTB)",
+            "sources": [
+                {
+                    "source": "scp_pvtb_received_failure_ratio"
+                },
+                {
+                    "source": "scp_pvtb_send_failure_ratio"
+                }
+            ]
+        },
+        {
+            "_id": "scp_tapcollector_timeline",
+            "widgetType": "timeline",
+            "title": "Timeline [MPS] - Tapped Packets in SCP Worker (Tapcollector)",
+            "sources": [
+                {
+                    "source": "scp_tapcollector_in_tap_frames_total"
+                },
+                {
+                    "source": "scp_tapcollector_sent_frames_total"
+                }
+            ]
+        },
+        {
+            "_id": "scp_tapcollector_rate_timeline",
+            "widgetType": "timeline",
+            "title": "Timeline [%] - Tapping Failures in SCP Worker (Tapcollector)",
+            "sources": [
+                {
+                    "source": "scp_tapcollector_recv_frames_failure_ratio"
+                },
+                {
+                    "source": "scp_tapcollector_sent_frames_failure_ratio"
+                }
+            ]
+        },
+        {
+            "_id": "scp_envoy_tap_timeline",
+            "widgetType": "timeline",
+            "title": "Timeline [MPS] - SCP Worker Segments Tapped (Envoy)",
+            "sources": [
+                {
+                    "source": "scp_envoy_ingress_vtap_segments_tapped"
+                },
+                {
+                    "source": "scp_envoy_egress_vtap_segments_tapped"
+                }
+            ]
+        },
+        {
+            "_id": "scp_envoy_tap_rate_timeline",
+            "widgetType": "timeline",
+            "title": "Timeline [%] - SCP Worker Segments Dropped (Envoy)",
+            "sources": [
+                {
+                    "source": "scp_envoy_segment_tapped_failure_ratio"
+                }
+            ]
+        }
+    ],
+    "sources": [
+        {
+            "_id": "scp_pvtb_received_total",
+            "sourceType": "prometheus",
+            "query": "scp_pvtb_received_total_rate or vector(0)",
+            "label": "Received [MPS]"
+        },
+        {
+            "_id": "scp_pvtb_send_total",
+            "sourceType": "prometheus",
+            "query": "scp_pvtb_send_total_rate or vector(0)",
+            "label": "Sent [MPS]"
+        },
+        {
+            "_id": "scp_pvtb_received_failure_ratio",
+            "sourceType": "prometheus",
+            "query": "scp_pvtb_received_failure_ratio",
+            "label": "Received [%]"
+        },
+        {
+            "_id": "scp_pvtb_send_failure_ratio",
+            "sourceType": "prometheus",
+            "query": "scp_pvtb_send_failure_ratio",
+            "label": "Sent [%]"
+        },
+        {
+            "_id": "scp_tapcollector_in_tap_frames_total",
+            "sourceType": "prometheus",
+            "query": "scp_tapcollector_in_tap_frames_total_rate or vector(0)",
+            "label": "Received [MPS]"
+        },
+        {
+            "_id": "scp_tapcollector_sent_frames_total",
+            "sourceType": "prometheus",
+            "query": "scp_tapcollector_sent_frames_total_rate or vector(0)",
+            "label": "Sent [MPS] "
+        },
+        {
+            "_id": "scp_tapcollector_recv_frames_failure_ratio",
+            "sourceType": "prometheus",
+            "query": "scp_tapcollector_recv_frames_failure_ratio",
+            "label": "Received [%]"
+        },
+        {
+            "_id": "scp_tapcollector_sent_frames_failure_ratio",
+            "sourceType": "prometheus",
+            "query": "scp_tapcollector_sent_frames_failure_ratio",
+            "label": "Sent [%]"
+        },
+        {
+            "_id": "scp_envoy_ingress_vtap_segments_tapped",
+            "sourceType": "prometheus",
+            "query": "scp_envoy_ingress_vtap_segments_tapped_rate or vector(0)",
+            "label": "Ingress Segments Tapped [MPS]"
+        },
+        {
+            "_id": "scp_envoy_egress_vtap_segments_tapped",
+            "sourceType": "prometheus",
+            "query": "scp_envoy_egress_vtap_segments_tapped_rate or vector(0)",
+            "label": "Egress Segments Tapped [MPS]"
+        },
+        {
+            "_id": "scp_envoy_segment_tapped_failure_ratio",
+            "sourceType": "prometheus",
+            "query": "scp_envoy_segment_tapped_failure_ratio",
+            "label": "Segments Dropped [%]"
+        }
+    ]
+}

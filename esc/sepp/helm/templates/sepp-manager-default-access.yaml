@@ -1,0 +1,29 @@
+{{- if .Values.global -}}
+{{- if and .Values.global.networkPolicy .Values.networkPolicy -}}
+{{- if and .Values.global.networkPolicy.enabled .Values.networkPolicy.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Values.service.manager.name }}-default-access
+  labels:
+{{- include "eric-sepp.labels" . | indent 4 }}
+  annotations:
+{{- include "eric-sepp.helm-annotations" . | indent 4 }}
+{{- include "eric-sepp.config-annotations" . | indent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Values.service.manager.name }}
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          {{ .Values.service.manager.name }}-access: "true"
+    ports:
+    - port: {{ .Values.service.manager.server.nrf.targetPort }}
+      protocol: TCP
+{{- end }}
+{{- end }}
+{{- end }}

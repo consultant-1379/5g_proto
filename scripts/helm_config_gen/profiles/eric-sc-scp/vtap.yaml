@@ -1,0 +1,8 @@
+eric-scp:
+  tapcollector:
+    worker:
+      enabled: true
+    tappedData:
+      chunkSizeLimit: 600 
+  vtap:
+    enabled: true

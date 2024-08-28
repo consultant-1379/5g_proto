@@ -1,0 +1,122 @@
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.13
+#  Date     : 2018-12-11 14:24:55
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2014,2015,2016,2017,2018
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Send a command to the GEP board.
+#
+# This subroutine expects that it is already connected to the GEP Linux prompt.
+#
+# Input:
+#  - Command to send
+#
+# Output:
+#  -  0: Success
+#    >0: Command returned an error
+#    -1: Timeout
+#    -2: Connection lost
+#    -3: Broken pipe
+#
+proc GEP_send_command {command} {
+    global spawn_id
+
+    set errorcnt 0
+
+    # Send the command
+    send -- "$command\r"
+
+    expect {
+        -re "Retry\/Cancel\?\[^\n\]*$" {
+            # Probably the "parted /dev/sdX u s print" command on some invalid partition, send "c" and increment an error counter
+            send -- "c\r"
+            incr errorcnt
+            exp_continue
+        }
+        -re "^(\[^\r\n\]*)\r*\n" {
+            # New line received, check for special strings
+            set line $expect_out(1,string)
+            if {[regexp "^.*: Broken pipe$" $line junk] == 1} {
+                # packet_write_wait: Connection to 10.87.188.101 port 830: Broken pipe
+                return -3
+            }
+            exp_continue
+        }
+        -re "SC-\[12\]\[^\n\]*\[#>\$\]\[ \]$" {
+            # Ready for next command
+        }
+        -re "PL-\[0-9\]+\[^\n\]*\[#>\$\]\[ \]$" {
+            # Ready for next command
+        }
+        eof {
+            return -2
+        }
+        timeout {
+            return -1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    set exitcode -1
+
+    # Check exitcode from previous command
+    send -- "echo \$?\r"
+
+    expect {
+        -re "^(\[0-9\]+)\r*\n" {
+            # Exit status returned
+            set exitcode $expect_out(1,string);
+            exp_continue
+        }
+        "\n" {
+            # New line received, continue waiting
+            exp_continue
+        }
+        -re "SC-\[12\]\[^\n\]*\[#>\$\]\[ \]$" {
+            # Ready for next command
+        }
+        -re "PL-\[0-9\]+\[^\n\]*\[#>\$\]\[ \]$" {
+            # Ready for next command
+        }
+        eof {
+            return -2
+        }
+        timeout {
+            return -1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    if { $exitcode == 0 } {
+        # Command executed successfully
+        return $exitcode
+    } elseif { $errorcnt > 0 } {
+        # Some error was detected
+        return $errorcnt
+    } elseif { $exitcode == -1 } {
+        # No exit code could be found, return back failure
+        return 1
+    } else {
+        # The command returned some non zero return code, return this value to the caller
+        return $exitcode
+    }
+}

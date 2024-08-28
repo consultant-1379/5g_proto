@@ -1,0 +1,127 @@
+openapi: 3.0.0
+
+info:
+  version: 1.2.2
+  title: NLF O&M Service
+  description: NLF Operation & Maintenance Service.
+servers:
+- url: '{apiRoot}/nnlf-oam/v0'
+  variables:
+    apiRoot:
+      default: https://example.com
+      description: apiRoot as defined in clause 4.4 of 3GPP TS 29.501
+paths:
+  /config/{namespace}:
+    put:
+      summary: Update configuration
+      operationId: UpdateConfig
+      parameters:
+      - name: namespace
+        in: path
+        description: The namespace of the configuration to update.
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Config'
+      responses:
+        '204':
+          description: Expected response to a valid request
+components:
+  schemas:
+    Config:
+      description: NLF configuration data.
+      type: object
+      required:
+      - nrfGroup
+      properties:
+        nrfGroup:
+          description: NRF redundancy groups.
+          type: array
+          items:
+            $ref: '#/components/schemas/NrfGroup'          
+    NrfGroup:
+      description: Group of NRFs for redundancy.
+      type: object
+      required:
+      - name
+      - source
+      - path
+      properties:
+        name:
+          description: Name identifying the NRF group.
+          type: string
+        source:
+          description: "Name of the source configuration. Example: 'ericsson-scp'."
+          type: string
+        path:
+          description: "Distinguished name (parent first) to the NRF group in the source configuration. Example: 'nf=scp-function,nf-instance=instance-1'."
+          type: string
+        nrf:
+          description: List of NRFs amongst which failover can take place.
+          type: array
+          items:
+            $ref: '#/components/schemas/Nrf'
+    Nrf:
+      description: Container for NRF parameters
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          description: Name identifying the NRF.
+          type: string
+        priority:
+          description: Priority of this NRF relative to other NRFs in the same NRF group. The NRF with the highest priority
+            is the primary NRF. The remaining NRFs are used in case of failover, in order of priority. Lower values indicate
+            a higher priority.
+          type: integer
+          format: int16
+          minimum: 0
+          maximum: 99
+        fqdn:
+          description: FQDN of the NRF.
+          type: string
+        scheme:
+          description: Specifies the URI scheme to be used when contacting this NRF.
+          type: string
+          enum:
+          - http
+          - https
+        ipEndpoint:
+          description: IP endpoints of the NRF
+          type: array
+          items:
+            $ref: '#/components/schemas/IpEndpoint'
+        requestTimeout:
+          description: The time duration in milliseconds after which a request is considered unsuccessful.
+          type: integer
+          format: int32
+          minimum: 0
+        srcSbiNfPeerInfo:
+          description: "Source related content of the 3gpp-Sbi-NF-Peer-Info header. If not present, the header will not be used. Example: 'srcscp=example.com'."
+          type: string
+    IpEndpoint:
+      description: IP endpoint of an NRF.
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          description: Name uniquely identifying the IP endpoint.
+          type: string
+        port:
+          description: Port integer.
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 65535
+        ipv4Address:
+          description: IPv4 address.
+          type: string
+        ipv6Address:
+          description: IPv6 address.
+          type: string

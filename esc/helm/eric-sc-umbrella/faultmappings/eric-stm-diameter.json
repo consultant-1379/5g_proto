@@ -1,0 +1,110 @@
+[
+   {
+      "faultName" : "DiaadpManagedObjectDisabled",
+      "createAlarm" : true,
+      "defaultDescription": "Diameter CM managed object (YANG node) is disabled",
+      "defaultExpiration" : 0,
+      "defaultSeverity" : "Minor",
+      "vendor" : 193,
+      "code" : 10354689,
+      "category" : "CommunicationsAlarm",
+      "probableCause" : 14,
+      "specificProblem" : "DIA Diameter Managed Object Disabled"
+   },
+   {
+      "faultName" : "DiaadpConfigurationFailure",
+      "createAlarm" : true,
+      "defaultDescription": "config is not valid |\n config schema does not match |\n (diameter-parsing-result)",
+      "defaultExpiration" : 0,
+      "defaultSeverity" : "Major",
+      "vendor" : 193,
+      "code" : 10354690,
+      "category" : "CommunicationsAlarm",
+      "probableCause" : 14,
+      "specificProblem" : "DIA Diameter Configuration Failure"
+   },
+   {
+      "faultName" : "DiaadpConfigurationIncomplete",
+      "createAlarm" : true,
+      "defaultDescription": "(node) not found (id) |\n Faulty referenced service object (id) is unavailable for (id) |\n TSL profile has invalid truststore-reference |\n TSL profile is not valid: load certificate file failed",
+      "defaultExpiration" : 0,
+      "defaultSeverity" : "Minor",
+      "vendor" : 193,
+      "code" : 10354691,
+      "category" : "CommunicationsAlarm",
+      "probableCause" : 14,
+      "specificProblem" : "DIA Diameter Configuration Incomplete"
+   },
+   {
+      "faultName" : "DiaadpConfigurationAmbiguous",
+      "createAlarm" : true,
+      "defaultDescription": "Peer (originHost) ambiguous, matching hosts dynamic-peer-acceptor (id), static-peer (id) |\n Only auth_application_id or only acct_application_id can have value |\n Object duplicated",
+      "defaultExpiration" : 0,
+      "defaultSeverity" : "Warning",
+      "vendor" : 193,
+      "code" : 10354692,
+      "category" : "CommunicationsAlarm",
+      "probableCause" : 14,
+      "specificProblem" : "DIA Diameter Configuration Ambiguous"
+   },
+   {
+      "faultName" : "DiaadpPeerUnavailable",
+      "createAlarm" : true,
+      "defaultDescription": "Peer (origin-host) unavailable for (service-id)",
+      "defaultExpiration" : 0,
+      "defaultSeverity" : "Major",
+      "vendor" : 193,
+      "code" : 10354693,
+      "category" : "CommunicationsAlarm",
+      "probableCause" : 14,
+      "specificProblem" : "DIA Diameter Peer Unavailable"
+   },
+   {
+      "faultName" : "DiaadpPeerConnNrBelowLevel",
+      "createAlarm" : true,
+      "defaultDescription": "The number of connections (act-nr) is below the required (req-nr), service: (service-id)",
+      "defaultExpiration" : 0,
+      "defaultSeverity" : "Warning",
+      "vendor" : 193,
+      "code" : 10354694,
+      "category" : "QualityOfServiceAlarm",
+      "probableCause" : 351,
+      "specificProblem" : "DIA Diameter Peer Connection Number Below Required Level"
+   },
+   {
+      "faultName" : "DiaadpCommFailure",
+      "createAlarm" : true,
+      "defaultDescription": "CURL request failed (rc)",
+      "defaultExpiration" : 0,
+      "defaultSeverity" : "Major",
+      "vendor" : 193,
+      "code" : 10354695,
+      "category" : "CommunicationsAlarm",
+      "probableCause" : 14,
+      "specificProblem" : "DIA Diameter Communication Failure"
+   },
+   {
+      "faultName" : "DiaadpConfigurationSchemaError",
+      "createAlarm" : true,
+      "defaultDescription": "Schema error: [(cmm-error) |\n deployed diameter schema (version) is [older than |\n not compatible with] the actual version stored in CMM (version)]",
+      "defaultExpiration" : 0,
+      "defaultSeverity" : "Major",
+      "vendor" : 193,
+      "code" : 10354696,
+      "category" : "CommunicationsAlarm",
+      "probableCause" : 14,
+      "specificProblem" : "DIA Diameter Configuration Schema Error"
+   },
+   {
+      "faultName" : "DiaadpTranspVulnerability",
+      "createAlarm" : true,
+      "defaultDescription": "Unsecured local-endpoint: (id)[,(id)] |\n Weak tls-profile: (id)[,(id)] |\n Not validated peers on local-endpoint: (id)[,(id)]",
+      "defaultExpiration" : 0,
+      "defaultSeverity" : "Warning",
+      "vendor" : 193,
+      "code" : 10354697,
+      "category" : "CommunicationsAlarm",
+      "probableCause" : 402,
+      "specificProblem" : "DIA Diameter Transport Vulnerability"
+   }
+]

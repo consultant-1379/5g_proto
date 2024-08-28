@@ -1,0 +1,13 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema",
+    "id": "file://schema/LastChanged#",
+    "title": "Alarm last changed",
+    "description": "Alarm last changed",
+    "type": "object",
+    "properties": {
+        "lastChanged": {
+            "description": "The timestamp of the latest alarm state change. With this attribute, an external system can determine if a resynchronization operation is needed, such as following a loss and restore of a communications link. The timestamp is in ISO 8601 format, YYYY-MM-DDTHH:MM:SS[.mmmmmm] TZ, the microsecond part is optional if 0. TZ is the abbreviation of the time zone used. This property is not set until the first alarm is raised.",
+            "type": "string"
+        }
+    }
+}

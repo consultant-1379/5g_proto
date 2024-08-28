@@ -1,0 +1,737 @@
+ARG ENVOY_BUILDER_CBOS
+FROM armdocker.rnd.ericsson.se/proj-ldc/common_base_os_release/sles:$ENVOY_BUILDER_CBOS
+
+ENV JAVA_HOME=/usr/local/jdk-14.0.2
+ENV PATH="$PATH:/root/bin"
+ENV CC=gcc-9
+ENV CXX=g++-9
+ARG BUILDER_VERSION
+ENV BUILDER_VERSION=$BUILDER_VERSION
+ARG YOU_REPO_BASE_URL=https://arm.sero.gic.ericsson.se/artifactory/proj-suse-repos-rpm-local/SLE15
+
+ARG ENVOY_BUILDER_CBOS
+RUN zypper ar -C -G -f https://arm.rnd.ki.sw.ericsson.se/artifactory/proj-ldc-repo-rpm-local/common_base_os/sles/$ENVOY_BUILDER_CBOS/?ssl_verify=no LDC-SLES15 &&\
+    zypper --quiet in --no-recommends -l -y LDC-SLES15:bzip &&\
+    zypper --quiet in --no-recommends -l -y LDC-SLES15:ca-certificates &&\
+    zypper --quiet in --no-recommends -l -y LDC-SLES15:ca-certificates-mozilla &&\
+    zypper --quiet in --no-recommends -l -y LDC-SLES15:cmake &&\    
+    zypper --quiet in --no-recommends -l -y LDC-SLES15:curl &&\    
+    zypper --quiet in --no-recommends -l -y LDC-SLES15:glibc &&\    
+    zypper --quiet in --no-recommends -l -y LDC-SLES15:libatomic1 &&\    
+    zypper --quiet in --no-recommends -l -y LDC-SLES15:libLLVM9 &&\    
+    zypper --quiet in --no-recommends -l -y LDC-SLES15:libltdl7 &&\
+    zypper --quiet in --no-recommends -l -y LDC-SLES15:make &&\    
+    zypper --quiet in --no-recommends -l -y LDC-SLES15:openssh &&\    
+    zypper --quiet in --no-recommends -l -y LDC-SLES15:patch &&\
+    zypper --quiet in --no-recommends -l -y LDC-SLES15:perl &&\
+    zypper --quiet in --no-recommends -l -y LDC-SLES15:python2 &&\ 
+    zypper --quiet in --no-recommends -l -y LDC-SLES15:python3 &&\        
+	zypper --quiet in --no-recommends -l -y LDC-SLES15:unzip &&\   
+	zypper --quiet in --no-recommends -l -y LDC-SLES15:wget &&\
+	zypper --quiet in --no-recommends -l -y LDC-SLES15:xz &&\			
+	zypper clean -a
+
+RUN wget -q --no-check-certificate https://download.java.net/java/GA/jdk14.0.2/205943a0976c4ed48cb16f1043c5c647/12/GPL/openjdk-14.0.2_linux-x64_bin.tar.gz &&\
+    tar -C /usr/local/ -xzf openjdk-14.0.2_linux-x64_bin.tar.gz &&\
+    rm openjdk-14.0.2_linux-x64_bin.tar.gz
+
+RUN mkdir -p /bazel &&\
+    mkdir -p /bazelisk/0.0.8 &&\
+    mkdir -p /bazelisk/latest &&\
+    wget -q --no-check-certificate --directory-prefix /bazel/ https://github.com/bazelbuild/bazel/releases/download/0.24.1/bazel-0.24.1-installer-linux-x86_64.sh &&\
+    wget -q --no-check-certificate --directory-prefix /bazel/ https://github.com/bazelbuild/bazel/releases/download/0.28.1/bazel-0.28.1-installer-linux-x86_64.sh &&\   
+    wget -q -O /bazelisk/0.0.8/bazel https://github.com/bazelbuild/bazelisk/releases/download/v0.0.8/bazelisk-linux-amd64 &&\
+    wget -q -O /bazelisk/latest/bazel https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64 &&\
+    chmod +x /bazel/bazel-0.24.1-installer-linux-x86_64.sh &&\
+    chmod +x /bazel/bazel-0.28.1-installer-linux-x86_64.sh &&\
+    chmod +x /bazelisk/0.0.8/bazel &&\
+    chmod +x /bazelisk/latest/bazel
+
+RUN mkdir -p llvm &&\
+    wget -q --no-check-certificate https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/clang+llvm-10.0.0-x86_64-linux-sles11.3.tar.xz &&\
+    tar -C /llvm/ -xvJf clang+llvm-10.0.0-x86_64-linux-sles11.3.tar.xz &&\
+    rm -rf clang+llvm-10.0.0-x86_64-linux-sles11.3.tar.xz
+
+RUN zypper addrepo -C -G -f https://arm.rnd.ki.sw.ericsson.se/artifactory/proj-ldc-repo-rpm-local/adp-dev/adp-build-env/15.1?ssl_verify=no CBO_BUILD_REPO &&\ 
+    zypper --quiet in --no-recommends -l -y CBO_BUILD_REPO:autoconf &&\
+    zypper --quiet in --no-recommends -l -y CBO_BUILD_REPO:automake &&\            
+    zypper --quiet in --no-recommends -l -y CBO_BUILD_REPO:git-core &&\    
+    zypper --quiet in --no-recommends -l -y CBO_BUILD_REPO:less &&\    
+    zypper --quiet in --no-recommends -l -y CBO_BUILD_REPO:ninja &&\
+    zypper clean -a
+
+RUN zypper addrepo -C -G -f https://arm.sero.gic.ericsson.se/artifactory/proj-ldc-repo-rpm-local/adp-dev/adp-build-env/latest/?ssl_verify=no CBO_BUILD_REPO_LATEST &&\
+    zypper --quiet in --no-recommends -l -y CBO_BUILD_REPO_LATEST:gcc9 &&\
+    zypper --quiet in --no-recommends -l -y CBO_BUILD_REPO_LATEST:gcc9-c++ &&\    
+    zypper --quiet in --no-recommends -l -y CBO_BUILD_REPO_LATEST:libtool &&\
+    zypper --quiet in --no-recommends -l -y CBO_BUILD_REPO_LATEST:libasan5 &&\
+    zypper clean -a 
+    
+RUN zypper ar -C -G -f $YOU_REPO_BASE_URL/ISO/SLE-15-SP1-GM/SLE-15-SP1-Packages-x86_64-GM-DVD1/Module-Basesystem/?ssl_verify=no YOU-SLE-15-SP1-Packages-GM-DVD1-Module-Basesystem &&\       	
+    zypper --quiet in --no-recommends -l -y YOU-SLE-15-SP1-Packages-GM-DVD1-Module-Basesystem:zip &&\
+    zypper clean -a
+    
+RUN zypper ar -C -G -f $YOU_REPO_BASE_URL/ISO/SLE-15-SP1-GM/SLE-15-SP1-Packages-x86_64-GM-DVD1/Module-Development-Tools/?ssl_verify=no YOU-SLE-15-SP1-Packages-x86_64-GM-DVD1-Module-Development-Tools &&\
+    zypper --quiet in --no-recommends -l -y YOU-SLE-15-SP1-Packages-x86_64-GM-DVD1-Module-Development-Tools:python3-virtualenv &&\
+    zypper clean -a	
+
+RUN zypper ar -C -G -f https://arm.sero.gic.ericsson.se/artifactory/proj-suse-repos-rpm-local/SLE15/SLE-15-SP2-Module-Packagehub-Subpackages/?ssl_verify=no YOU-SLE-15-SP2-Module-Packagehub-Subpackages &&\
+    zypper --quiet in --no-recommends -l -y YOU-SLE-15-SP2-Module-Packagehub-Subpackages:clang9 &&\
+    zypper clean -a
+
+RUN zypper --quiet in --no-recommends -l -y LDC-SLES15:libncurses5 &&\
+    zypper clean -a
+
+######################3
+RUN zypper --quiet in --no-recommends -l -y go &&\
+    zypper clean -a
+
+RUN mkdir -p /lib-bin/
+
+#bazel_compdb - No binaries
+#https://github.com/grailbio/bazel-compilation-database/archive/0.4.2.tar.gz
+
+#bazel_gazelle - Bazel
+#https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.19.1/bazel-gazelle-v0.19.1.tar.gz
+
+#bazel_toolchains - Bazel
+#https://github.com/bazelbuild/bazel-toolchains/releases/download/3.2.0/bazel-toolchains-3.2.0.tar.gz
+
+#build_bazel_rules_apple - bazel
+#https://github.com/bazelbuild/rules_apple/releases/download/0.19.0/rules_apple.0.19.0.tar.gz
+
+#envoy_build_tools
+#https://github.com/envoyproxy/envoy-build-tools/archive/557ee9b44a3d08cf38d9ce6f08adb872c385d6a5.tar.gz
+
+#boringssl - Not used
+
+#1.15.0
+ENV BORINGSSL_FIPS=66005f41fbc3529ffe8d007708756720529da20d
+#1.15.2/1.16.0
+#ENV BORINGSSL_FIPS=ae223d6138807a13006342edfeef32e813246b39
+
+#boringssl_fips
+RUN mkdir -p /lib-source/boringssl-fips &&\
+    wget -q --no-check-certificate https://commondatastorage.googleapis.com/chromium-boringssl-docs/fips/boringssl-$BORINGSSL_FIPS.tar.xz &&\
+    tar -C /lib-source/boringssl-fips -xf boringssl-$BORINGSSL_FIPS.tar.xz &&\
+    rm boringssl-$BORINGSSL_FIPS.tar.xz &&\
+    cd /lib-source/boringssl-fips/boringssl &&\
+    mkdir -p build &&\
+    cd build &&\
+    cmake -DBUILD_SHARED_LIBS=1 -DCMAKE_BUILD_TYPE=Release .. &&\
+    make &&\
+#Create lib-symlinks to build xx and yy    
+    cd .. &&\
+    mkdir -p lib &&\
+    cd lib &&\
+    ln -s ../build/ssl/libssl.a &&\
+    ln -s ../build/crypto/libcrypto.a 
+
+#1.15.0/1.15.2
+ENV ABSL=ca9856cabc23d771bcce634677650eb6fc4363ae
+#1.16.0
+#ENV ABSL=093cc27604df1c4a179b73bc3f00d4d1ce2ce113
+
+#com_google_absl
+RUN mkdir -p /lib-source/abseil &&\
+    wget -q --no-check-certificate https://github.com/abseil/abseil-cpp/archive/$ABSL.tar.gz &&\
+    tar -C /lib-source/abseil/ -xf $ABSL.tar.gz &&\
+    rm $ABSL.tar.gz &&\
+    cd /lib-source/abseil/abseil-cpp-$ABSL &&\
+    mkdir -p build &&\
+    cd build &&\
+    cmake .. &&\
+    make &&\
+    make install &&\
+    rm -rf /lib-source/abseil
+
+RUN zypper --quiet in --no-recommends -l -y LDC-SLES15:python2-devel &&\     
+    zypper --quiet in --no-recommends -l -y LDC-SLES15:python2-pip &&\
+    zypper clean -a 
+
+#1.15.0/1.15.2
+ENV APACHE_THRIFT=0.11.0
+#Not used in 1.16.0
+    
+#com_github_apache_thrift - python
+RUN mkdir -p /lib-source/thrift &&\
+    mkdir -p /usr/local/lib64/python2.7/site-packages/ &&\
+    wget -q --no-check-certificate https://files.pythonhosted.org/packages/c6/b4/510617906f8e0c5660e7d96fbc5585113f83ad547a3989b80297ac72a74c/thrift-0.11.0.tar.gz &&\
+    tar -C /lib-source/thrift -xf thrift-0.11.0.tar.gz &&\
+    rm thrift-0.11.0.tar.gz &&\
+    cd /lib-source/thrift/thrift-0.11.0 &&\
+    chmod 755 setup.py &&\
+    ./setup.py install &&\
+    rm -rf /lib-source/thrift 
+
+#RUN zypper --quiet in --no-recommends -l -y LDC-SLES15:file &&\
+#    zypper --quiet in --no-recommends -l -y LDC-SLES15:file-devel
+
+#1.15.0/1.15.2/1.16.0
+ENV CARES=1.16.1
+
+#com_github_c_ares_c_ares
+RUN mkdir -p /lib-source/c-ares &&\
+    wget -q --no-check-certificate https://github.com/c-ares/c-ares/releases/download/cares-1_16_1/c-ares-1.16.1.tar.gz &&\
+    tar -C /lib-source/c-ares/ -xf c-ares-1.16.1.tar.gz &&\
+    rm c-ares-1.16.1.tar.gz &&\
+    cd /lib-source/c-ares/c-ares-1.16.1 &&\
+    ./configure &&\
+    make &&\
+    make install &&\
+    rm -rf /lib-source/c-ares    
+
+#1.15.0/1.15.2/1.16.0
+ENV LIBCIRCLLHIST=63a16dd6f2fc7bc841bb17ff92be8318df60e2e1
+
+#com_github_circonus_labs_libcircllhist
+RUN mkdir -p /lib-source/libcircllhist &&\
+    wget -q --no-check-certificate https://github.com/circonus-labs/libcircllhist/archive/63a16dd6f2fc7bc841bb17ff92be8318df60e2e1.tar.gz &&\
+    tar -C /lib-source/libcircllhist -xf 63a16dd6f2fc7bc841bb17ff92be8318df60e2e1.tar.gz &&\
+    rm 63a16dd6f2fc7bc841bb17ff92be8318df60e2e1.tar.gz &&\
+    cd /lib-source/libcircllhist/libcircllhist-63a16dd6f2fc7bc841bb17ff92be8318df60e2e1 &&\
+    autoconf &&\
+    ./configure &&\
+    make &&\
+    make install &&\
+    rm -rf /lib-source/libcircllhist/ 
+
+#1.15.0/1.15.2/1.16.0
+ENV XXHASH=0.7.3
+
+#com_github_cyan4973_xxhash
+RUN mkdir -p /lib-source/xxHash &&\
+    wget -q --no-check-certificate https://github.com/Cyan4973/xxHash/archive/v$XXHASH.tar.gz &&\
+    tar -C /lib-source/xxHash -xf v$XXHASH.tar.gz &&\
+    rm v$XXHASH.tar.gz &&\
+    cd lib-source/xxHash/xxHash-$XXHASH &&\
+    make &&\
+    make install &&\
+    rm -rf /lib-source/xxHash
+
+#1.15.0/1.15.2/1.16.0
+ENV SQLPARSER=3b40ba2d106587bdf053a292f7e3bb17e818a57f
+
+#com_github_envoyproxy_sqlparser
+RUN mkdir -p /lib-source/sqlparser &&\
+    wget -q --no-check-certificate https://github.com/envoyproxy/sql-parser/archive/$SQLPARSER.tar.gz &&\
+    tar -C /lib-source/sqlparser -xf $SQLPARSER.tar.gz &&\
+    rm $SQLPARSER.tar.gz &&\
+    cd lib-source/sqlparser/sql-parser-$SQLPARSER &&\
+    make &&\
+    make install &&\
+    rm -rf /lib-source/sqlparser
+
+#1.15.0/1.15.2/1.16.0
+#ENV TCLAP=1-2-1-release-final
+
+#com_github_mirror_tclap
+RUN mkdir -p /lib-source/tclap &&\
+    wget -q --no-check-certificate https://github.com/mirror/tclap/archive/tclap-1-2-1-release-final.tar.gz &&\
+    tar -C /lib-source/tclap -xf tclap-1-2-1-release-final.tar.gz &&\
+    rm tclap-1-2-1-release-final.tar.gz &&\
+    cd /lib-source/tclap/tclap-tclap-1-2-1-release-final &&\
+    #Suppress error
+    mkdir -p docs/html &&\
+    ./autotools.sh &&\
+    ./configure &&\
+    make install &&\
+    rm -rf /lib-source/tclap
+
+#1.15.0/1.15.2
+ENV FMTLIB=e2ff910675c7800e5c4e28e1509ca6a50bdceafa
+#1.16.0
+#ENV FMTLIB=7.0.3 
+
+#com_github_fmtlib_fmt
+RUN mkdir -p /lib-source/fmt &&\
+    wget -q --no-check-certificate https://github.com/fmtlib/fmt/archive/$FMTLIB.tar.gz &&\
+    tar -C /lib-source/fmt/ -xf $FMTLIB.tar.gz &&\
+    rm $FMTLIB.tar.gz &&\
+    cd /lib-source/fmt/fmt-$FMTLIB &&\
+    mkdir -p build &&\
+    cd build &&\
+    cmake -DBUILD_SHARED_LIBS=TRUE .. &&\
+    make &&\
+    make install &&\
+    #cp libfmt.so.6.2.1 /lib-bin &&\
+    rm -rf /lib-source/fmt 
+
+#1.15.0/1.15.2
+ENV SPDLOG=1.6.1
+#1.16.0
+#ENV SPDLOG=1.7.0
+
+#com_github_gabime_spdlog
+RUN mkdir -p /lib-source/spdlog &&\
+    wget -q --no-check-certificate https://github.com/gabime/spdlog/archive/v$SPDLOG.tar.gz &&\
+    tar -C /lib-source/spdlog/ -xf v$SPDLOG.tar.gz &&\
+    rm v$SPDLOG.tar.gz &&\
+    cd /lib-source/spdlog/spdlog-$SPDLOG &&\
+    mkdir -p build &&\
+    cd build &&\
+    cmake -DBUILD_SHARED_LIBS=TRUE .. &&\
+    make &&\
+    make install &&\
+    rm -rf /lib-source/spdlog
+
+ENV GPERFTOOLS=2.7.90
+#1.16.0
+#ENV GPERFTOOLS=2.8
+
+#com_github_gperftools_gperftools
+RUN mkdir -p /lib-source/gperftools &&\
+    wget -q --no-check-certificate https://github.com/gperftools/gperftools/archive/gperftools-$GPERFTOOLS.tar.gz &&\
+    tar -C /lib-source/gperftools -xf gperftools-$GPERFTOOLS.tar.gz &&\
+    rm gperftools-$GPERFTOOLS.tar.gz &&\
+    cd /lib-source/gperftools/gperftools-gperftools-$GPERFTOOLS &&\
+    ./autogen.sh &&\
+    ./configure &&\
+    make install &&\
+    rm -rf /lib-source/gperftools
+
+#com_github_grpc_grpc - cmake errors libcares dependency
+#com_github_grpc_grpc - openssl dependency
+#BORINGSSL_ROOT_DIR
+RUN mkdir -p /lib-source/grpc &&\
+#   Needed to refresh the library cache to find the libprotobuf shared lib    
+    ldconfig &&\
+    wget -q --no-check-certificate https://github.com/grpc/grpc/archive/d8f4928fa779f6005a7fe55a176bdb373b0f910f.tar.gz &&\
+    tar -C /lib-source/grpc -xf d8f4928fa779f6005a7fe55a176bdb373b0f910f.tar.gz &&\
+    rm d8f4928fa779f6005a7fe55a176bdb373b0f910f.tar.gz &&\
+    cd /lib-source/grpc/grpc-d8f4928fa779f6005a7fe55a176bdb373b0f910f &&\
+    make run_dep_checks
+##    make
+##    make install
+#    mkdir -p cmake/build &&\
+#    cd cmake/build &&\
+#    cmake -DBENCHMARK_ROOT_DIR=/lib-source/google-benchmark/benchmark-1.5.0 -DBUILD_SHARED_LIBS=ON -DBORINGSSL_ROOT_DIR=/lib-source/boringssl/ ../.. &&\
+#    make
+
+#1.15.0/1.15.2/1.16.0
+ENV LUAJIT=2.1.0-beta3
+
+#com_github_luajit_luajit
+RUN mkdir -p /lib-source/LuaJIT &&\
+    wget -q --no-check-certificate https://github.com/LuaJIT/LuaJIT/archive/v$LUAJIT.tar.gz &&\
+    tar -C /lib-source/LuaJIT -xf v$LUAJIT.tar.gz &&\
+    rm v$LUAJIT.tar.gz &&\
+    cd /lib-source/LuaJIT/LuaJIT-$LUAJIT &&\
+    make &&\
+    make install &&\
+    rm -rf /lib-source/LuaJIT
+
+#1.15.0/1.15.2/1.16.0
+ENV MOONJIT=2.2.0
+
+#com_github_moonjit_moonjit
+RUN mkdir -p /lib-source/moonjit &&\
+    wget -q --no-check-certificate https://github.com/moonjit/moonjit/archive/$MOONJIT.tar.gz &&\
+    tar -C /lib-source/moonjit -xf $MOONJIT.tar.gz &&\
+    rm $MOONJIT.tar.gz &&\
+    cd /lib-source/moonjit/moonjit-$MOONJIT &&\
+    make &&\
+    make install &&\
+    rm -rf /lib-source/moonjit
+
+#1.15.0/1.15.2/1.16.0
+ENV NGHTTP2=1.41.0
+    
+#com_github_nghttp2_nghttp2    
+RUN mkdir -p /lib-source/nghttp2 &&\
+    wget -q --no-check-certificate https://github.com/nghttp2/nghttp2/releases/download/v$NGHTTP2/nghttp2-$NGHTTP2.tar.gz &&\
+    tar -C /lib-source/nghttp2/ -xf nghttp2-$NGHTTP2.tar.gz &&\
+    rm nghttp2-$NGHTTP2.tar.gz &&\
+    cd /lib-source/nghttp2/nghttp2-$NGHTTP2 &&\
+    mkdir -p build &&\
+    cd build &&\
+    cmake -DBUILD_SHARED_LIBS=TRUE .. &&\
+    make &&\
+    make install &&\
+    rm -rf /lib-source/nghttp2 
+
+#1.15.0/1.15.2/1.16.0
+ENV IO_OPENTRACING=1.5.1
+
+#io_opentracing_cpp
+RUN mkdir -p /lib-source/opentracing &&\
+    wget -q --no-check-certificate https://github.com/opentracing/opentracing-cpp/archive/v$IO_OPENTRACING.tar.gz &&\
+    tar -C /lib-source/opentracing/ -xf v$IO_OPENTRACING.tar.gz &&\
+    rm v$IO_OPENTRACING.tar.gz &&\
+    cd /lib-source/opentracing/opentracing-cpp-$IO_OPENTRACING &&\
+    mkdir -p build &&\
+    cd build &&\
+    cmake -DBUILD_SHARED_LIBS=TRUE .. &&\
+    make &&\
+    make install &&\
+    rm -rf /lib-source/opentracing 
+
+#com_github_datadog_dd_opentracing_cpp
+#/usr/include/c++/7/bits/c++0x_warning.h:32:2: error: #error This file requires compiler and library support for the ISO C++ 2011 standard. This support must be enabled with the -std=c++11 or -std=gnu++11 compiler options.
+RUN mkdir -p /lib-source/dd-opentracing &&\
+    wget -q --no-check-certificate https://github.com/DataDog/dd-opentracing-cpp/archive/v1.1.5.tar.gz &&\    
+    tar -C /lib-source/dd-opentracing -xf v1.1.5.tar.gz &&\
+    rm v1.1.5.tar.gz &&\
+    cd /lib-source/dd-opentracing/dd-opentracing-cpp-1.1.5 &&\
+    scripts/install_dependencies.sh &&\
+    mkdir -p .build &&\
+    cd .build &&\
+    #cmake -std=c++11 .. &&\
+    cmake .. &&\
+    make install &&\
+    rm -rf /lib-source/dd-opentracing
+
+ENV GOOGLEBENCHMARK=1.5.0
+
+#com_github_google_benchmark
+RUN mkdir -p /lib-source/google-benchmark &&\
+    wget -q --no-check-certificate https://github.com/google/benchmark/archive/v$GOOGLEBENCHMARK.tar.gz &&\    
+    tar -C /lib-source/google-benchmark -xf v$GOOGLEBENCHMARK.tar.gz &&\
+    rm v$GOOGLEBENCHMARK.tar.gz &&\
+    cd /lib-source/google-benchmark/benchmark-$GOOGLEBENCHMARK &&\    
+    cmake -E make_directory "build" &&\
+#Disable testing to remove dependency towards Googletest sourcefiles    
+    cmake -E chdir "build" cmake -DBENCHMARK_ENABLE_GTEST_TESTS=0 -DCMAKE_BUILD_TYPE=Release ../ &&\ 
+    cmake --build "build" --config Release --target install
+
+#com_github_libevent_libevent - autoconf error
+#Does not detect Python, tests skipped
+#Does not find SSL libraries, disabled
+RUN mkdir -p /lib-source/libevent &&\
+    ldconfig &&\
+    wget -q --no-check-certificate https://github.com/libevent/libevent/archive/06a11929511bebaaf40c52aaf91de397b1782ba2.tar.gz &&\    
+    tar -C /lib-source/libevent -xvf 06a11929511bebaaf40c52aaf91de397b1782ba2.tar.gz &&\
+    rm 06a11929511bebaaf40c52aaf91de397b1782ba2.tar.gz &&\
+    cd /lib-source/libevent/libevent-06a11929511bebaaf40c52aaf91de397b1782ba2 &&\
+    ./autogen.sh &&\    
+    ./configure --disable-openssl &&\
+#    make &&\
+    make install &&\
+    rm -rf /lib-source/libevent
+
+ENV ZLIB=79baebe50e4d6b73ae1f8b603f0ef41300110aa3
+
+#net_zlib
+RUN mkdir -p /lib-source/zlib &&\
+    wget -q --no-check-certificate https://github.com/madler/zlib/archive/$ZLIB.tar.gz &&\
+    tar -C /lib-source/zlib/ -xf $ZLIB.tar.gz &&\
+    rm $ZLIB.tar.gz &&\
+    cd /lib-source/zlib/zlib-$ZLIB &&\
+    ./configure &&\
+    make &&\
+    make install &&\
+    rm -rf /lib-source/zlib 
+
+ENV PROTOBUF=3.10.1
+
+#com_google_protobuf
+RUN mkdir -p /lib-source/protobuf &&\
+    wget -q --no-check-certificate https://github.com/protocolbuffers/protobuf/releases/download/v$PROTOBUF/protobuf-all-$PROTOBUF.tar.gz &&\
+    tar -C /lib-source/protobuf/ -xf protobuf-all-$PROTOBUF.tar.gz &&\
+    rm protobuf-all-$PROTOBUF.tar.gz &&\
+    cd /lib-source/protobuf/protobuf-$PROTOBUF &&\
+    autoconf &&\
+    ./configure &&\
+    make &&\
+    make install &&\
+#    ldconfig &&\
+    rm -rf /lib-source/protobuf
+
+
+
+#dependency on zlib and protobuf
+#XZ lib error?
+
+#Dependency for protobuf mutator
+RUN mkdir -p /lib-source/xz &&\
+    wget -q --no-check-certificate https://tukaani.org/xz/xz-5.2.5.tar.gz &&\
+    tar -C /lib-source/xz -xf xz-5.2.5.tar.gz &&\
+    rm -f xz-5.2.5.tar.gz &&\
+    cd /lib-source/xz/xz-5.2.5 &&\
+    ./configure &&\
+    make install &&\
+    rm -rf /lib-source/xz
+
+ENV PROTOBUF_MUTATOR=7a2ed51a6b682a83e345ff49fc4cfd7ca47550db
+
+#com_github_google_libprotobuf_mutator   
+RUN mkdir -p /lib-source/libprotobuf-mutator &&\
+    ldconfig &&\
+    wget -q --no-check-certificate https://github.com/google/libprotobuf-mutator/archive/$PROTOBUF_MUTATOR.tar.gz &&\   
+    tar -C /lib-source/libprotobuf-mutator -xf $PROTOBUF_MUTATOR.tar.gz &&\
+    rm $PROTOBUF_MUTATOR.tar.gz &&\
+    cd /lib-source/libprotobuf-mutator/libprotobuf-mutator-$PROTOBUF_MUTATOR &&\
+    mkdir build &&\
+    cd build &&\
+    cmake .. -GNinja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release
+    #this fails cause it can't clone a git repo with https
+    #ninja install    
+
+
+ENV YAML_CPP=98acc5a8874faab28b82c28936f4b400b389f5d6
+
+#com_github_jbeder_yaml_cpp
+RUN mkdir -p /lib-source/yaml-cpp &&\
+    wget -q --no-check-certificate https://github.com/jbeder/yaml-cpp/archive/$YAML_CPP.tar.gz &&\    
+    tar -C /lib-source/yaml-cpp -xf $YAML_CPP.tar.gz &&\
+    rm $YAML_CPP.tar.gz &&\
+    cd /lib-source/yaml-cpp/yaml-cpp-$YAML_CPP &&\
+    mkdir -p build &&\    
+    cd build &&\
+    cmake -DYAML_BUILD_SHARED_LIBS=ON .. &&\
+    make install
+
+#ENV MSGPACK=3.2.1
+
+#com_github_msgpack_msgpack_c  compiler error
+RUN mkdir -p /lib-source/msgpack_c &&\
+    wget -q --no-check-certificate https://github.com/msgpack/msgpack-c/releases/download/cpp-3.2.1/msgpack-3.2.1.tar.gz &&\
+    tar -C /lib-source/msgpack_c/ -xvf msgpack-3.2.1.tar.gz &&\
+    rm msgpack-3.2.1.tar.gz &&\    
+    cd /lib-source/msgpack_c/msgpack-3.2.1 &&\
+    #Suppress: This file requires compiler and library support for the ISO C++ 2011 standard. This support must be enabled with the -std=c++11 or -std=gnu++11 compiler options.
+    export CXXFLAGS="$CXXFLAGS -std=c++11" &&\
+#    cmake -DCMAKE_CXX_FLAGS="-std=c++11" . &&\
+    cmake . &&\    
+    make install &&\
+    rm -rf /lib-source/msgpack_c 
+
+ENV NODEJS_HTTP=2.9.3
+
+#com_github_nodejs_http_parser
+RUN mkdir -p /lib-source/nodejs_http &&\
+    wget -q --no-check-certificate https://github.com/nodejs/http-parser/archive/v$NODEJS_HTTP.tar.gz &&\
+    tar -C /lib-source/nodejs_http/ -xf v$NODEJS_HTTP.tar.gz &&\
+    rm v$NODEJS_HTTP.tar.gz &&\
+    cd /lib-source/nodejs_http/http-parser-$NODEJS_HTTP &&\
+    make &&\
+    make install &&\
+    rm -rf /lib-source/nodejs_http 
+
+#com_github_pallets_jinja - Python
+RUN mkdir -p /lib-source/jinja &&\
+    wget -q --no-check-certificate https://github.com/pallets/jinja/archive/2.10.3.tar.gz &&\
+    tar -C /lib-source/jinja/ -xf 2.10.3.tar.gz &&\
+    rm 2.10.3.tar.gz &&\
+    cd /lib-source/jinja/jinja-2.10.3 &&\
+    pip install -U Jinja2 &&\
+    rm -rf /lib-source/jinja 
+
+#com_github_pallets_markupsafe
+RUN mkdir -p /lib-source/markupsafe &&\
+    wget -q --no-check-certificate https://github.com/pallets/markupsafe/archive/1.1.1.tar.gz &&\
+    tar -C /lib-source/markupsafe/ -xf 1.1.1.tar.gz &&\
+    rm 1.1.1.tar.gz &&\
+    cd /lib-source/markupsafe/markupsafe-1.1.1 &&\
+    pip install -U MarkupSafe &&\
+    rm -rf /lib-source/markupsafe 
+
+#com_github_tencent_rapidjson
+RUN mkdir -p /lib-source/rapidjson &&\
+    wget -q --no-check-certificate https://github.com/Tencent/rapidjson/archive/dfbe1db9da455552f7a9ad5d2aea17dd9d832ac1.tar.gz &&\
+    tar -C /lib-source/rapidjson/ -xvf dfbe1db9da455552f7a9ad5d2aea17dd9d832ac1.tar.gz &&\
+    rm dfbe1db9da455552f7a9ad5d2aea17dd9d832ac1.tar.gz &&\
+    cd /lib-source/rapidjson/rapidjson-dfbe1db9da455552f7a9ad5d2aea17dd9d832ac1 &&\
+    cmake . &&\
+    make install &&\
+    rm -rf /lib-source/rapidjson 
+
+
+#com_github_twitter_common_lang = Python
+
+#com_github_twitter_common_rpc - Python
+
+#com_github_twitter_common_finagle_thrift - Python
+
+#com_google_googletest
+RUN mkdir -p /lib-source/googletest &&\
+    wget -q --no-check-certificate https://github.com/google/googletest/archive/release-1.10.0.tar.gz &&\
+    tar -C /lib-source/googletest/ -xf release-1.10.0.tar.gz &&\
+    rm release-1.10.0.tar.gz &&\
+    cd /lib-source/googletest/googletest-release-1.10.0 &&\
+    cmake -DBUILD_SHARED_LIBS=TRUE . &&\
+    make &&\
+    make install &&\
+    #cp libfmt.so.6.2.1 /lib-bin &&\
+    rm -rf /lib-source/googletest 
+
+#io_bazel_rules_go
+
+#rules_cc
+
+#rules_foreign_cc
+
+#rules_python
+
+#six = Python
+
+#io_opencensus_cpp - prometheus dependency error
+#https://github.com/census-instrumentation/opencensus-cpp/archive/04ed0211931f12b03c1a76b3907248ca4db7bc90.tar.gz
+RUN mkdir -p /lib-source/opencensus_cpp &&\
+    wget -q --no-check-certificate https://github.com/census-instrumentation/opencensus-cpp/archive/04ed0211931f12b03c1a76b3907248ca4db7bc90.tar.gz &&\
+    tar -C /lib-source/opencensus_cpp/ -xf 04ed0211931f12b03c1a76b3907248ca4db7bc90.tar.gz &&\
+    rm 04ed0211931f12b03c1a76b3907248ca4db7bc90.tar.gz &&\
+    cd /lib-source/opencensus_cpp/opencensus-cpp-04ed0211931f12b03c1a76b3907248ca4db7bc90 &&\
+    mkdir -p build &&\
+    cd build &&\
+    cmake -DBUILD_TESTING=OFF -DBUILD_SHARED_LIBS=TRUE .. &&\
+#    make &&\
+    make install
+#    rm -rf /lib-source/opencensus_cpp 
+
+
+#com_github_curl
+RUN mkdir -p /lib-source/curl &&\
+    wget -q --no-check-certificate https://github.com/curl/curl/releases/download/curl-7_69_1/curl-7.69.1.tar.gz &&\
+    tar -C /lib-source/curl/ -xf curl-7.69.1.tar.gz &&\
+    rm curl-7.69.1.tar.gz &&\
+    cd /lib-source/curl/curl-7.69.1 &&\
+    make &&\
+    make install &&\
+    rm -rf /lib-source/curl 
+
+#com_googlesource_chromium_v8 - not sure how to build
+
+#com_googlesource_quiche - not sure how/what to build
+
+#com_googlesource_googleurl - bazel
+
+#com_google_cel_cpp - Bazel
+
+#com_googlesource_code_re2
+
+#org_llvm_releases_compiler_rt - cmake error
+
+#upb - compiler error
+RUN mkdir -p /lib-source/upb &&\
+    wget -q --no-check-certificate https://github.com/protocolbuffers/upb/archive/8a3ae1ef3e3e3f26b45dec735c5776737fc7247f.tar.gz &&\
+    tar -C /lib-source/upb/ -xvf 8a3ae1ef3e3e3f26b45dec735c5776737fc7247f.tar.gz &&\
+    rm 8a3ae1ef3e3e3f26b45dec735c5776737fc7247f.tar.gz &&\
+    cd /lib-source/upb/upb-8a3ae1ef3e3e3f26b45dec735c5776737fc7247f &&\    
+#    cmake -DBUILD_SHARED_LIBS=TRUE . &&\ # leads to an ld-error
+    cmake . &&\ 
+    make 
+#    rm -rf /lib-source/upb 
+
+#kafka_source = gradle
+
+#kafka_server_binary
+#Nothing to install, just the binary to unpack
+RUN mkdir -p /lib-source/kafka &&\    
+    wget -q --no-check-certificate https://mirrors.gigenet.com/apache/kafka/2.4.1/kafka_2.12-2.4.1.tgz &&\
+    tar -C /lib-source/kafka -xf kafka_2.12-2.4.1.tgz &&\
+    rm kafka_2.12-2.4.1.tgz
+
+
+ 
+#kafka_python_client
+
+
+
+
+
+#com_lightstep_tracer_cpp - cmake error, needs protobuf, version mismatch
+#RUN mkdir -p /lib-source/lightstep &&\
+#    wget -q --no-check-certificate https://github.com/lightstep/lightstep-tracer-cpp/archive/3efe2372ee3d7c2138d6b26e542d757494a7938d.tar.gz &&\
+#    tar -C /lib-source/lightstep/ -xvf 3efe2372ee3d7c2138d6b26e542d757494a7938d.tar.gz &&\
+#    rm 3efe2372ee3d7c2138d6b26e542d757494a7938d.tar.gz &&\
+#    cd /lib-source/lightstep/lightstep-tracer-cpp-3efe2372ee3d7c2138d6b26e542d757494a7938d &&\
+#    mkdir build &&\
+#    cd build &&\
+#    cmake -DBUILD_SHARED_LIBS=TRUE .. &&\
+#    make &&\
+#    make install &&\
+#    #cp libfmt.so.6.2.1 /lib-bin &&\
+#    rm -rf /lib-source/lightstep 
+
+
+RUN cp bazelisk/0.0.8/bazel /usr/bin/
+
+#com_github_google_jwt_verify
+RUN mkdir -p /lib-source/jwt_verify_lib &&\    
+    wget -q --no-check-certificate https://github.com/google/jwt_verify_lib/archive/7276a339af8426724b744216f619c99152f8c141.tar.gz &&\
+    tar -C /lib-source/jwt_verify_lib -xvf 7276a339af8426724b744216f619c99152f8c141.tar.gz &&\
+    rm 7276a339af8426724b744216f619c99152f8c141.tar.gz &&\
+    cd /lib-source/jwt_verify_lib/jwt_verify_lib-7276a339af8426724b744216f619c99152f8c141 &&\
+    bazel build jwt_verify_lib
+
+#GoogleAPI dependency?
+
+#RUN #https://github.com/googleapis/googleapis/archive/common-protos-1_3_1.tar.gz
+#RUN git clone https://github.com/googleapis/googleapis.git &&\
+#    cd googleapis &&\
+#    bazel build //...
+
+#BAZEL ERRROR
+#grpc_httpjson_transcoding - bazel
+RUN mkdir -p /lib-source/grpc_httpjson_transcoding &&\    
+    wget -q --no-check-certificate https://github.com/grpc-ecosystem/grpc-httpjson-transcoding/archive/faf8af1e9788cd4385b94c8f85edab5ea5d4b2d6.tar.gz &&\
+    tar -C /lib-source/grpc_httpjson_transcoding -xvf faf8af1e9788cd4385b94c8f85edab5ea5d4b2d6.tar.gz &&\
+    rm faf8af1e9788cd4385b94c8f85edab5ea5d4b2d6.tar.gz &&\
+    cd /lib-source/grpc_httpjson_transcoding/grpc-httpjson-transcoding-faf8af1e9788cd4385b94c8f85edab5ea5d4b2d6
+#    bazel build //...
+#
+
+
+
+
+
+
+    #gflags-2.2.2
+    
+
+#    cd /lib-source/protobuf/protobuf-$PROTOBUF    
+
+
+#    cd /lib-source/zlib/zlib-$ZmLIB
+
+    
+#com_github_grpc_grpc
+#Lots of dependencies, doesn't seem to find already installed libaries, source code used instead
+RUN mkdir -p /lib-source/c-ares &&\
+    wget -q --no-check-certificate https://github.com/c-ares/c-ares/releases/download/cares-1_16_1/c-ares-1.16.1.tar.gz &&\
+    tar -C /lib-source/c-ares/ -xf c-ares-1.16.1.tar.gz &&\
+    rm c-ares-1.16.1.tar.gz &&\
+    mkdir -p /lib-source/gflags &&\
+    wget -q --no-check-certificate https://github.com/gflags/gflags/archive/v2.2.2.tar.gz &&\
+    tar -C /lib-source/gflags -xf v2.2.2.tar.gz &&\
+    rm v2.2.2.tar.gz &&\
+    mkdir -p /lib-source/protobuf &&\
+    wget -q --no-check-certificate https://github.com/protocolbuffers/protobuf/releases/download/v$PROTOBUF/protobuf-all-$PROTOBUF.tar.gz &&\
+    tar -C /lib-source/protobuf/ -xvf protobuf-all-$PROTOBUF.tar.gz &&\
+    rm protobuf-all-$PROTOBUF.tar.gz &&\
+    mkdir -p /lib-source/zlib &&\
+    wget -q --no-check-certificate https://github.com/madler/zlib/archive/$ZLIB.tar.gz &&\
+    tar -C /lib-source/zlib/ -xf $ZLIB.tar.gz &&\
+    rm $ZLIB.tar.gz &&\       
+    mkdir -p /lib-source/grpc &&\
+#   Needed to refresh the library cache to find the libprotobuf shared lib    
+    ldconfig &&\
+    wget -q --no-check-certificate https://github.com/grpc/grpc/archive/d8f4928fa779f6005a7fe55a176bdb373b0f910f.tar.gz &&\
+    tar -C /lib-source/grpc -xf d8f4928fa779f6005a7fe55a176bdb373b0f910f.tar.gz &&\
+    rm d8f4928fa779f6005a7fe55a176bdb373b0f910f.tar.gz &&\
+    cd /lib-source/grpc/grpc-d8f4928fa779f6005a7fe55a176bdb373b0f910f &&\
+    make run_dep_checks &&\
+    mkdir -p cmake/build &&\
+    cd cmake/build &&\
+    #cmake -DgRPC_CARES_PROVIDER=/lib-source/c-ares/c-ares-1.16.1/ -DBENCHMARK_ROOT_DIR=/lib-source/google-benchmark/benchmark-1.5.0 -DGFLAGS_ROOT_DIR=/lib-source/gflags/gflags-2.2.2/ -DPROTOBUF_ROOT_DIR=/lib-source/protobuf/protobuf-$PROTOBUF/ gRPC_PROTOBUF_PROVIDER=/lib-source/protobuf/protobuf-$PROTOBUF/ -DBORINGSSL_ROOT_DIR=/lib-source/boringssl-fips/boringssl/ -DZLIB_ROOT_DIR=/lib-source/zlib/zlib-$ZLIB -DBUILD_SHARED_LIBS=ON ../.. &&\
+    cmake cmake -G Ninja -DgRPC_CARES_PROVIDER=/lib-source/c-ares/c-ares-1.16.1/ -DBENCHMARK_ROOT_DIR=/lib-source/google-benchmark/benchmark-1.5.0 -DGFLAGS_ROOT_DIR=/lib-source/gflags/gflags-2.2.2/ -DPROTOBUF_ROOT_DIR=/lib-source/protobuf/protobuf-$PROTOBUF/ gRPC_PROTOBUF_PROVIDER=/lib-source/protobuf/protobuf-$PROTOBUF/ -DBORINGSSL_ROOT_DIR=/lib-source/boringssl-fips/boringssl/ -DZLIB_ROOT_DIR=/lib-source/zlib/zlib-$ZLIB -DBUILD_SHARED_LIBS=ON ../.. &&\
+    ninja grpc &&\
+#    make &&\
+#Cleanup
+    rm -rf /lib-source/c-ares &&\
+    rm -rf /lib-source/gflags &&\
+    rm -rf /lib-source/protobuf &&\
+    rm -rf /lib-source/zlib/  
+#    make
+
+#mkdir build
+#cd build/
+#cmake -G Ninja ..
+#ninja grpc
+#ninja sqlite
+#ninja flatbuffers
+
+#/lib-source/protobuf/protobuf-3.10.1
+CMD ["/bin/bash"]
+  

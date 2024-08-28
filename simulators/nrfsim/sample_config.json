@@ -1,0 +1,139 @@
+{
+	"nnrfNfManagement": {
+		"heartBeatTimerInSecs": 3600,
+		"provisioning": [
+			{
+				"modifiers": [
+					{
+						"replicator": 10,
+						"patches": [
+							{
+								"op": "replace",
+								"path": "/nfInstanceId",
+								"value": "2ec8ac0b-265e-4165-86e9-e073a1%06d"
+							},
+							{
+								"op": "replace",
+								"path": "/chfInfo/supiRangeList/0/start",
+								"value": "460030101%06d"
+							},
+							{
+								"op": "replace",
+								"path": "/chfInfo/supiRangeList/0/end",
+								"value": "460030101%06d"
+							}
+						]
+					}
+				],
+				"nfProfile": {
+					"nfInstanceId": "2ec8ac0b-265e-4165-86e9-e073a1000000",
+					"nfType": "CHF",
+					"nfStatus": "REGISTERED",
+					"fqdn": "RegionA",
+					"priority": 1,
+					"chfInfo": {
+						"supiRangeList": [
+							{
+								"start": "460030101000000",
+								"end": "460030101000000"
+							}
+						]
+					},
+					"nfServicePersistence": false,
+					"nfProfileChangesSupportInd": false,
+					"nfProfileChangesInd": false,
+					"lcHSupportInd": false,
+					"olcHSupportInd": false
+				}
+			},
+			{
+				"modifiers": [
+					{
+						"replicator": 10,
+						"patches": [
+							{
+								"op": "replace",
+								"path": "/nfInstanceId",
+								"value": "2ec8ac0b-265e-4165-86e9-e073b1%06d"
+							},
+							{
+								"op": "replace",
+								"path": "/chfInfo/supiRangeList/0/start",
+								"value": "460030401%06d"
+							},
+							{
+								"op": "replace",
+								"path": "/chfInfo/supiRangeList/0/end",
+								"value": "460030401%06d"
+							}
+						]
+					}
+				],
+				"nfProfile": {
+					"nfInstanceId": "2ec8ac0b-265e-4165-86e9-e073b1000000",
+					"nfType": "CHF",
+					"nfStatus": "REGISTERED",
+					"fqdn": "RegionB",
+					"priority": 1,
+					"chfInfo": {
+						"supiRangeList": [
+							{
+								"start": "460030401000000",
+								"end": "460030401000000"
+							}
+						]
+					},
+					"nfServicePersistence": false,
+					"nfProfileChangesSupportInd": false,
+					"nfProfileChangesInd": false,
+					"lcHSupportInd": false,
+					"olcHSupportInd": false
+				}
+			},
+			{
+				"modifiers": [
+					{
+						"replicator": 10,
+						"patches": [
+							{
+								"op": "replace",
+								"path": "/nfInstanceId",
+								"value": "2ec8ac0b-265e-4165-86e9-e073c1%06d"
+							},
+							{
+								"op": "replace",
+								"path": "/chfInfo/supiRangeList/0/start",
+								"value": "460030701%06d"
+							},
+							{
+								"op": "replace",
+								"path": "/chfInfo/supiRangeList/0/end",
+								"value": "460030701%06d"
+							}
+						]
+					}
+				],
+				"nfProfile": {
+					"nfInstanceId": "2ec8ac0b-265e-4165-86e9-e073c1000000",
+					"nfType": "CHF",
+					"nfStatus": "REGISTERED",
+					"fqdn": "RegionC",
+					"priority": 1,
+					"chfInfo": {
+						"supiRangeList": [
+							{
+								"start": "460030701000000",
+								"end": "460030701000000"
+							}
+						]
+					},
+					"nfServicePersistence": false,
+					"nfProfileChangesSupportInd": false,
+					"nfProfileChangesInd": false,
+					"lcHSupportInd": false,
+					"olcHSupportInd": false
+				}
+			}
+		]
+	}
+}

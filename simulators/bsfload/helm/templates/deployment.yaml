@@ -1,0 +1,81 @@
+# Copyright 2021 Ericsson GmbH
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.service.name }}
+  labels:
+    app: {{ .Values.service.name }}
+    role: {{ .Values.service.name }}
+spec:
+  replicas: {{ .Values.spec.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.service.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.service.name }}
+      annotations:
+        prometheus.io/scrape: {{ .Values.metrics.enabled | quote }}
+        prometheus.io/port: {{ .Values.metrics.port | quote }}
+        prometheus.io/method: http
+    spec:
+      {{- if .Values.imageCredentials.registry.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.imageCredentials.registry.pullSecret }}
+      {{- end }}
+      containers:
+      - name: {{ .Values.service.name }}
+        image: {{ .Values.imageCredentials.registry.url }}/{{ .Values.imageCredentials.repoPath }}/{{ .Values.spec.image }}:{{ .Values.spec.tag }}
+        imagePullPolicy: {{ .Values.imageCredentials.pullPolicy }}
+        ports:
+        - name: "http-port"
+          containerPort: {{ .Values.spec.port }}
+        {{- if .Values.metrics.enabled }}
+        - name: "metrics"
+          containerPort: {{ .Values.metrics.port }}
+        {{- end }}
+        env:
+        - name: BSF_LOAD_PORT
+          value: {{ .Values.spec.port | quote }}
+        - name: METRICS_ENABLED
+          value: {{ .Values.metrics.enabled | quote }}
+        - name: METRICS_JVM_ENABLED
+          value: {{ .Values.metrics.jvmMetrics | quote }}
+        - name: METRICS_PATH
+          value: {{ .Values.metrics.path | quote }}
+        - name: METRICS_PORT
+          value: {{ .Values.metrics.port | quote }}
+        - name: JVM_PARAMS
+          value: {{ .Values.jvm.parameters | quote }}
+        {{- if .Values.spec.resources.requests }}
+        resources:
+          requests:
+            cpu: {{ .Values.spec.resources.requests.cpu | quote }}
+            memory: {{ .Values.spec.resources.requests.memory | quote }}
+          limits:
+            cpu: {{ .Values.spec.resources.limits.cpu | quote }}
+            memory: {{ .Values.spec.resources.limits.memory | quote }}
+        {{- end }}
+        volumeMounts:
+        - name: bsfload-cert-secret
+          mountPath: /opt/bsf-load/certificates/
+          readOnly: true
+      {{ if .Values.usage }}
+      nodeSelector:
+        usage: {{ .Values.usage }}
+      tolerations:
+      - key: usage
+        operator: Equal
+        value: {{ .Values.usage }}
+        effect: "NoSchedule"
+      {{ end }}
+      volumes:
+      - name: bsfload-cert-secret
+        secret:
+          secretName: bsfload-cert-secret
+          items:
+          - key: tls.crt
+            path: cert.pem
+          - key: tls.key
+            path: key.pem

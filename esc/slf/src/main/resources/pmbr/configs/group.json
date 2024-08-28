@@ -1,0 +1,241 @@
+[
+  {
+    "measurement-type": [
+      {
+        "measurement-name": "slf_load",
+        "description": "SLF load in percent",
+        "collection-method": "gauge",
+        "internal-metric-name": "slf_load",
+        "multiplicity": 1,
+        "aggregation": "sum",
+        "measurement-status": "deprecated",
+        "internal-metric-type": "Gauge",
+        "reset-at-gran-period": false,
+        "id": "slf_load",
+        "internal-instrumentation-label": {
+          "nf": "",
+          "nf_instance": "",
+          "app": "eric-sc-slf"
+        },
+        "internal-target-pattern": "nf=[nf],nf_instance=[nf_instance]",
+        "condition": "CPU Load increased. CPU Load decreased.",
+        "size": 8,
+        "service-name": "ericsson-scp",
+        "threshold-direction": "increasing"
+      },
+      {
+        "measurement-name": "slf_load_avg",
+        "description": "Average SLF load in percent",
+        "collection-method": "gauge",
+        "internal-metric-name": "slf_load",
+        "multiplicity": 1,
+        "aggregation": "avg",
+        "measurement-status": "used",
+        "internal-metric-type": "Gauge",
+        "reset-at-gran-period": false,
+        "id": "slf_load_avg",
+        "internal-instrumentation-label": {
+          "nf": "",
+          "nf_instance": "",
+          "app": "eric-sc-slf"
+        },
+        "internal-target-pattern": "nf=[nf],nf_instance=[nf_instance]",
+        "condition": "CPU Load increased. CPU Load decreased.",
+        "size": 8,
+        "fm-alarm-type": "/fme:fm/fme:alarm-model[fme:id='ericsson-scp']/fme:alarm-type[fme:id='ScpSlfHighLoad']",
+        "fault-name": "ScpSlfHighLoad",
+        "fault-description": "SLF load has passed a defined threshold",
+        "service-name": "ericsson-scp",
+        "threshold-direction": "increasing"
+      },
+      {
+        "measurement-name": "slf_load_max",
+        "description": "Max SLF load in percent",
+        "collection-method": "gauge",
+        "internal-metric-name": "slf_load",
+        "multiplicity": 1,
+        "aggregation": "max",
+        "measurement-status": "used",
+        "internal-metric-type": "Gauge",
+        "reset-at-gran-period": false,
+        "id": "slf_load_max",
+        "internal-instrumentation-label": {
+          "nf": "",
+          "nf_instance": "",
+          "app": "eric-sc-slf"
+        },
+        "internal-target-pattern": "nf=[nf],nf_instance=[nf_instance]",
+        "condition": "CPU Load increased. CPU Load decreased.",
+        "size": 8,
+        "service-name": "ericsson-scp",
+        "threshold-direction": "increasing"
+      },
+      {
+        "measurement-name": "slf_container_memory_working_set_bytes",
+        "description": "Memory usage per slf container in bytes",
+        "collection-method": "gauge",
+        "internal-metric-name": "container_memory_working_set_bytes",
+        "multiplicity": 1,
+        "aggregation": "avg",
+        "measurement-status": "used",
+        "internal-metric-type": "Gauge",
+        "reset-at-gran-period": false,
+        "id": "slf_container_memory_working_set_bytes",
+        "internal-instrumentation-label": {
+          "container": "eric-sc-slf",
+          "pod": "",
+          "instance": ""
+        },
+        "internal-target-pattern": "container=[container],pod=[pod],k8snode=[instance]",
+        "condition": "Memory usage increased. Memory usage decreased.",
+        "size": 8
+      },
+      {
+        "measurement-name": "slf_container_memory_usage_bytes",
+        "description": "Memory usage per slf container in bytes",
+        "collection-method": "gauge",
+        "internal-metric-name": "container_memory_usage_bytes",
+        "multiplicity": 1,
+        "aggregation": "sum",
+        "measurement-status": "deprecated",
+        "internal-metric-type": "Gauge",
+        "reset-at-gran-period": false,
+        "id": "slf_container_memory_usage_bytes",
+        "internal-instrumentation-label": {
+          "container": "eric-sc-slf",
+          "pod": "",
+          "instance": ""
+        },
+        "internal-target-pattern": "container=[container],pod=[pod],k8snode=[instance]",
+        "condition": "Memory usage increased. Memory usage decreased.",
+        "size": 8
+      }
+    ],
+    "version": "1.0.0",
+    "name": "slf_system_metrics"
+  },
+  {
+    "measurement-type": [
+      {
+        "measurement-name": "slf_nrf_out_requests_total",
+        "description": "Number of outgoing requests on the Nnrf interface",
+        "collection-method": "cc",
+        "internal-metric-name": "nrf_out_requests_total",
+        "multiplicity": 1,
+        "aggregation": "sum",
+        "measurement-status": "used",
+        "internal-metric-type": "Counter",
+        "reset-at-gran-period": true,
+        "id": "slf_nrf_out_requests_total",
+        "internal-instrumentation-label": {
+          "service": "",
+          "nf": "",
+          "nf_instance": "",
+          "nrf_group": "",
+          "nrf": "",
+          "method": "",
+          "path": "",
+          "app": "eric-sc-slf"
+        },
+        "internal-target-pattern": "nf=[nf],nf_instance=[nf_instance],nrf_group=[nrf_group],nrf=[nrf],service=[service],method=[method],path=[path]",
+        "condition": "Incremented: None Decremented: N/A",
+        "size": 8
+      },
+      {
+        "measurement-name": "slf_nrf_discovery_success_rate",
+        "description": "Success rate of HTTP transaction requests initiated by the SLF towards NRF",
+        "collection-method": "gauge",
+        "internal-metric-name": "slf_nrf_discovery_success_pmbr",
+        "multiplicity": 1,
+        "aggregation": "avg",
+        "measurement-status": "used",
+        "internal-metric-type": "Gauge",
+        "reset-at-gran-period": false,
+        "id": "slf_nrf_discovery_success_rate",
+        "internal-instrumentation-label": {},
+        "internal-target-pattern": "nf=scp",
+        "condition": "Incremented: None Decremented: N/A",
+        "size": 8
+      },
+      {
+        "measurement-name": "slf_nrf_in_answers_total",
+        "description": "Number of incoming answers on the Nnrf interface",
+        "collection-method": "cc",
+        "internal-metric-name": "nrf_in_answers_total",
+        "multiplicity": 1,
+        "aggregation": "sum",
+        "measurement-status": "used",
+        "internal-metric-type": "Counter",
+        "reset-at-gran-period": true,
+        "id": "slf_nrf_in_answers_total",
+        "internal-instrumentation-label": {
+          "service": "",
+          "nf": "",
+          "nf_instance": "",
+          "nrf_group": "",
+          "nrf": "",
+          "method": "",
+          "path": "",
+          "status": "",
+          "app": "eric-sc-slf"
+        },
+        "internal-target-pattern": "nf=[nf],nf_instance=[nf_instance],nrf_group=[nrf_group],nrf=[nrf],service=[service],method=[method],path=[path],status=[status]",
+        "condition": "Incremented: None Decremented: N/A",
+        "size": 8
+      },
+      {
+        "measurement-name": "slf_nrf_failovers_total",
+        "description": "Number of failovers between NRF instances within an NRF group",
+        "collection-method": "cc",
+        "internal-metric-name": "nrf_failovers_total",
+        "multiplicity": 1,
+        "aggregation": "sum",
+        "measurement-status": "used",
+        "internal-metric-type": "Counter",
+        "reset-at-gran-period": true,
+        "id": "slf_nrf_failovers_total",
+        "internal-instrumentation-label": {
+          "service": "",
+          "nf": "",
+          "nf_instance": "",
+          "nrf_group": "",
+          "from": "",
+          "to": "",
+          "cause": "",
+          "app": "eric-sc-slf"
+        },
+        "internal-target-pattern": "nf=[nf],nf_instance=[nf_instance],nrf_group=[nrf_group],service=[service],from=[from],to=[to],cause=[cause]",
+        "condition": "Incremented: None Decremented: N/A",
+        "size": 8
+      },
+      {
+        "measurement-name": "slf_nrf_endpoint_failovers_total",
+        "description": "Number of failovers between NRF internal endpoints",
+        "collection-method": "cc",
+        "internal-metric-name": "nrf_endpoint_failovers_total",
+        "multiplicity": 1,
+        "aggregation": "sum",
+        "measurement-status": "used",
+        "internal-metric-type": "Counter",
+        "reset-at-gran-period": true,
+        "id": "slf_nrf_endpoint_failovers_total",
+        "internal-instrumentation-label": {
+          "service": "",
+          "nf": "",
+          "nf_instance": "",
+          "nrf_group": "",
+          "nrf": "",
+          "from": "",
+          "to": "",
+          "cause": "",
+          "app": "eric-sc-slf"
+        },
+        "internal-target-pattern": "nf=[nf],nf_instance=[nf_instance],nrf_group=[nrf_group],nrf=[nrf],service=[service],from=[from],to=[to],cause=[cause]",
+        "condition": "Incremented: None Decremented: N/A",
+        "size": 8
+      }
+    ],
+    "version": "1.0.0",
+    "name": "slf_nrf"
+  }
+]

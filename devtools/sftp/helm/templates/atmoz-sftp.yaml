@@ -1,0 +1,90 @@
+# Copyright 2020 5G ESC Challengers Team
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ .Values.service.name }}
+  labels:
+    a: {{ .Values.service.name }}
+spec:
+  # for being able to access the service using Node's IPv6 address on dual stack clusters.
+  # Default is: SingleStack
+  ipFamilyPolicy: PreferDualStack
+  type: NodePort
+  ports:
+  - protocol: TCP
+    port: {{ .Values.service.port }} 
+    targetPort: {{ .Values.spec.port }}
+  selector:
+    app: {{ .Values.service.name }}
+status:
+  loadBalancer: {}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ .Values.service.name }}-pvc
+  labels:
+    app: {{ .Values.service.name }}
+spec:
+  storageClassName: {{ .Values.persistence.persistentVolumeClaim.storageClassName }}
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.persistence.persistentVolumeClaim.size }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.service.name }}
+  labels:
+    app: {{ .Values.service.name }}
+    role: {{ .Values.service.name }}
+spec:
+  replicas: {{ .Values.spec.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.service.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.service.name }}
+        a: {{ .Values.service.name }}
+    spec:
+{{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+{{- end }}
+{{- if .Values.tolerations.sftp }}
+      tolerations:
+{{ toYaml .Values.tolerations.sftp | indent 8 }}
+{{- end }}
+      volumes:
+        - name: {{ .Values.service.name }}-storage
+          persistentVolumeClaim:
+            claimName: {{ .Values.service.name }}-pvc 
+      imagePullSecrets:
+          - name: {{ template "eric-atmoz-sftp.pullSecrets" . }}
+      containers:
+        - name: {{ .Values.service.name }}   
+          image: {{ template "eric-atmoz-sftp.registryUrl" . }}/{{ template "eric-atmoz-sftp.repoPath" . }}/{{ template "eric-atmoz-sftp.image" . }}:{{ template "eric-atmoz-sftp.tag" . }}        
+          imagePullPolicy: {{ template "eric-atmoz-sftp.imagePullPolicy" . }}     
+          ports:
+            - containerPort: {{ .Values.spec.port }}
+          args: ["admin:admin:1001:1001:data"]
+          volumeMounts:
+            - mountPath: "/home/admin"
+              name: {{ .Values.service.name }}-storage
+          securityContext:
+            capabilities:
+              add: ["SYS_ADMIN"]
+          {{ if .Values.spec.resources.requests.cpu }}
+          resources:
+            requests:
+              cpu: {{ .Values.spec.resources.requests.cpu | quote }}
+              memory: {{ .Values.spec.resources.requests.memory | quote }}
+            limits:
+              cpu: {{ .Values.spec.resources.limits.cpu | quote }}
+              memory: {{ .Values.spec.resources.limits.memory | quote }}            
+          {{ end }}

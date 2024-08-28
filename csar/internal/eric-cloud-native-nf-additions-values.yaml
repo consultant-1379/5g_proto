@@ -1,0 +1,244 @@
+global:
+  timezone: UTC
+  pullSecret: ""
+  registry:
+    url: "armdocker.rnd.ericsson.se"
+  externalIPv4:
+     enabled: false
+  externalIPv6:
+     enabled: false
+  ipFamilyPolicy: SingleStack
+  networkPolicy:
+    enabled: true
+  log:
+    streamingMethod: "indirect"
+  logShipper:
+    deployment:
+      type: ""
+  security:
+    tls:
+      enabled: true
+  ## Configuration options for Document Database PG (DDB-PG) Service Provider (SP), included in the Cloud Native Base IHC,
+  ## and for the CMYP, CNOM Server Service Consumer (SCs) in this IHC.
+  documentDatabasePG:
+    operator:
+      ## For enabling the Operator-based deployment or the non-Operator deployment, for both SP and SCs, the global parameter
+      ## global.documentDatabasePG.operator.enabled is to be set to true or false, respectively.
+      ## When enabled=true the Operator-based deployment is enabled, otherwise the non-Operator deployment is enabled.
+      enabled: false
+  ## Configuration options for Key Value Database RD (KVDB RD) Service Provider (SP), included in the Cloud Native Base IHC,
+  ## and for the CNOM Server Service Consumer (SC) in this IHC.
+  keyValueDatabaseRD:
+    newOperator:
+      ## For enabling the new Operator-based deployment or the old Operator-based deployment, for both SP and SCs,
+      ## the global parameter global.keyValueDatabaseRD.newOperator.enabled is to be set to true or false, respectively.
+      ## When enabled=true the new Operator-based deployment is enabled, otherwise the old Operator-based deployment is enabled.
+      enabled: false
+
+## Admin User Management
+eric-sec-admin-user-management:
+  enabled: true
+  egress:
+   iamAuthenticationLdapClient:
+    certificates:
+      asymmetricKeyCertificateName: "sc-ldap-default-cert"
+      trustedCertificateListName: "sc-trusted-default-cas"
+  notices:
+    legal: "IF YOU ARE NOT AN AUTHORIZED USER, PLEASE EXIT IMMEDIATELY"
+    privacy: "This system processes sensitive personal data. The misuse of such data may\ngenerate considerable harm to the data subjects. Be reminded of the\nconfidentiality obligations you have when accessing this kind of data and\nthe disciplinary consequences of improper handling.\nVersion: 1.0, Last Updated: May 21, 2019"
+    postLogin: "SIGNALING CONTROLLER"
+  ldap:
+    notifierEnabled: true
+
+## LDAP Server
+eric-sec-ldap-server:
+  enabled: true
+  replicaCount: 2
+  ldap:
+    aum:
+      enabled: true
+  brAgent:
+    enabled: true
+    brLabelValue: "eric-sec-ldap-server"
+    backupTypeList:
+      - "DEFAULT"
+  persistentVolumeClaim:
+    size: 8Gi
+
+## Configuration Management Yang Provider
+eric-cm-yang-provider:
+  enabled: true
+  enableCliCommandAuditLogs: true
+  externaldb:
+    host: eric-cm-mediator-db-pg
+    dbname: adp_gs_cm
+  certManagement:
+    sshKeys:
+      enabled: false
+  sshHostKeys:
+    name: cm-cliNetconf-ssh-server
+  cliExtensionCmds:
+    showAlarms:
+      enabled: true
+    showAlarmsHistory:
+      enabled: true
+  pmMetrics:
+    enableQueryMetricsCommands: true
+  service:
+    certificates:
+      asymmetricKeyCertificateName: "netconf-default-key-cert"
+      trustedCertificateListName: "sc-trusted-default-cas"
+  externalTls:
+    netconf:
+      enabled: true
+  logShipper:
+    input:
+      files:
+      - enabled: true
+        skipLongLines: "on"
+        buffer:
+          maxSize: "64k"
+        paths:
+          - "api-server.log"
+          - "cli-extension-cmds.log"
+          - "data-adapter.log"
+          - "init-container.log"
+          - "notification-controller.log"
+          - "object-storage-adapter.log"
+          - "pm-metrics.log"
+          - "schema-synchronizer.log"
+          - "yang-db-adapter.log"
+          - "yang-engine.log"
+          - "yp-sshd.log"
+        parsers:
+          - "json"
+
+## CNOM Server
+eric-cnom-server:
+  enabled: true
+  features:
+    serviceCommunicationProxy: false
+    logViews: true
+    metricViewer: false
+    bro: false
+  documentDatabase:
+    enabled: false
+  documentDatabasePg:
+    enabled: true
+    customObject:
+      ## Parameter enabled allows the creation of the CNOM-dedicated DDB-PG instance by deploying the CNOM Server-owned CR.
+      ## If it is set to true and the global.documentDatabasePG.operator.enabled parameter is set to true as well,
+      ## the CR is deployed, provided that the CNOM Server service is deployed by setting the
+      ## eric-cnom-server.enabled parameter to true.
+      enabled: false
+    ## Use single DBPG
+    # host: eric-data-document-database-pg
+    ## Use for dedicated DBPG and enable eric-cnom-server-db-pg
+    ## The host parameter holds the hostname of DDB-PG instance to use.
+    ## By default the CNOM-dedicated DDB-PG instance is configured by default;
+    ## a shared one can be optionally used.
+    host: eric-cnom-server-db-pg
+  cmYangProvider:
+    enabled: true
+    host: eric-cm-yang-provider-external
+  serviceCommunicationProxy:
+    configMap: eric-scp-manager-scp-schema-configmap
+    secret: eric-sc-oam-user-secret
+    secretUsernameKey: username
+    secretPasswordKey: password
+  appConfig:
+    configMaps: [eric-sc-cs-cnom-app-config]
+  metrics:
+    #hierarchy:
+      #configMap: "eric-cnom-metrics-hierarchy"
+    selectorConfig:
+      configMap: "eric-sc-cs-cnom-metrics-selector-config"
+  server:
+    basePath: "/em"
+    behindProxy: true
+  service:
+    endpoints:
+      api:
+        tls:
+          ca:
+            - name: eric-tm-ingress-controller-cr-client-ca
+              bundle: ca.pem
+  authentication:
+    local:
+      enabled: false
+    ldap:
+      enabled: true
+      roleMapping:
+        - internalRole: SECURITY_ADMIN
+          externalRoles: ["sc-security-admin", "*:sc-security-admin"]
+        - internalRole: ADMINISTRATOR
+          externalRoles: ["sc-admin", "*:sc-admin"]
+        - internalRole: OPERATOR
+          externalRoles: ["sc-read-only", "*:sc-read-only"]
+  resources:
+    server:
+      requests:
+        cpu: 500m
+  ## Configuration parameters for connecting to Redis-Cluster
+  keyValueDatabaseRD:
+    ## The enabled parameter enables the usage of the Redis-Cluster.
+    enabled: false
+
+eric-cnom-server-db-pg:
+  enabled: true
+  log:
+    schema: "adp"
+  
+## PM Bulk Reporter
+eric-pm-bulk-reporter:
+  enabled: true
+  objectStorage: ## ROP File Storage Backend
+    enabled: false
+    secretName: "eric-data-object-storage-mn-secret"
+  thresholdReporter:
+    enabled: true
+    restAPI: true
+  security:
+    keyManagement:
+      enabled: true
+    certificateManagement:
+      enabled: false
+  sshHostKeys:
+    name: pm-rop-sftp-server
+  applicationId:
+    enabled: true
+  networkPolicy:
+    enabled: true
+  persistentVolumeClaim:
+    enabled: true
+    size: 10Gi
+  userConfig:
+    ldap:
+      rolesConfig:
+        readOnlyGroup: "system-read-only,scp-read-only,bsf-read-only,sepp-read-only,dsc-read-only"
+        readWriteGroup: "system-admin,scp-admin,bsf-admin,sepp-admin,dsc-admin"
+  env:
+    nodeType: "Signaling_Controller"
+
+## SFTP Server
+eric-data-sftp-server:
+  enabled: false
+  certmHostKey:
+    enabled: false
+  objectStorage:
+    accessSecretName: "eric-data-object-storage-mn-secret"
+  configuration:
+    bucket_policy: "scp-admin eric-pmbr-rop-file-store rw:bsf-admin eric-pmbr-rop-file-store rw:sepp-admin eric-pmbr-rop-file-store rw:dsc-admin eric-pmbr-rop-file-store rw:scp-read-only eric-pmbr-rop-file-store r:bsf-read-only eric-pmbr-rop-file-store r:sepp-read-only eric-pmbr-rop-file-store r:dsc-read-only eric-pmbr-rop-file-store r"
+    object_policy: ""
+    default_bucket_policy: "system-admin * rw:system-read-only * r:system-security-admin * rw"
+  privacy_notice_file: "This system processes sensitive personal data. The misuse of such data may\ngenerate considerable harm to the data subjects. Be reminded of the\nconfidentiality obligations you have when accessing this kind of data and\nthe disciplinary consequences of improper handling.\nVersion: 1.0, Last Updated: May 21, 2019"
+
+eric-lcm-smart-helm-hooks:
+  enabled: false
+
+eric-cloud-native-nf-additions-log-shipper:
+  ## This alias chart name avoids conflicts with the Log Shipper chart defined in Cloud Native Base integration chart.
+  ## The default values below can be overridden for deployment specific values.
+  ## In case sidecar deployment needs to be enabled for LS service, the below 'enabled' parameter is to be set to 'true'
+  ## together two global parameters, as decribed at the top
+  enabled: false

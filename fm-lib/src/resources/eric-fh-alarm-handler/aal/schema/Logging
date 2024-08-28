@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "id": "file://schema/LogEvent#",
+  "title": "Log event",
+  "description": "Definition of a structured log event",
+  "eric-adp-version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "version": {
+      "description": "Version of this logging format. Equivalent to VERSION in RFC 5424.",
+      "type": "string",
+      "default": "1.0.0"
+    },
+    "timestamp": {
+      "description": "YYYY-MM-DDThh:mm:ss.sss+/-hh:mm. The time expressed in local time with UTC offset and millisecond precision according to TIMESTAMP in RFC 5424. Example: 2015-08-12T11:33:14.012+01:00",
+      "type": "string"
+    },
+    "severity": {
+      "description": "Log event severity level. A sub-set of severity levels specified in RFC 5424.",
+      "type": "string",
+      "enum": [
+        "debug",
+        "info",
+        "warning",
+        "error",
+        "critical"
+      ]
+    },
+    "service_id": {
+      "description": "Name of the service producing the log event. Equivalent to APP-NAME in RFC 5424.",
+      "type": "string"
+    },
+    "extra_data": {
+      "description": "Optional application-specific data.",
+      "type": "object"
+    },
+    "metadata": {
+      "description": "Optional properties which can be used to parse the logging events. Equivalent to STRUCTURED-DATA in RFC 5424.",
+      "type": "object",
+      "properties": {
+        "function": {
+          "description": "The name of the function to which the event is related.",
+          "type": "string"
+        },
+        "category": {
+          "description": "An identifier for the type of message. Equivalent to MSGID in RFC 5424.",
+          "type": "string"
+        },
+        "proc_id": {
+          "description": "Identifies a process name or process ID inside a service. Equivalent to PROCID in RFC 5424.",
+          "type": "string"
+        },
+        "ul_id": {
+          "description": "An identifier that uniquely identifies the origin of a logged event in the source code across multiple versions of the service.",
+          "type": "string"
+        }
+      }
+    },
+    "message": {
+      "description": "A freeform text describing the log event, preferably without control characters (even escaped). Equivalent to MSG in RFC 5424.",
+      "type": "string"
+    },
+    "facility": {
+      "description": "Facility is described in RFC 5424 by non normative values aiming to categorize logs. The value \"log audit\" associated to the numerical code 13 shall be used.",
+      "type": "string"
+    },
+    "subject": {
+      "description": "The operator who performed the O&M operation.",
+      "type": "string"
+    },
+    "resp_message": {
+      "description": "A freeform text dedicated to response messages.",
+      "type": "string"
+    },
+    "resp_code": {
+      "description": "A freeform text dedicated to response codes.",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "timestamp",
+    "severity",
+    "service_id",
+    "message"
+  ]
+}

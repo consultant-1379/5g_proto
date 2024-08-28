@@ -1,0 +1,7 @@
+server:
+  extraConfigmapMounts:
+    - name: eric-sc-cs-rr-volume
+      configMap: eric-sc-cs-rr
+      mountPath: /etc/config/sccs
+      subPath: ""
+      readOnly: true

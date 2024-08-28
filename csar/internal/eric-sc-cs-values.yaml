@@ -1,0 +1,19 @@
+## TODO: enable nvip after sc-diameter addition or delete if nvip disabled by default
+# eric-tm-senp-nvip:
+  # enabled: false
+
+eric-sc-manager:
+  enabled: true
+
+eric-data-distributed-coordinator-ed-sc:
+  enabled: true
+
+swim:
+  productName: "Signaling Controller (SC)"
+  productNumber: "CXP_904_2595/1"
+  productRevision: "R16A5"
+  productDate: "2024-06-14T17:00:00+02:00"
+  description: "The Signaling Controller (SC) is a cloud native function (CNF) comprising distinctive 4G and 5G network functions (NF). These are the 4G functions Diameter Agent, Routing Agent and Edge Agent (DA, DRA, DEA) as well as the 5G functions Service Communication Proxy (SCP), Security Edge Protection Proxy (SEPP) and the Binding Support Function (BSF)."
+  type: "SIGNALING_CONTROLLER"
+  semanticVersion: "1.15.0+5"
+  commercialVersion: "1.15.0"

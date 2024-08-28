@@ -1,0 +1,192 @@
+modelVersion: 2.0
+
+import:
+  base: ruleset2.0-eric-base.yaml
+
+description: "Security Edge Protection Proxy (SEPP) Simulator"
+
+properties:
+  - EXPORT_DIR: ${base.OUTPUT_DIR}/export-seppsim
+  - IMAGE_NAME: ${SERVICE_NAME}
+  - SERVICE_NAME: eric-seppsim
+
+env:
+ - BOB_FORCE_IMAGE_PULL (default=false)
+ - RELEASE (default=false)
+ - TEST_TYPE (default=)
+
+var:
+ - seppsim-cxu-number
+ - seppsim-cxu-rev-number
+ - seppsim-version
+
+
+rules:
+  init:
+    - task: base.init:create-output-dir
+    - task: base.init:set-namespace
+    - task: base.init:set-kube-config
+    - task: base.init:set-build-proxy
+    - task: base.init:set-supreme-properties
+    - task: base.init:api-tokens
+    - task: version
+      docker-image: base.adp-release-auto
+      cmd: generate-version --is-release ${env.RELEASE} --output seppsim-version
+    - task: seppsim-cxu-number
+      cmd:
+       - VP=$(cat VERSION_PREFIX) && arr=(${VP//./ }) && X_VERSION=${arr[0]}
+       - cat SEPPSIM_CXU_PREFIX | sed -e "s/ /_/g" -e "s/$/$X_VERSION/" > ${base.OUTPUT_DIR}/var.seppsim-cxu-number
+    - task: seppsim-cxu-rev-number
+      docker-image: base.adp-release-auto
+      cmd: /bin/bash -c "
+        if ${env.RELEASE}; then 
+          /usr/local/bin/get_rstate.py  $(cat ${base.OUTPUT_DIR}/var.seppsim-version) > ${base.OUTPUT_DIR}/var.seppsim-cxu-rev-number; 
+          echo -n $(cat ${base.OUTPUT_DIR}/var.seppsim-version|awk -F'-' '{print $2}')|tee -a ${base.OUTPUT_DIR}/var.seppsim-cxu-rev-number;
+          sed -i ':a;$!{N;s/\n//;ba;}' ${base.OUTPUT_DIR}/var.seppsim-cxu-rev-number;
+          echo '' | tee -a ${base.OUTPUT_DIR}/var.seppsim-cxu-rev-number;
+        else
+          /usr/local/bin/get_rstate.py  $(cat ${base.OUTPUT_DIR}/var.seppsim-version) > ${base.OUTPUT_DIR}/var.seppsim-cxu-rev-number;
+        fi"
+        # cmd: scripts/prim_number_revision.sh ${base.OUTPUT_DIR}/var.seppsim-version > ${base.OUTPUT_DIR}/var.seppsim-cxu-rev-number
+
+  build:
+    - task: esc-parent
+      docker-image: base.java-maven-builder
+      cmd: mvn -s ${var.base.build-proxy} -Duser.home=. -DskipTests -Djacoco.skip=true -am -pl :eric-seppsim ${base.MVN_ARGS} package
+
+  image:
+    - task: build-eric-seppsim
+      cmd: docker build ./simulators/seppsim/
+           --file simulators/seppsim/Dockerfile
+           --build-arg DOCKER_BASE_IMG=${base.SC_CBOS_IMG}
+           --tag ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${IMAGE_NAME}:${var.seppsim-version}
+
+  lint:
+    - task: helm
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: helm lint ${base.OUTPUT_DIR}/${SERVICE_NAME}
+
+  package-full:
+    - task: helm-chart
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "
+           rm -rf ${base.OUTPUT_DIR}/eric-seppsim*.tgz;
+           mkdir -p ${base.OUTPUT_DIR}/${SERVICE_NAME};
+           cp -r simulators/seppsim/helm/* ${base.OUTPUT_DIR}/${SERVICE_NAME};
+           update_values.rb ${base.OUTPUT_DIR}/${SERVICE_NAME}/values.yaml
+           imageCredentials:registry:url=${base.DOCKER_REGISTRY_URL} imageCredentials:repoPath=${base.DOCKER_REPO_PATH}/${env.base.USER}
+           spec:image=${IMAGE_NAME} spec:tag=${var.seppsim-version} > ${base.OUTPUT_DIR}/${SERVICE_NAME}/values.tmp.yaml;
+           mv ${base.OUTPUT_DIR}/${SERVICE_NAME}/values.tmp.yaml ${base.OUTPUT_DIR}/${SERVICE_NAME}/values.yaml;
+           helm package --version ${var.seppsim-version} ${base.OUTPUT_DIR}/${SERVICE_NAME}/ -d ${base.OUTPUT_DIR}/";
+
+#Removes all extra seppsim-p deployments
+  package:
+    - task: helm-chart
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "
+           rm -rf ${base.OUTPUT_DIR}/eric-seppsim*.tgz;
+           mkdir -p ${base.OUTPUT_DIR}/${SERVICE_NAME};
+           cp -r simulators/seppsim/helm/* ${base.OUTPUT_DIR}/${SERVICE_NAME};
+           rm -r ${base.OUTPUT_DIR}/${SERVICE_NAME}/templates/pseppsim1.yaml ${base.OUTPUT_DIR}/${SERVICE_NAME}/templates/pseppsim2.yaml
+                 ${base.OUTPUT_DIR}/${SERVICE_NAME}/templates/pseppsim3.yaml ${base.OUTPUT_DIR}/${SERVICE_NAME}/templates/pseppsim4.yaml
+                 ${base.OUTPUT_DIR}/${SERVICE_NAME}/templates/pseppsim5.yaml ${base.OUTPUT_DIR}/${SERVICE_NAME}/templates/pseppsim6.yaml
+                 ${base.OUTPUT_DIR}/${SERVICE_NAME}/templates/pseppsim7.yaml ${base.OUTPUT_DIR}/${SERVICE_NAME}/templates/pseppsim8.yaml;
+           sed -i 's|product_number|'${var.seppsim-cxu-number}'|g' ${base.OUTPUT_DIR}/${SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/product_revision/'${var.seppsim-cxu-rev-number}'/g' ${base.OUTPUT_DIR}/${SERVICE_NAME}/eric-product-info.yaml;
+           update_values.rb ${base.OUTPUT_DIR}/${SERVICE_NAME}/values.yaml
+           imageCredentials:registry:url=${base.DOCKER_REGISTRY_URL} imageCredentials:repoPath=${base.DOCKER_REPO_PATH}/${env.base.USER}
+           spec:image=${IMAGE_NAME} spec:tag=${var.seppsim-version} > ${base.OUTPUT_DIR}/${SERVICE_NAME}/values.tmp.yaml;
+           mv ${base.OUTPUT_DIR}/${SERVICE_NAME}/values.tmp.yaml ${base.OUTPUT_DIR}/${SERVICE_NAME}/values.yaml;
+           helm package --version ${var.seppsim-version} ${base.OUTPUT_DIR}/${SERVICE_NAME}/ -d ${base.OUTPUT_DIR}/";
+
+  push:
+    - task: docker-image
+      cmd: docker push ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${IMAGE_NAME}:${var.seppsim-version}
+    - task: helm-chart
+      cmd: "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\" --upload-file ${base.OUTPUT_DIR}/${SERVICE_NAME}-${var.seppsim-version}.tgz \"${base.HELM_CHART_REPO}/${SERVICE_NAME}-${var.seppsim-version}.tgz\""
+
+  deploy:
+    - task: all
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: /bin/bash -c 'if [[ "${env.TEST_TYPE}" = "IaaS_Stability_tools_on_separate_workers" ]];
+                        then
+                            helm install --namespace ${var.base.namespace} --set usage=tools ${SERVICE_NAME}-${env.base.USER} ${base.OUTPUT_DIR}/${SERVICE_NAME}-${var.seppsim-version}.tgz;
+                        else
+                            helm install --namespace ${var.base.namespace} ${SERVICE_NAME}-${env.base.USER} ${base.OUTPUT_DIR}/${SERVICE_NAME}-${var.seppsim-version}.tgz;
+                        fi;
+                        '
+
+  undeploy:
+    - task: all
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: helm uninstall --namespace ${var.base.namespace} ${SERVICE_NAME}-${env.base.USER}
+
+  download:
+    - task: download-seppsim
+      cmd: "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\" -O https://arm.seli.gic.ericsson.se/artifactory/proj-5g-bsf-helm-local/${SERVICE_NAME}-${var.seppsim-version}.tgz"
+
+  export:
+    - task: clean:export
+    - task: folders
+      cmd:
+        - mkdir -p ${EXPORT_DIR}
+        - mkdir -p ${EXPORT_DIR}/helm/
+        - mkdir -p ${EXPORT_DIR}/helm/full
+        - mkdir -p ${EXPORT_DIR}/docker
+        - mkdir -p ${EXPORT_DIR}/certificates/seppsim
+        - mkdir -p ${EXPORT_DIR}/certificates/seppsim-scp
+    - rule: package-full
+    - task: helm-full
+      cmd: cp ${base.OUTPUT_DIR}/${SERVICE_NAME}-${var.seppsim-version}.tgz ${EXPORT_DIR}/helm/full
+    - rule: package
+    - task: helm
+      cmd: cp ${base.OUTPUT_DIR}/${SERVICE_NAME}-${var.seppsim-version}.tgz ${EXPORT_DIR}/helm
+    - task: image
+      cmd: docker save ${base.DOCKER_REGISTRY_URL}/${base.DOCKER_REPO_PATH}/${env.base.USER}/${IMAGE_NAME}:${var.seppsim-version} > ${EXPORT_DIR}/docker/${IMAGE_NAME}-${var.seppsim-version}.tar
+    - task: certificates
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd:
+        - generate -d seppsim -p ${base.CERTS_OUT_DIR}/supreme.yaml
+        - generate -d seppsim-scp -p ${base.CERTS_OUT_DIR}/supreme.yaml
+    - task: copy-certificates
+      cmd:
+        - cp -R ${base.CERTS_OUT_DIR}/seppsim/* ${EXPORT_DIR}/certificates/seppsim
+        - cp -R ${base.CERTS_OUT_DIR}/seppsim-scp/* ${EXPORT_DIR}/certificates/seppsim-scp
+
+  clean:
+    - task: base.init:create-output-dir
+    - task: base.init:set-build-proxy
+    - task: certificates
+      cmd:
+        - rm -rf ${base.CERTS_OUT_DIR}/seppsim
+        - rm -rf ${base.CERTS_OUT_DIR}/seppsim-scp
+    - task: export
+      cmd: rm -rf ${EXPORT_DIR}
+    - task: helm
+      cmd:
+        - rm -f ${base.OUTPUT_DIR}/${SERVICE_NAME}-*.tgz
+        - rm -rf ${base.OUTPUT_DIR}/${SERVICE_NAME}
+    - task: maven
+      docker-image: base.java-maven-builder
+      cmd: mvn -s ${var.base.build-proxy} -Duser.home=. -DskipTests -am -pl :eric-seppsim ${base.MVN_ARGS} clean
+    - task: version
+      cmd:
+        - rm -f ${base.OUTPUT_DIR}/var.seppsim-cxu-number
+        - rm -f ${base.OUTPUT_DIR}/var.seppsim-cxu-rev-number
+        - rm -f ${base.OUTPUT_DIR}/var.seppsim-version

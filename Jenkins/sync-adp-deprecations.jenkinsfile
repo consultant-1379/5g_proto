@@ -1,0 +1,109 @@
+pipeline{
+	options {
+		timeout(time: 15, unit: 'MINUTES')
+		timestamps()
+	}
+	agent {
+		node {
+			label '5G-SC'
+		} // node
+	} // agent
+	parameters {
+		string(name: 'COMPONENT', defaultValue: 'Product Backlog', description: 'Component name for new jira ticket to be created')
+		string(name: 'SUFFIX', defaultValue: 'SC', description: 'Suffix to be added to the summary, usually the application name')
+		string(name: 'EPIC', defaultValue: 'DND-28350', description: 'Deprecation epic id. Eg: ADPPRG-35840, DND-28350')
+		string(name: 'JIRAPROJECT', defaultValue: 'DND', description: 'Jira project key in which new ticket to be created')
+		string(name: 'JIRAURL', defaultValue: 'https://eteamproject.internal.ericsson.com', description: 'Application jira server where deprecation_new tickets should be created')
+		string(name: 'LABEL', defaultValue: '5GC', description: 'Label for new jira ticket to be created (supports multiple labels separated by comma)')
+	} // parameters
+	stages {
+		stage('Print env vars') {
+			steps {
+				sh 'printenv | sort'
+			} // steps
+		} // stage
+		stage('Set build info') {
+			steps {
+				script{
+					// set displayed build name to "BUILD_NUMBER - COMMIT"
+					currentBuild.displayName = "#${BUILD_NUMBER} - ${env.COMMIT}"
+					// set displayed description to "NODE_NAME, KUBE_HOST, CHART_VERSION"
+					currentBuild.description = "${env.NODE_NAME}";
+				} // script
+			} // steps
+		} // stage
+		stage('Log current job start') {
+			steps {
+				script {
+					if ( fileExists("/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh") ) {
+						// Log current job 
+						sh "/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh -start"
+					} // if
+				} //script
+			} //steps
+		} //stage
+		stage('Init actions'){
+			steps{
+				sh "./bob/bob clean:directories"
+				sh "./bob/bob base.create-output-dir"
+			} //steps
+		} //stage
+		stage('Sync Deprecations'){
+			steps {
+				withCredentials([usernamePassword(credentialsId: 'eiffelesc-credentials', usernameVariable: 'USER', passwordVariable: 'PASSWORD')]) {
+					sh "./bob/bob deprecations:sync"
+					} //withCredentials
+			} // steps
+		} // stage
+        stage('Archive files') {
+            steps {
+                // transform generated report from json to csv
+                sh "./bob/bob deprecations:json2csv"
+                
+                // generate html report
+                sh "./bob/bob deprecations:create-html-report"
+                
+                // Archive deprecation report
+                archiveArtifacts artifacts: '.bob/*.json', allowEmptyArchive: true
+                archiveArtifacts artifacts: '.bob/report.csv', allowEmptyArchive: true
+                publishHTML (target: [
+	                allowMissing: false,
+	                alwaysLinkToLastBuild: false,
+	                keepAll: true,
+	                reportDir: '.bob/',
+	                reportFiles: 'report.html',
+	                reportName: "ADP Deprecations"
+	            ])
+            }
+        }
+	}
+	post{
+		always {
+			script {
+				// Log current job
+				if ( fileExists("/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh") ) {
+					sh "/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh -stop"
+				} // if
+			} // script
+		} // always
+		success {
+			script {
+				COLOR = "<body style=\"background-color: Green;\">"
+				emailext body: "$COLOR" + "Hi Challengers,<p> We successfully synced ADP deprecations automatically.<p> Please check latest <a href=\"${env.BUILD_URL}/ADP_20Deprecations/\">report</a><br><br><br>BR,<br>sync-adp-deprecations pipeline",
+					mimeType: 'text/html',
+					subject: "Latest ADP deprecations.",
+					to: "evak@intracom-telecom.com, IXG-ChallengersTeam@ericsson.onmicrosoft.com"
+			} // script
+			cleanWs()
+		} // success
+		failure {
+			script {
+				COLOR = "<body style=\"background-color: Red;\">"
+				emailext body: "$COLOR" + "Hi Challengers,<p> We failed to sync ADP deprecations automatically.<p> Please check:<br>${env.BUILD_URL}<br><br><br>BR,<br>sync-adp-deprecations pipeline",
+					mimeType: 'text/html',
+					subject: "Failed to sync ADP deprecations.",
+					to: "evak@intracom-telecom.com, IXG-ChallengersTeam@ericsson.onmicrosoft.com"
+			} // script
+		} // failure
+	}
+}

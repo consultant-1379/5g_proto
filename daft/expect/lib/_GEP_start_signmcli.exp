@@ -1,0 +1,118 @@
+################################################################################
+#
+#  Author   : eustone, eedvam
+#
+#  Revision : 1.11
+#  Date     : 2018-11-07 13:33:16
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2014,2015,2017
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+source [file join [file dirname [info script]] ../lib/_GEP_check_valid_command.exp]
+source [file join [file dirname [info script]] ../lib/_sleep_seconds.exp]
+
+# -----------------------------------------------------------------------------
+# Start the SIGNMCLI shell.
+#
+# This subroutine expects that it is already connected to the GEP Linux prompt.
+#
+# Input:
+#  -
+#
+# Output:
+#  -  0: Success, Connected to SIGNMCLI
+#     1: Failure, Not able to connect to SIGNMCLI
+#    -1: Timeout
+#
+proc GEP_start_signmcli {} {
+    global spawn_id
+
+    set connected 0
+    set long_execution 0
+    set retry 0
+    set try_old_command 0
+
+    # Check which command is available
+    if { [GEP_check_valid_command "/opt/dsc/cli/dsc-connect-signalling-mgr"] == 0 } {
+        set command "/opt/dsc/cli/dsc-connect-signalling-mgr"
+    } elseif { [GEP_check_valid_command "/opt/dsc/cli/signmcli"] == 0 } {
+        set command "/opt/dsc/cli/signmcli"
+    } else {
+        # Unable to find the command to connect to the signaling manager
+        return 1
+    }
+
+    # Connect to the signaling CLI
+    send -- "$command\r"
+    expect {
+        -re "\(yes,no,abort\).*" {
+            # Problems to connect to signmcli, most likely because somebody else is using it.
+            # We assume that we have the right to remove the lock file so we can execute our commands
+            # so answer "no" to continue.
+            send -- "no\r"
+            exp_continue
+        }
+        -re "command not found" {
+            # Try the older "signmcli" command
+            if { $command == "/opt/dsc/cli/dsc-connect-signalling-mgr" } {
+                set try_old_command 1
+            }
+            exp_continue
+        }
+        -re "If the operation takes longer time than expected, abort it with Ctrl-D." {
+            set long_execution 1
+            exp_continue
+        }
+        -re "Timed out while waiting for response.\r*\nERROR\r*\ncli> $" {
+            set connected 0
+        }
+        -re "cli> $" {
+            # We successfully connected to the signaling CLI
+            set connected 1
+        }
+        -re "SC-\[12\]\[^\n\]*$" {
+            # We failed to connect to the signaling CLI
+            if { $try_old_command == 1 } {
+                set command "signmcli"
+                set try_old_command 0
+                send -- "$command\r"
+                exp_continue
+            }
+        }
+        timeout {
+            if { $long_execution == 1 } {
+                if { $retry > 3 } {
+                    return -1
+                } else {
+                    incr retry
+                    exp_continue
+                }
+            } elseif { $retry == 0 } {
+                sleep_seconds 60 10
+                set retry 1
+                send -- "$command\r"
+                exp_continue
+            } else {
+                return -1
+            }
+        }
+    }
+    # Read any pending output
+    expect -re ".*"
+
+    if { $connected == 1 } {
+        return 0
+    } else {
+        return 1
+    }
+}

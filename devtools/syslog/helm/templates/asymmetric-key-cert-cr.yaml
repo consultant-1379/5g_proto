@@ -1,0 +1,14 @@
+{{- if eq (include "eric-syslog.cr" .) "true" -}}
+{{- if eq (include "eric-syslog.tls" .) "true" -}}
+apiVersion: certm.sec.ericsson.com/v1
+kind: ExternalCertificate
+metadata:
+  name: {{ template "eric-syslog.name" . }}-asymmetric-key-cert
+  labels:
+    app: {{ template "eric-syslog.name" . }}
+spec:
+  generated-secret-name: {{ template "eric-syslog.name" . }}-asymmetric-key-cert-secret
+  generated-secret-type: tls
+  asymmetric-key-certificate-name: {{ .Values.service.tls.useCr.clientKey }}/{{ .Values.service.tls.useCr.clientCert }}
+{{- end -}}
+{{- end -}}

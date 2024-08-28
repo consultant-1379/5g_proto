@@ -1,0 +1,1035 @@
+global:
+  timezone: UTC
+  pullSecret: ""
+  registry:
+    url: "armdocker.rnd.ericsson.se"
+    # imagePullPolicy: IfNotPresent
+  externalIPv4:
+    enabled: 
+  externalIPv6:
+    enabled: 
+  internalIPFamily: ""
+  ericsson:
+    sc:
+      fileCollector:
+        enabled: false
+        persistentVolumeClaim:
+          storageClassName: 'network-block'
+          accessMode: ReadWriteOnce
+          size: 30Gi
+    scp:
+      enabled: true
+    bsf:
+      enabled: true
+    bsfdiameter:
+      enabled: true
+    sepp:
+      enabled: true
+    nlf:
+      enabled: true
+    rlf:
+      enabled: true
+    slf:
+      enabled: true
+    scdiameter:
+      enabled: false
+    wcdb:
+      enabled: true
+    objectStorage: ## ROP File Storage Backend (Alpha Feature)
+      enabled: false
+    sftp: ## ROP File Storage Backend (Alpha Feature)
+      enabled: false
+    ddc:
+      enabled: true
+    pvtb:
+      enabled: false
+  security:
+    tls:
+      enabled: true
+  log:
+    outputs: ["stdout", "k8sLevel"] # supports stream, applicationLevel or stdout (or <old> k8sLevel)
+    streamingMethod: "indirect" # supports direct, indirect or dual
+  logShipper:
+    deployment:
+      type: "" # supports sidecar or empty
+  licenseConsumer:
+    features:
+      monitoring:
+        licenses:
+           enabled: true
+  featureGates:
+    caBootstrap_v2: true
+  networkPolicy:
+    enabled: true
+
+eric-sc:
+  rbac:
+    clusterMonitoring:
+      create: true
+  routes:
+    nbi:
+      fqdn: ""
+      security:
+        tls:
+          clientValidation:
+            enabled: true
+  logging:
+    enabled: true
+  certificates:
+    internal:
+      caSecret: eric-sec-sip-tls-trusted-root-cert
+    nbi:
+      secret: nbi-cert-secret
+      key: sc-nbi-default-key
+      certificate: sc-nbi-default-cert
+      caSecret: eric-sc-trusted-ca
+    trustedCAs:
+      secret: trusted-cas-secret
+      certificateList: sc-trusted-default-cas
+
+eric-sc-hcagent:
+  enabled: true
+  severities:
+    application:
+    - service-name: "eric-sc-nlf"
+      highest-severity-reported: "Minor"
+      replication-controller-type: "deployment"
+      minimum-replicas-required: 2
+      high-availability-replicas-required: 0
+    - service-name: "eric-sc-rlf"
+      highest-severity-reported: "Minor"
+      replication-controller-type: "deployment"
+      minimum-replicas-required: 2
+      high-availability-replicas-required: 0
+    - service-name: "eric-bsf-diameter"
+      highest-severity-reported: "Critical"
+      replication-controller-type: "deployment"
+      minimum-replicas-required: 1
+      high-availability-replicas-required: 2
+    - service-name: "eric-bsf-manager"
+      highest-severity-reported: "Critical"
+      replication-controller-type: "deployment"
+      minimum-replicas-required: 1
+      high-availability-replicas-required: 0
+    - service-name: "eric-bsf-worker"
+      highest-severity-reported: "Critical"
+      replication-controller-type: "deployment"
+      minimum-replicas-required: 1
+      high-availability-replicas-required: 2
+    - service-name: "eric-sc-manager"
+      highest-severity-reported: "Critical"
+      replication-controller-type: "deployment"
+      minimum-replicas-required: 1
+      high-availability-replicas-required: 0
+    - service-name: "eric-sc-slf"
+      highest-severity-reported: "Critical"
+      replication-controller-type: "deployment"
+      minimum-replicas-required: 2
+      high-availability-replicas-required: 0
+    - service-name: "eric-sc-spr-fe"
+      highest-severity-reported: "Critical"
+      replication-controller-type: "deployment"
+      minimum-replicas-required: 1
+      high-availability-replicas-required: 3
+    - service-name: "eric-scp-manager"
+      highest-severity-reported: "Critical"
+      replication-controller-type: "deployment"
+      minimum-replicas-required: 1
+      high-availability-replicas-required: 0
+    - service-name: "eric-scp-worker"
+      highest-severity-reported: "Critical"
+      replication-controller-type: "deployment"
+      minimum-replicas-required: 2
+      high-availability-replicas-required: 0
+    - service-name: "eric-sepp-manager"
+      highest-severity-reported: "Critical"
+      replication-controller-type: "deployment"
+      minimum-replicas-required: 1
+      high-availability-replicas-required: 0
+    - service-name: "eric-sepp-worker"
+      highest-severity-reported: "Critical"
+      replication-controller-type: "deployment"
+      minimum-replicas-required: 2
+      high-availability-replicas-required: 0
+    - service-name: "eric-probe-virtual-tap-broker"
+      highest-severity-reported: "Major"
+      replication-controller-type: "deployment"
+      minimum-replicas-required: 1
+    - service-name: "eric-tm-ingress-controller-cr-envoy"
+      highest-severity-reported: "Critical"
+      replication-controller-type: "deployment"
+      minimum-replicas-required: 1
+      high-availability-replicas-required: 2
+
+eric-sc-license-consumer:
+  enabled: true
+
+eric-sc-logging:
+  enabled: true
+
+eric-tm-ingress-controller:
+  enabled: true
+
+eric-cm-mediator:
+  # cmm: ## used for local troubleshooting
+    # debug: false
+    # configReloadTimer: 120
+    # gunicornLogLevel: "Info"
+    # gunicornAccessLogLevel: "Info"
+    # accessLogging: false
+    # kafkaLogLevel: "Info"
+    # kafkaProducerConfig: ""
+    # logFormat: "adpjson"
+    # logLevel: "debug" # DND-30613 Errors with assymetric keys - corrupted database
+    # logMaxMsgSize: 32
+    # logOutput: ["stdout"]
+    # redisConfig: ""
+    # redisLogLevel: "Error"
+    # restWorkers: 2
+    # restWorkerTimeout: 30
+    # restWorkerQueueLimit: 32
+    # subCleanerInterval: 60
+  backend:
+    dbuser: scusr
+    dbname: sc_database
+  # service: ## used for local testing to enable tls/non-tls simulteneous support
+    # endpoints:
+      # restapi:
+        # tls:
+          # enforced: "required"
+          # verifyClientCertificate: "required"
+  cmkey:
+    enable: true
+  dbbr:
+    backupType: "DEFAULT"
+
+eric-cm-yang-provider:
+  externaldb:
+    dbname: sc_database
+    dbuser: scusr
+  # ldap: ## used for ipv4/ipv6 deployments
+    # ipv6Enabled: false
+  cliExtensionCmds:
+    showAlarms:
+      enabled: true
+    showAlarmsHistory:
+      enabled: true
+  pmMetrics:
+    enableQueryMetricsCommands: true
+  nbiNotifications:
+    notifyInternalChanges: false
+  # env: ## use for troubleshooting
+    # logLevel: "debug"
+  externalTls:
+    netconf:
+      enabled: true
+  service:
+    certificates:
+      asymmetricKeyCertificateName: netconf-default-key-cert
+      trustedCertificateListName: sc-trusted-default-cas
+  # Import SSH keys from Certificate Management Service
+  certManagement:
+    sshKeys:
+      enabled: false
+  sshHostKeys:
+    name: cm-cliNetconf-ssh-server
+
+eric-cnom-server:
+  documentDatabasePg:
+    enabled: true
+  documentDatabase:
+    enabled: false
+  cmYangProvider:
+    enabled: true
+    host: eric-cm-yang-provider-external
+  serviceCommunicationProxy:
+    configMap: eric-scp-schema-configmap
+    secret: eric-sc-oam-user-secret
+    secretUsernameKey: username
+    secretPasswordKey: password
+  features:
+    serviceCommunicationProxy: false
+    logViews: true
+    metricViewer: false
+    bro: false
+  appConfig:
+    configMaps: [eric-cnom-app-config]
+  metrics:
+    #hierarchy:
+      #configMap: "eric-cnom-metrics-hierarchy"
+    selectorConfig:
+      configMap: "eric-cnom-metrics-selector-config"
+  server:
+    basePath: "/em"
+    behindProxy: true
+  resources:
+    server:
+      requests:
+        cpu: 500m ## use the same CPU as limits
+  service:
+    endpoints:
+      api:
+        tls:
+          ca:
+            - name: eric-tm-ingress-controller-cr-client-ca
+              bundle: ca.pem
+  authentication:
+    local:
+      enabled: false
+    ldap:
+      enabled: true
+      roleMapping:
+        - internalRole: SECURITY_ADMIN
+          externalRoles: ["sc-security-admin", "*:sc-security-admin"]
+        - internalRole: ADMINISTRATOR
+          externalRoles: ["sc-admin", "*:sc-admin"]
+        - internalRole: OPERATOR
+          externalRoles: ["sc-read-only", "*:sc-read-only"]
+
+eric-ctrl-bro:
+  bro:
+    enableConfigurationManagement: true
+    # enableNotifications: false ## disable for SC1.7
+    enableAgentDiscovery: true
+  persistence:
+    persistentVolumeClaim:
+      storageClassName: "network-block"
+
+eric-data-coordinator-zk:
+  metricsexporter:
+    enabled: true
+  logLevel: "INFO" ## used for troubleshooting
+  podDisruptionBudget:
+    minAvailable: "51%"
+
+eric-data-distributed-coordinator-ed:
+  env:
+    dced:
+      DISARM_ALARM_PEER_INTERVAL: 5
+  brAgent:
+    enabled: true
+    brLabelValue: "eric-data-distributed-coordinator-ed"
+    backupTypeList:
+      - "DEFAULT"
+    properties:
+      applicationProperties: |-
+         dced.agent.restore.type=overwrite
+         dced.excluded.paths=/shelter,/kms/core/lock
+  metricsexporter:
+    enabled: true
+
+eric-data-distributed-coordinator-ed-sc:
+  # security:
+    # dced:
+      # certificates:
+        # enabled: false ## use for troubleshooting non-tls
+  env:
+    dced:
+      ETCD_MAX_SNAPSHOTS: 1
+      ETCD_MAX_WALS: 1
+      ETCD_QUOTA_BACKEND_BYTES: "400000000"
+      DISARM_ALARM_PEER_INTERVAL: 5
+  metricsexporter:
+    enabled: true
+  # service:
+    # endpoints:
+      # dced:
+        # acls:
+          # adminSecret: "eric-data-distributed-coordinator-creds-sc" ## use for troubleshooting non-tls
+
+eric-data-document-database-pg:
+  postgresDatabase: sc_database
+  brAgent:
+    enabled: true
+    # logLevel: "info" ## use for troubleshooting
+    # RootLogLevel: "info" ## use for troubleshooting
+    # PGAgentLogLevel: "info" ## use for troubleshooting
+    logicalDBBackupEnable: true
+    backupDataModelConfig: eric-cm-mediator-br-agent
+    backupTypeList:
+     - "DEFAULT"
+  persistentVolumeClaim: ## set default class name to network-block
+    storageClassName: "network-block"
+  podDisruptionBudget:
+    minAvailable: "50%"
+  postgresConfig:
+    # client_min_messages: debug1
+    # log_min_messages: debug1
+    # log_min_error_statement: debug1
+    max_connections: 350
+  # patroni:
+  #   logLevel: DEBUG
+  # metrics:
+    # logLevel: debug
+  # postgresLogging: ## use for troubleshooting
+    # enabled: false ## use for troubleshooting
+  resources:
+    postgres:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+        hugepages-2Mi: # This value only work when hugepage is properly configured. As a requirement of Kubernetes, requests and limits must be the same.
+        hugepages-1Gi: # This value only work when hugepage is properly configured. As a requirement of Kubernetes, requests and limits must be the same.
+        ephemeral-storage: "" # Experimental feature. Specifying incorrect ephemeral-storage may cause unexpected pod evictions. See User Guide for more details.
+      limits:
+        cpu: "1"
+        memory: "2560Mi"
+        hugepages-2Mi: # This value only work when hugepage is properly configured. As a requirement of Kubernetes, requests and limits must be the same.
+        hugepages-1Gi: # This value only work when hugepage is properly configured. As a requirement of Kubernetes, requests and limits must be the same.
+        ephemeral-storage: "" # Experimental feature. Specifying incorrect ephemeral-storage may cause unexpected pod evictions. See User Guide for more details.
+    logshipper:
+      requests:
+        ephemeral-storage: ""
+      limits:
+        ephemeral-storage: ""
+    metrics:
+      requests:
+        ephemeral-storage: ""
+      limits:
+        ephemeral-storage: ""
+    kube_client:
+      requests:
+        ephemeral-storage: ""
+      limits:
+        ephemeral-storage: ""
+    brm:
+      requests:
+        ephemeral-storage: ""
+      limits:
+        ephemeral-storage: ""
+    hooklauncher:
+      requests:
+        ephemeral-storage: ""
+      limits:
+        ephemeral-storage: ""
+
+eric-data-message-bus-kf:
+  configurationOverrides:
+    log.retention.hours: 96
+    auto.create.topics.enable: true
+  podDisruptionBudget:
+    minAvailable: 2
+  service:
+    endpoints:
+      messagebuskf:
+        tls:
+          enforced: "optional"
+          verifyClientCertificate: "optional"
+
+eric-data-search-engine:
+  # autoSetRequiredWorkerNodeSysctl: true
+  jvmHeap:
+    ingest: "1024m"
+    master: "512m"
+    data: "2048m"
+  resources:
+    ingest:
+      limits:
+        memory: "2Gi"
+      requests:
+        memory: "2Gi"
+    master:
+      limits:
+        memory: "1.5Gi"
+      requests:
+        memory: "1.5Gi"
+    data:
+      limits:
+        cpu: "750m"
+        memory: "4Gi"
+      requests:
+        cpu: "750m"
+        memory: "4Gi"
+  brAgent:
+    enabled: false
+  persistence:
+    data:
+      persistentVolumeClaim:
+        size: "100Gi"
+        storageClassName: "network-block"
+    master:
+      persistentVolumeClaim:
+        storageClassName: "network-block"
+  fastButUnsafeUpgrade:
+    enabled: true
+  index_management:
+    enabled: true
+    policies:
+      - description: "Delete adp-app-logs after 15 days"
+        indices:
+        - adp-app-logs*
+        priority: 1
+        states:
+        - name: init
+          transitions:
+          - condition: min_index_age=15d
+            destination_state: delete
+        - name: delete
+          actions:
+          - delete
+      - description: "Delete adp-app-audit-logs and adp-app-asi-logs after 30 days"
+        indices:
+        - adp-app-audit-logs*
+        - adp-app-asi-logs*
+        priority: 1
+        states:
+        - name: init
+          transitions:
+          - condition: min_index_age=30d
+            destination_state: delete
+        - name: delete
+          actions:
+          - delete
+      - description: "Delete adp-app-debug-logs after 3 days"
+        indices:
+        - adp-app-debug-logs*
+        priority: 1
+        states:
+        - name: init
+          transitions:
+          - condition: min_index_age=3d
+            destination_state: delete
+        - name: delete
+          actions:
+          - delete
+      - description: "Delete SC logs after 7 days"
+        indices:
+        - sc-bsf-logs*
+        - sc-scp-logs*
+        - sc-sepp-logs*
+        - sc-logs*
+        - sc-events*
+        priority: 1
+        states:
+        - name: init
+          transitions:
+          - condition: min_index_age=7d
+            destination_state: delete
+        - name: delete
+          actions:
+          - delete
+    delete_indices_by_diskspace:
+      - index: adp-app-logs*
+        size: 15gb
+      - index: adp-app-audit-logs*
+        size: 1gb
+      - index: adp-app-asi-logs*
+        size: 1gb
+      - index: adp-app-debug-logs*
+        size: 8gb
+      - index: sc-bsf-logs*
+        size: 12gb
+      - index: sc-scp-logs*
+        size: 12gb
+      - index: sc-sepp-logs*
+        size: 12gb
+      - index: sc-logs*
+        size: 12gb
+      - index: sc-events*
+        size: 1gb
+        
+eric-data-wide-column-database-cd:
+  sysctls:
+    cassandra: []
+  replicaCount: 2
+  persistence:
+    dataVolume:
+      persistentVolumeClaim:
+        size: 100Gi
+  resources:
+    cassandra:
+      limits:
+        cpu: 4
+        memory: 16Gi
+      requests:
+        cpu: 4
+        memory: 16Gi
+    brsc:
+      requests:
+        cpu: "0.2"
+      limits:
+        cpu: "0.5"
+  cassandra:
+    yaml:
+      num_tokens: 32
+      allocate_tokens_for_local_replication_factor: 2
+      materialized_views_enabled: true
+    jvmOptions:
+      set:
+        - "Dmv_enable_coordinator_batchlog=true"
+        - "XX:+UseG1GC"
+        - "XX:InitialRAMPercentage=50.0"
+        - "XX:MaxRAMPercentage=50.0"
+        - "XX:MaxGCPauseMillis=200"    
+        - "XX:InitiatingHeapOccupancyPercent=70"
+      unset:
+        - "Xmn800M"
+        - "Xmn100M"
+        - "Xmn400M"
+        - "XX:+HeapDumpOnOutOfMemoryError"
+        - "XX:+UseParNewGC"
+        - "XX:+UseConcMarkSweepGC"
+        - "XX:+CMSParallelRemarkEnabled"
+        - "XX:SurvivorRatio=8"
+        - "XX:MaxTenuringThreshold=1"
+        - "XX:CMSInitiatingOccupancyFraction=75"
+        - "XX:+UseCMSInitiatingOccupancyOnly"
+        - "XX:CMSWaitDuration=10000"
+        - "XX:+CMSParallelInitialMarkEnabled"
+        - "XX:+CMSEdenChunksRecordAlways"
+        - "XX:+CMSClassUnloadingEnabled"
+  metrics:
+    cassandra:
+      enabled: true
+  georeplication:
+    certificates:
+      asymmetricKeyCertificateName: "internode-external-key/internode-external-cert"
+      trustedCertificateListName: "sc-trusted-default-cas"
+  egress:
+    certificates:
+      asymmetricKeyCertificateName: "cql-client-external-key/cql-client-external-cert"
+      trustedCertificateListName: "sc-trusted-default-cas"
+  service:
+    certificates:
+      asymmetricKeyCertificateName: "cql-server-external-key/cql-server-external-cert"
+      trustedCertificateListName: "sc-trusted-default-cas"
+      internal:
+        timeToLive: "15778800"
+        renewalLeadTime: "15692400"
+    endpoints:
+      cql:
+        tls:
+          enforced: "optional"
+    external:
+      tls:
+        enabled: true
+  security:
+    auth:
+      cql:
+        enableAuthentication: "true"
+        enableAuthorization: "true"
+        wcdbcdAdminSecret: eric-bsf-wcdb-cd-admin-creds
+        adminSecret: eric-bsf-wcdb-cd-day0-creds
+  annotations:
+    ericsson.com/nf-name: "BSF"
+  repairAgent:
+    enabled: true
+
+eric-fh-alarm-handler:
+  redis:
+    acl:
+      enabled: false
+  backend:
+    dbname: sc_database
+    dbuser: scusr
+  alarmhandler: ## use for troubleshooting
+    debug: false ## use for troubleshooting
+    rest:
+      fi:
+        api:
+          enabled: true
+  kafka:
+    fiReaderEnabled: false
+
+## SNMP Alarm Provider
+eric-fh-snmp-alarm-provider:
+  probes:
+    snmpAP:
+      livenessProbe:
+        initialDelaySeconds: 120
+      readinessProbe:
+        initialDelaySeconds: 120
+
+eric-lm-combined-server:
+  database:
+    name: sc_database
+    userName: scusr
+
+eric-log-shipper:
+  logshipper:
+    autodiscover:
+      enabled: true
+      namespace: ".RELEASE.NAMESPACE"
+    cfgData: ""
+    #  filebeat.inputs:
+  additionalVolumes: |
+    - name: docker-containers
+      hostPath:
+        path: /var/lib/docker/containers
+    - name: kubernetes-pods
+      hostPath:
+        path: /var/log/pods
+    - name: kubernetes-containers
+      hostPath:
+        path: /var/log/containers
+  additionalVolumeMounts: |
+    - name: docker-containers
+      mountPath: /var/lib/docker/containers
+    - name: kubernetes-pods
+      mountPath: /var/log/pods
+    - name: kubernetes-containers
+      mountPath: /var/log/containers
+  rbac:
+    automountServiceAccountToken: true
+    createClusterRole: true
+    createClusterRoleBinding: true
+  # logLevel: "info" ## use for troubleshooting
+
+eric-log-transformer:
+  replicaCount: 2
+  resources:
+    logtransformer:
+      requests:
+        memory: 8Gi
+      limits:
+        cpu: 2000m
+        memory: 8Gi
+      jvm:
+        initialMemoryAllocationPercentage: 67
+        smallMemoryAllocationMaxPercentage: 50
+        largeMemoryAllocationMaxPercentage: 67
+  ensureOnceDelivery:
+    enabled: true
+  searchengine:
+    host: eric-data-search-engine
+    logplaneConfig:
+    - field: "[extra_data][asi][log_plane]"
+      value: "alarm"
+      newLogplane: "adp-app-asi-logs"
+    - field: "[extra_data][sc_event][log_type]"
+      value: "sc-event"
+      newLogplane: "sc-events"
+    - field: "[facility]"
+      value: "log audit"
+      newLogplane: "adp-app-audit-logs"
+    - field: "[metadata][category]"
+      contains: "-privacy-"
+      newLogplane: "adp-app-audit-logs"
+    - field: "[severity]"
+      contains: "debug"
+      newLogplane: "adp-app-debug-logs"
+    - field: "[service_id]"
+      contains: "eric-bsf"
+      newLogplane: "sc-bsf-logs"
+    - field: "[kubernetes][container][name]"
+      value: "eric-bsf-worker-tapagent"
+      newLogplane: "sc-bsf-logs"
+    - field: "[kubernetes][container][name]"
+      value: "eric-bsf-manager-tapagent"
+      newLogplane: "sc-bsf-logs"
+    - field: "[service_id]"
+      value: "eric-data-wide-column-database-cd"
+      newLogplane: "sc-bsf-logs"
+    - field: "[kubernetes][pod][name]"
+      contains: "eric-bsf-diameter"
+      newLogplane: "sc-bsf-logs"
+    - field: "[service_id]"
+      contains: "eric-scp"
+      newLogplane: "sc-scp-logs"
+    - field: "[kubernetes][container][name]"
+      value: "eric-scp-manager-tapagent"
+      newLogplane: "sc-scp-logs"
+    - field: "[kubernetes][container][name]"
+      value: "eric-scp-worker-tapagent"
+      newLogplane: "sc-scp-logs"
+    - field: "[service_id]"
+      value: "eric-sc-slf"
+      newLogplane: "sc-scp-logs"
+    - field: "[service_id]"
+      contains: "eric-sepp"
+      newLogplane: "sc-sepp-logs"
+    - field: "[kubernetes][container][name]"
+      value: "eric-sepp-manager-tapagent"
+      newLogplane: "sc-sepp-logs"
+    - field: "[kubernetes][container][name]"
+      value: "eric-sepp-worker-tapagent"
+      newLogplane: "sc-sepp-logs"
+    - field: "[service_id]"
+      value: "eric-sc-hcagent"
+      newLogplane: "sc-logs"
+    - field: "[service_id]"
+      value: "eric-sc-monitor"
+      newLogplane: "sc-logs"
+    - field: "[service_id]"
+      value: "eric-sc-manager"
+      newLogplane: "sc-logs"
+    - field: "[service_id]"
+      value: "eric-sc-nlf"
+      newLogplane: "sc-logs"
+    - field: "[service_id]"
+      value: "eric-sc-rlf"
+      newLogplane: "sc-logs"
+    - field: "[service_id]"
+      value: "eric-probe-virtual-tap-broker"
+      newLogplane: "sc-logs"
+  egress:
+    lumberjack:
+      enabled: false
+      certificates:
+        trustedCertificateListName: sc-trusted-default-cas
+      # remoteHosts: {[{"id": "ext-lj-1","host": "eric-ext-log-transformer","port": "5044","codec": "json"}]} ## locally set by config_gen using values-default.yaml
+    syslog:
+      enabled: false
+      certificates:
+        asymmetricKeyCertificateName: syslog-default-key-cert
+        trustedCertificateListName: sc-trusted-default-cas
+      # remoteHosts: {[{"host": "eric-syslog","port": "6514"}]} ## locally set by config_gen using values-default.yaml
+      # filter: ""
+  # logLevel: "info" ## use for troubleshooting
+
+eric-pm-bulk-reporter:
+  env:
+    #logLevel: info ## use for troubleshooting
+    nodeType: "Signaling_Controller"
+  userConfig:
+    ldap:
+      rolesConfig:
+        readOnlyGroup: "system-read-only,scp-read-only,bsf-read-only,sepp-read-only"
+        readWriteGroup: "system-admin,scp-admin,bsf-admin,sepp-admin"
+    # useIPv6DNSFirst: false # true for IPv6 deployments
+  objectStorage: ## ROP File Storage Backend
+    enabled: false
+    secretName: "eric-data-object-storage-mn-secret"
+  thresholdReporter:
+    enabled: true
+    restAPI: true
+  security:
+    keyManagement:
+      enabled: true
+    certificateManagement:
+      enabled: false
+  sshHostKeys:
+    name: pm-rop-sftp-server
+  persistentVolumeClaim: ## used internally only when objectStorage disabled (mutual exclusive)
+    storageClassName: "network-block"
+    enabled: true
+    size: 10Gi
+  applicationId:
+    enabled: true
+  networkPolicy:
+    enabled: true
+
+eric-pm-server:
+  ## tls optional because SC not support tls
+  service:
+    endpoints:
+      scrapeTargets:
+        tls:
+          enforced: "optional"
+      reverseproxy:
+        tls:
+          enforced: "optional"
+          verifyClientCertificate: "optional"
+          certificateAuthorityBackwardCompatibility: false
+  server:
+    configMapOverrideName: eric-pm-server
+    serviceAccountName: eric-pm-server-cluster-monitoring
+    retention: '2d'
+    extraArgs:
+      enable-feature: promql-at-modifier
+    persistentVolume:
+      storageClass: "network-block"
+      enabled: true
+      size: 80Gi
+  resources:
+    eric-pm-server:
+      limits:
+        memory: 8Gi
+      requests:
+        memory: 4Gi
+  config:
+    ## For remote write over TLS
+    certm_tls: []
+      # - name: sc-pm-wr ## used only INTERNALLY -> changes applied in config_gen
+        # trustedCertName: "sc-trusted-default-cas"
+        # clientKeyName: "sc-pm-wr-default-cert"
+        # clientCertName: "sc-pm-wr-default-cert"
+  networkPolicy:
+    enabled: true
+
+eric-sec-admin-user-management:
+  notices:
+    legal: "IF YOU ARE NOT AN AUTHORIZED USER, PLEASE EXIT IMMEDIATELY"
+    privacy: "This system processes sensitive personal data. The misuse of such data may\ngenerate considerable harm to the data subjects. Be reminded of the\nconfidentiality obligations you have when accessing this kind of data and\nthe disciplinary consequences of improper handling.\nVersion: 1.0, Last Updated: May 21, 2019"
+    postLogin: "SIGNALING CONTROLLER"
+  egress:
+    iamAuthenticationLdapClient:
+      certificates:
+        asymmetricKeyCertificateName: "sc-ldap-default-cert"
+        trustedCertificateListName: "sc-trusted-default-cas"
+  ldap:
+    notifierEnabled: true
+  # log:
+    # level: "debug"
+
+eric-sec-key-management:
+  shelter:
+    enabled: true
+  replicaCount:
+    kms: 2
+  metrics:
+    enabled: true
+  # logLevel: "debug"
+
+eric-sec-ldap-server:
+  replicaCount: 2
+  ldap:
+    aum:
+      enabled: true
+  brAgent:
+    enabled: true
+    brLabelValue: "eric-sec-ldap-server"
+    backupTypeList:
+      - "DEFAULT"
+  persistentVolumeClaim:
+    storageClassName: "network-block"
+
+eric-sec-sip-tls:
+  keyManagement:
+    port: 8210 # shelter
+  kafka:
+    port: 9093
+    tls:
+      enabled: true
+      verifyHostname: true
+  alarmHandler:
+    useAPIDefinition: true
+  # logLevel: "debug"
+
+eric-sec-certm:
+  features:
+    alarmHandling:
+      enabled: true
+      useRestApi: true
+#   log:
+#     certm:
+#       level: "debug" ## use for certm debugging
+
+eric-stm-diameter:
+  service:
+    certificates:
+      asymmetricKeyCertificateName: "diameter-key-cert"
+      trustedCertificateListName: "sc-trusted-default-cas"
+  initialConfig:
+    dsl:
+      enableControlPlane: true
+      serviceName: "eric-stm-diameter-dsl"  # it should be eric-stm-diameter-dsl if enableControlPlane is true
+    dsl-pvtb-client:
+      pvtbBaseURI: "http://eric-probe-virtual-tap-broker:8080"
+      domain: "sc-bsf"
+  annotations:
+    ericsson.com/nf-name: "BSF"
+  ah:
+    fiapi:
+      enable: true
+  kafka:
+    hostname: ""
+  resources:
+    diameter:
+      limits:
+        cpu: 2
+    dsl:
+      limits:
+        cpu: 2
+
+eric-tm-ingress-controller-cr:
+  rbac:
+    create: true
+  service:
+    externalTrafficPolicy: Cluster
+  resources:
+    contour:
+      limits:
+        cpu: "100m"
+  ingressClass: "sc"
+  envoyWorkloadMode:
+    daemonset:
+      enabled: false
+    deployment:
+      enabled: true
+  metrics:
+    enabled: false
+
+eric-odca-diagnostic-data-collector:
+  env:
+    adminState: "locked" ## lock interval-based collection
+    enableCmConfig: true ## Enable to use CM Mediator service for configuration
+    enableCmypConfig: true ## Enable to use CM Yang Provider service for configuration
+    enablePromReceiver: false ## Disable pm-remote-write metrics collection, enable via CLI
+    enableKubernetesInfoCollector: true ## Enable to collect kubernetes information
+    enableSwICollector: true ## Enable to collect software information
+  kms:
+    enabled: true
+  appSysInfoHandler: ## Setup an ASIH client used by the Software Information Collector
+    enabled: true
+  kubernetesInfo: ## Setup a Kubernetes REST API client used by the Kubernetes information Collector
+    enabled: true
+  resources:
+    diagnostic-data-collector:
+      limits:
+        memory: 1.5G
+        cpu: 1.5
+
+eric-data-object-storage-mn:
+  persistence:
+    persistentVolumeClaim:
+      storageClassName: "network-block"
+  # nodeSelector: {}
+  # tolerations: []
+  affinity:
+    podAntiAffinity: "soft"
+  # environment: ## used only internally
+    # MINIO_BROWSER: "off" ## used only internally
+  # podDisruptionBudget:
+    # maxUnavailable: 1
+  # labels: {}
+  networkPolicy:
+    enabled: true
+
+eric-data-sftp-server:
+  certmHostKey:
+    enabled: false
+  service:
+    sshHostKeys:
+      name: eric-data-sftp-server-ssh-server-key
+  objectStorage:
+    accessSecretName: "eric-data-object-storage-mn-secret"
+  configuration:
+    bucket_policy: "scp-admin eric-pmbr-rop-file-store rw:bsf-admin eric-pmbr-rop-file-store rw:sepp-admin eric-pmbr-rop-file-store rw:scp-read-only eric-pmbr-rop-file-store r:bsf-read-only eric-pmbr-rop-file-store r:sepp-read-only eric-pmbr-rop-file-store r"
+    object_policy: ""
+    default_bucket_policy: "system-admin * rw:system-read-only * r:system-security-admin * rw"
+  privacy_notice_file: "This system processes sensitive personal data. The misuse of such data may\ngenerate considerable harm to the data subjects. Be reminded of the\nconfidentiality obligations you have when accessing this kind of data and\nthe disciplinary consequences of improper handling.\nVersion: 1.0, Last Updated: May 21, 2019"
+  # podDisruptionBudget:
+    # maxUnavailable: 1
+  # labels: {}
+  # annotations: {}
+  # environment: ## use for troubleshooting
+    # S3_LOG_LEVEL: "OFF"
+    # SFTP_LOG_LEVEL: "INFO"
+
+eric-probe-virtual-tap-broker:
+  testmode: true
+  dtls:
+    enabled: false
+  egress:
+    probeVtapUDPClient:
+      certificates:
+        asymmetricKeyCertificateName: probe-vtap-udp-client
+        trustedCertificateListName: probe-vtap-udp-client
+  resources:
+    VirtualTapBroker:
+      requests:
+        cpu: 2000m
+      limits:
+        cpu: 6000m
+
+eric-si-application-sys-info-handler:
+  applicationInfoService:
+    # scheme: "https"
+    port: 9095
+  asih:
+    applicationId: "sc-testnode"
+    fetchInfrastructureInfo: false
+    
+    
+

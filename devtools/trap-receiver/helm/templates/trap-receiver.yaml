@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .Values.service.name | quote }} 
+  labels:
+    app: {{ .Values.service.name | quote }}
+spec:
+  containers:
+  - name: "trap-receiver" 
+    image: {{ .Values.imageCredentials.registry.url }}/{{ .Values.imageCredentials.repoPath }}/{{ .Values.spec.image }}:{{ .Values.spec.tag }}
+    imagePullPolicy: {{ .Values.imageCredentials.pullPolicy | quote }}
+
+    env:
+    - name: TRAP_VERSION
+      value: {{ .Values.trapCredentials.version | quote }}
+    {{- if eq .Values.trapCredentials.version "2" }}
+    - name: COMMUNITY_NAME
+      value: {{ .Values.trapCredentials.snmpv2.communityName | quote }}
+    {{- else if eq .Values.trapCredentials.version "3" }}
+    - name: USER_NAME
+      value: {{ .Values.trapCredentials.snmpv3.user | quote }}
+    - name: ENGINE_ID
+      value: {{ .Values.trapCredentials.snmpv3.engineId | quote }}
+    - name: SECURITY_LEVEL
+      value: {{ .Values.trapCredentials.snmpv3.securityLevel | quote }}
+      {{- if or (eq .Values.trapCredentials.snmpv3.securityLevel "authNoPriv") (eq .Values.trapCredentials.snmpv3.securityLevel "authPriv") }}
+    - name: AUTH_PROTOCOL
+      value: {{ .Values.trapCredentials.snmpv3.authProtocol | quote }}
+    - name: AUTH_PASSWORD
+      value: {{ .Values.trapCredentials.snmpv3.authPassphrase | quote }}
+      {{- end }}
+      {{- if eq .Values.trapCredentials.snmpv3.securityLevel "authPriv" }} 
+    - name: PRIV_PROTOCOL
+      value: {{ .Values.trapCredentials.snmpv3.privProtocol | quote }}
+    - name: PRIV_PASSWORD
+      value: {{ .Values.trapCredentials.snmpv3.privPassphrase | quote }}
+      {{- end }}
+    {{- end }}
+
+    command: ["/bin/sh","-c"]
+    args:
+      - "if [ $TRAP_VERSION = 2 ];
+         then sed -ix -e \"s/<SNMPV2>//g\" -e \"s/<SNMPV3>/#/g\" -e \"s/<COMMUNITY_NAME>/$COMMUNITY_NAME/g\" /etc/snmp/snmptrapd.conf;
+         elif [ $TRAP_VERSION = 3 ]; 
+         then sed -ix -e \"s/<SNMPV2>/#/g\" -e \"s/<SNMPV3>//g\" -e \"s/<USER_NAME>/$USER_NAME/g\" -e \"s/<ENGINE_ID>/$ENGINE_ID/g\" -e \"s/<SECURITY_LEVEL>/$SECURITY_LEVEL/g\" -e \"s/<AUTH_PROTOCOL>/$AUTH_PROTOCOL/g\" -e \"s/<AUTH_PASSWORD>/$AUTH_PASSWORD/g\" -e \"s/<PRIV_PROTOCOL>/$PRIV_PROTOCOL/g\" -e \"s/<PRIV_PASSWORD>/$PRIV_PASSWORD/g\" /etc/snmp/snmptrapd.conf;
+         fi;
+         if [ $TRAP_VERSION = 3 ] && [ $SECURITY_LEVEL = \"noAuthNoPriv\" ];
+         then sed -ix -e \"s/<NO_AUTH>/\"noauth\"/g\" /etc/snmp/snmptrapd.conf;
+         else sed -ix -e \"s/<NO_AUTH>//g\" /etc/snmp/snmptrapd.conf;
+         fi;
+         if [ $TRAP_VERSION = 2 ] || [ $TRAP_VERSION = 3 ];
+         then rm /etc/snmp/snmptrapd.confx; snmptrapd -f -Lo | tee /var/log/snmptrap.log;
+         fi;"

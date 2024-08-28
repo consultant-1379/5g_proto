@@ -1,0 +1,9 @@
+config
+diagnostic-data-collection sftp-server mySFTP endpoints endpoint myEP remote-path /data remote-address <SFTP_IP> remote-port <SFTP_PORT>
+diagnostic-data-collection sftp-server mySFTP endpoints endpoint myEP client-identity username admin password YWRtaW4=
+diagnostic-data-collection sftp-server mySFTP endpoints endpoint myEP server-authentication ssh-host-keys local-definition host-key <SFTP_KEY>
+diagnostic-data-collection data-collector collection-interval 5
+diagnostic-data-collection data-collector administrative-state unlocked
+commit
+exit
+exit

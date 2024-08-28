@@ -1,0 +1,41 @@
+Version: v3
+Decription: FOSS list
+LastUpdate: 2023-11-14 13:50
+FOSS:
+    # Available in Bazaar
+    FOSSName: Requests Toolbelt 
+    # Available in Bazaar
+    FOSSVersion:  0.9.1
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://files.pythonhosted.org/packages/28/30/7bf7e5071081f761766d46820e52f4b16c8a08fef02d2eb4682ca7534310/requests-toolbelt-0.9.1.tar.gz
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 1/CTX1024997
+    # Not Available in Bazaar
+    Primary: N
+    # Available in Bazaar
+    STAKOCode: Not for a new Design
+    # Available in Bazaar
+    STAKOReason:  Product version is older than 18 months Newer versions exists
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: A toolbelt of useful classes and functions to be used with python-requests. 
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: Apache License 2.0 (Apache-2.0)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0 (Apache-2.0)
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: NO
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ZARISAR Aristeidis Sarras

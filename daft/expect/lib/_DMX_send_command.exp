@@ -1,0 +1,81 @@
+################################################################################
+# $Revision: 1.2 $                                                             #
+#   $Author: eustone $                                                         #
+#     $Date: 2014/05/15 11:36:52 $                                             #
+################################################################################
+#                                                                              #
+# (C) COPYRIGHT ERICSSON GMBH 2014                                             #
+#                                                                              #
+# The copyright to the computer program(s) herein is the property of           #
+# Ericsson GmbH, Germany.                                                      #
+#                                                                              #
+# The program(s) may be used and/or copied only with the written permission    #
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in   #
+# the agreement/contract under which the program(s) have been supplied.        #
+#                                                                              #
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Send a command to the DMX.
+#
+# This subroutine expects that it is already connected to the DMX as expert.
+#
+# Input:
+#  - Command to send
+#
+# Output:
+#  -  0: Success
+#    >0: Command returned an error
+#    -1: Timeout
+#
+proc DMX_send_command {command} {
+    global spawn_id
+
+    set errorcnt 0
+
+    # Send the command
+    send -- "$command\r"
+
+    expect {
+        "\\\[error\\\]" {
+            # Some invalid command have been given, increment an error counter
+            incr errorcnt
+            exp_continue
+        }
+        "Discard changes and continue\? \\\[yes,no\\\]" {
+            # The user have changed something but forgot to commit the changes
+            # for now just discard the changes but step error counter.
+            incr errorcnt
+            send -- "yes\r"
+            exp_continue
+        }
+        "\n" {
+            # New line received, continue waiting
+            exp_continue
+        }
+        "\\-\\-More\\-\\-" {
+            # Most likely the command "show running-config" have been given
+            # which produces paged output requiring the user to press a space
+            # for getting the next page.
+            send -- " "
+            exp_continue
+        }
+        "expert@blade_0_*" {
+            # Ready for next command
+        }
+        "advanced@blade_0_*" {
+            # We are finished
+        }
+        "root@blade_0_*" {
+            # We are finished
+        }
+        timeout {
+            return -1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    return $errorcnt
+}

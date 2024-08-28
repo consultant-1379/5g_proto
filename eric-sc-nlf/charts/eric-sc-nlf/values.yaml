@@ -1,0 +1,264 @@
+# NLF
+
+# global:
+  # pullSecret: ""
+  # registry:
+    # url: "armdocker.rnd.ericsson.se"
+    # imagePullPolicy: IfNotPresentpullSecret: ""
+
+egress:
+  nrf:
+    ## default 0, the value range 0..63, 0 is the lowest priority, 63 is the highest priority.
+    ## Any other value is invalid.
+    dscp: 0
+
+# imageCredentials:
+  # pullSecret: ## should NOT be SET according to DR-D1123-115
+  # nlf:
+    # repoPath: ## override image repository path according to DR-D1121-106
+    # registry:
+      # url: ## override global registry url according to DR-D1121-104
+      # imagePullPolicy: ## override global imagePullPolicy according to DR-D1121-102
+  # tapagent:
+    # repoPath: ## override image repository path according to DR-D1121-106
+    # registry:
+      # url: ## override global registry url according to DR-D1121-104
+      # imagePullPolicy: ## override global imagePullPolicy according to DR-D1121-102
+  # tlskeylogagent:
+    # repoPath: ## override image repository path according to DR-D1121-106
+    # registry:
+      # url: ## override global registry url according to DR-D1121-104
+      # imagePullPolicy: ## override global imagePullPolicy according to DR-D1121-102
+
+replicaCount: "2"
+
+networkPolicy:
+  enabled: true
+
+metrics:
+  enabled: "true"
+
+podDisruptionBudget:
+  minAvailable: 1
+
+affinity:
+  podAntiAffinity: "soft"
+
+concurrentStreamsMax: 1000
+nrf_wait_queue_size_max: 50
+
+tolerations:
+  - key: node.kubernetes.io/not-ready
+    operator: Exists
+    effect: NoExecute
+    tolerationSeconds: 0
+  - key: node.kubernetes.io/unreachable
+    operator: Exists
+    effect: NoExecute
+    tolerationSeconds: 0
+
+nodeSelector: {}
+
+annotations: {}
+
+labels: {}
+
+service:
+  nlf:
+    internalIPFamily: "" ## empty, IPv4 or IPv6
+    restOam:
+      port: 8080
+      targetPortName: "rest-oam"
+      targetPort: 8080
+    rest:
+      port: 8083
+      targetPortName: "rest"
+      targetPort: 8083
+    internal:
+      port: 8081
+      targetPort: 8081
+    metrics:
+      port: 8082
+      targetPort: 8082
+    # client:
+      # interfaces:
+        # dcedsc:
+          # tls:
+            # enabled: true ## overwrite global tls, enable/disable tls for dcedsc client
+    # annotations: {}
+
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 0
+probes:
+  nlf:
+    livenessProbe:
+      port: 8081
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+    readinessProbe:
+      port: 8081
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 1
+      successThreshold: 1
+      failureThreshold: 3
+  logshipper:
+    livenessProbe:
+      initialDelaySeconds: 180
+      timeoutSeconds: 10
+      periodSeconds: 10
+      failureThreshold: 3
+
+leaderElection:
+  enabled: true
+
+resources:
+  nlf:
+    requests:
+      memory: "1Gi"
+      cpu: "1500m"
+      # ephemeral-storage: ""
+    limits:
+      memory: "2Gi"
+      cpu: "3"
+      # ephemeral-storage: ""
+  # Logshipper configured for an average throughput of 100logs/sec (covering the case of debug logs)
+  # Refer to the "Sidecar dimensioning recommendations" section of LogShipper
+  logshipper:
+    requests:
+      memory: "20Mi"
+      cpu: "33m"
+      ephemeral-storage:
+    limits:
+      memory: "30Mi"
+      cpu: "40m"
+      ephemeral-storage:
+  tapagent:
+    requests:
+      memory: "100Mi"
+      cpu: "100m"
+      # ephemeral-storage: ""
+    limits:
+      memory: "500Mi"
+      cpu: "500m"
+      # ephemeral-storage: ""
+  tlskeylogagent:
+    requests:
+      memory: "100Mi"
+      cpu: "100m"
+      # ephemeral-storage: ""
+    limits:
+      memory: "500Mi"
+      cpu: "500m"
+      # ephemeral-storage: ""
+
+## Log Shipper (as a sidecar) configuration
+## Used only if global.log.streamingMethod is "direct" or "dual"
+## Log Shipper also requires Log Transformer
+logShipper:
+  logLevel: "info"
+  storage:
+    path: "/logs"
+    size: "800Mi"
+    medium: "Ephemeral"
+  input:
+    files:
+    - enabled: true
+      paths:
+      - "nlf.log"
+      - "tlskeylogagent.log"
+      multilines:
+      - "java"
+  output:
+    logTransformer:
+      enabled: true
+      host: eric-log-transformer
+
+rbac:
+  # createServiceAccount controls the creation of ServiceAccount, ClusterRole and ClusterRoleBinding.
+  # If set to false, the cluster administrator is responsible for creating those entities.
+  # If set to false, the serviceAccountName field is Mandatory.
+  #
+  createServiceAccount: true
+  # serviceAccountName contains the service account name to use.
+  # Mandatory, if createServiceAccount is set to false
+  serviceAccountName:
+
+security:
+  tls:
+    # TTL for the certificates, SIP-TLS default value if not provided
+    certificateTTL:
+
+etcd:
+  endpoint: "https://eric-data-distributed-coordinator-ed-sc:2379"
+  username: "root"
+  secretName: "eric-data-distributed-coordinator-creds-sc"
+  passwordKey: "etcdpasswd"
+
+adp:
+  cm:
+    mediator:
+      hostname: "eric-cm-mediator"
+      port: "5004"
+  fh:
+    alarmHandler:
+      hostname: "eric-fh-alarm-handler"
+      port: "6006"
+  log:
+    transformer:
+      hostname: "eric-log-transformer"
+  pm:
+    server:
+      hostname: "eric-pm-server"
+
+sc:
+  common:
+    etcd:
+      hostname: "eric-data-distributed-coordinator-ed-sc"
+    monitor:
+      hostname: "eric-sc-monitor"
+
+certificates:
+  nrf:
+    caCertificate: sc-trusted-default-cas
+    key: sc-nrf-default-key
+    certificate: sc-nrf-default-cert
+
+jvm:
+  parameters:
+    nlf: "-server -XX:+ErrorFileToStderr -XX:MaxRAMPercentage=80 -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact -Dcom.sun.management.jmxremote.port=8090 -Dcom.sun.management.jmxremote.rmi.port=8090 -Djava.rmi.server.hostname=127.0.0.1 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.host=127.0.0.1 -Dvertx.cacheDirBase=/vertx/vertx-cache -Dio.netty.native.workdir=/vertx"
+    tlskeylogagent: "-server -XX:+ErrorFileToStderr -XX:+UseG1GC -XX:MaxRAMPercentage=80 -Dcom.sun.management.jmxremote.port=8099 -Dcom.sun.management.jmxremote.rmi.port=8099 -Djava.rmi.server.hostname=127.0.0.1 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.host=127.0.0.1"
+
+tapagent:
+  enabled: false
+  configmap:
+    name: tap-config
+    mountpath: /etc/cm-config/
+    fileName: tap_config.json
+  secret:
+    name: sftp-server-config
+    mountpath: /etc/ftpserver/
+
+tlskeylogagent:
+  fileSizeLimit: 1000 #MB
+  configmap:
+    name: tap-config
+    mountpath: /etc/cm-config/
+    fileName: tap_config.json
+  secret:
+    name: sftp-server-config
+    mountpath: /etc/ftpserver/
+  uid: 198596
+  wgid: 203342
+  mgid: 156593
+
+log:
+  volumeName: "loglevel-volume"
+  nlf:
+    level: info

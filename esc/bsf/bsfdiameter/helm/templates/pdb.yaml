@@ -1,0 +1,40 @@
+# START. Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC
+{{- if int .Values.replicaCount }}
+{{- if (gt (int .Values.replicaCount) 1) }}
+{{- if .Values.podDisruptionBudget }}
+{{- if (or .Values.podDisruptionBudget.minAvailable .Values.podDisruptionBudget.maxUnavailable) }}
+# STOP. Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC
+# START. Additions/Changes due to deprecation policy k8s API (PDB - Pod Desruption Budget): DND-31389
+{{- if .Capabilities.APIVersions.Has "policy/v1" }}
+# STOP. Additions/Changes due to deprecation policy k8s API (PDB - Pod Desruption Budget): DND-31389
+apiVersion: policy/v1
+{{- else }}
+apiVersion: policy/v1beta1
+{{- end }}
+kind: PodDisruptionBudget
+metadata:
+  name: {{ template "eric-stm-diameter-proxy-grpc.name" . }}-pdb
+  labels:
+{{- if (include "eric-stm-diameter-proxy-grpc.labels" .) }}
+{{- include "eric-stm-diameter-proxy-grpc.labels" . | nindent 4 }}
+{{- end }}
+  annotations:
+{{- if (include "eric-stm-diameter-proxy-grpc.annotations" .) }}
+{{- include "eric-stm-diameter-proxy-grpc.annotations" . | nindent 4 }}
+{{- end }}
+spec:
+  # START. Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC
+  {{- if .Values.podDisruptionBudget.minAvailable }}
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  {{- else if .Values.podDisruptionBudget.maxUnavailable }}
+  maxUnavailable: {{ .Values.podDisruptionBudget.maxUnavailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "eric-stm-diameter-proxy-grpc.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name | quote }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+  # STOP. Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC

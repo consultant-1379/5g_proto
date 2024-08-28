@@ -1,0 +1,61 @@
+{
+  "duration": 86400,
+  "target-port": 80,
+  "metrics": {
+    "export-metrics": [
+      "PROMETHEUS"
+    ]
+  },
+  "setup-traffic-mix": [
+    {
+      "name": "setupRegister",
+      "order": 1,
+      "tps": 2000,
+      "target-host": "192.168.1.1",
+      "type": "register",
+      "auth-access-token": "eyJjcml0IjpbImV4cCJdLCJraWQiOiJwcm9mNCIsInR5cCI6IkpXVCIsImFsZyI6IkVTMjU2In0.eyJwcm9kdWNlclBsbW5JZCI6eyJtY2MiOiIzMzMiLCJtbmMiOiIzMyJ9LCJpc3MiOiI4MjcyYThhOS01ZjlkLTQ0NzUtYWNmMi1kNDNmNmFiNTU2MjciLCJwcm9kdWNlck5zaUxpc3QiOlsiMTIzNCIsIjU2NzgiXSwicHJvZHVjZXJOZlNldElkIjoiTmZTZXRJZDEiLCJjb25zdW1lclBsbW5JZCI6eyJtY2MiOiIyMjIiLCJtbmMiOiIyMiJ9LCJhdWQiOiJbXCI0NDFhMWFmZC1lYjZlLTRlMWItODhiNC1kYzdmNTkxNTQ2NGVcIl0iLCJuYmYiOjE2OTk2MjQ1MzksInByb2R1Y2VyU25zc2FpTGlzdCI6W3sic3N0IjoxLCJzZCI6IkFCQ0RFMSJ9LHsic3N0IjozLCJzZCI6IkFCQ0RFMyJ9XSwic2NvcGUiOiJuYnNmLW1hbmFnZW1lbnQiLCJleHAiOjE3OTQzMTg5MzksImlhdCI6MTY5OTYyNDUzOSwianRpIjoiand0LXV1aWQyIn0.BB1a5RpJI-tnyQhprBSRusS2g9wYhIbjL1_Ik9RynTYrqchrzx0A9b3v4Y9tlXVfYiY7HErugjVgnXYzkzm5-g",
+      "num-requests": 2000000,
+      "ip-range": {
+        "start-ip": "170.0.0.1",
+        "range": 2000000
+      }
+    }
+  ],
+  "traffic-mix": [
+    {
+      "name": "registerSet",
+      "order": 1,
+      "tps": 3000,
+      "target-host": "192.168.1.1",
+      "type": "register",
+      "auth-access-token": "eyJjcml0IjpbImV4cCJdLCJraWQiOiJwcm9mNCIsInR5cCI6IkpXVCIsImFsZyI6IkVTMjU2In0.eyJwcm9kdWNlclBsbW5JZCI6eyJtY2MiOiIzMzMiLCJtbmMiOiIzMyJ9LCJpc3MiOiI4MjcyYThhOS01ZjlkLTQ0NzUtYWNmMi1kNDNmNmFiNTU2MjciLCJwcm9kdWNlck5zaUxpc3QiOlsiMTIzNCIsIjU2NzgiXSwicHJvZHVjZXJOZlNldElkIjoiTmZTZXRJZDEiLCJjb25zdW1lclBsbW5JZCI6eyJtY2MiOiIyMjIiLCJtbmMiOiIyMiJ9LCJhdWQiOiJbXCI0NDFhMWFmZC1lYjZlLTRlMWItODhiNC1kYzdmNTkxNTQ2NGVcIl0iLCJuYmYiOjE2OTk2MjQ1MzksInByb2R1Y2VyU25zc2FpTGlzdCI6W3sic3N0IjoxLCJzZCI6IkFCQ0RFMSJ9LHsic3N0IjozLCJzZCI6IkFCQ0RFMyJ9XSwic2NvcGUiOiJuYnNmLW1hbmFnZW1lbnQiLCJleHAiOjE3OTQzMTg5MzksImlhdCI6MTY5OTYyNDUzOSwianRpIjoiand0LXV1aWQyIn0.BB1a5RpJI-tnyQhprBSRusS2g9wYhIbjL1_Ik9RynTYrqchrzx0A9b3v4Y9tlXVfYiY7HErugjVgnXYzkzm5-g",
+      "num-requests": 10000,
+      "ip-range": {
+        "start-ip": "10.0.0.1",
+        "range": 10000
+      }
+    },
+    {
+      "name": "discoverySet",
+      "order": 2,
+      "tps": 3000,
+      "target-host": "192.168.1.1",
+      "type": "discovery",
+      "auth-access-token": "eyJjcml0IjpbImV4cCJdLCJraWQiOiJwcm9mNCIsInR5cCI6IkpXVCIsImFsZyI6IkVTMjU2In0.eyJwcm9kdWNlclBsbW5JZCI6eyJtY2MiOiIzMzMiLCJtbmMiOiIzMyJ9LCJpc3MiOiI4MjcyYThhOS01ZjlkLTQ0NzUtYWNmMi1kNDNmNmFiNTU2MjciLCJwcm9kdWNlck5zaUxpc3QiOlsiMTIzNCIsIjU2NzgiXSwicHJvZHVjZXJOZlNldElkIjoiTmZTZXRJZDEiLCJjb25zdW1lclBsbW5JZCI6eyJtY2MiOiIyMjIiLCJtbmMiOiIyMiJ9LCJhdWQiOiJbXCI0NDFhMWFmZC1lYjZlLTRlMWItODhiNC1kYzdmNTkxNTQ2NGVcIl0iLCJuYmYiOjE2OTk2MjQ1MzksInByb2R1Y2VyU25zc2FpTGlzdCI6W3sic3N0IjoxLCJzZCI6IkFCQ0RFMSJ9LHsic3N0IjozLCJzZCI6IkFCQ0RFMyJ9XSwic2NvcGUiOiJuYnNmLW1hbmFnZW1lbnQiLCJleHAiOjE3OTQzMTg5MzksImlhdCI6MTY5OTYyNDUzOSwianRpIjoiand0LXV1aWQyIn0.BB1a5RpJI-tnyQhprBSRusS2g9wYhIbjL1_Ik9RynTYrqchrzx0A9b3v4Y9tlXVfYiY7HErugjVgnXYzkzm5-g",
+      "num-requests": 10000,
+      "ip-range": {
+        "start-ip": "170.0.0.1",
+        "range": 10000
+      }
+    },
+    {
+      "name": "deregisterSet",
+      "order": 3,
+      "tps": 3000,
+      "target-host": "192.168.1.1",
+      "type": "deregister",
+      "auth-access-token": "eyJjcml0IjpbImV4cCJdLCJraWQiOiJwcm9mNCIsInR5cCI6IkpXVCIsImFsZyI6IkVTMjU2In0.eyJwcm9kdWNlclBsbW5JZCI6eyJtY2MiOiIzMzMiLCJtbmMiOiIzMyJ9LCJpc3MiOiI4MjcyYThhOS01ZjlkLTQ0NzUtYWNmMi1kNDNmNmFiNTU2MjciLCJwcm9kdWNlck5zaUxpc3QiOlsiMTIzNCIsIjU2NzgiXSwicHJvZHVjZXJOZlNldElkIjoiTmZTZXRJZDEiLCJjb25zdW1lclBsbW5JZCI6eyJtY2MiOiIyMjIiLCJtbmMiOiIyMiJ9LCJhdWQiOiJbXCI0NDFhMWFmZC1lYjZlLTRlMWItODhiNC1kYzdmNTkxNTQ2NGVcIl0iLCJuYmYiOjE2OTk2MjQ1MzksInByb2R1Y2VyU25zc2FpTGlzdCI6W3sic3N0IjoxLCJzZCI6IkFCQ0RFMSJ9LHsic3N0IjozLCJzZCI6IkFCQ0RFMyJ9XSwic2NvcGUiOiJuYnNmLW1hbmFnZW1lbnQiLCJleHAiOjE3OTQzMTg5MzksImlhdCI6MTY5OTYyNDUzOSwianRpIjoiand0LXV1aWQyIn0.BB1a5RpJI-tnyQhprBSRusS2g9wYhIbjL1_Ik9RynTYrqchrzx0A9b3v4Y9tlXVfYiY7HErugjVgnXYzkzm5-g",
+      "traffic-set-ref": "registerSet"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{{- if eq (include "eric-sc.fileCollector.enabled" .) "true" }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: eric-sc-core-dumps
+  labels:
+{{- include "eric-sc.de-facto-labels" . | indent 4 }}
+  annotations:
+    helm.sh/resource-policy: keep
+{{- include "eric-sc.product-annotations" . | indent 4 }}
+spec:
+  accessModes:
+    - {{ index .Values "eric-sc" "fileCollector" "persistentVolumeClaim" "accessMode" | quote }}
+  resources:
+    requests:
+      storage: {{ index .Values "eric-sc" "fileCollector" "persistentVolumeClaim" "size" | quote }}
+{{- if index .Values "eric-sc" "fileCollector" "persistentVolumeClaim" "storageClassName" }}
+  storageClassName: {{ index .Values "eric-sc" "fileCollector" "persistentVolumeClaim" "storageClassName" | quote }}
+{{- end }}
+{{- end }}

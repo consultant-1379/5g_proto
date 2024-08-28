@@ -1,0 +1,50 @@
+{{- $cnomServiceName := "eric-cnom-server" -}}
+{{- $cnomServicePort := 8585 -}}
+{{- $monitorServiceName := "eric-sc-monitor" -}}
+{{- $monitorServicePort := 80 -}}
+{{- $monitorServiceTlsPort := 443 -}}
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: eric-sc-cs-nbi
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    kubernetes.io/ingress.class: {{ index .Values "eric-tm-ingress-controller-cr" "ingressClass" | quote }}
+spec:
+  virtualhost:
+    fqdn: {{ index .Values "eric-sc" "routes" "nbi" "fqdn" | quote }}
+    tls:
+{{- if eq (include "eric-sc.tlsClientValidation.enabled" .) "true" }}
+      clientValidation:
+        caSecret: {{ index .Values "eric-sc" "certificates" "nbi" "caSecret" | quote }}
+{{- end }}
+      secretName: {{ index .Values "eric-sc" "certificates" "nbi" "secret" | quote }}
+{{- if .Values.global.security.tls.enabled }}
+  routes:
+   - conditions:
+     - prefix: /em
+     services:
+       - name: {{ $cnomServiceName }}
+         protocol: tls
+         port: {{ $cnomServicePort }}
+         validation:
+           caSecret: {{ index .Values "eric-sc" "certificates" "internal" "caSecret" | quote }}
+           subjectName: {{ $cnomServiceName }}
+   - conditions:
+     - prefix: /monitor
+     permitInsecure: true
+     services:
+       - name: {{ $monitorServiceName }}
+         protocol: tls
+         port: {{ $monitorServiceTlsPort }}
+         validation:
+           caSecret: {{ index .Values "eric-sc" "certificates" "internal" "caSecret" | quote }}
+           subjectName: {{ $monitorServiceName }}
+{{ else }}
+  tcpproxy:
+    services:
+      - name: {{ $cnomServiceName }}
+        port: {{ $cnomServicePort }}
+      - name: {{ $monitorServiceName }}
+        port: {{ $monitorServicePort }}
+{{- end }}

@@ -1,0 +1,35 @@
+[
+	{
+		"faultName": "CertMCertificateToExpire",
+		"vendor": 193,
+		"code": 9699329,
+		"defaultDescription": "The certificate will expire in (x) days and should be renewed to prevent service failure",
+		"defaultExpiration": 1800,
+		"defaultSeverity": "Warning",
+		"probableCause": 351,
+		"category": "ProcessingErrorAlarm",
+		"specificProblem": "Certificate Management, Certificate is about to Expire"
+	},
+	{
+		"faultName": "CertMTrustedCertificateToExpire",
+		"vendor": 193,
+		"code": 9699330,
+		"defaultDescription": "The trusted certificate will expire in (x) days and should be renewed to prevent service failure",
+		"defaultExpiration": 1800,
+		"defaultSeverity": "Warning",
+		"probableCause": 351,
+		"category": "ProcessingErrorAlarm",
+		"specificProblem": "Certificate Management, Trusted Certificate is about to Expire"
+	},
+	{
+		"faultName": "CertMAutomaticEnrollmentFailed",
+		"vendor": 193,
+		"code": 9699331,
+		"defaultDescription": "Automatic certificate renewal using enrollment protocol (protocol) failed due to local misconfiguration or remote enrollment service denial",
+		"defaultExpiration": 1800,
+		"defaultSeverity": "Warning",
+		"probableCause": 307,
+		"category": "ProcessingErrorAlarm",
+		"specificProblem": "Certificate Management, Automatic Enrollment Failed"
+	}
+]

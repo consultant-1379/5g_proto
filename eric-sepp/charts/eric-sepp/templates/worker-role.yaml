@@ -1,0 +1,24 @@
+{{- if .Values.rbac.createServiceAccount }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ template "eric-sepp.name" . }}-worker
+  labels:
+{{- include "eric-sepp.labels" . | indent 4 }}
+    app: {{ template "eric-sepp.name" . }}-worker
+  annotations:
+{{- include "eric-sepp.helm-annotations" . | indent 4 }}
+{{- include "eric-sepp.config-annotations" . | indent 4 }}
+  namespace: {{ .Release.Namespace }}
+rules:
+  - apiGroups:
+    - ""
+    resources:
+    - services
+    - endpoints
+    - secrets
+    verbs:
+    - get
+    - list
+    - watch
+{{- end }}

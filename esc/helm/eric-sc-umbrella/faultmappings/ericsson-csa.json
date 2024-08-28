@@ -1,0 +1,74 @@
+[
+  {
+    "faultName": "Test",
+    "vendor": 193,
+    "code": 9306112,
+    "defaultSeverity": "Warning",
+    "defaultDescription": "This is a test alarm, please ignore.",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "Test Alarm"
+  },
+  {
+    "faultName": "ScpNrfGroupUnavailable",
+    "vendor": 193,
+    "code": 9306113,
+    "defaultSeverity": "Major",
+    "defaultDescription": "The NRF-group is unavailable",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SCP, NRF Group Unavailable"
+  },
+  {
+    "faultName": "ScpBadConfiguration",
+    "vendor": 193,
+    "code": 9306114,
+    "defaultSeverity": "Major",
+    "defaultDescription": "The configuration provided is faulty",
+    "category": "ProcessingErrorAlarm",
+    "specificProblem": "SCP, Bad Configuration"
+  },
+  {
+    "faultName": "ScpProducerNotReachable",
+    "vendor": 193,
+    "code": 9306115,
+    "defaultSeverity": "Major",
+    "defaultDescription": "The Producer is not reachable for service requests",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SCP, Producer Not Reachable"
+  },
+  {
+    "faultName": "ScpProducerPoolNotReachable",
+    "vendor": 193,
+    "code": 9306116,
+    "defaultSeverity": "Major",
+    "defaultDescription": "The Producer Pool is not reachable for service requests",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SCP, Producer Pool Not Reachable"
+  },
+  {
+    "faultName": "ScpDynamicProducerSuspended",
+    "vendor": 193,
+    "code": 9306117,
+    "defaultSeverity": "Major",
+    "defaultDescription": "The Dynamic Producer has been suspended from service requests",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SCP, Dynamic Producer Suspended"
+  },
+  {
+    "faultName": "ScpUnresolvableHosts",
+    "vendor": 193,
+    "code": 9306118,
+    "defaultSeverity": "Major",
+    "defaultDescription": "One or more hostnames cannot be resolved",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SCP, Unresolvable Hosts"
+  },
+  {
+    "faultName": "MissingCertificate",
+    "vendor": 193,
+    "code": 9306119,
+    "defaultSeverity": "Critical",
+    "defaultDescription": "An asymmetric key or/and a certificate authority are unavailable which can result in the failure of the secure connection that uses them.",
+    "category": "Other",
+    "specificProblem": "SCP, Certificate Missing"
+  }
+]

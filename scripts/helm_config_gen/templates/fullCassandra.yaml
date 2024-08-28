@@ -1,0 +1,11 @@
+eric-data-wide-column-database-cd:
+  resources:
+    cassandra:
+      requests:
+        cpu: "4"
+      limits:
+        cpu: "4" 
+  persistence:
+    dataVolume:
+      persistentVolumeClaim:
+        size: 100Gi

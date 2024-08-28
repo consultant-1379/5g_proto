@@ -1,0 +1,202 @@
+#!/usr/bin/expect
+
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 2.5
+#  Date     : 2018-10-23 11:32:56
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2014,2015,2017,2018
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# ------------------------------- Procedures ----------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+
+# -----------------------------------------------------------------------------
+# Show syntax and help information.
+# Input:
+#  -
+#
+# Output:
+#  -
+#
+proc show_syntax {} {
+    global argv0
+
+    puts ""
+    puts "This script copies data from a source file/directory to a target"
+    puts "file/directory using secure copy protocol \"scp\"."
+    puts "Either the source or the target can be on a remote node, but not both."
+    puts ""
+    puts "Syntax:"
+    puts "======="
+    puts ""
+    puts "  $argv0 <MANDATORY> <OPTIONAL>"
+    puts ""
+    puts "Where <MANDATORY> is:"
+    puts ""
+    puts "   --from-data=<source directory or file>"
+    puts "   --to-data=<target directory or file>"
+    puts ""
+    puts "Where <OPTIONAL> is:"
+    puts ""
+    puts "  --password=<password for remote node>"
+    puts "  --scp-options=<option switches>"
+    puts "    Set option parameters to be used for the 'scp' command, for example:"
+    puts "    '-p' Preserves modification times, access times, and modes from the original file."
+    puts "    '-r' Recursively copy entire directories."
+    puts "  --timeout-value=<value in seconds>"
+    puts "    Set the maximum time to wait for a string to printed from the node"
+    puts "    Might have to be set to a higher value than the default 60 seconds"
+    puts "    if the files to copy are big."
+    puts "  --help"
+    puts "    Shows this help information."
+    puts ""
+    puts ""
+    puts "Examples:"
+    puts "========="
+    puts ""
+    puts "Example 1:"
+    puts "When copying binary scripts from DAFT server to the GEP."
+    puts ""
+    puts "  $argv0 --scp-options='-r' --from-data='bin' --to-data='root@10.87.13.54:/home/daft' --password=rootroot"
+    puts "   for backwards compatible reason also the following is allowed:"
+    puts "  $argv0 --from-data='-r bin' --to-data='root@10.87.13.54:/home/daft' --password=rootroot"
+    puts ""
+    puts "Example 2:"
+    puts "When copying files from GEP to the current directory of the DAFT server."
+    puts ""
+    puts "  $argv0 --scp-options='-r' --from-data='root@10.87.13.54:/home/daft/useraccount_backup' --to-data='.' --password=rootroot"
+    puts ""
+    puts ""
+    puts "The script returns:"
+    puts "==================="
+    puts ""
+    puts " 0: Successful termination"
+    puts " 1: Unsuccessful termination"
+    puts ""
+}
+
+source [file join [file dirname [info script]] ../lib/_exit_with_error_message.exp]
+source [file join [file dirname [info script]] ../lib/_login_via_scp.exp]
+
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# ----------------------------- Main code loop --------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+
+# Workaround for problem which happens when this script is run as part of the
+# DAFT server playlist which runs the script using a terminal type "dumb" which
+# causes the CLISS to not show any prompt which causes all sent commands to
+# time out.
+# The workaround is to trick the terminal to use a terminal type of "tty" which
+# at least seems to return back a proper CLISS prompt.
+set env(TERM) "xterm"
+
+# Initialize the global error counter
+set errorcnt 0
+
+# Initialize debug_list for the scripts that need it
+set debug_list {}
+
+set from_data ""
+set password "rootroot"
+set port 22
+set scp_options ""
+set timeoutval 60
+set to_data ""
+
+# ***********************************
+# **                               **
+# ** Check command line parameters **
+# **                               **
+# ***********************************
+
+# Parse all command line parameters
+foreach cmd_arg $argv {
+    # --ts-user=
+    if {[regexp "^(\-\-from-data)=(.+)" $cmd_arg junk param value] == 1} {
+        set from_data $value
+        # puts "\t$param seen with $value"
+
+    # --ts-ip=
+    } elseif {[regexp "^(\-\-to-data)=(.+)" $cmd_arg junk param value] == 1} {
+        set to_data $value
+        # puts "\t$param seen with $value"
+
+    # --password=
+    } elseif {[regexp "^(\-\-password)=(.+)" $cmd_arg junk param value] == 1} {
+        set password $value
+        # puts "\t$param seen with $value"
+
+    # --port=
+    } elseif {[regexp "^(\-\-port)=(.+)" $cmd_arg junk param value] == 1} {
+        set port $value
+        # puts "\t$param seen with $value"
+
+    # --scp-options=
+    } elseif {[regexp "^(\-\-scp-options)=(.+)" $cmd_arg junk param value] == 1} {
+        set scp_options $value
+        # puts "\t$param seen with $value"
+
+    # --timeout-value=
+    } elseif {[regexp "^(\-\-timeout-value)=(.+)" $cmd_arg junk param value] == 1} {
+        set timeoutval $value
+        # puts "\t$param seen with $value"
+
+    # --help
+    } elseif {[regexp "^(\-\-help)$" $cmd_arg junk param] == 1} {
+        show_syntax
+        exit 1
+
+    } else {
+        exit_with_error_message 1 "Unknown parameter \"$cmd_arg\" detected, use parameter --help to see syntax"
+    }
+}
+
+# Check consistency of the parameters
+if {$from_data == ""} {
+    exit_with_error_message 1 "You must specify parameter --from_data="
+} elseif {$to_data == ""} {
+    exit_with_error_message 1 "You must specify parameter --to_data="
+}
+
+# Set timeout value in seconds to use for waiting for the expected string
+set timeout $timeoutval
+
+# **************************
+# **                      **
+# ** Login and copy files **
+# **                      **
+# **************************
+
+if { [login_via_scp "$from_data" "$to_data" $password $port $scp_options] > 0 } {
+    # Some error have occurred
+    exit_with_error_message 1 "Unable to copy files"
+}
+
+# Check for any errors
+if {$errorcnt > 0} {
+    exit_with_error_message 1 "Error Counter = $errorcnt"
+} else {
+    puts ""
+    exit 0
+}

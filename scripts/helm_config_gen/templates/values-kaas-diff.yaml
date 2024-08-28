@@ -1,0 +1,565 @@
+#This file contains settings to reduce memory, cpu and disk space requests and limits by the ADP components.
+#SCP/BSF are deployed with original values.
+#Original values are mentioned with #
+
+global:
+  ericsson:
+    licensing:     
+      licenseDomains:
+        - productType: "SIGNALING_CONTROLLER" ## DO NOT CHANGE THIS VALUE
+          customerId: "Eric123"
+          swltId: "Palaven"
+  registry:
+    imagePullPolicy: "Always"
+
+
+#eric-cloud-native-base
+eric-cm-mediator:
+  resources:
+    eric-cm-mediator:
+      requests:
+        cpu: 250m #500m (max), 100m (min)
+        # memory: 256Mi       
+      limits:
+        cpu: 500m #2000m (max), 200m (min)
+        memory: 384Mi #512Mi (max). 384Mi (min)
+    # eric-cm-mediator-notifier:
+      # requests:
+        # cpu: 250m #250m (max), 100m (min)
+        # memory: 256Mi
+      # limits:
+        # cpu: 2000m # 2000m (max), 200m (min)
+        # memory: 512Mi #512Mi (max), 384Mi (min)
+#  replicaCount: 1        
+
+eric-ctrl-bro:
+  resources:
+    backupAndRestore:
+      limits:
+        cpu: 1
+        memory: "2Gi"
+      requests:
+        cpu: 500m
+        memory: "1Gi"
+  # persistence:
+    # persistentVolumeClaim:
+      # size: "15Gi"
+      # enabled: true             
+
+eric-data-coordinator-zk:
+  resources:
+    datacoordinatorzk:
+      requests:
+        cpu: "500m" #"1" (max) "500m" (min)
+        memory: "1Gi" #"2Gi" (max) "1Gi" (min)
+      limits:
+        cpu: "1" #2 (max) "1" (min)
+        memory: "1Gi" #"4Gi" (max) "1Gi" (min)
+        # emphemeral-storage: "5Gi"
+    brAgent:
+      requests:
+        cpu: "500m" #"1" (max) 500m (min)
+        memory: "256Mi" #"1Gi" (max)  256Mi (min)
+      limits:
+        cpu: "500m" #"1" (max) 500m (min)
+        memory: "768Mi" #"2Gi" (max) 256Mi (min)        
+  # replicas: 3
+  # minAvailable: "55%"
+  # heap: "1G"
+
+eric-data-distributed-coordinator-ed:
+  # pods:
+    # etcd:
+      # replicas: 3
+  resources:
+    dced:
+      requests:
+        cpu: '150m' #"400m" (max/min)
+        memory: "192Mi" #"400Mi" (max/min)
+      limits:
+        cpu: '300m' #"1" (max/min)
+        memory: "512Mi" #"1Gi" (max/min)
+    brAgent:
+      limits:
+        cpu: "400m" #"1" (max)
+        memory: "512Mi" #"2Gi" (max)
+      requests:
+        cpu: "100m" #"400m" (max)
+        memory: "256Mi" #"400Mi" (max)
+
+eric-data-document-database-pg:
+  resources:
+    postgres:
+      requests:
+        # cpu: 100m #100m (max)
+        # memory: 256Mi #256Mi (max)    
+      limits:
+        cpu: 0.5 #1 (max)
+        memory: 768Mi #2560Mi (max)
+    metrics:
+      requests:
+        memory: "32Mi" #"128Mi" (max)
+        cpu: "30m" #"100m" (max)
+      limits:
+        cpu: "100m" #"200m" (max)
+        memory: "96Mi" #"256Mi" (max)
+    # kube_client:
+      # limits:
+        # cpu: 200m #200m (max)
+        # memory: 512Mi #521Mi (max)
+      # requests:
+        # cpu: 100m #100m (max)
+        # memory: 256Mi #256Mi (max)    
+    brm:
+      requests:
+        memory: "128Mi" #"256Mi" (max)
+        cpu: "100m" #"300m" (max)
+      limits:
+        cpu: "300m" #"1" (max)
+        memory: "256Mi" #"512Mi" (max)
+    bra:
+      requests:
+        memory: "256Mi" #"1Gi" (max)
+        cpu: "100m" #"500m" (max)
+        # ephemeral-storage: "10Gi"
+      limits:
+        cpu: "300m" #"1" (max)
+        memory: "768Mi" #"2Gi" (max)  
+#  metrics:
+#    enabled: true
+#  highAvailability:
+#    replicaCount: 2
+  persistentVolumeClaim:
+    size: 4Gi #8Gi (max)
+#    backup:
+#      enabled: true
+
+eric-data-message-bus-kf:
+  resources:
+    messagebuskf:
+      requests:
+        cpu: "500m" #"1" (max) "300m" (min)
+        # memory: "1024Mi" #"1Gi" (max) "400Mi" (min)
+      limits:  
+        cpu: "1" #"2" (max) "1" (min)
+        memory: "2048Mi" #"6Gi" (max) "1Gi" (min)
+  persistence:
+    persistentVolumeClaim:
+      size: "5Gi" #"15Gi"
+      # enabled: true
+
+eric-data-search-engine:
+  resources:
+    master:
+      requests:
+        cpu: 100m #500m
+#        memory: 1Gi
+#      limits:
+#        cpu: 500m
+#        memory: 1Gi        
+    ingest:
+      requests:
+        cpu: 100m #500m
+#        memory: 1Gi
+#      limits:
+#        cpu: 500m
+#        memory: 1Gi               
+    data:  
+      requests:
+        cpu: 250m #500m
+#        memory: 2Gi
+#      limits:
+#        cpu: 500m
+#        memory: 2Gi
+#    bragent:
+#      requests:
+#        cpu: "500m"
+#        memory: "1Gi"
+#      limits:
+#        cpu: "500m"
+#        memory: "1Gi"
+  persistence:
+    data:
+      persistentVolumeClaim:
+        size: "20Gi" #100Gi
+#  replicas:
+#    ingest: 1
+#    master: 3
+#    data: 2            
+
+# eric-fh-alarm-handler:
+  # resources:
+    # alarmhandler:
+      # requests:
+        # cpu: 100m #500m (max) 100m (min)
+        # memory: 128Mi #384Mi (max) 384Mi (min)
+      # limits:
+        # cpu: 300m #1000m (max) 100m (min)
+        # memory: 512Mi #512Mi (max) 384Mi (min)
+  # replicaCount: 2
+
+eric-fh-snmp-alarm-provider:
+  alarmprovider:
+    requests:
+      cpu: 50m #0.1 (max) 100m (min)
+      memory: 256Mi #348Mi (max) 384Mi (min)
+    limits:
+      cpu: 150m #0.2 (max)
+      memory: 1024Mi #1.5Gi (max)
+  ingress:
+    enabled: true
+  service:
+    secretName: snmp-alarm-provider-config
+
+eric-log-shipper:
+  resources:
+    logshipper:
+      requests:
+        memory: "64Mi" #"100Mi"
+        cpu: "40m" #"100m"
+      limits:
+        memory: "256Mi" #500Mi
+        cpu: "100m" #"250m"
+
+#eric-log-transformer:
+#  resources:
+#    logtransformer:    
+#      requests:
+#        cpu: 150m #250m
+#        memory: 1Gi #2Gi
+#      limits:
+#        cpu: 300m #1000m
+#        memory: 2Gi
+#      metrics:
+#        limits:
+#          cpu: "100m"
+#          memory: "256Mi"
+#        requests:
+#          cpu: "25m"
+#          memory: "64Mi"                      
+
+#eric-odca-diagnostic-data-collector:
+#  resources:
+#    diagnostic-data-collector:
+#      requests:
+#        memory: 32Mi
+#        cpu: 50m
+#      limits:
+#        memory: 128Mi
+#        cpu: 200m
+#    diagnostic-data-collector-manual:
+#      requests:
+#        memory: 32Mi
+#        cpu: 50m
+#      limits:
+#        memory: 128Mi
+#        cpu: 200m
+
+eric-pm-server:
+  resources:
+    server:
+      # requests:
+        # cpu: 250m #250m (max/min)
+        # memory: 512Mi #512Mi (max/min)
+        # ephemeral-storage: 512Mi #512Mi (max)
+      limits:
+        cpu: 1 #2 (max/min)
+        # memory: 2048Mi #2048Mi (max/min)
+        # ephemeral-storage: 8Gi #8Gi (max/min)
+    configmapReload:
+      requests:
+        cpu: 50m #100m (max/min)
+        # memory: 8Mi #8Mi (max/min)
+        # ephemeral-storage: 8Mi #8Mi (max)
+      limits:
+        cpu: 150m #200m (max/min)
+        # memory: 32Mi #32Mi (max/min)
+        # ephemeral-storage: 1Gi #1Gi (max)
+  server:               
+    persistentVolume:
+#      enabled: true
+      size: 30Gi #80Gi
+
+eric-sec-certm:
+  resources:
+    certm:
+      requests:
+        memory: "512Mi" #"1Gi" (max/min)
+        cpu: "150m" #"0.5" (max/min)
+      limits:
+        memory: "1024Mi" #"2Gi" (max/min)
+        cpu: "0.5" #"1" (max/min)
+
+# eric-sec-key-management:
+  # resources:
+    # vault:
+      # requests:
+        # memory: "400Mi"
+        # cpu: "100m"
+      # limits:
+        # memory: "1200Mi"
+        # cpu: "300m"
+
+eric-sec-sip-tls:
+  resources:
+    sip:
+      requests:
+        memory: "128Mi" #"200Mi"
+        cpu: "50m" #"100m"
+      limits:
+        memory: "256Mi" #"400Mi"
+        cpu: "200m" #"3000m"  
+
+#eric-si-application-sys-info-handler:
+#  resources:
+#    eric-si-application-sys-info-handler:
+#      requests:
+#        cpu: 10m
+#        memory: 16Mi
+#      limits:
+#        cpu: 100m
+#        memory: 100Mi
+
+eric-lm-combined-server:
+  resources:
+    eric-lm-license-consumer-handler:
+      limits:
+        cpu: 1500m ## 2000m
+  licenseServerClient:  
+    licenseServer:
+      thrift:
+        host: eric-test-nels-simulator
+    
+eric-data-object-storage-mn:
+  resources:
+    server:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 1
+        memory: 1Gi
+#    mgt:
+#      requests:
+#        cpu: 50m #100m #250m
+#        memory: 32Mi #64Mi #128Mi #256Mi
+#      limits:
+#        cpu: 200m #500m
+#        memory: 256Mi #512Mi
+#    kes:
+#      requests:
+#        cpu: 25m
+#        memory: 32Mi
+#      limits:
+#        memory: 100Mi
+#        cpu: 100m
+#    logshipper:
+#      requests:
+#        memory: 24Mi
+#        cpu: 15m
+#      limits:
+#        memory: 128Mi
+#        cpu: 100m
+
+eric-tm-ingress-controller-cr:
+  resources:
+    contour:
+      requests:
+        cpu: "10m" #"50m"
+        memory: "128Mi" #"250Mi"
+#      limits:
+#         cpu: "75m"
+#        memory: "256Mi" #"300Mi"        
+#    envoy:    
+#      resources:
+#        requests:
+#          cpu: "25m" #"100m"
+#          memory: "64Mi" #"250Mi"
+#        limits:
+#          cpu: "500m" #"1"
+#          memory: "128Mi" #"300Mi"
+#    initconfig:
+#      requests:
+#        cpu: "150m" #"300m"
+#        memory: "250Mi"
+#      limits:
+#        cpu: "300m" #"500m"
+#        memory: "350Mi"
+
+
+#eric-cloud-native-nf-additions
+eric-cm-yang-provider:
+  resources:
+    yangEngine:
+      requests:
+        # memory: 500Mi #500Mi (max)
+        cpu: 200m #250m (max)
+      limits:
+        # memory: 2Gi #2Gi (max)
+        cpu: 400m #4000m (max)
+    yangDbAdapter:
+      requests:
+        memory: 64Mi #100Mi (max)
+        cpu: 50m #100m (max)
+      limits:
+        # memory: 250Mi #250Mi (max)
+        cpu: 200m #2000m (max)
+    sshd:
+      # requests:
+        # memory: 50Mi #50Mi (max)
+        # cpu: 50m #50m (max)
+      limits:
+        memory: 128Mi #250Mi (max)
+        cpu: 200m #1000m (max)
+    schemaSynchronizer:
+      # requests:
+        # memory: 32Mi #50Mi (max)
+        # cpu: 100m #100m (max)
+      limits:
+        memory: 128Mi #2Gi (max)
+        cpu: 400m #4000m (max)
+    externalNotifSender:
+      requests:
+        memory: 32Mi #50Mi (max)
+        # cpu: 50m #50m (max)
+      limits:
+        memory: 128Mi #250Mi (max)
+        cpu: 200m #1000m (max)
+    yangLibExt:
+      requests:
+        memory: 32Mi #50Mi (max)
+        # cpu: 50m #50m (max)
+      limits:
+        memory: 128Mi #250Mi (max)
+        cpu: 200m #1000m (max)
+    notificationController:
+      requests:
+        memory: 32Mi #50Mi (max)
+        # cpu: 50m #50m (max)
+      limits:
+        memory: 128Mi #250Mi (max)
+        cpu: 200m #1000m (max)
+# object storage is not active but still reduce resources
+    objectStorageAdapter:
+      requests:
+        cpu: 50m #50m (max)
+        memory: 32Mi #50Mi (max)
+      limits:
+        cpu: 200m #1000m (max)
+        memory: 128Mi #250Mi (max)
+    pmMetrics:
+      # requests:
+        # cpu: 50m #50m (max)
+        # memory: 50Mi #50Mi (max)
+      limits:
+        cpu: 500m #1000m (max)
+        # memory: 250Mi #250Mi (max)
+    # cliExtensionCmds:
+      # requests:
+        # cpu: 50m #50m (max)
+        # memory: 50Mi #50Mi (max)
+      # limits:
+        # cpu: 500m #50m (max)
+        # memory: 128Mi #128Mi (max)
+
+eric-pm-bulk-reporter:
+  resources:
+    bulkreporter:
+      requests:
+        cpu: 50m #100m
+#        memory: 50Mi
+      limits:
+        cpu: '0.4' #'1'
+#        memory: 200Mi
+    alarmreporter:
+      requests:
+        cpu: 50m #100m
+#        memory: 50Mi
+      limits:
+        cpu: '0.5' #'1'
+#        memory: 200Mi
+    pmsftp:
+#      requests:
+#        cpu: 50m
+#        memory: 50Mi
+      limits:
+        cpu: '0.5' #'1'
+#        memory: 200Mi
+#  persistentVolumeClaim:
+#    size: 500Mi
+
+eric-sec-admin-user-management:
+  resources:
+    aum:
+      requests:
+        memory: "128Mi" #"256Mi" (max)
+        cpu: "100m" #"250m" (max)
+      limits:
+        memory: "256Mi" #"512Mi" (max) 256Mi (min)
+        cpu: "250m" #"500m" (max) 250m (min)
+
+eric-sec-ldap-server:
+  resources:
+    ldap:
+      requests:
+        memory: "768Mi" #"512Mi"
+        cpu: 150m #"300m"
+      limits:
+#        memory: "2036Mi"
+        cpu: 500m #"3000m"  
+    ldapagent:
+      requests:
+        memory: "128Mi" #"512Mi"
+        cpu: "100m" #"500m"
+      limits:
+        memory: "512Mi" #"2036Mi"
+        cpu: "400m" #"1"
+    ldapproxy:
+      requests:
+        memory: "256Mi" #"512Mi"
+        cpu: 250m #"500m"
+      limits:
+        memory: "1024Mi" #"2036Mi"
+        cpu: "500m" #"3000m"    
+  persistentVolumeClaim:
+    size: 4Gi #"8Gi"                 
+
+eric-cnom-server:
+  resources:
+    server:
+      requests:
+        cpu: 200m #150m (max)
+        memory: 256Mi #400Mi (max)
+      limits:
+        cpu: 500m #150m (max)
+        memory: 512Mi #400Mi (max)
+  features:
+    serviceCommunicationProxy: false
+
+
+#eric-sc-cs
+eric-data-distributed-coordinator-ed-sc:
+  # pods:
+    # etcd:
+      # replicas: 3
+  resources:
+    dced:
+      requests:
+        cpu: '150m' #"400m" (max/min)
+        memory: "192Mi" #"400Mi" (max/min)
+      limits:
+        cpu: '300m' #"1" (max/min)
+        memory: "512Mi" #"1Gi" (max/min)
+    brAgent:
+      limits:
+        cpu: "400m" #"1" (max)
+        memory: "512Mi" #"2Gi" (max)
+      requests:
+        cpu: "100m" #"400m" (max)
+        memory: "256Mi" #"400Mi" (max)
+  # persistence:
+    # persistentVolumeClaim:
+      # size: "1Gi"
+  env:
+    etcd:
+      ETCD_QUOTA_BACKEND_BYTES: "128000000"

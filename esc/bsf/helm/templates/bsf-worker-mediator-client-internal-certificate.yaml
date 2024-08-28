@@ -1,0 +1,23 @@
+# Copyright 2019 Ericsson GmbH
+{{- if eq (include "eric-bsf.tls" .) "true" }}
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+  name: {{ template "eric-bsf.name" . }}-worker-mediator-client-internal-certificate
+  labels:
+{{- include "eric-bsf.labels" . | indent 4 }}
+  annotations:
+{{- include "eric-bsf.helm-annotations" . | indent 4 }}
+{{- include "eric-bsf.config-annotations" . | indent 4 }}
+spec:
+  kubernetes:
+    generatedSecretName: bsf-worker-mediator-client-if-certificate-secret
+  certificate:
+    subject:
+      cn: eric-bsf-worker
+    issuer:
+      reference: eric-cm-mediator-ca
+    extendedKeyUsage:
+      tlsClientAuth: true
+      tlsServerAuth: false
+{{- end }}

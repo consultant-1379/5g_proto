@@ -1,0 +1,21 @@
+{
+  "duration": 20,
+  "target-host": "192.168.1.1",
+  "target-port": 80,
+  "metrics": {
+    "export-metrics": ["PROMETHEUS"]
+  },
+  "traffic-mix": [
+    {
+      "name": "set1",
+      "order": 1,
+      "tps": 500,
+      "type": "discovery",
+      "num-requests": 3000,
+      "ip-range": {
+        "start-ip": "10.0.0.1",
+        "range": 100
+      }
+    }
+  ]
+}

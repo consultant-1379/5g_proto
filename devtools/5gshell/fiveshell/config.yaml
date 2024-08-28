@@ -1,0 +1,2010 @@
+actions:
+  all_supi_ranges:
+    cmd: /bin/bash -c "curl -sS -X GET 'http://{node_ip}:{nrfsim_port}/nnrf-disc/v1/nf-instances?requester-nf-type=SMF&target-nf-type=CHF'
+      | jq"
+    label: "\U0001F441  All SUPI Ranges"
+    tooltip: Print all SUPI-ranges provisioned in NRFSIM
+    type: linux
+  cc_create:
+    cmd: '{fiveshellhome}/tools/test -o -c -1 -N {node_ip} -W {worker_port} -E {envoydomain}
+      -O http://eric-chfsim-2:80/nchf-convergedcharging/v1/chargingdata/notify'
+    label: "\u27A1 CC Create"
+    tooltip: Send a single Converged-Charging CREATE request
+    type: linux
+  cc_notify:
+    cmd: '{fiveshellhome}/tools/test -o -c -4 -N {node_ip} -W {worker_port} -E {envoydomain}
+      -O http://eric-chfsim-2:80/nchf-convergedcharging/v1/chargingdata/notify_cc_receiver'
+    label: "\u27A1 CC Notify"
+    tooltip: Send a single Converged-Charging NOTIFY request
+    type: linux
+  cc_reg_test:
+    cmd: '{fiveshellhome}/tools/test -o -c -N {node_ip} -W {worker_port} -E {envoydomain}'
+    label: "\u27A1\u27A1 CC Reg-Test"
+    tooltip: 'Regression-test: Send Converged-Charging CREATE, UPDATE, RELEASE, NOTIFY'
+    type: linux
+  cc_reg_test_ct:
+    cmd: '{fiveshellhome}/tools/test_rcc -o -N {node_ip} -W {worker_port} -F {fiveshellhome}'
+    label: "\u27A1\u27A1 CC Reg-Test"
+    tooltip: 'Regression-test: Send Converged-Charging CREATE, UPDATE, RELEASE, NOTIFY
+      (CT-style)'
+    type: linux
+  cc_sl_reg_test_v2:
+    cmd: '{fiveshellhome}/tools/test -o -N {node_ip} -W {worker_port} -E {envoydomain}
+      -q 2'
+    label: "\u27A1\u27A1 CC+SL Reg-Test v2"
+    tooltip: 'Regression test: Converged Charging v2 and Spending-Limit Control v1'
+    type: linux
+  change_chfsim_log_level_info:
+    cmd: json.dumps(json.loads(requests.put('http://localhost:{monitor_port}/monitor/api/v0/commands?target=eric-chfsim&command=log&logger=com.ericsson.sim.chf&level=INFO').text),
+      indent=2, sort_keys=False)
+    label: "\u2B06 CHFSim log \u2254 info"
+    tooltip: Set the CHFSim's log level to 'INFO'
+    type: python
+  change_chfsim_log_level_warning:
+    cmd: json.dumps(json.loads(requests.put('http://localhost:{monitor_port}/monitor/api/v0/commands?target=eric-chfsim&command=log&logger=com.ericsson.sim.chf&level=WARN').text),
+      indent=2, sort_keys=False)
+    label: "\u2B06 CHFSim log \u2254 warning"
+    tooltip: Set the CHFSim's log level to 'WARN'
+    type: python
+  change_kube_context:
+    cmd: kubectl config set current-context {kube_context}
+    label: Change kube context
+    tooltip: Change the current context of your .kube/config
+    type: linux
+  change_manager_log_level_debug:
+    cmd: json.dumps(json.loads(requests.put('http://localhost:{monitor_port}/monitor/api/v0/commands?target=eric-scp&command=log&logger=com.ericsson.esc.scp&level=DEBUG').text),
+      indent=2, sort_keys=False)
+    label: "\u2B06 Manager log \u2254 debug"
+    tooltip: Set the manager's log level to 'DEBUG'
+    type: python
+  change_manager_log_level_info:
+    cmd: json.dumps(json.loads(requests.put('http://localhost:{monitor_port}/monitor/api/v0/commands?target=eric-scp&command=log&logger=com.ericsson.esc.scp&level=INFO').text),
+      indent=2, sort_keys=False)
+    label: "\u2B06 Manager log \u2254 info"
+    tooltip: Set the manager's log level to 'INFO'
+    type: python
+  clear_all_flexi_disturbances:
+    cmd: post_request('http://{node_ip}:{chfsim_one_port}/admin/v1/clear_disturbances')
+    label: "Clear Flexi \u21AF"
+    tooltip: 'Clear all Flexible Disturbances.
+
+      POST /admin/v1/clear_disturbances'
+    type: python
+  clear_output:
+    cmd: clear_output()
+    label: Clear all output
+    shortcut: Ctrl+D
+    tooltip: Clear the log view area on the right
+    type: python no log
+  close_one_window:
+    cmd: close_one_window()
+    label: Close window
+    shortcut: Ctrl+W
+    tooltip: Close the current open window
+    type: python no log
+  configure_chfsim_delay_send_503_reject:
+    cmd: post_request('http://{node_ip}:{chfsim_one_port}/admin/v1/add_disturbance/delay-reject:100:503')
+    label: "Flexi \u21AF \u2254 Delay-503"
+    tooltip: 'Configure CHFSim to first delay the next incoming message by 100 ms,
+      then reject it with 503 (only once).
+
+      POST /admin/v1/add_disturbance/delay-reject:100:503'
+    type: python
+  configure_chfsim_send_404:
+    cmd: post_request('http://{node_ip}:{chfsim_one_port}/admin/v1/add_disturbance/reject:404')
+    label: "Flexi \u21AF \u2254 404"
+    tooltip: 'Configure CHFSim to send a 404 for the next incoming request (only once).
+
+      POST /admin/v1/add_disturbance/reject:404'
+    type: python
+  configure_chfsim_send_503_reject_x20:
+    cmd: post_request('http://{node_ip}:{chfsim_one_port}/admin/v1/add_disturbance/reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503')
+    label: "Flexi \u21AF \u2254 503 (20x)"
+    tooltip: 'Configure ChfSim to send reject with 503 for the next 20 requests.
+
+      POST /admin/v1/add_disturbance/reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503,reject:503'
+    type: python
+  delete_conf_json:
+    cmd: delete_request('http://{namespace}.{cluster}.rnd.gic.ericsson.se/cmm/cm/api/v1.1/configurations/ericsson-scp')
+    label: "\u2620 JSON"
+    tooltip: Delete the current configuration (via CM-Mediator)
+    type: python
+  delete_conf_netconf:
+    cmd: upload_via_netconf('{fiveshellhome}/tools/delete_config.netconf', '{node_ip}',
+      '{yang_port}', '{verbose}')
+    label: "\u2620 Netconf"
+    tooltip: Delete the current configuration (via Netconf)
+    type: python
+  deploy_chfsim_x3:
+    cmd: '{terminal} --geometry=100x20 -e make deploy'
+    dir: '{5g_proto}/simulators/chfsim'
+    label: "\u2B06 Deploy CHFSim (3x)"
+    tooltip: Deploy the NRFsim
+    type: linux
+  deploy_chfsim_x7:
+    cmd: '{terminal} --geometry=100x20 -e make deploy-full'
+    dir: '{5g_proto}/simulators/chfsim'
+    label: "\u2B06 Deploy CHFSim (7x)"
+    tooltip: Deploy the NRFsim
+    type: linux
+  deploy_k6:
+    cmd: '{terminal} --geometry=100x20 -e make deploy'
+    dir: '{5g_proto}/devtools/k6'
+    label: "\u2B06 Deploy K6"
+    tooltip: Deploy the K6
+    type: linux
+  deploy_nrfsim:
+    cmd: '{terminal} --geometry=100x20 -e make deploy'
+    dir: '{5g_proto}/simulators/nrfsim'
+    label: "\u2B06 Deploy NRFSim"
+    tooltip: Deploy the NRFsim
+    type: linux
+  deregister_all_chfsims:
+    cmd: post_request('http://{node_ip}:{port}/admin/v1/nrf/do_nf_instance_deregister')
+    label: "\u2B06 Deregister"
+    loop:
+      name: port
+      variable: chfsim_ports
+    tooltip: 'Deregister (PUT) all CHFSims as dynamic OCCs:
+
+      POST /admin/v1/nrf/do_nf_instance_deregister'
+    type: python
+  derigister_occ3:
+    cmd: post_request('http://{node_ip}:{chfsim_ports[2]}/admin/v1/nrf/do_nf_instance_deregister')
+    label: "\u2B06 Deregister OCC3"
+    tooltip: 'Deregister (PUT) CHFSim-3 as dynamic OCC3:
+
+      POST /admin/v1/nrf/do_nf_instance_deregister'
+    type: python
+  disable_dyn_prod_reg:
+    cmd: upload_via_netconf('{fiveshellhome}/tools/disable_dyn_prod_reg.netconf',
+      '{node_ip}', '{yang_port}', '{verbose}')
+    label: "\u2B06 Dyn. Prod. Reg. off"
+    tooltip: Disable dynamic producer registration via Netconf
+    type: python
+  disable_fixed_disturbances:
+    cmd: post_request('http://{node_ip}:{port}/admin/v1/set_rej_percent/0')
+    label: "Set Fixed \u21AF 0% (off)"
+    loop:
+      name: port
+      variable: chfsim_ports
+    tooltip: 'Disable/switch off Fixed Disturbances.
+
+      /admin/v1/set_rej_percent/0'
+    type: python
+  disable_load_test_mode:
+    cmd: post_request('http://{node_ip}:{port}/admin/v1/load_test_mode/off')
+    label: "\u2B07 Load-Mode \u2254 off"
+    loop:
+      name: port
+      variable: chfsim_ports
+    tooltip: 'Disable Load-Test-Mode in all CHFSims: enable flexible disturbances
+      and request logging.
+
+      POST /admin/v1/load_test_mode/off'
+    type: python
+  disable_load_test_statistic_mode:
+    cmd: post_request('http://{node_ip}:{port}/admin/v1/load_test_statistics_mode/off')
+    label: "\u2B07 Load-Statistic-Mode \u2254 off"
+    loop:
+      name: port
+      variable: chfsim_ports
+    tooltip: 'Disable Load-Test-Statistic-Mode in all CHFSims: no collects counters,
+      only applicable when load-mode on.
+
+      POST /admin/v1/load_test_statistics_mode/off'
+    type: python
+  enable_dyn_prod_reg:
+    cmd: upload_via_netconf('{fiveshellhome}/tools/enable_dyn_prod_reg.netconf', '{node_ip}',
+      '{yang_port}', '{verbose}')
+    label: "\u2B06 Dyn. Prod. Reg. on"
+    tooltip: Enable dynamic producer registration via Netconf
+    type: python
+  enable_load_test_mode:
+    cmd: post_request('http://{node_ip}:{port}/admin/v1/load_test_mode/on')
+    label: "\u2B06 Load-Mode \u2254 on"
+    loop:
+      name: port
+      variable: chfsim_ports
+    tooltip: 'Enable Load-Test-Mode in all CHFSims: no logging of requests, no disturbances.
+
+      POST /admin/v1/load_test_mode/on'
+    type: python
+  enable_load_test_statistic_mode:
+    cmd: post_request('http://{node_ip}:{port}/admin/v1/load_test_statistics_mode/on')
+    label: "\u2B06 Load-Statistic-Mode \u2254 on"
+    loop:
+      name: port
+      variable: chfsim_ports
+    tooltip: 'Enable Load-Test-Statistic-Mode in all CHFSims: collects counters, only
+      applicable when load-mode on.
+
+      POST /admin/v1/load_test_statistics_mode/on'
+    type: python
+  exec_linux_cmd:
+    cmd: bash -c "{linuxcommand}"
+    label: "\u27A1 execute"
+    tooltip: Execute the Linux command entered into the textfield
+    type: linux
+  instruct_chfsims_dont_send_HB:
+    cmd: post_request('http://{node_ip}:{port}/admin/v1/nrf/set_heartbeat/off')
+    label: "\u2B06 Set HB OFF"
+    loop:
+      name: port
+      variable: chfsim_ports
+    tooltip: 'Instruct all CHFSims to not send HeartBeat (HB) messages:
+
+      POST /admin/v1/nrf/set_heartbeat/off'
+    type: python
+  instruct_chfsims_dont_send_HB_occ3:
+    cmd: post_request('http://{node_ip}:{chfsim_ports[2]}/admin/v1/nrf/set_heartbeat/off')
+    label: "\u2B06 Set HB OFF OCC3"
+    tooltip: 'Instruct all CHFSims to not send HeartBeat (HB) messages:
+
+      POST /admin/v1/nrf/set_heartbeat/off'
+    type: python
+  instruct_chfsims_send_HB:
+    cmd: post_request('http://{node_ip}:{port}/admin/v1/nrf/set_heartbeat/on')
+    label: "\u2B06 Set HB ON"
+    loop:
+      name: port
+      variable: chfsim_ports
+    tooltip: 'Instruct all CHFSims to automatically send HeartBeat (HB) messages:
+
+      POST /admin/v1/nrf/set_heartbeat/on'
+    type: python
+  kill_traffic_on_selected_k6:
+    cmd: kubectl -n {namespace} exec -ti {K6} -- pkill k6
+    label: "\u27A1 Kill traffic on selected K6"
+    tooltip: Kill traffic on selected K6
+    type: linux
+  new_fiveshell_window:
+    cmd: create_fiveshell_window()
+    label: New window
+    shortcut: Ctrl+N
+    tooltip: Open new fiveshell instance
+    type: python no log
+  open_fiveshell_documentation:
+    cmd: open_fiveshell_documentation()
+    label: "Open documentation..."
+    tooltip: Open the fiveshell documentation
+    type: python no log
+  port_change_netconf:
+    cmd: upload_via_netconf_with_port_change("{5g_proto}/esc/scp/sample_config.netconf",
+      "{node_ip}", "{yang_port}", "{worker_port}", "{worker_port_tls}", "{nrfsim_cluster_ip}",
+      "{verbose}")
+    label: "\u2B06 PortChange Netconf"
+    tooltip: Update the scp-worker port in the sample_config.netconf, then upload
+      the configuration via Netconf
+    type: python
+  port_change_netconf_dyn:
+    cmd: upload_via_netconf_with_port_change("{5g_proto}/esc/scp/sample_config_only_dynpool.netconf",
+      "{node_ip}", "{yang_port}", "{worker_port}", "{worker_port_tls}", "{nrfsim_cluster_ip}",
+      "{verbose}")
+    label: "\u2B06 PortChange Netconf Dyn"
+    tooltip: Update the scp-worker port in the sample_config_only_dynpool.netconf,
+      then upload the configuration via Netconf
+    type: python
+  port_change_netconf_dyn_nrf:
+    cmd: upload_via_netconf_with_port_change("{5g_proto}/esc/scp/sample_config_only_dynpool_nrf.netconf",
+      "{node_ip}", "{yang_port}", "{worker_port}", "{worker_port_tls}", "{nrfsim_cluster_ip}",
+      "{verbose}")
+    label: "\u2B06 PortChange Netconf Dyn NRF"
+    tooltip: Update the scp-worker port in the sample_config_only_dynpool_nrf.netconf,
+      then upload the configuration via Netconf
+    type: python
+  port_change_netconf_nrf:
+    cmd: upload_via_netconf_with_port_change("{5g_proto}/esc/scp/sample_config_nrf.netconf",
+      "{node_ip}", "{yang_port}", "{worker_port}", "{worker_port_tls}", "{nrfsim_cluster_ip}",
+      "{verbose}")
+    label: "\u2B06 PortChange Netconf NRF"
+    tooltip: Update the scp-worker port in the sample_config_nrf.netconf, then upload
+      the configuration via Netconf
+    type: python
+  port_change_poc:
+    cmd: upload_via_netconf_with_port_change("{5g_proto}/esc/sepp/sample_poc_config.netconf",
+      "{node_ip}", "{yang_port}", "{sepp_worker_port}", "{sepp_worker_port_tls}",
+      "{nrfsim_cluster_ip}", "{verbose}", "user3")
+    label: "\u2B06 PortChange POC"
+    tooltip: Update the sepp-worker port in the sample_poc_config.netconf, then upload
+      the configuration via Netconf
+    type: python
+  port_change_rcc:
+    cmd: upload_via_netconf_with_port_change("{5g_proto}/esc/scp/sample_config_rcc_nrf.netconf",
+      "{node_ip}", "{yang_port}", "{worker_port}", "{worker_port_tls}", "{nrfsim_cluster_ip}",
+      "{verbose}")
+    label: "\u2B06 PortChange RCC"
+    tooltip: Update the scp-worker port in the sample_config_rcc.netconf, then upload
+      the configuration via Netconf
+    type: python
+  port_change_rcc_ipv6:
+    cmd: upload_via_netconf_with_port_change("{5g_proto}/esc/scp/sample_config_rcc_nrf_ipv6.netconf",
+      "{node_ip}", "{yang_port}", "{worker_port}", "{worker_port_tls}", "{nrfsim_cluster_ip}",
+      "{verbose}")
+    label: "\u2B06 PortChange RCC IPv6"
+    tooltip: Update the scp-worker port in the sample_config_rcc.netconf, then upload
+      the configuration via Netconf
+    type: python
+  print_all_nodes:
+    cmd: kubectl -n {namespace} get nodes -o wide
+    label: "\U0001F441 Nodes"
+    tooltip: Print all nodes in the current cluster
+    type: linux
+  print_all_pods:
+    cmd: kubectl -n {namespace} get pods
+    label: "\U0001F441 Pods"
+    tooltip: Print all pods in the current cluster
+    type: linux
+  print_all_services:
+    cmd: kubectl -n {namespace} get services
+    label: "\U0001F441 Services"
+    tooltip: Print all services in the current cluster
+    type: linux
+  print_hosts_file_for_wireshark:
+    cmd: get_hosts_data_for_wireshark()
+    label: "\U0001F441 Hosts"
+    tooltip: 'Print a ''hosts'' file to use with Wireshark: show hostnames instead
+      of IP-addresses. Copy it to ~/.config/wireshark/hosts'
+    type: python
+  provision_supis:
+    cmd: '{fiveshellhome}/tools/provision-slf.sh {node_ip} {nrfsim_port}'
+    label: "\u2B06 Provision SUPIs"
+    tooltip: Provision SUPI ranges into the NRF so that SLF can resolve them into
+      provinces
+    type: linux
+  quit_fiveshell:
+    cmd: quit_fiveshell(0,0)
+    label: Quit
+    shortcut: Ctrl+Q
+    tooltip: Quit the fiveshell application
+    type: python no log
+  redeploy_baseline:
+    cmd: '{terminal} --geometry=100x20 -e make undeploy-baseline remove-volumes libs
+      deploy-baseline'
+    dir: '{5g_proto}/esc'
+    label: "\u27F2 Redeploy Baseline"
+    tooltip: Undeploy the baseline and volumes, then build libs and deploy the baseline
+      again
+    type: linux
+  redeploy_scp_only:
+    cmd: '{terminal} --geometry=100x20 -e  make undeploy-scp-only deploy-scp-only'
+    dir: '{5g_proto}/esc'
+    label: "\u27F2 Redeploy SCP-only"
+    tooltip: Undeploy and then deploy the SCP. Baseline is not changed.
+    type: linux
+  register_all_chsfsims:
+    cmd: post_request('http://{node_ip}:{port}/admin/v1/nrf/do_nf_instance_register')
+    label: "\u2B06 Register"
+    loop:
+      name: port
+      variable: chfsim_ports
+    tooltip: '(Re-)Register (PUT) all CHFSims as dynamic OCCs:
+
+      POST /admin/v1/nrf/do_nf_instance_register'
+    type: python
+  register_occ3:
+    cmd: post_request('http://{node_ip}:{chfsim_ports[2]}/admin/v1/nrf/do_nf_instance_register')
+    label: "\u2B06 Register OCC3"
+    tooltip: '(Re-)Register (PUT) CHFSim-3 as dynamic OCC3:
+
+      POST /admin/v1/nrf/do_nf_instance_register'
+    type: python
+  release_all_sessions_chfsims:
+    cmd: post_request('http://{node_ip}:{port}/admin/v1/delete_all')
+    label: "\u2620 Release All Sessions"
+    loop:
+      name: port
+      variable: chfsim_ports
+    tooltip: 'Release all sessions in all CHFSims (equivalent to release / unsubscribe).
+
+      POST /admin/v1/delete_all'
+    type: python
+  reload_config:
+    cmd: load_config_file()
+    label: "\u27F2 Config"
+    tooltip: Reload FiveShell's config file, but not K8s
+    type: python
+  reload_k8s:
+    cmd: reload_k8s_data()
+    label: "\u27F2 K8s Data"
+    tooltip: Reload fetch pod+service info from K8s
+    type: python
+  reset_all_envoy_counters:
+    cmd: reset_all_envoy_stats('http://localhost:{port}/reset_counters')
+    label: "\u2620 Counters"
+    loop:
+      name: port
+      variable: envoy_admin_ports
+    tooltip: Reset all Envoys' counters
+    type: python
+  reset_kube_context:
+    cmd: kubectl config set current-context {last_working_kube_context}
+    label: Reset kube context
+    tooltip: Change the current context of your .kube/config to the last working context
+    type: linux
+  reset_standalone_envoy_counters:
+    cmd: reset_all_envoy_stats('http://localhost:9901/reset_counters')
+    label: "\u2620 SA Counters"
+    tooltip: Reset the standalone Envoy's counters
+    type: python
+  restart_all_chfsim_pods:
+    cmd: kubectl -n {namespace} delete pods -l a=eric-chfsim
+    label: "\u2B06 Restart all CHFsim PODS"
+    tooltip: Restart all CHFsim PODS by k delete pods -l a=eric-chfsim
+    type: linux
+  scale_k6_to_2_pods:
+    cmd: '{terminal} --geometry=100x20 -e kubectl -n {namespace} scale deployment
+      eric-k6-deployment --replicas=2'
+    dir: '{5g_proto}/devtools/k6'
+    label: "\u2B06 Scale K6 to 2 PODS"
+    tooltip: Scale K6 to 2 PODS
+    type: linux
+  scale_monitor_to_selected_number:
+    cmd: kubectl -n {namespace} scale --replicas={monitor_replicas} deployments/eric-sc-monitor
+    label: "\u27A1 Scale Monitor"
+    tooltip: Scale the Monitor to the selected number of replicas
+    type: linux
+  scale_scp_workers_to_selected_number:
+    cmd: kubectl -n {namespace} scale --replicas={worker_replicas} deployments/eric-scp-worker
+    label: "\u27A1 Scale SCP Workers"
+    tooltip: Scale the SCP Workers to the selected number
+    type: linux
+  scale_sepp_workers:
+    cmd: kubectl -n {namespace} scale --replicas={worker_replicas} deployments/eric-sepp-worker
+    label: "\u27A1 Scale SEPP Workers"
+    tooltip: Scale the SEPP Workers to the selected number
+    type: linux
+  send_cc_cur_100mps_1k6:
+    cmd: 'kubectl -n {namespace} exec -ti {k6_pod_names[0]} -- k6 run -e SCP_HOST=scp.ericsson.se
+      -e SCP_IP={node_ip}  -e SCP_PORT={worker_port_tls} --vus 10 --duration 3h cc_create_update_release_ci.js
+      --insecure-skip-tls-verify --rps 100 '
+    label: "\u27A1 CC C/U/R 100/s (1. K6)"
+    tooltip: Send 100 MPS Converged-Charging CREATE/UPDATE/RELEASE requests from 1.
+      K6, 3h
+    type: linux
+  send_cc_cur_2000mps_scaling_1k6:
+    cmd: 'kubectl -n {namespace} exec -ti {k6_pod_names[0]} -- k6 run -e SCP_HOST=scp.ericsson.se
+      -e SCP_IP={node_ip}  -e SCP_PORT={worker_port_tls} --vus 10 --duration 3h cc_create_update_release_ci.js
+      --no-usage-report --insecure-skip-tls-verify --no-connection-reuse --rps 2000 '
+    label: "\u27A1 CC C/U/R 2000/s for Scaling (1. K6)"
+    tooltip: Send 2000 MPS Converged-Charging CREATE/UPDATE/RELEASE requests from
+      1. K6 with --no-connection-reuse, 3h
+    type: linux
+  send_cc_cur_3000mps_1k6:
+    cmd: 'kubectl -n {namespace} exec -ti {k6_pod_names[0]} -- k6 run -e SCP_HOST=scp.ericsson.se
+      -e SCP_IP={node_ip}  -e SCP_PORT={worker_port_tls} --vus 10 --duration 3h cc_create_update_release_ci.js
+      --no-usage-report --insecure-skip-tls-verify --rps 3000 '
+    label: "\u27A1 CC C/U/R 3000/s (1. K6)"
+    tooltip: Send 3000 MPS Converged-Charging CREATE/UPDATE/RELEASE requests from
+      1. K6, 3h
+    type: linux
+  send_cc_cur_max_1k6:
+    cmd: 'kubectl -n {namespace} exec -ti {k6_pod_names[0]} -- k6 run -e SCP_HOST=scp.ericsson.se
+      -e SCP_IP={node_ip}  -e SCP_PORT={worker_port_tls} --vus 10 --duration 3h cc_create_update_release_ci.js
+      --no-usage-report --insecure-skip-tls-verify '
+    label: "\u27A1 CC C/U/R max (1. K6)"
+    tooltip: Send 3000 MPS Converged-Charging CREATE/UPDATE/RELEASE requests from
+      1. K6, 3h
+    type: linux
+  send_slc_smu_100mps_2k6:
+    cmd: 'kubectl -n {namespace} exec -ti {k6_pod_names[1]} -- k6 run -e SCP_HOST=scp.ericsson.se
+      -e SCP_IP={node_ip}  -e SCP_PORT={worker_port_tls} --vus 10 --duration 3h slc_subscribe_modify_unsubscribe_ci.js
+      --insecure-skip-tls-verify --rps 100 '
+    label: "\u27A1 SLC S/M/U 100/s (2. K6)"
+    tooltip: Send 100 MPS Spendling-Limit-Control SUBSCRIBE/MODIFY/UNSUBSCRIBE requests
+      from 2. K6, 3h
+    type: linux
+  send_slc_smu_2000_scaling_2k6:
+    cmd: 'kubectl -n {namespace} exec -ti {k6_pod_names[1]} -- k6 run -e SCP_HOST=scp.ericsson.se
+      -e SCP_IP={node_ip}  -e SCP_PORT={worker_port_tls} --vus 10 --duration 3h slc_subscribe_modify_unsubscribe_ci.js  --no-usage-report
+      --insecure-skip-tls-verify --no-connection-reuse --rps 2000 '
+    label: "\u27A1 SLC S/M/U 2000/s for Scaling (2. K6)"
+    tooltip: Send 2000 MPS Spendling-Limit-Control SUBSCRIBE/MODIFY/UNSUBSCRIBE requests
+      from 2. K6 with --no-connection-reuse , 3h
+    type: linux
+  send_slc_smu_3000mps_2k6:
+    cmd: 'kubectl -n {namespace} exec -ti {k6_pod_names[1]} -- k6 run -e SCP_HOST=scp.ericsson.se
+      -e SCP_IP={node_ip}  -e SCP_PORT={worker_port_tls} --vus 10 --duration 3h slc_subscribe_modify_unsubscribe_ci.js  --no-usage-report
+      --insecure-skip-tls-verify --rps 3000 '
+    label: "\u27A1 SLC S/M/U 3000/s (2. K6)"
+    tooltip: Send 3000 MPS Spendling-Limit-Control SUBSCRIBE/MODIFY/UNSUBSCRIBE requests
+      from 2. K6, 3h
+    type: linux
+  send_slc_smu_max_2k6:
+    cmd: kubectl -n {namespace} exec -ti {k6_pod_names[1]} -- k6 run -e SCP_HOST=scp.ericsson.se
+      -e SCP_IP={node_ip}  -e SCP_PORT={worker_port_tls} --vus 10 --duration 3h slc_subscribe_modify_unsubscribe_ci.js  --no-usage-report
+      --insecure-skip-tls-verify
+    label: "\u27A1 SLC S/M/U max (2. K6)"
+    tooltip: Send 3000 MPS Spendling-Limit-Control SUBSCRIBE/MODIFY/UNSUBSCRIBE requests
+      from 2. K6, 3h
+    type: linux
+  sepp_reg_test:
+    cmd: '{fiveshellhome}/tools/test_sepp_poc -o -N {node_ip} -W {sepp_worker_port}
+      -F {fiveshellhome}'
+    label: "\u27A1\u27A1 SEPP Reg-Test"
+    tooltip: 'Regression-test: Send CC Create with different target-api-root headers'
+    type: linux
+  set_envoy_domain_for_notify_sending:
+    cmd: post_request('http://{node_ip}:{port}/admin/v1/set_envoy_domain/eric-scp-worker:{worker_port}')
+    label: "\u2B06 Set EnvoyDomain"
+    loop:
+      name: port
+      variable: chfsim_ports
+    tooltip: 'For NOTIFY-sending, tell all ChfSim where to send the NOTIFY message.
+
+      POST /admin/v1/set_envoy_domain/eric-scp-worker:{worker_port}'
+    type: python
+  set_envoy_log_level_config_loading_debug:
+    cmd: post_request(['http://localhost:{port}/logging?config=debug'])
+    label: "\u2B06 log \u2254 Config"
+    loop:
+      name: port
+      variable: envoy_admin_ports
+    tooltip: Set the Envoy log levels suitable for configuration loading debugging
+    type: python
+  set_envoy_log_level_lua:
+    cmd: post_request(['http://localhost:{port}/logging?http=debug','http://localhost:{port}/logging?lua=debug','http://localhost:{port}/logging?router=debug'])
+    label: "\u2B06 log \u2254 LUA"
+    loop:
+      name: port
+      variable: envoy_admin_ports
+    tooltip: Set the Envoy log levels suitable for LUA debugging
+    type: python
+  set_envoy_log_level_to_debug:
+    cmd: post_request('http://localhost:{port}/logging?level=debug')
+    label: "\u2B06 log \u2254 Debug"
+    loop:
+      name: port
+      variable: envoy_admin_ports
+    tooltip: Set the Envoy log level to Debug
+    type: python
+  set_envoy_log_level_to_info:
+    cmd: post_request('http://localhost:{port}/logging?level=info')
+    label: "\u2B06 log \u2254 Info"
+    loop:
+      name: port
+      variable: envoy_admin_ports
+    tooltip: Set the Envoy log level to Info
+    type: python
+  set_envoy_log_level_to_trace:
+    cmd: post_request('http://localhost:{port}/logging?level=trace')
+    label: "\u2B06 log \u2254 Trace"
+    loop:
+      name: port
+      variable: envoy_admin_ports
+    tooltip: Set the Envoy log level to Trace
+    type: python
+  set_fixed_disturbances100%:
+    cmd: post_request('http://{node_ip}:{port}/admin/v1/set_rej_percent/100')
+    label: "Set Fixed \u21AF 100%"
+    loop:
+      name: port
+      variable: chfsim_ports
+    tooltip: 'Set Fixed Disturbances to reject requests to 100%.
+
+      /admin/v1/set_rej_percent/100'
+    type: python
+  set_fixed_disturbances_503_reject:
+    cmd: post_request('http://{node_ip}:{port}/admin/v1/set_rej_answer/503')
+    label: "Set Fixed \u21AF 503"
+    loop:
+      name: port
+      variable: chfsim_ports
+    tooltip: 'Set Fixed Disturbances to reject requests with error code 503.
+
+      POST /admin/v1/set_rej_answer/503'
+    type: python
+  set_fixed_drop_off:
+    cmd: post_request('http://{node_ip}:{port}/admin/v1/set_drop_answer/false')
+    label: "Set Fixed \u21AF Drop=off"
+    loop:
+      name: port
+      variable: chfsim_ports
+    tooltip: 'Do not drop requests. This is the ''normal'' behavior.
+
+      /admin/v1/set_drop_answer/false'
+    type: python
+  set_fixed_drop_on:
+    cmd: post_request('http://{node_ip}:{port}/admin/v1/set_drop_answer/true')
+    label: "Set Fixed \u21AF Drop=on"
+    loop:
+      name: port
+      variable: chfsim_ports
+    tooltip: 'Drop request (do not answer). Should lead to a timeout in the worker.
+
+      /admin/v1/set_drop_answer/true'
+    type: python
+  set_nrf_address:
+    cmd: post_request('http://{node_ip}:{port}/admin/v1/nrf/set_addr/{envoydomain}:{worker_port},{node_ip}')
+    label: "\u2B06 Set address"
+    loop:
+      name: port
+      variable: chfsim_ports
+    tooltip: 'Set NRF address for all CHFSims as dynamic OCCs:
+
+      POST /admin/v1/nrf/set_addr/<host:port,resolved-ip>'
+    type: python
+  set_profile_occ1:
+    cmd: '/bin/bash -c "curl -svX POST -H ''Content-Type: application/json'' http://{node_ip}:{chfsim_ports[0]}/admin/v1/nrf/set_nf_profile
+      -d ''@spr_register_occ1_noInstanceID.json''"'
+    dir: '{fiveshellhome}/tools'
+    label: "\u2B06 Set profile OCC1"
+    tooltip: 'Set register profile for CHFSim-1 as dynamic OCC:
+
+      POST /admin/v1/nrf/set_nf_profile/ ...'
+    type: linux
+  set_profile_occ1_to_occ3:
+    cmd: '/bin/bash -c "curl -svX POST -H ''Content-Type: application/json'' http://{node_ip}:{chfsim_ports[0]}/admin/v1/nrf/set_nf_profile
+      -d ''@spr_register_occ1_noInstanceID.json''; curl -svX POST -H ''Content-Type:
+      application/json'' http://{node_ip}:{chfsim_ports[1]}/admin/v1/nrf/set_nf_profile
+      -d ''@spr_register_occ2_noInstanceID.json''; curl -svX POST -H ''Content-Type:
+      application/json'' http://{node_ip}:{chfsim_ports[2]}/admin/v1/nrf/set_nf_profile
+      -d ''@spr_register_occ3_noInstanceID.json''"'
+    dir: '{fiveshellhome}/tools'
+    label: "\u2B06 Set profile OCC1 to OCC3"
+    tooltip: 'Set register profile for CHFSim-1 to CHFSim-3 as dynamic OCC:
+
+      POST /admin/v1/nrf/set_nf_profile/ ...'
+    type: linux
+  set_profile_occ2:
+    cmd: '/bin/bash -c "curl -svX POST -H ''Content-Type: application/json'' http://{node_ip}:{chfsim_ports[1]}/admin/v1/nrf/set_nf_profile
+      -d ''@spr_register_occ2_noInstanceID.json''"'
+    dir: '{fiveshellhome}/tools'
+    label: "\u2B06 Set profile OCC2"
+    tooltip: 'Set register profile for CHFSim-2 as dynamic OCC: POST /admin/v1/nrf/set_nf_profile/
+      ...'
+    type: linux
+  set_profile_occ3:
+    cmd: '/bin/bash -c "curl -svX POST -H ''Content-Type: application/json'' http://{node_ip}:{chfsim_ports[2]}/admin/v1/nrf/set_nf_profile
+      -d ''@spr_register_occ3_noInstanceID.json''"'
+    dir: '{fiveshellhome}/tools'
+    label: "\u2B06 Set profile OCC3"
+    tooltip: 'Set register profile for CHFSim-3 as dynamic OCC: POST /admin/v1/nrf/set_nf_profile/
+      ...'
+    type: linux
+  setup_envoy_port_forwarding:
+    cmd: setup_envoy_port_forwarding({envoy_pod_names})
+    label: "\u2B06 Port-Fwd"
+    tooltip: Set up port-forwarding to all Envoys, local ports are 9901, 9902...
+    type: python
+  setup_envoy_standalone_port_forwarding:
+    cmd: setup_envoy_port_forwarding({envoy_standalone_pod_names})
+    label: "\u2B06 SA Port-Forwarding"
+    tooltip: Set up port-forwarding to the standalone Envoy, local port 9901
+    type: python
+  show_about_dialog:
+    cmd: open_about_window()
+    label: About...
+    tooltip: Open the about dialog
+    type: python no log
+  show_chfsim_config_settings:
+    cmd: post_request('http://{node_ip}:{port}/admin/v1/show_config')
+    label: "\U0001F441 Configuration"
+    loop:
+      name: port
+      variable: chfsim_ports
+    tooltip: 'Show CHFsim configuration settings.
+
+      POST /admin/v1/show_config'
+    type: python
+  show_chfsim_counters:
+    cmd: json.dumps(json.loads(requests.get('http://localhost:{monitor_port}/monitor/api/v0/commands?target=eric-chfsim&command=counter').text),
+      indent=2, sort_keys=False)
+    label: "\U0001F441 CHFSim Counters"
+    tooltip: Show CHFSim's counters
+    type: python
+  show_chfsim_counters_summary:
+    cmd: process_chfsim_counters(requests.get('http://localhost:{monitor_port}/monitor/api/v0/commands?target=eric-chfsim&command=counter').text)
+    label: "\U0001F441 CHFSim Counters summary"
+    tooltip: Show CHFSim's counters in a summay
+    type: python
+  show_cur_date_time:
+    cmd: date
+    label: "\U0001F441 Date"
+    tooltip: Print the current time and date
+    type: linux
+  show_dynamic_listeners_one_envoy:
+    cmd: get_envoy_listeners("{envoy_pod_names[0]}")
+    label: "\U0001F441 Envoy Listeners"
+    tooltip: Show the dynamic_listeners from one Envoy
+    type: python
+  show_envoy_certificates:
+    cmd: get_request(['http://localhost:{port}/certs'])
+    label: "\U0001F441 Certificates \U0001F512"
+    loop:
+      name: port
+      variable: envoy_admin_ports
+    tooltip: Show the certificates from all Envoys
+    type: python
+  show_envoy_clusters:
+    cmd: get_envoy_clusters("{envoy_pod_names[0]}")
+    label: "\U0001F441 Envoy Clusters"
+    tooltip: Show the dynamic_active_clusters from one Envoy
+    type: python
+  show_envoy_counters:
+    cmd: format_envoy_stats(remove_zero_stats(remove_non_integer_stats(remove_non_matching_names(get_all_envoy_stats({envoy_pod_names})))))
+    label: "\U0001F441 Counters"
+    tooltip: View all Envoy stats that are non-zero integers
+    type: python
+  show_envoy_listeners:
+    cmd: get_lua_code("{envoy_pod_names[0]}")
+    label: "\U0001F441 Envoy LUA Code"
+    tooltip: Show the LUA code from one Envoy
+    type: python
+  show_envoy_log_level_settings:
+    cmd: post_request('http://localhost:{port}/logging')
+    label: "\U0001F441 log-level"
+    loop:
+      name: port
+      variable: envoy_admin_ports
+    tooltip: Show the current Envoy log level settings
+    type: python
+  show_envoy_route_config:
+    cmd: get_envoy_routes("{envoy_pod_names[0]}")
+    label: "\U0001F441 Envoy Routes"
+    tooltip: Show the dynamic_route_config from one Envoy
+    type: python
+  show_kubernetes_manager:
+    cmd: open_kubernetes_manager()
+    label: Manage k8s contexts...
+    tooltip: Open the kubernetes manager window to manage your kubernetes contexts
+    type: python no log
+  show_preferences_window:
+    cmd: open_preferences()
+    label: Preferences...
+    shortcut: Ctrl+Shift+S
+    tooltip: Open the preferences window to edit the gui
+    type: python no log
+  sl_notify:
+    cmd: '{fiveshellhome}/tools/test -o -s -4 -N {node_ip} -W {worker_port} -E {envoydomain}
+      -O http://eric-chfsim-3:80/nchf-spendinglimitcontrol/v1/subscriptions/notify'
+    label: "\u27A1 SL Notify"
+    tooltip: Send a single Spending-Limit Control NOTIFY request
+    type: linux
+  sl_reg_test:
+    cmd: '{fiveshellhome}/tools/test -o -s -N {node_ip} -W {worker_port} -E {envoydomain}'
+    label: "\u27A1\u27A1 SL Reg-Test"
+    tooltip: 'Regression-test: Send Spending-Limit Control SUBSCRIBE, MODIFY, UNSUBSCRIBE,
+      NOTIFY, TERMINATE'
+    type: linux
+  sl_subscribe:
+    cmd: '{fiveshellhome}/tools/test -o -s -1 -N {node_ip} -W {worker_port} -E {envoydomain}
+      -O http://eric-chfsim-3:80/nchf-spendinglimitcontrol/v1/subscriptions/notify'
+    label: "\u27A1 SL Subscribe"
+    tooltip: Send a single Spending-Limit Control SUBSCRIBE request
+    type: linux
+  spr_deregister_occ1:
+    cmd: '/bin/bash -c "curl -svX DELETE --resolve {envoydomain}:{worker_port}:{node_ip}
+      -H ''Content-Type: application/json'' http://{envoydomain}:{worker_port}/nnrf-nfm/v1/nf-instances/1111c4c2-03ec-4983-86ef-6e00c52d6e41"'
+    dir: '{fiveshellhome}/tools'
+    label: "\u2B07 SPR Dereg. OCC1"
+    tooltip: De-register an existing registration (DELETE)
+    type: linux
+  spr_deregister_occ2:
+    cmd: '/bin/bash -c "curl -svX DELETE --resolve {envoydomain}:{worker_port}:{node_ip}
+      -H ''Content-Type: application/json'' http://{envoydomain}:{worker_port}/nnrf-nfm/v1/nf-instances/2222c4c2-03ec-4983-86ef-6e00c52d6e41"'
+    dir: '{fiveshellhome}/tools'
+    label: "\u2B07 SPR Dereg. OCC2"
+    tooltip: De-register an existing registration (DELETE)
+    type: linux
+  spr_deregister_occ3:
+    cmd: '/bin/bash -c "curl -svX DELETE --resolve {envoydomain}:{worker_port}:{node_ip}
+      -H ''Content-Type: application/json'' http://{envoydomain}:{worker_port}/nnrf-nfm/v1/nf-instances/3333c4c2-03ec-4983-86ef-6e00c52d6e41"'
+    dir: '{fiveshellhome}/tools'
+    label: "\u2B07 SPR Dereg. OCC3"
+    tooltip: De-register an existing registration (DELETE)
+    type: linux
+  spr_get_all:
+    cmd: '/bin/bash -c "curl -svX GET --resolve {envoydomain}:{worker_port}:{node_ip}
+      -H ''Content-Type: application/json'' http://{envoydomain}:{worker_port}/nnrf-nfm/v1/nf-instances"'
+    dir: '{fiveshellhome}/tools'
+    label: "\U0001F441 SPR Get All"
+    tooltip: Retrieve all dynamic producers (GET)
+    type: linux
+  spr_get_occ1:
+    cmd: '/bin/bash -c "curl -svX GET --resolve {envoydomain}:{worker_port}:{node_ip}
+      -H ''Content-Type: application/json'' http://{envoydomain}:{worker_port}/nnrf-nfm/v1/nf-instances/1111c4c2-03ec-4983-86ef-6e00c52d6e41
+      | jq"'
+    dir: '{fiveshellhome}/tools'
+    label: "\U0001F441 SPR Get OCC1"
+    tooltip: Retrieve data from an existing registration (GET)
+    type: linux
+  spr_heartbeat_occ1:
+    cmd: '/bin/bash -c "curl -svX PATCH --resolve {envoydomain}:{worker_port}:{node_ip}
+      -H ''Content-Type: application/json-patch+json'' http://{envoydomain}:{worker_port}/nnrf-nfm/v1/nf-instances/1111c4c2-03ec-4983-86ef-6e00c52d6e41
+      -d ''@spr_heartbeat_reg_33.json''"'
+    dir: '{fiveshellhome}/tools'
+    label: "\u2764 SPR Heartb. OCC1"
+    tooltip: Send a heartbeat message (PATCH), 33% load
+    type: linux
+  spr_heartbeat_occ2:
+    cmd: '/bin/bash -c "curl -svX PATCH --resolve {envoydomain}:{worker_port}:{node_ip}
+      -H ''Content-Type: application/json-patch+json'' http://{envoydomain}:{worker_port}/nnrf-nfm/v1/nf-instances/2222c4c2-03ec-4983-86ef-6e00c52d6e41
+      -d ''@spr_heartbeat_reg_66.json''"'
+    dir: '{fiveshellhome}/tools'
+    label: "\u2764 SPR Heartb. OCC2"
+    tooltip: Send a heartbeat message (PATCH), 66% load
+    type: linux
+  spr_heartbeat_occ3:
+    cmd: '/bin/bash -c "curl -svX PATCH --resolve {envoydomain}:{worker_port}:{node_ip}
+      -H ''Content-Type: application/json-patch+json'' http://{envoydomain}:{worker_port}/nnrf-nfm/v1/nf-instances/3333c4c2-03ec-4983-86ef-6e00c52d6e41
+      -d ''@spr_heartbeat_reg_99.json''"'
+    dir: '{fiveshellhome}/tools'
+    label: "\u2764 SPR Heartb. OCC3"
+    tooltip: Send a heartbeat message (PATCH), 99% load
+    type: linux
+  spr_registration_occ1:
+    cmd: '/bin/bash -c "curl -svX PUT --resolve {envoydomain}:{worker_port}:{node_ip}
+      -H ''Content-Type: application/json'' http://{envoydomain}:{worker_port}/nnrf-nfm/v1/nf-instances/1111c4c2-03ec-4983-86ef-6e00c52d6e41
+      -d ''@spr_register_occ1.json''"'
+    dir: '{fiveshellhome}/tools'
+    label: "\u2B06 SPR Reg. OCC1"
+    tooltip: Create a new registration (PUT)
+    type: linux
+  spr_registration_occ2:
+    cmd: '/bin/bash -c "curl -svX PUT --resolve {envoydomain}:{worker_port}:{node_ip}
+      -H ''Content-Type: application/json'' http://{envoydomain}:{worker_port}/nnrf-nfm/v1/nf-instances/2222c4c2-03ec-4983-86ef-6e00c52d6e41
+      -d ''@spr_register_occ2.json''"'
+    dir: '{fiveshellhome}/tools'
+    label: "\u2B06 SPR Reg. OCC2"
+    tooltip: Create a new registration (PUT)
+    type: linux
+  spr_registration_occ3:
+    cmd: '/bin/bash -c "curl -svX PUT --resolve {envoydomain}:{worker_port}:{node_ip}
+      -H ''Content-Type: application/json'' http://{envoydomain}:{worker_port}/nnrf-nfm/v1/nf-instances/3333c4c2-03ec-4983-86ef-6e00c52d6e41
+      -d ''@spr_register_occ3.json''"'
+    dir: '{fiveshellhome}/tools'
+    label: "\u2B06 SPR Reg. OCC3"
+    tooltip: Create a new registration (PUT)
+    type: linux
+  teardown_envoy_port_forwarding:
+    cmd: teardown_port_forwarding()
+    label: "\u2B07 Port-Fwd"
+    tooltip: Tear down all port-forwardings
+    type: python
+  test_k8s_var_manager_ip_status:
+    cmd: 'echo "Host-IP: {manager_ip}, Phase: {phase}"'
+    label: "\U0001F441 Manager' host IP + Status"
+    tooltip: Test to access a k8s variable
+    type: linux
+    variables:
+    - filter: k8s.pod[?name=='eric-scp-manager-0'].host_ip
+      name: manager_ip
+    - filter: k8s.pod[?name=='eric-scp-manager-0'].phase
+      name: phase
+  test_linux_var_envoy_pod_names:
+    cmd: echo {envoy_pod_names}
+    label: "\U0001F441 Envoy Pod Names"
+    tooltip: Simple example of a Linux command + variable
+    type: linux
+  test_linux_var_show_k6_pod_names:
+    cmd: echo {k6_pod_names}
+    label: "\U0001F441 K6 Pod Names"
+    tooltip: Simple example of a Linux command + variable
+    type: linux
+  test_unicode:
+    cmd: format("ok \u2713\nfail \u2717")
+    label: "\U0001F441 Unicode Test"
+    tooltip: Example to show how to print Unicode characters
+    type: python
+  update_all_chsfsims:
+    cmd: post_request('http://{node_ip}:{port}/admin/v1/nrf/do_nf_instance_update')
+    label: "\u2B06 Update"
+    loop:
+      name: port
+      variable: chfsim_ports
+    tooltip: 'Update (HB) all CHFSims as dynamic OCCs:
+
+      POST /admin/v1/nrf/do_nf_instance_update'
+    type: python
+  update_chfsims_set_load:
+    cmd: post_request('http://{node_ip}:{port}/admin/v1/nrf/set_nf_load_percent/{occ_load}')
+    label: "\u2B06 Set LOAD"
+    loop:
+      name: port
+      variable: chfsim_ports
+    tooltip: 'Update all CHFSims and set the load value to be used in the HB (set
+      value on the left):
+
+      POST /admin/v1/nrf/set_nf_load_percent'
+    type: python
+  upload_netconf:
+    cmd: upload_via_netconf("{5g_proto}/esc/scp/sample_config.netconf", "{node_ip}",
+      "{yang_port}", '{verbose}')
+    label: "\u2B06 Netconf"
+    tooltip: Upload the sample_config.netconf unmodified via Netconf
+    type: python
+  view_commands_monitor_interface:
+    cmd: json.dumps(json.loads(requests.get('http://localhost:{monitor_port}/monitor/api/v0/commands?command=list').text),
+      indent=2, sort_keys=False)
+    label: "\U0001F441 Commands"
+    tooltip: View the commands of all pods with monitor interface
+    type: python
+  view_conf_all_envoys:
+    cmd: print_envoy_config({envoy_pod_names})
+    label: "\U0001F441 All Envoys"
+    tooltip: View the configuration of all Envoys (via Envoy's admin interface)
+    type: python
+  view_conf_json:
+    cmd: json.dumps(json.loads(requests.get('http://{namespace}.{cluster}.rnd.gic.ericsson.se/cmm/cm/api/v1.1/configurations/ericsson-scp').text),
+      indent=2, sort_keys=True)
+    label: "\U0001F441 JSON"
+    tooltip: View the current configuration in JSON format (fetched from CM-Mediator)
+    type: python
+  view_conf_one_envoy:
+    cmd: print_envoy_config("{envoy_pod_names[0]}")
+    label: "\U0001F441 One Envoy"
+    tooltip: View the configuration from one Envoy (via Envoy's admin interface)
+    type: python
+  view_conf_one_envoy_loadable:
+    cmd: get_envoy_config_in_loadable_format("{envoy_pod_names[0]}")
+    label: "\U0001F441 One Envoy, Loadable"
+    tooltip: View the configuration of one Envoy in loadable YAML format (via Envoy's
+      admin interface)
+    type: python
+  view_conf_one_envoy_unmodified:
+    cmd: get_envoy_config("{envoy_pod_names[0]}")
+    label: "\U0001F441 One Envoy unmodified"
+    tooltip: View the configuration from one Envoy (via Envoy's admin interface)
+    type: python
+  view_envoy_standalone_counters:
+    cmd: format_envoy_stats(remove_zero_stats(remove_non_integer_stats(remove_non_matching_names(get_all_envoy_stats({envoy_standalone_pod_names})))))
+    label: "\U0001F441 SA Counters"
+    tooltip: View the standalone Envoy's counters which are non-zero integers
+    type: python
+  view_envoy_standalone_counters_prometheus:
+    cmd: /bin/bash -c "curl -sS 'http://localhost:9901/stats/prometheus' | egrep -v
+      '(bucket|count|sum)'  "
+    label: "\U0001F441 SA Prometheus"
+    tooltip: View the standalone Envoy's counters in Prometheus format, excluding
+      histograms
+    type: linux
+  view_envoy_standalone_counters_prometheus_short:
+    cmd: /bin/bash -c "curl -sS 'http://localhost:9901/stats/prometheus' |grep upstream_rq
+      |egrep -v '(bucket|count|sum)'  "
+    label: "\U0001F441 SA Prometheus, short"
+    tooltip: View the standalone Envoy's counters in Prometheus format, only upstream_rq
+    type: linux
+  view_envoy_standalone_counters_services:
+    cmd: /bin/bash -c "curl -sS 'http://localhost:9901/stats/prometheus' | grep 'service='
+      |grep _rq | egrep -v '(bucket|count|sum)'  "
+    label: "\U0001F441 SA Prometheus services"
+    tooltip: View the standalone Envoy's Prometheus counters for services
+    type: linux
+  view_esa_monitor_interface:
+    cmd: json.dumps(json.loads(requests.get('http://localhost:{monitor_port}/monitor/api/v0/commands?command=esa').text),
+      indent=2, sort_keys=False)
+    label: "\U0001F441 ESA"
+    tooltip: View the Event-Sequence-Array from all pods equipped with a monitor interface
+    type: python
+  view_global_vars:
+    cmd: pformat(g.globalDict)
+    label: "\U0001F441 Global Vars"
+    tooltip: View all global variables that can be used in commands
+    type: python
+  view_logs_chfsim:
+    cmd: '{terminal} --geometry=250x40 -e {stern} -n {namespace} chfsim'
+    label: "\U0001F441 CHFSim"
+    tooltip: View and follow all CHFSims' logs in a separate window
+    type: linux
+  view_logs_manager:
+    cmd: '{terminal} --geometry=250x40 -e {stern} -n {namespace} eric-scp-manager'
+    label: "\U0001F441 Manager"
+    tooltip: View and follow the manager's log in a separate window
+    type: linux
+  view_logs_worker:
+    cmd: '{terminal} --geometry=250x40 -e {stern} -n {namespace} eric-scp-worker'
+    label: "\U0001F441 Worker"
+    tooltip: View and follow all workers' logs in a separate window
+    type: linux
+  view_netconf_config:
+    cmd: view_netconf("{fiveshellhome}/tools/get_running_config.netconf", "{node_ip}",
+      "{yang_port}", "scp-function")
+    label: "\U0001F441 Netconf Config"
+    tooltip: View the current configuration in Netconf, only SCP-config (fetched from
+      Yang-Provider)
+    type: python
+  view_netconf_data:
+    cmd: view_netconf("{fiveshellhome}/tools/get_running_config.netconf", "{node_ip}",
+      "{yang_port}")
+    label: "\U0001F441 Netconf"
+    tooltip: View the current Netconf data (fetched from Yang-Provider)
+    type: python
+  view_netconf_wro:
+    cmd: view_netconf("{fiveshellhome}/tools/get.netconf", "{node_ip}", "{yang_port}")
+    label: "\U0001F441 Netconf w/ R/O"
+    tooltip: View the current Netconf data with read-only values included (fetched
+      from Yang-Provider)
+    type: python
+  view_node_vars:
+    cmd: pformat(g.globalDict['k8s']['node'])
+    label: "\U0001F441 Node Variables"
+    tooltip: View the global variables regarding Kubernetes nodes
+    type: python
+  view_pod_vars:
+    cmd: pformat(g.globalDict['k8s']['pod'])
+    label: "\U0001F441 Pod Variables"
+    tooltip: View the global variables regarding Kubernetes pods
+    type: python
+  view_schema_json:
+    cmd: json.dumps(json.loads(requests.get('http://{namespace}.{cluster}.rnd.gic.ericsson.se/cmm/cm/api/v1.1/schemas/ericsson-scp').text),
+      indent=2, sort_keys=True)
+    label: "\U0001F441  Schema JSON"
+    tooltip: View the current schema in JSON format (fetched from CM-Mediator)
+    type: python
+  view_service_vars:
+    cmd: pformat(g.globalDict['k8s']['service'])
+    label: "\U0001F441 Service Variables"
+    tooltip: View the global variables regarding Kubernetes services
+    type: python
+  view_version_info_monitor_interface:
+    cmd: json.dumps(json.loads(requests.get('http://localhost:{monitor_port}/monitor/api/v0/commands?command=version').text),
+      indent=2, sort_keys=False)
+    label: "\U0001F441 Versions"
+    tooltip: View the version info from all pods equipped with a monitor interface
+    type: python
+  write_hosts_file_for_wireshark:
+    cmd: write_wireshark_hosts_file()
+    label: "\u2B06 Hosts"
+    tooltip: Write a 'hosts' file to use with Wireshark (to see hostnames instead
+      of IP-addresses) to ~/.config/wireshark/hosts
+    type: python
+buttons:
+  all_supi_ranges:
+    action_ids:
+    - all_supi_ranges
+    color: E66E19
+    tags:
+    - Tests CT
+  cc_create:
+    action_ids:
+    - cc_create
+    color: 288964
+    tags:
+    - Tests TMO
+  cc_notify:
+    action_ids:
+    - cc_notify
+    color: 288964
+    tags:
+    - Tests CT
+    - Tests TMO
+  cc_reg_test:
+    action_ids:
+    - cc_reg_test
+    color: 288964
+    tags:
+    - Tests TMO
+  cc_reg_test_ct:
+    action_ids:
+    - cc_reg_test_ct
+    color: 288964
+    tags:
+    - Tests CT
+  cc_sl_reg_test_v2:
+    action_ids:
+    - cc_sl_reg_test_v2
+    color: 288964
+    tags:
+    - Tests TMO
+  change_chfsim_log_level_info:
+    action_ids:
+    - change_chfsim_log_level_info
+    color: 8750A0
+    tags:
+    - Monitor
+  change_chfsim_log_level_warning:
+    action_ids:
+    - change_chfsim_log_level_warning
+    color: 8750A0
+    tags:
+    - Monitor
+  change_manager_log_level_debug:
+    action_ids:
+    - change_manager_log_level_debug
+    color: 8750A0
+    tags:
+    - Monitor
+  change_manager_log_level_info:
+    action_ids:
+    - change_manager_log_level_info
+    color: 8750A0
+    tags:
+    - Monitor
+  clear_all_flexi_disturbances:
+    action_ids:
+    - clear_all_flexi_disturbances
+    color: 28a0ff
+    tags:
+    - CHFSim
+  configure_chfsim_delay_send_503_reject:
+    action_ids:
+    - configure_chfsim_delay_send_503_reject
+    color: 28a0ff
+    tags:
+    - CHFSim
+  configure_chfsim_send_404:
+    action_ids:
+    - configure_chfsim_send_404
+    color: 28a0ff
+    tags:
+    - CHFSim
+  configure_chfsim_send_503_reject_x20:
+    action_ids:
+    - configure_chfsim_send_503_reject_x20
+    color: 28a0ff
+    tags:
+    - CHFSim
+  delete_conf_json:
+    action_ids:
+    - delete_conf_json
+    color: E66E19
+    tags:
+    - Configuration
+  delete_conf_netconf:
+    action_ids:
+    - delete_conf_netconf
+    color: E66E19
+    tags:
+    - Configuration
+  deploy_chfsim_x3:
+    action_ids:
+    - deploy_chfsim_x3
+    color: DCAF00
+    tags:
+    - Deploy
+  deploy_chfsim_x7:
+    action_ids:
+    - deploy_chfsim_x7
+    color: DCAF00
+    tags:
+    - Deploy
+  deploy_k6:
+    action_ids:
+    - deploy_k6
+    color: DCAF00
+    tags:
+    - Deploy
+  deploy_nrfsim:
+    action_ids:
+    - deploy_nrfsim
+    color: DCAF00
+    tags:
+    - Deploy
+  deregister_all_chfsims:
+    action_ids:
+    - deregister_all_chfsims
+    color: 28a0ff
+    tags:
+    - CHFSim_NRF_client
+  derigister_occ3:
+    action_ids:
+    - derigister_occ3
+    color: 28a0ff
+    tags:
+    - CHFSim_NRF_client
+  disable_dyn_prod_reg:
+    action_ids:
+    - disable_dyn_prod_reg
+    color: E66E19
+    tags:
+    - Tests TMO
+  disable_fixed_disturbances:
+    action_ids:
+    - disable_fixed_disturbances
+    color: 28a0ff
+    tags:
+    - CHFSim
+  disable_load_test_mode:
+    action_ids:
+    - disable_load_test_mode
+    color: 28a0ff
+    tags:
+    - CHFSim
+  disable_load_test_statistic_mode:
+    action_ids:
+    - disable_load_test_statistic_mode
+    color: 28a0ff
+    tags:
+    - CHFSim
+  enable_dyn_prod_reg:
+    action_ids:
+    - enable_dyn_prod_reg
+    color: E66E19
+    tags:
+    - Tests TMO
+  enable_load_test_mode:
+    action_ids:
+    - enable_load_test_mode
+    color: 28a0ff
+    tags:
+    - CHFSim
+  enable_load_test_statistic_mode:
+    action_ids:
+    - enable_load_test_statistic_mode
+    color: 28a0ff
+    tags:
+    - CHFSim
+  exec_linux_cmd:
+    action_ids:
+    - exec_linux_cmd
+    color: 288964
+    inputs:
+    - label: 'Linux command:'
+      store_var: linuxcommand
+      type: line_edit
+    tags:
+    - FiveShell
+  instruct_chfsims_dont_send_HB:
+    action_ids:
+    - instruct_chfsims_dont_send_HB
+    color: 28a0ff
+    tags:
+    - CHFSim_NRF_client
+  instruct_chfsims_dont_send_HB_occ3:
+    action_ids:
+    - instruct_chfsims_dont_send_HB_occ3
+    color: 28a0ff
+    tags:
+    - CHFSim_NRF_client
+  instruct_chfsims_send_HB:
+    action_ids:
+    - instruct_chfsims_send_HB
+    color: 28a0ff
+    tags:
+    - CHFSim_NRF_client
+  kill_traffic_on_selected_k6:
+    action_ids:
+    - kill_traffic_on_selected_k6
+    color: 288964
+    inputs:
+    - default: 1. K6
+      labels:
+      - 1. K6
+      - 2. K6
+      store_var: K6
+      type: radiobutton
+      values:
+      - '{k6_pod_names[0]}'
+      - '{k6_pod_names[1]}'
+    tags:
+    - Load
+  port_change_netconf:
+    action_ids:
+    - port_change_netconf
+    color: E66E19
+    tags:
+    - Tests TMO
+  port_change_netconf_dyn:
+    action_ids:
+    - port_change_netconf_dyn
+    color: E66E19
+    tags:
+    - Tests TMO
+  port_change_netconf_dyn_nrf:
+    action_ids:
+    - port_change_netconf_dyn_nrf
+    color: E66E19
+    tags:
+    - Tests TMO
+  port_change_netconf_nrf:
+    action_ids:
+    - port_change_netconf_nrf
+    color: E66E19
+    tags:
+    - Tests TMO
+  port_change_poc:
+    action_ids:
+    - port_change_poc
+    color: E66E19
+    tags:
+    - Tests SEPP POC
+  port_change_rcc:
+    action_ids:
+    - port_change_rcc
+    color: E66E19
+    tags:
+    - Tests CT
+  port_change_rcc_ipv6:
+    action_ids:
+    - port_change_rcc_ipv6
+    color: E66E19
+    tags:
+    - Tests CT
+  print_all_nodes:
+    action_ids:
+    - print_all_nodes
+    color: cc7007
+    tags:
+    - Kubernetes
+  print_all_pods:
+    action_ids:
+    - print_all_pods
+    color: cc7007
+    tags:
+    - Kubernetes
+  print_all_services:
+    action_ids:
+    - print_all_services
+    color: cc7007
+    tags:
+    - Kubernetes
+  print_hosts_file_for_wireshark:
+    action_ids:
+    - print_hosts_file_for_wireshark
+    color: cc7007
+    tags:
+    - Kubernetes
+  provision_supis:
+    action_ids:
+    - provision_supis
+    color: E66E19
+    tags:
+    - Tests CT
+  redeploy_baseline:
+    action_ids:
+    - redeploy_baseline
+    color: DCAF00
+    tags:
+    - Deploy
+  redeploy_scp_only:
+    action_ids:
+    - redeploy_scp_only
+    color: DCAF00
+    tags:
+    - Deploy
+  register_all_chsfsims:
+    action_ids:
+    - register_all_chsfsims
+    color: 28a0ff
+    tags:
+    - CHFSim_NRF_client
+  register_occ3:
+    action_ids:
+    - register_occ3
+    color: 28a0ff
+    tags:
+    - CHFSim_NRF_client
+  release_all_sessions_chfsims:
+    action_ids:
+    - release_all_sessions_chfsims
+    color: 28a0ff
+    tags:
+    - CHFSim
+  reload_config:
+    action_ids:
+    - reload_config
+    tags:
+    - FiveShell
+  reload_k8s:
+    action_ids:
+    - reload_k8s
+    tags:
+    - FiveShell
+  reset_all_envoy_counters:
+    action_ids:
+    - reset_all_envoy_counters
+    color: 0014d2
+    tags:
+    - Counters
+  reset_standalone_envoy_counters:
+    action_ids:
+    - reset_standalone_envoy_counters
+    color: 0082F0
+    tags:
+    - Counters
+  restart_all_chfsim_pods:
+    action_ids:
+    - restart_all_chfsim_pods
+    color: 28a0ff
+    tags:
+    - CHFSim
+  scale_k6_to_2_pods:
+    action_ids:
+    - scale_k6_to_2_pods
+    color: DCAF00
+    tags:
+    - Deploy
+  scale_monitor_to_selected_number:
+    action_ids:
+    - scale_monitor_to_selected_number
+    color: 8750A0
+    inputs:
+    - labels:
+      - '1'
+      - '0'
+      store_var: monitor_replicas
+      type: combobox
+    tags:
+    - Monitor
+  scale_scp_workers_to_selected_number:
+    action_ids:
+    - scale_scp_workers_to_selected_number
+    color: 0014d2
+    inputs:
+    - labels:
+      - '1'
+      - '2'
+      - '3'
+      - '4'
+      - '5'
+      - '6'
+      - '0'
+      store_var: worker_replicas
+      type: combobox
+    tags:
+    - Envoy
+  scale_sepp_workers:
+    action_ids:
+    - scale_sepp_workers
+    color: 0014d2
+    tags:
+    - Envoy
+  send_cc_cur_100mps_1k6:
+    action_ids:
+    - send_cc_cur_100mps_1k6
+    color: 288964
+    tags:
+    - Load
+  send_cc_cur_2000mps_scaling_1k6:
+    action_ids:
+    - send_cc_cur_2000mps_scaling_1k6
+    color: 288964
+    tags:
+    - Load
+  send_cc_cur_3000mps_1k6:
+    action_ids:
+    - send_cc_cur_3000mps_1k6
+    color: 288964
+    tags:
+    - Load
+  send_cc_cur_max_1k6:
+    action_ids:
+    - send_cc_cur_max_1k6
+    color: 288964
+    tags:
+    - Load
+  send_slc_smu_100mps_2k6:
+    action_ids:
+    - send_slc_smu_100mps_2k6
+    color: 288964
+    tags:
+    - Load
+  send_slc_smu_2000_scaling_2k6:
+    action_ids:
+    - send_slc_smu_2000_scaling_2k6
+    color: 288964
+    tags:
+    - Load
+  send_slc_smu_3000mps_2k6:
+    action_ids:
+    - send_slc_smu_3000mps_2k6
+    color: 288964
+    tags:
+    - Load
+  send_slc_smu_max_2k6:
+    action_ids:
+    - send_slc_smu_max_2k6
+    color: 288964
+    tags:
+    - Load
+  sepp_reg_test:
+    action_ids:
+    - sepp_reg_test
+    color: 288964
+    tags:
+    - Tests SEPP POC
+  set_envoy_domain_for_notify_sending:
+    action_ids:
+    - set_envoy_domain_for_notify_sending
+    color: 28a0ff
+    tags:
+    - CHFSim
+  set_envoy_log_level_config_loading_debug:
+    action_ids:
+    - set_envoy_log_level_config_loading_debug
+    color: 0014d2
+    tags:
+    - Envoy
+  set_envoy_log_level_lua:
+    action_ids:
+    - set_envoy_log_level_lua
+    color: 0014d2
+    tags:
+    - Envoy
+  set_envoy_log_level_to_debug:
+    action_ids:
+    - set_envoy_log_level_to_debug
+    color: 0014d2
+    tags:
+    - Envoy
+  set_envoy_log_level_to_info:
+    action_ids:
+    - set_envoy_log_level_to_info
+    color: 0014d2
+    tags:
+    - Envoy
+  set_envoy_log_level_to_trace:
+    action_ids:
+    - set_envoy_log_level_to_trace
+    color: 0014d2
+    tags:
+    - Envoy
+  set_fixed_disturbances100%:
+    action_ids:
+    - set_fixed_disturbances100%
+    color: 28a0ff
+    tags:
+    - CHFSim
+  set_fixed_disturbances_503_reject:
+    action_ids:
+    - set_fixed_disturbances_503_reject
+    color: 28a0ff
+    tags:
+    - CHFSim
+  set_fixed_drop_off:
+    action_ids:
+    - set_fixed_drop_off
+    color: 28a0ff
+    tags:
+    - CHFSim
+  set_fixed_drop_on:
+    action_ids:
+    - set_fixed_drop_on
+    color: 28a0ff
+    tags:
+    - CHFSim
+  set_nrf_address:
+    action_ids:
+    - set_nrf_address
+    color: 28a0ff
+    tags:
+    - CHFSim_NRF_client
+  set_profile_occ1:
+    action_ids:
+    - set_profile_occ1
+    color: 28a0ff
+    tags:
+    - CHFSim_NRF_client
+  set_profile_occ1_to_occ3:
+    action_ids:
+    - set_profile_occ1_to_occ3
+    color: 28a0ff
+    tags:
+    - CHFSim_NRF_client
+  set_profile_occ2:
+    action_ids:
+    - set_profile_occ2
+    color: 28a0ff
+    tags:
+    - CHFSim_NRF_client
+    - CHFSim_NRF_client
+  setup_envoy_port_forwarding:
+    action_ids:
+    - setup_envoy_port_forwarding
+    color: 0014d2
+    tags:
+    - Envoy
+  setup_envoy_standalone_port_forwarding:
+    action_ids:
+    - setup_envoy_standalone_port_forwarding
+    color: 0014d2
+    tags:
+    - Envoy
+  show_chfsim_config_settings:
+    action_ids:
+    - show_chfsim_config_settings
+    color: 28a0ff
+    tags:
+    - CHFSim
+  show_chfsim_counters:
+    action_ids:
+    - show_chfsim_counters
+    color: 8750A0
+    tags:
+    - Monitor
+  show_chfsim_counters_summary:
+    action_ids:
+    - show_chfsim_counters_summary
+    color: 8750A0
+    tags:
+    - Monitor
+  show_cur_date_time:
+    action_ids:
+    - show_cur_date_time
+    color: 767676
+    tags:
+    - FiveShell Debugging
+  show_dynamic_listeners_one_envoy:
+    action_ids:
+    - show_dynamic_listeners_one_envoy
+    color: 0014d2
+    tags:
+    - Envoy
+  show_envoy_certificates:
+    action_ids:
+    - show_envoy_certificates
+    color: 0014d2
+    tags:
+    - Envoy
+  show_envoy_clusters:
+    action_ids:
+    - show_envoy_clusters
+    color: 0014d2
+    tags:
+    - Envoy
+  show_envoy_counters:
+    action_ids:
+    - show_envoy_counters
+    color: 0014d2
+    tags:
+    - Counters
+  show_envoy_listeners:
+    action_ids:
+    - show_envoy_listeners
+    color: 0014d2
+    tags:
+    - Envoy
+  show_envoy_log_level_settings:
+    action_ids:
+    - show_envoy_log_level_settings
+    color: 0014d2
+    tags:
+    - Envoy
+  show_envoy_route_config:
+    action_ids:
+    - show_envoy_route_config
+    color: 0014d2
+    tags:
+    - Envoy
+  sl_notify:
+    action_ids:
+    - sl_notify
+    color: 288964
+    tags:
+    - Tests TMO
+  sl_reg_test:
+    action_ids:
+    - sl_reg_test
+    color: 288964
+    tags:
+    - Tests TMO
+  sl_subscribe:
+    action_ids:
+    - sl_subscribe
+    color: 288964
+    tags:
+    - Tests TMO
+  spr_deregister_occ1:
+    action_ids:
+    - spr_deregister_occ1
+    color: 0fc373
+    tags:
+    - Tests TMO
+  spr_deregister_occ2:
+    action_ids:
+    - spr_deregister_occ2
+    color: 0fc373
+    tags:
+    - Tests TMO
+  spr_deregister_occ3:
+    action_ids:
+    - spr_deregister_occ3
+    color: 0fc373
+    tags:
+    - Tests TMO
+  spr_get_all:
+    action_ids:
+    - spr_get_all
+    color: 0fc373
+    tags:
+    - Tests TMO
+  spr_get_occ1:
+    action_ids:
+    - spr_get_occ1
+    color: 0fc373
+    tags:
+    - Tests TMO
+  spr_heartbeat_occ1:
+    action_ids:
+    - spr_heartbeat_occ1
+    color: 0fc373
+    tags:
+    - Tests TMO
+  spr_heartbeat_occ2:
+    action_ids:
+    - spr_heartbeat_occ2
+    color: 0fc373
+    tags:
+    - Tests TMO
+  spr_heartbeat_occ3:
+    action_ids:
+    - spr_heartbeat_occ3
+    color: 0fc373
+    tags:
+    - Tests TMO
+  spr_registration_occ1:
+    action_ids:
+    - spr_registration_occ1
+    color: 0fc373
+    tags:
+    - Tests TMO
+  spr_registration_occ2:
+    action_ids:
+    - spr_registration_occ2
+    color: 0fc373
+    tags:
+    - Tests TMO
+  spr_registration_occ3:
+    action_ids:
+    - spr_registration_occ3
+    color: 0fc373
+    tags:
+    - Tests TMO
+  teardown_envoy_port_forwarding:
+    action_ids:
+    - teardown_envoy_port_forwarding
+    color: 0014d2
+    tags:
+    - Envoy
+  test_k8s_var_manager_ip_status:
+    action_ids:
+    - test_k8s_var_manager_ip_status
+    color: 767676
+    tags:
+    - FiveShell Debugging
+  test_linux_var_envoy_pod_names:
+    action_ids:
+    - test_linux_var_envoy_pod_names
+    color: 767676
+    tags:
+    - FiveShell Debugging
+  test_linux_var_show_k6_pod_names:
+    action_ids:
+    - test_linux_var_show_k6_pod_names
+    color: 767676
+    tags:
+    - FiveShell Debugging
+  test_unicode:
+    action_ids:
+    - test_unicode
+    color: 767676
+    tags:
+    - FiveShell Debugging
+  update_all_chsfsims:
+    action_ids:
+    - update_all_chsfsims
+    color: 28a0ff
+    tags:
+    - CHFSim_NRF_client
+  update_chfsims_set_load:
+    action_ids:
+    - update_chfsims_set_load
+    color: 28a0ff
+    inputs:
+    - label: OCC load
+      store_var: occ_load
+      type: line_edit
+    tags:
+    - CHFSim_NRF_client
+  upload_netconf:
+    action_ids:
+    - upload_netconf
+    color: E66E19
+    tags:
+    - Tests TMO
+  view_commands_monitor_interface:
+    action_ids:
+    - view_commands_monitor_interface
+    color: 8750A0
+    tags:
+    - Monitor
+  view_conf_all_envoys:
+    action_ids:
+    - view_conf_all_envoys
+    color: E66E19
+    tags:
+    - Configuration
+  view_conf_json:
+    action_ids:
+    - view_conf_json
+    color: E66E19
+    tags:
+    - Configuration
+  view_conf_one_envoy:
+    action_ids:
+    - view_conf_one_envoy
+    color: E66E19
+    tags:
+    - Configuration
+  view_conf_one_envoy_loadable:
+    action_ids:
+    - view_conf_one_envoy_loadable
+    color: E66E19
+    tags:
+    - Configuration
+  view_conf_one_envoy_unmodified:
+    action_ids:
+    - view_conf_one_envoy_unmodified
+    color: E66E19
+    tags:
+    - Configuration
+  view_envoy_standalone_counters:
+    action_ids:
+    - view_envoy_standalone_counters
+    color: 0082F0
+    tags:
+    - Counters
+  view_envoy_standalone_counters_prometheus:
+    action_ids:
+    - view_envoy_standalone_counters_prometheus
+    color: 0082F0
+    tags:
+    - Counters
+  view_envoy_standalone_counters_prometheus_short:
+    action_ids:
+    - view_envoy_standalone_counters_prometheus_short
+    color: 0082F0
+    tags:
+    - Counters
+  view_envoy_standalone_counters_services:
+    action_ids:
+    - view_envoy_standalone_counters_services
+    color: 0082F0
+    tags:
+    - Counters
+  view_esa_monitor_interface:
+    action_ids:
+    - view_esa_monitor_interface
+    color: 8750A0
+    tags:
+    - Monitor
+  view_global_vars:
+    action_ids:
+    - view_global_vars
+    color: 767676
+    tags:
+    - FiveShell Debugging
+  view_logs_chfsim:
+    action_ids:
+    - view_logs_chfsim
+    color: AF78D2
+    tags:
+    - Logs
+  view_logs_manager:
+    action_ids:
+    - view_logs_manager
+    color: AF78D2
+    tags:
+    - Logs
+  view_logs_worker:
+    action_ids:
+    - view_logs_worker
+    color: AF78D2
+    tags:
+    - Logs
+  view_netconf_config:
+    action_ids:
+    - view_netconf_config
+    color: E66E19
+    tags:
+    - Configuration
+  view_netconf_data:
+    action_ids:
+    - view_netconf_data
+    color: E66E19
+    tags:
+    - Configuration
+  view_netconf_wro:
+    action_ids:
+    - view_netconf_wro
+    color: E66E19
+    tags:
+    - Configuration
+  view_node_vars:
+    action_ids:
+    - view_node_vars
+    color: 767676
+    tags:
+    - FiveShell Debugging
+  view_pod_vars:
+    action_ids:
+    - view_pod_vars
+    color: 767676
+    tags:
+    - FiveShell Debugging
+  view_schema_json:
+    action_ids:
+    - view_schema_json
+    color: E66E19
+    tags:
+    - Configuration
+  view_service_vars:
+    action_ids:
+    - view_service_vars
+    color: 767676
+    tags:
+    - FiveShell Debugging
+  view_version_info_monitor_interface:
+    action_ids:
+    - view_version_info_monitor_interface
+    color: 8750A0
+    tags:
+    - Monitor
+  write_hosts_file_for_wireshark:
+    action_ids:
+    - write_hosts_file_for_wireshark
+    color: cc7007
+    tags:
+    - Kubernetes
+colors:
+- 0014d2
+- 0082F0
+- 28a0ff
+- 288964
+- 0fc373
+- DCAF00
+- E66E19
+- AF78D2
+- 8750A0
+- 767676
+- cc7007
+main_window:
+  elements:
+  - actions:
+    - action_id: reload_config
+    - action_id: reload_k8s
+    - action_id: new_fiveshell_window
+    - action_id: show_preferences_window
+    - action_id: show_kubernetes_manager
+    - action_id: clear_output
+    - action_id: close_one_window
+    - action_id: quit_fiveshell
+    menu: File
+  - actions:
+    - action_id: open_fiveshell_documentation
+    - action_id: show_about_dialog
+    menu: Help
+variables:
+  curl: docker run --rm curlnew
+  curlnative: 'curl -vsS -o /dev/null --stderr - '
+  dynamic:
+  - filter: k8s.node[3].addresses[?type=='InternalIP'] | [0].address
+    name: node_ip
+  - filter: k8s.pod[?labels.app=='envoy-standalone'].name
+    name: envoy_standalone_pod_names
+  - filter: k8s.pod[?(labels.app=='eric-scp-worker' || labels.app=='eric-sepp-worker')].name
+    name: envoy_pod_names
+  - filter: k8s.service[?name=='envoy-standalone'].ports[] | [0].node_port
+    name: worker_port_standalone
+  - filter: k8s.service[?name=='eric-scp-worker'].ports[] | [0].node_port
+    name: worker_port
+  - filter: k8s.service[?name=='eric-scp-worker'].ports[] | [1].node_port
+    name: worker_port_tls
+  - filter: k8s.service[?name=='eric-sepp-worker'].ports[] | [0].node_port
+    name: sepp_worker_port
+  - filter: k8s.service[?name=='eric-sepp-worker'].ports[] | [1].node_port
+    name: sepp_worker_port_tls
+  - filter: k8s.service[?name=='eric-cm-yang-provider'].ports[] | [?name=='netconf'].node_port
+      | [0]
+    name: yang_port
+  - filter: k8s.service[?starts_with(name, 'eric-chfsim-')] | [?name!='eric-chfsim-redis'].ports[0].node_port
+    name: chfsim_ports
+  - filter: k8s.service[?starts_with(name, 'eric-chfsim-')] | [?name!='eric-chfsim-redis'].ports[1].node_port
+    name: chfsim_ports_tls
+  - filter: k8s.service[?starts_with(name, 'eric-chfsim-')] | [?name!='eric-chfsim-redis'].ports[].node_port
+      | [0]
+    name: chfsim_one_port
+  - filter: k8s.service[?name=='eric-nrfsim'].cluster_ip | [0]
+    name: nrfsim_cluster_ip
+  - filter: k8s.service[?name=='eric-nrfsim'].ports[] | [0].node_port
+    name: nrfsim_port
+  - filter: k8s.pod[?labels.app=='eric-sc-monitor'].name
+    name: monitor_pod_names
+  - filter: k8s.pod[?labels.app=='eric-k6'].name
+    name: k6_pod_names
+  envoydomain: csa.ericsson.se
+  fiveshellhome: /proj/sc-tools/share/fiveshell/5g_proto/devtools/5gshell/fiveshell
+  sshpass: /app/vbuild/RHEL7-x86_64/sshpass/1.05/bin/sshpass
+  stern: /proj/sc-tools/bin/stern
+  terminal: gnome-terminal

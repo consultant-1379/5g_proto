@@ -1,0 +1,35 @@
+# SEPP Simulator
+
+service:
+  name: "eric-seppsim"
+  type: "NodePort"
+  
+imageCredentials:
+  registry:
+    url: "armdocker.rnd.ericsson.se"
+    pullSecret: "regcred"
+  repoPath: "proj-5g-bsf"
+  pullPolicy: Always
+
+spec:
+  replicas: "1"
+  image: 
+  tag:
+  resources:
+    requests:
+      memory: 400Mi
+      cpu: 0.7
+    limits:
+      memory: 4Gi
+      cpu: 1
+
+certificates:
+   enabled: true     
+   secret: seppsim-certificates
+   certificate: cert.pem   
+   key: key.pem
+   ca: rootCA.crt
+
+jvm:
+  parameters:
+    seppsim: "-server -XX:+ErrorFileToStderr -XX:+UseG1GC -XX:MaxRAMPercentage=80"

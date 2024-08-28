@@ -1,0 +1,114 @@
+# Copyright 2020 Ericsson GmbH
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ .Values.service.name }}-p4-mcc-262-mnc-73
+  labels:
+{{- include "eric-seppsim.labels" . | indent 4 }}
+  annotations:
+{{- include "eric-seppsim.helm-annotations" . | indent 4 }}
+{{- include "eric-seppsim.config-annotations" . | indent 4 }}
+spec:
+  {{- include "eric-seppsim.ipfamilies" . | indent 2 }}
+  ipFamilyPolicy: PreferDualStack
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+    targetPort: rest-api
+  - name: https
+    protocol: TCP
+    port: 443
+    targetPort: rest-api-tls
+  selector:
+    app: {{ .Values.service.name }}-p4
+  type: {{ .Values.service.type }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.service.name }}-p4
+  labels:
+{{- include "eric-seppsim.labels" . | indent 4 }}
+    app: {{ .Values.service.name }}-p4
+  annotations:
+{{- include "eric-seppsim.helm-annotations" . | indent 4 }}
+{{- include "eric-seppsim.config-annotations" . | indent 4 }}
+spec:
+  replicas: {{ .Values.spec.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.service.name }}-p4
+  template:
+    metadata:
+      labels:
+{{- include "eric-seppsim.labels" . | indent 8 }}
+        app: {{ .Values.service.name }}-p4
+        eric-sc-monitor-access: "true"
+      annotations:
+{{- include "eric-seppsim.helm-annotations" . | indent 8 }}
+{{- include "eric-seppsim.config-annotations" . | indent 8 }}
+    spec:
+      {{- if include "eric-seppsim.pullSecrets" . }}
+      imagePullSecrets:
+      - name: {{ template "eric-seppsim.pullSecrets" . }}
+      {{- end }}
+      containers:
+      - name: {{ .Values.service.name }}
+        image: {{ template "eric-seppsim.registryUrl" . }}/{{ .Values.imageCredentials.repoPath }}/{{ .Values.spec.image }}:{{ .Values.spec.tag }}
+        imagePullPolicy: {{ .Values.imageCredentials.pullPolicy | quote }}
+        ports:
+        - name: rest-api
+          protocol: TCP
+          containerPort: 80
+        - name: rest-api-tls
+          containerPort: 443
+        {{   if  (eq .Values.certificates.enabled true) }}
+        volumeMounts:
+        - name: secrets
+          mountPath: /root/certificates
+          readOnly: true
+        {{ end }}
+        env:
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        {{   if  (eq .Values.certificates.enabled true) }}
+        - name: CERTIFICATES_PATH
+          value: /root/certificates
+        {{ end }}
+        - name: JVM_PARAMS
+          value: {{ .Values.jvm.parameters.seppsim | quote }}
+        - name: POD_IPS
+          valueFrom:
+           fieldRef:
+             fieldPath: status.podIPs
+        resources:
+          requests:
+            memory: {{ .Values.spec.resources.requests.memory | quote }}
+            cpu: {{ .Values.spec.resources.requests.cpu | quote }}
+          limits:
+            memory: {{ .Values.spec.resources.limits.memory | quote }}
+            cpu: {{ .Values.spec.resources.limits.cpu | quote }}
+      {{ if .Values.usage }}
+      nodeSelector:
+        usage: {{ .Values.usage }}
+      tolerations:
+      - key: usage
+        operator: Equal
+        value: {{ .Values.usage }}
+        effect: "NoSchedule"
+      {{ end }}
+      {{   if  (eq .Values.certificates.enabled true) }}
+      volumes:
+        - name: secrets
+          secret:
+            secretName: {{ .Values.certificates.secret }}-p4
+            items:
+              - key: {{ .Values.certificates.certificate }}
+                path: certificate.pem
+              - key: {{ .Values.certificates.key }}
+                path: key.pem
+              - key: {{ .Values.certificates.ca }}
+                path: ca.pem
+      {{ end }}

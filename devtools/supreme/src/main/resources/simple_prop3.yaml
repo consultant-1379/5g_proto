@@ -1,0 +1,12 @@
+### Admin field must always exist
+defaultScenarios:
+  outputDir: <DIR>
+  expirationDays: 365
+
+admin:
+  namespace: <NAMESPACE>
+  yangProvider:
+    username: sec-admin
+    password: secsec
+
+

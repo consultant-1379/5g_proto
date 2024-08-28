@@ -1,0 +1,8 @@
+apiVersion: v1
+appVersion: 0.0.1
+description: A Helm chart for the BSF Diameter Service # Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC
+engine: gotpl
+name: eric-bsf-diameter # Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC
+sources:
+  - ssh://gerrit.ericsson.se:29418/diameter-cc/diametercc
+version: 1.1.0-0 # Additions/Changes for BSF compared to helm chart provided by Diameter Proxy gRPC

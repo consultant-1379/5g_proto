@@ -1,0 +1,5 @@
+apiVersion: v2
+appVersion: 1.0.0
+description: Signaling Controller NLF. (c) Ericsson AB 2023.
+name: eric-sc-nlf
+version: 1.0.0-0

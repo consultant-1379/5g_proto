@@ -1,0 +1,42 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2024-01-04 09:05
+FOSS:
+    # Available in Bazaar
+    FOSSName: Bouncy Castle Utility, bcutil
+    # Available in Bazaar
+    FOSSVersion: 1.77
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://repo1.maven.org/maven2/org/bouncycastle/bcutil-jdk18on/{{FOSSVersion}}/bcutil-jdk18on-{{FOSSVersion}}-sources.jar 
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 9/CTX1032639
+    # Not Available in Bazaar
+    Primary: N
+    # Available in Bazaar
+    STAKOCode: Restricted use
+    # Available in Bazaar
+    STAKOReason: Low community activity
+    # Not Available in Bazaar
+    FunctionalityUsedInTheEricssonProduct: 'The Bouncy Castle Java APIs for ASN.1 extension and utility APIs used to support bcpkix and bctls.'
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: MIT License (MIT)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: MIT License (MIT)
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'org.bouncycastle:bcutil-jdk18on:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: XEIRPAP Eirini Papastefanaki

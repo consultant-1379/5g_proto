@@ -1,0 +1,228 @@
+{
+  "content": {
+    "section": [
+      {
+        "hello": {
+          "capabilities": {
+            "capability": [
+              "urn:ietf:params:netconf:base:1.0"
+            ]
+          }
+        }
+      },
+      {
+        "rpc": {
+          "edit-config": {
+            "target": {
+              "running": ""
+            },
+            "config": {
+              "system": {
+                "authentication": {
+                  "user": [
+                    {
+                      "name": "user1",
+                      "password": "rootroot",
+                      "groups": [
+                        "scp-admin"
+                      ]
+                    },
+                    {
+                      "name": "user2",
+                      "password": "rootroot",
+                      "groups": [
+                        "bsf-admin"
+                      ]
+                    },
+                    {
+                      "name": "user3",
+                      "password": "rootroot",
+                      "groups": [
+                        "sepp-admin"
+                      ]
+                    },
+                    {
+                      "name": "user4",
+                      "password": "rootroot",
+                      "groups": [
+                        "csa-admin"
+                      ]
+                    },
+                    {
+                      "name": "user-diam",
+                      "password": "rootroot",
+                      "groups": [
+                        "bsf-admin"
+                      ]
+                    },
+                    {
+                      "name": "expert",
+                      "password": "rootroot",
+                      "groups": [
+                        "system-admin",
+                        "system-security-admin",
+                        "scp-admin",
+                        "bsf-admin",
+                        "sepp-admin",
+                        "csa-admin",
+                        "pc-probe-privacy-admin"
+                      ]
+                    },
+                    {
+                      "name": "sys-admin",
+                      "password": "syssys",
+                      "groups": [
+                        "system-admin"
+                      ]
+                    },
+                    {
+                      "name": "sec-admin",
+                      "password": "secsec",
+                      "groups": [
+                        "system-security-admin"
+                      ]
+                    },
+                    {
+                      "name": "sys-read",
+                      "password": "readread",
+                      "groups": [
+                        "system-read-only"
+                      ]
+                    },
+                    {
+                      "name": "scp-read",
+                      "password": "readread",
+                      "groups": [
+                        "scp-read-only"
+                      ]
+                    },
+                    {
+                      "name": "scp-sec-admin",
+                      "password": "scpsec",
+                      "groups": [
+                        "scp-security-admin"
+                      ]
+                    },
+                    {
+                      "name": "scp-admin",
+                      "password": "scpscp",
+                      "groups": [
+                        "scp-admin",
+                        "pc-probe-privacy-admin"
+                      ]
+                    },
+                    {
+                      "name": "bsf-read",
+                      "password": "readread",
+                      "groups": [
+                        "bsf-read-only"
+                      ]
+                    },
+                    {
+                      "name": "bsf-sec-admin",
+                      "password": "bsfsec",
+                      "groups": [
+                        "bsf-security-admin"
+                      ]
+                    },
+                    {
+                      "name": "bsf-admin",
+                      "password": "bsfbsf",
+                      "groups": [
+                        "bsf-admin",
+                        "pc-probe-privacy-admin"
+                      ]
+                    },
+                    {
+                      "name": "sepp-read",
+                      "password": "readread",
+                      "groups": [
+                        "sepp-read-only"
+                      ]
+                    },
+                    {
+                      "name": "sepp-sec-admin",
+                      "password": "seppsec",
+                      "groups": [
+                        "sepp-security-admin"
+                      ]
+                    },
+                    {
+                      "name": "sepp-admin",
+                      "password": "seppsepp",
+                      "groups": [
+                        "sepp-admin",
+                        "pc-probe-privacy-admin"
+                      ]
+                    },
+                    {
+                      "name": "csa-read",
+                      "password": "readread",
+                      "groups": [
+                        "csa-read-only"
+                      ]
+                    },
+                    {
+                      "name": "csa-sec-admin",
+                      "password": "csasec",
+                      "groups": [
+                        "csa-security-admin"
+                      ]
+                    },
+                    {
+                      "name": "csa-admin",
+                      "password": "csacsa",
+                      "groups": [
+                        "csa-admin"
+                      ]
+                    },
+                    {
+                      "name": "sc-oam-admin",
+                      "password": "oamoam",
+                      "groups": [
+                        "sc-admin"
+                      ]
+                    },
+                    {
+                      "name": "sc-oam-sec-admin",
+                      "password": "oamsec",
+                      "groups": [
+                        "sc-security-admin"
+                      ]
+                    },
+                    {
+                      "name": "sc-oam-read-only",
+                      "password": "oamread",
+                      "groups": [
+                        "sc-read-only"
+                      ]
+                    },
+                    {
+                      "name": "oam-internal",
+                      "password": "oaminternal",
+                      "groups": [
+                        "scp-admin"
+                      ]
+                    },
+                    {
+                      "name": "sc-admin",
+                      "password": "scsc",
+                      "groups": [
+                        "csa-admin",
+                        "scp-admin",
+                        "sepp-admin",
+                        "bsf-admin",
+                        "pc-probe-privacy-admin"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "@message-id": 1
+        }
+      }
+    ]
+  }
+}

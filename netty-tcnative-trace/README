@@ -1,0 +1,18 @@
+Downloads and patch netty-tcnative.
+The patch enables TLS premaster-key tracing.
+
+If you want to uplift tcnative:
+1. change the version in ruleset2.0-eric-esc.yaml, rule build-boringssl:
+  - NETTY_TCNATIVE_VERSION
+  - NETTY_TCNATIVE_PATCHED_VERSION
+  - esc-parent/pom.xml
+2. run bob/bob build-boringssl from inside 5g_proto
+3. If build fails due to a conflict, a patch is needed. To do so give inside "5g_proto/.bob/netty-tcnative-trace/netty-tcnative":
+  - "git st" in order to find the file(s) that has conflicts (it will be under "Unmerged paths:")
+  - edit and resolve the conflicts after opening the file (e.g. "pluma openssl-dynamic/src/main/c/sslcontext.c")
+  - "git commit" with message "Enable keylog callback" !
+  - "git format-patch -1 <sha>" (e.g.: git format-patch -1 81e5ea9c49305ff0482961904d4ec8a32d064468)
+  - cp the generated file "0001-Enable-keylog-callback.patch" in  5g_proto/netty-tcnative-trace/
+  - $ rm -rf netty-tcnative from 5g_proto/.bob/netty-tcnative-trace/
+  - bob/bob build-boringssl
+

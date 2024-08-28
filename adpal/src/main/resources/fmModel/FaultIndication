@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "id": "file://schema/FaultIndication#",
+  "title": "Fault indication",
+  "description": "Definition of a fault indication.",
+  "type": "object",
+  "properties": {
+    "version": {
+      "description": "The semantic version of this schema. It should be <major version>.<minor version>. A change in minor version only is backward compatible.",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$"
+    },
+    "faultName": {
+      "description": "An identifier uniquely identifying the type of fault per service.",
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_]+$"
+    },
+    "serviceName": {
+      "description": "An identifier uniquely identifying the service.",
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]+$"
+    },
+    "faultyResource": {
+      "description": "The faulty resource of the fault. An instance of the fault type.",
+      "type": "string",
+      "minLength": 1
+    },
+    "severity": {
+      "description": "The perceived severity level of the fault. Reflects the urgency level of the required action. Use 'Clear' to clear an existing fault indication.",
+      "type": "string",
+      "enum": [
+        "Clear",
+        "Warning",
+        "Minor",
+        "Major",
+        "Critical"
+      ]
+    },
+    "description": {
+      "description": "Extra information providing further insight about the fault.",
+      "type": "string"
+    },
+    "eventTime": {
+      "description": "The timestamp of when the fault indication was last updated, as microseconds elapsed since 1 Jan 1970 not including leap seconds in UTC. If not provided, a timestamp will be generated.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "expiration": {
+      "description": "The expiration time of the fault in seconds. The fault will automatically be cleared if no new fault indications of the same type within the expiration time. Value 0 means no expiration.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "additionalInformation": {
+      "description": "Additional fault information as a JSON object",
+      "type": "object"
+    }
+  },
+  "required": [
+    "version",
+    "faultName",
+    "serviceName"
+  ],
+  "additionalProperties": true
+}

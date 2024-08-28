@@ -1,0 +1,40 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2019-06-21 12:24
+FOSS:
+    # Available in Bazaar
+    FOSSName: Java Hamcrest
+    # Available in Bazaar
+    FOSSVersion: 1.3
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: http://code.google.com/p/hamcrest/downloads/list
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 2/CAX1054964
+    # Not Available in Bazaar
+    PRIMNumber(CTC): CTC1014453
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: Hamcrest is a library of matchers for building test expressions. It provides a library of matcher objects allowing 'match' rules to be defined declaratively, to be used in other frameworks. Hamcrest has been ported to Java, C++, Objective-C, Python, PHP and Erlang.
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: The BSD 2-Clause License ORIGINAL/OLD
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: The BSD 2-Clause License ORIGINAL/OLD
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'org.hamcrest:hamcrest-core:jar:{{FOSSVersion}}'
+    - 'org.hamcrest:hamcrest-all:jar:{{FOSSVersion}}'
+    - 'org.hamcrest:hamcrest-library:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ENTNGRG Georgios Antoniou

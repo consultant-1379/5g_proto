@@ -1,0 +1,564 @@
+infra:
+  enable_seccomp_default: true
+  cgroupv2:
+    enabled: true
+  audit:
+    log_level: detailed
+  iaas:
+    type: capo
+    nameservers:
+      - 10.221.16.10
+      - 10.221.16.11
+    ntp_servers:
+      - 10.221.17.6
+      - 10.221.17.46
+    ntp_parameters:
+      ntp_minpoll: 3
+      ntp_maxpoll: 8
+      ntp_version: 4
+      ntp_max_offset: "1.2"
+    timezone: "UTC"
+    capo:
+      clouds:
+        n60vpod2:
+          auth:
+            auth_url: http://10.221.146.27:5000
+            username: SC-admin
+            password: admin
+            project_name: SC
+            project_domain_name: Default
+            user_domain_name: Default
+          cacert: ""
+          regions:
+            - name: regionOne
+      target_cloud: n60vpod2 
+      target_cloud_cacert: |
+        -----BEGIN CERTIFICATE-----
+        MIIDlzCCAn+gAwIBAgIJALw61YdirEDUMA0GCSqGSIb3DQEBCwUAMGIxCzAJBgNV
+        BAYTAkRFMQwwCgYDVQQIDANOUlcxDzANBgNVBAcMBkFhY2hlbjERMA8GA1UECgwI
+        RXJpY3Nzb24xDDAKBgNVBAsMA0RTUzETMBEGA1UEAwwKVHJpcGxlTyBDQTAeFw0x
+        OTA3MDExMDM1MTZaFw00NDAyMjAxMDM1MTZaMGIxCzAJBgNVBAYTAkRFMQwwCgYD
+        VQQIDANOUlcxDzANBgNVBAcMBkFhY2hlbjERMA8GA1UECgwIRXJpY3Nzb24xDDAK
+        BgNVBAsMA0RTUzETMBEGA1UEAwwKVHJpcGxlTyBDQTCCASIwDQYJKoZIhvcNAQEB
+        BQADggEPADCCAQoCggEBALAezr4+4ndCSFYBcC8AOm3WdC2cxvFe23btqVdhxurA
+        e3jGuVcFJbSokFQbK+FkNl4NaMb4W3NQNx7O6ekQAKdNE+KIe576vpz6Z5I7aqho
+        HQkTjFelq53vSL+nB7s4Gq+9SdSuXlFqPeXM4sNrGsg2y4PUQAnz08nZMM0kxIMG
+        q7nve9Jo4m/LvKybzTJu6Lhmp3WYRHqfB1qO3bHNpvfEbgOgQ7aJCJofvrYEzBP3
+        ZJDaaZM5/gKBPSrR/Z8ztLsfoZ6JvLmZBfURzqq38n0N9eMq9IFiIaU0R93sakB9
+        MxhNoO1VKk0HfYAhioiBC8E+1YFTBtc3uKDUeqbuqzECAwEAAaNQME4wHQYDVR0O
+        BBYEFNXfkkcZxQeFp6+iaOr4WZRZ5OfSMB8GA1UdIwQYMBaAFNXfkkcZxQeFp6+i
+        aOr4WZRZ5OfSMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBABHYzDXm
+        ZD4oF3JNlDBQH/pnpu6bhyDJ+KJwM9TYdF+TmqWaysjJ0fy8oDyQQNiKdtMqMFzg
+        AJRHo9mxsQa47HeXqj6OwPjIURpXmvG6WsNXNTstptaFtstunCfpbGS+gXuVOmoP
+        Q5NwGFmdHOxoQGzVytSnHW4YNZvn1SiG7MFjTvyWXb9F9AGAtGIIrD0cZskaeHlj
+        2X0Xl+86aPN2ZS2egfqnvg3jhaymuM+pn1yGrhlHrPa23q+g6L59v0yiYlyxjwWh
+        zMUpGUke+3uPW9kFMopX8/PpTFF/YVrpZASVkqFrgRO6zG1JcAbmj7RYugpCG7Dj
+        4/z57PxZy/v3VeM=
+        -----END CERTIFICATE-----
+      oam_network:
+        name: "N60_CCD_OAM_NET_T3"
+      internal_network:
+        subnet_ipv4:
+          cidr: "10.10.0.0/24"
+        subnet_ipv6:
+          cidr: "2001::/64"
+      election_network:
+        subnet_ipv4:
+          cidr: "20.10.0.0/24"
+        subnet_ipv6:
+          cidr: "2002::/64"
+      node_image:
+        name: node-2.28.1-000032-6d66778a
+
+  # password is ccdTestPassword, salt is ccdTestSalt
+  console_password_hash: "$6$ccdTestSalt$m3GxI5wbeH4TlQdMCbDh.lzqugYXBHFKVv/yk5S3paeGWmCC/S.YQ4h0I4du5wJchJi/PirdtI.OjQlIgTudk1"
+  # deleting the value for session_timeout or setting to zero will default to 900
+  session_timeout: 800
+  # deleting the value for ssh_inactivity or setting to zero will default to 300
+  ssh_inactivity: 200
+  bootstrap:
+    # EHRKINC: As "authorized_keys" jenkins-public key should be used. Manually can be created using "ssh-keygen"
+    authorized_keys:
+    - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDY1j0C7WlDvqGwuwoJxqNZKJbBoKshkxvkcXJPZtzHpar+C20MdmtxfuhnHDCOg8oCaQtj7NuyFob0FSeIZHUw5gAUESmA6vC8RmdpGh61u72Wy/S/Ln5ON3KidfLfkBfyZ0elqHC+JiiIouzSnN7LnzpBHMukgFxEcfupNTCl0JpuaIc0QNo0REAJ7SN2mI+ozXBwh4DWq+AmNL9672EsxMf47uLPQRTBoZLL8N2kpNi6p6tqjeR6DKw0/HUiZ9DO4g7I/bqDmkJYeOexejDlsbVzmkiMiKrsMKRnB759857c2bdPECxsAHFLkUAT6dRW5XCY3mf11kVnAuGVK2d/
+    capo:
+      ephemeral_root_volume:
+        size: 80
+      ephemeral_flavor: "eccd.flavor.director"
+      ephemeral_image:
+        name: ephemeral-2.28.1-000032-6d66778a
+      ephemeral_availability_zone: "AZ-SC"
+
+
+  controlplane:
+    control_plane_external_vip: 10.117.19.200
+    control_plane_internal_vip: 10.10.0.2
+    control_plane_registry_vip: 10.10.0.3
+    control_plane_port: 6443
+    pool_cfg:
+      name: controlplane
+      count: 3
+      capo:
+        flavor: "eccd-capo-master"
+        root_volume:
+          size: 200
+          availability_zone: nova
+        metadata:
+            ha-policy: "ha-offline"
+        availability_zones:
+          - AZ-SC
+        server_group_policies:
+          - soft-affinity
+
+      # EHRKINC: As "authorized_keys" jenkins-public key should be used. Manually can be created
+      # EHRKINC: using "ssh-keygen" BUT preferred the the jenkins key
+      authorized_keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDY1j0C7WlDvqGwuwoJxqNZKJbBoKshkxvkcXJPZtzHpar+C20MdmtxfuhnHDCOg8oCaQtj7NuyFob0FSeIZHUw5gAUESmA6vC8RmdpGh61u72Wy/S/Ln5ON3KidfLfkBfyZ0elqHC+JiiIouzSnN7LnzpBHMukgFxEcfupNTCl0JpuaIc0QNo0REAJ7SN2mI+ozXBwh4DWq+AmNL9672EsxMf47uLPQRTBoZLL8N2kpNi6p6tqjeR6DKw0/HUiZ9DO4g7I/bqDmkJYeOexejDlsbVzmkiMiKrsMKRnB759857c2bdPECxsAHFLkUAT6dRW5XCY3mf11kVnAuGVK2d/ root@ubuntu
+      user_node_scripts:
+        #EHRKINC: QUESTION to AVI. These are pre-join scripts for oam network?
+        # touch /home/eccd/.prenetdone
+        #pre_network_init: IyEvYmluL2Jhc2gKdG91Y2ggL2hvbWUvZWNjZC8ucHJlbmV0ZG9uZQo=
+        pre_network_init: ""
+        # touch /home/eccd/.postnetdone
+        #post_network_init: IyEvYmluL2Jhc2gKdG91Y2ggL2hvbWUvZWNjZC8ucG9zdG5ldGRvbmUKCg==
+        post_network_init: ""
+        # touch /home/eccd/.postkubeadmdone; fstrim -a -v
+        #post_kubeadm_init: IyEvYmluL2Jhc2gKdG91Y2ggL2hvbWUvZWNjZC8ucG9zdGt1YmVhZG1kb25lCmZzdHJpbSAtYSAtdgoK
+        post_kubeadm_init: ""
+        startup_script: "IyEvdXNyL2Jpbi9lbnYgYmFzaAp0b3VjaCAvaG9tZS9lY2NkL3J1bl9vbl9zdGFydHVwLnR4dA=="
+      cpu_isolation_config:
+        #     reserved_cpus: 0
+        #     cpu_manager_policy: static
+        system_reserved: "cpu=100m"
+      kubelet_options:
+        housekeeping_interval: 10
+        allowed_unsafe_sysctls:
+          - "kernel.shm*"
+          - "kernel.msg*"
+      max_pods_per_node: 110
+    host_workloads: false
+  worker_pools:
+    - pool_cfg:
+        name: pool1
+        capo:
+          flavor: "eccd.flavor.worker_16_81920"
+          root_volume:
+            size: 80
+            availability_zone: nova
+          availability_zones:
+            - AZ-SC
+          traffic_networks:
+            - network: N60_SC_SIG_NET_T3
+              enable_port_security: false
+            - network: N60_SC_OAM_NET_T3
+              enable_port_security: false
+          server_group_policies:
+            - soft-affinity
+          metadata:
+            ha-policy: "ha-offline"
+        user_node_scripts:
+          # touch /home/eccd/pre_network_init
+          #pre_network_init: IyEvdXNyL2Jpbi9lbnYgYmFzaApzZXQgLXVlCiMgSW5wdXQgIHZhcmlhYmxlcwp0b3VjaCAvaG9tZS9lY2NkL3ByZV9uZXR3b3JrX2luaXQK
+          pre_network_init: ""
+          post_network_init: "IyEvYmluL2Jhc2gKc3lzY3RsIC13IG5ldC5pcHY2LmNvbmYuYWxsLnVzZV90ZW1wYWRkcj0wCnN5c2N0bCAtdyBuZXQuaXB2Ni5jb25mLmRlZmF1bHQudXNlX3RlbXBhZGRyPTAKI0JTCmVjaG8gICIyMDAxOjFiNzA6ODIzMDo0MDI6Oi82NCAyMDAxOjFiNzA6ODIzMDo3MDA6OjEgLSAtIiA+PiAvZXRjL3N5c2NvbmZpZy9uZXR3b3JrL2lmcm91dGUtZXRoMgojVkRJcwplY2hvICAiMjAwMToxYjcwOjgyMzA6NjAxOjovNjQgMjAwMToxYjcwOjgyMzA6NzAwOjoxIC0gLSIgPj4gL2V0Yy9zeXNjb25maWcvbmV0d29yay9pZnJvdXRlLWV0aDIKZWNobyAgIjIwMDE6MWI3MDo4MjMwOjYwNTo6LzY0IDIwMDE6MWI3MDo4MjMwOjcwMDo6MSAtIC0iID4+IC9ldGMvc3lzY29uZmlnL25ldHdvcmsvaWZyb3V0ZS1ldGgyCmVjaG8gICIyMDAxOjFiNzA6ODIzMDo2MDA6Oi82NCAyMDAxOjFiNzA6ODIzMDo3MDA6OjEgLSAtIiA+PiAvZXRjL3N5c2NvbmZpZy9uZXR3b3JrL2lmcm91dGUtZXRoMgplY2hvICAiMjAwMToxYjcwOjgyMzA6NjAyOjovNjQgMjAwMToxYjcwOjgyMzA6NzAwOjoxIC0gLSIgPj4gL2V0Yy9zeXNjb25maWcvbmV0d29yay9pZnJvdXRlLWV0aDIKZWNobyAgIjIwMDE6MWI3MDo4MjMwOjYwMzo6LzY0IDIwMDE6MWI3MDo4MjMwOjcwMDo6MSAtIC0iID4+IC9ldGMvc3lzY29uZmlnL25ldHdvcmsvaWZyb3V0ZS1ldGgyCmVjaG8gICIyMDAxOjFiNzA6ODIzMDo2MDQ6Oi82NCAyMDAxOjFiNzA6ODIzMDo3MDA6OjEgLSAtIiA+PiAvZXRjL3N5c2NvbmZpZy9uZXR3b3JrL2lmcm91dGUtZXRoMgplY2hvICAiMjAwMToxYjc0OjhiOjQ5MDA6Oi82NCAgMjAwMToxYjcwOjgyMzA6NzAwOjoxIC0gLSIgPj4gL2V0Yy9zeXNjb25maWcvbmV0d29yay9pZnJvdXRlLWV0aDIKZWNobyAgIjIwMDE6MWI3NDo4YjoyZDBjOjovNjQgIDIwMDE6MWI3MDo4MjMwOjcwMDo6MSAtIC0iID4+IC9ldGMvc3lzY29uZmlnL25ldHdvcmsvaWZyb3V0ZS1ldGgyCmVjaG8gICIyMDAxOjFiNzQ6OGI6MmQwYTo6LzY0ICAyMDAxOjFiNzA6ODIzMDo3MDA6OjEgLSAtIiA+PiAvZXRjL3N5c2NvbmZpZy9uZXR3b3JrL2lmcm91dGUtZXRoMgplY2hvICAiMjAwMToxYjc0OjhiOjJkMWM6Oi82NCAgMjAwMToxYjcwOjgyMzA6NzAwOjoxIC0gLSIgPj4gL2V0Yy9zeXNjb25maWcvbmV0d29yay9pZnJvdXRlLWV0aDIKZWNobyAgIjIwMDE6MWI3NDo4YjoyZDJmOjovNjQgMjAwMToxYjcwOjgyMzA6NzAwOjoxIC0gLSIgPj4gL2V0Yy9zeXNjb25maWcvbmV0d29yay9pZnJvdXRlLWV0aDIKc3lzdGVtY3RsIHJlc3RhcnQgbmV0d29yawojQnVpbGQgU2xhdmVzCmVjaG8gICIxMC4yMTAuMTU1LjAvMjQgMTAuMTE3LjQxLjY1IC0gLSIgPj4gL2V0Yy9zeXNjb25maWcvbmV0d29yay9pZnJvdXRlLWV0aDIKZWNobyAgIjEwLjIxMC4xNzQuMC8yNCAxMC4xMTcuNDEuNjUgLSAtIiA+PiAvZXRjL3N5c2NvbmZpZy9uZXR3b3JrL2lmcm91dGUtZXRoMgplY2hvICAiMTAuMjEwLjE4MS4yMjQvMjggMTAuMTE3LjQxLjY1IC0gLSIgPj4gL2V0Yy9zeXNjb25maWcvbmV0d29yay9pZnJvdXRlLWV0aDIKZWNobyAgIjEzNy41OC4yMDcuMTkyLzI2IDEwLjExNy40MS42NSAtIC0iID4+IC9ldGMvc3lzY29uZmlnL25ldHdvcmsvaWZyb3V0ZS1ldGgyCiNWRElzCmVjaG8gICIxMC4xMjguOTYuMTI4LzI2IDEwLjExNy40MS42NSAtIC0iID4+IC9ldGMvc3lzY29uZmlnL25ldHdvcmsvaWZyb3V0ZS1ldGgyCmVjaG8gICIxMC44Ni44MC4wLzI2IDEwLjExNy40MS42NSAtIC0iID4+IC9ldGMvc3lzY29uZmlnL25ldHdvcmsvaWZyb3V0ZS1ldGgyCmVjaG8gICIxMC44Ni44MC4wLzI2IDEwLjExNy40MS42NSAtIC0iID4+IC9ldGMvc3lzY29uZmlnL25ldHdvcmsvaWZyb3V0ZS1ldGgyCmVjaG8gICIxMC42My4xODMuMTI4LzI2IDEwLjExNy40MS42NSAtIC0iID4+IC9ldGMvc3lzY29uZmlnL25ldHdvcmsvaWZyb3V0ZS1ldGgyCmVjaG8gICIxMC42My40LjAvMjYgMTAuMTE3LjQxLjY1IC0gLSIgPj4gL2V0Yy9zeXNjb25maWcvbmV0d29yay9pZnJvdXRlLWV0aDIKZWNobyAgIjEwLjYzLjQ3LjEyOC8yNiAxMC4xMTcuNDEuNjUgLSAtIiA+PiAvZXRjL3N5c2NvbmZpZy9uZXR3b3JrL2lmcm91dGUtZXRoMgplY2hvICAiMTAwLjc4LjQwLjY0LzI2IDEwLjExNy40MS42NSAtIC0iID4+IC9ldGMvc3lzY29uZmlnL25ldHdvcmsvaWZyb3V0ZS1ldGgyCmVjaG8gICIxMDAuNzkuMTE2LjAvMjYgMTAuMTE3LjQxLjY1IC0gLSIgPj4gL2V0Yy9zeXNjb25maWcvbmV0d29yay9pZnJvdXRlLWV0aDIKI01pc2MKZWNobyAgIjEwLjYxLjE0LjEyOSAxMC4xMTcuNDEuNjUgLSAtIiA+PiAvZXRjL3N5c2NvbmZpZy9uZXR3b3JrL2lmcm91dGUtZXRoMgplY2hvICAiMTAuODYuMTg3LjE0MyAxMC4xMTcuNDEuNjUgLSAtIiA+PiAvZXRjL3N5c2NvbmZpZy9uZXR3b3JrL2lmcm91dGUtZXRoMgplY2hvICAiMTMxLjE2MC4xNDYuMjIgMTAuMTE3LjQxLjY1IC0gLSIgPj4gL2V0Yy9zeXNjb25maWcvbmV0d29yay9pZnJvdXRlLWV0aDIKZWNobyAgIjE2NC40OC40Mi4wLzI0IDEwLjExNy40MS42NSAtIC0iID4+IC9ldGMvc3lzY29uZmlnL25ldHdvcmsvaWZyb3V0ZS1ldGgyCnN5c3RlbWN0bCByZXN0YXJ0IG5ldHdvcmsKZWNobyAidm0ubWF4X21hcF9jb3VudD0yNjIxNDQiID4+IC9ldGMvc3lzY3RsLmNvbmYKZWNobyAibmV0LmNvcmUub3B0bWVtX21heD00MDk2MCIgPj4gL2V0Yy9zeXNjdGwuY29uZgplY2hvICJuZXQuY29yZS5ybWVtX2RlZmF1bHQ9MTY3NzcyMTYiID4+IC9ldGMvc3lzY3RsLmNvbmYKZWNobyAibmV0LmNvcmUucm1lbV9tYXg9MTY3NzcyMTYiID4+IC9ldGMvc3lzY3RsLmNvbmYKZWNobyAibmV0LmNvcmUud21lbV9kZWZhdWx0PTE2Nzc3MjE2IiA+PiAvZXRjL3N5c2N0bC5jb25mCmVjaG8gIm5ldC5jb3JlLndtZW1fbWF4PTE2Nzc3MjE2IiA+PiAvZXRjL3N5c2N0bC5jb25mCmVjaG8gIm5ldC5pcHY0LnRjcF9ybWVtPTQwOTYgODczODAgMTY3NzcyMTYiID4+IC9ldGMvc3lzY3RsLmNvbmYKZWNobyAibmV0LmlwdjQudGNwX3dtZW09NDA5NiA2NTUzNiAxNjc3NzIxNiIgPj4gL2V0Yy9zeXNjdGwuY29uZgplY2hvICJ2bS5tYXhfbWFwX2NvdW50PTEwNDg1NzUiID4+IC9ldGMvc3lzY3RsLmNvbmYKZWNobyAidm0uem9uZV9yZWNsYWltX21vZGU9MCIgPj4gL2V0Yy9zeXNjdGwuY29uZgpzdWRvIHN5c2N0bCAtdyB2bS5tYXhfbWFwX2NvdW50PTI2MjE0NApzdWRvIHN5c2N0bCAtdyBuZXQuY29yZS5vcHRtZW1fbWF4PTQwOTYwCnN1ZG8gc3lzY3RsIC13IG5ldC5jb3JlLnJtZW1fZGVmYXVsdD0xNjc3NzIxNgpzdWRvIHN5c2N0bCAtdyBuZXQuY29yZS5ybWVtX21heD0xNjc3NzIxNgpzdWRvIHN5c2N0bCAtdyBuZXQuY29yZS53bWVtX2RlZmF1bHQ9MTY3NzcyMTYKc3VkbyBzeXNjdGwgLXcgbmV0LmNvcmUud21lbV9tYXg9MTY3NzcyMTYKc3VkbyBzeXNjdGwgLXcgbmV0LmlwdjQudGNwX3JtZW09IjQwOTYgODczODAgMTY3NzcyMTYiCnN1ZG8gc3lzY3RsIC13IG5ldC5pcHY0LnRjcF93bWVtPSI0MDk2IDY1NTM2IDE2Nzc3MjE2IgpzdWRvIHN5c2N0bCAtdyB2bS5tYXhfbWFwX2NvdW50PTEwNDg1NzUKc3VkbyBzeXNjdGwgLXcgdm0uem9uZV9yZWNsYWltX21vZGU9MApzdWRvIGlwdGFibGVzIC10IG1hbmdsZSAtQSBQT1NUUk9VVElORyAtcCBUQ1AgLWQgMTAuMTU1LjEwNy4yMjQvMjggLWogRFNDUCAtLXNldC1kc2NwIDQ2Cg=="
+          # touch /home/eccd/post_network_init
+          #post_network_init: IyEvdXNyL2Jpbi9lbnYgYmFzaApzZXQgLXVlCiMgSW5wdXQgIHZhcmlhYmxlcwp0b3VjaCAvaG9tZS9lY2NkL3Bvc3RfbmV0d29ya19pbml0Cg==
+          # touch /home/eccd/post_kubeadm_init
+          post_kubeadm_init: ""
+          #post_kubeadm_init: IyEvdXNyL2Jpbi9lbnYgYmFzaApzZXQgLXVlCiMgSW5wdXQgIHZhcmlhYmxlcwp0b3VjaCAvaG9tZS9lY2NkL3Bvc3Rfa3ViZWFkbV9pbml0Cg==
+          startup_script: "IyEvdXNyL2Jpbi9lbnYgYmFzaAp0b3VjaCAvaG9tZS9lY2NkL3J1bl9vbl9zdGFydHVwLnR4dA=="
+        # EHRKINC: This is number of workers. TO BE UPDATED
+        count: 9
+        initial_deployment_count: 9
+        # hugepage_config:
+        #     type: 2MB
+        #     pagecount_2mb: 512
+        cpu_isolation_config:
+          #     reserved_cpus: 0
+          #     cpu_manager_policy: static
+          system_reserved: "cpu=100m"
+        #     topology_manager_policy: best-effort
+        #     isolation_interrupts: true
+        #     generic_receive_offload: true
+        #     receive_packet_steering: true
+        kubelet_options:
+          housekeeping_interval: 10
+          allowed_unsafe_sysctls:
+            - "kernel.shm*"
+            - "kernel.msg*"
+        max_pods_per_node: 500
+        machine_health_check:
+          max_unhealthy: 80%
+          node_startup_timeout: 10m
+          timeout: 5m
+          #unhealthy_range: [0-10]
+  deploy_workers_with_cp: false
+  deploy_critical_addons_only: false
+kubernetes:
+  #nodelocalDNS_config_map_fwdzones added for testing purpose (Verify Nodelocal DNS configuration)
+#  nodelocalDNS_config_map_fwdzones:
+#    - domain: mynet.local
+#      dns_server: 192.168.0.254
+  ip_version: dualstack
+  ingress_cluster_ip: 10.96.255.200,fd00:eccd:17:ffff::5555:c1c1
+  apiserver_extra_sans:
+    - api.pikachu.ipv4.n60vpod1.sc.sero.gic.ericsson.se
+  pod_cidr_blocks:
+    - 192.168.0.0/16
+    - fd00:eccd:18:ffff::/64
+  service_cidr_blocks:
+    - 10.96.0.0/12
+    - fd00:eccd:17:ffff::5555:0/112
+  node_cidr_mask_size_ipv4: "24"
+  node_cidr_mask_size_ipv6: "80"
+  default_dualstack_ip_family: "ipv4"
+  #EHRKINC: Order the next command in Jenkins VM:
+  #EHRKINC: [jenkins@dc423-cee1-ccd03-jenkins ~]$ openssl req -x509 -new -nodes -key ca.key -subj "/CN=Kubernetes-ca" -days 10000 -out ca.crt
+
+  ca_cert: |
+    -----BEGIN CERTIFICATE-----
+    MIIDgTCCAmmgAwIBAgIJAJOElJ+oR3fWMA0GCSqGSIb3DQEBCwUAMFcxCzAJBgNV
+    BAYTAkZJMRAwDgYDVQQIDAdVdXNpbWFhMQ4wDAYDVQQHDAVFc3BvbzEOMAwGA1UE
+    CgwFQ2xvdWQxFjAUBgNVBAMMDUt1YmVybmV0ZXMtY2EwHhcNMTkwMjExMTQ0NjMy
+    WhcNMjkwMjA4MTQ0NjMyWjBXMQswCQYDVQQGEwJGSTEQMA4GA1UECAwHVXVzaW1h
+    YTEOMAwGA1UEBwwFRXNwb28xDjAMBgNVBAoMBUNsb3VkMRYwFAYDVQQDDA1LdWJl
+    cm5ldGVzLWNhMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxHcE/Z7r
+    +7gTSClnZwN+W0VFyNAgvDcgn/0CaomCV87GsqSjX5kUnLdjeacFPFPp1Ppeijnm
+    L26QYr1tKhc8yMrrIch1PJeh8ENKxwpcwosLiACmK5b6SJ0SRSF5izJbOK+7HSQZ
+    +bp7drR2xIp61udxJxZCYZ/IFgUFEzD60R/43jR0Fv16/rA+/0JPNVDfyxw5UWPL
+    A1WaueUYxNMyIkuWW+T5ILjI8iXQKvsUe8eXrBZvmqsfHQinj0weZNq4whFfChem
+    sQu43svZuwT5yW0tWg2I72cQ5kQo4t0PK4Y+wjCLAxowmvZV+grywyWFSdlYIP0a
+    6UVhitFs4qTsRwIDAQABo1AwTjAdBgNVHQ4EFgQU7L9IkEUMWvEvk/h35NV8qX42
+    FeIwHwYDVR0jBBgwFoAU7L9IkEUMWvEvk/h35NV8qX42FeIwDAYDVR0TBAUwAwEB
+    /zANBgkqhkiG9w0BAQsFAAOCAQEAIYCPnnrNGNMFo7DtKfC0ahkTnRu+KdnCqFwl
+    uol5tOF7rVHYGZK1T72XKbz19usrRJA7VWkcNnZ0Y35Mu7vDfqcdenLSFsdZb2Hq
+    fui/ebhZdg2pe2Pa7sg+IhOQYNAeMUf6sWn6REdlTT5HhTSq1axNwFgK73ZD+IGI
+    jg+0ALEdeG9573sosgco4rN0xbDyLgLqSaVq1fWsRMl3DO9kUi/1igLlMtQ+CwaV
+    aWbgf63mton0agKV0TevYCK3X0zVoTVIgvlnbiW91DmvzJGoIZhJbapqbX+ihA4X
+    tm+0JpOXnte7JIVL5sh4tvDjuOKkUyfgFHU5EotwCTNg0tGM6Q==
+    -----END CERTIFICATE-----
+
+  ca_key: |
+    -----BEGIN RSA PRIVATE KEY-----
+    MIIEowIBAAKCAQEAxHcE/Z7r+7gTSClnZwN+W0VFyNAgvDcgn/0CaomCV87GsqSj
+    X5kUnLdjeacFPFPp1PpeijnmL26QYr1tKhc8yMrrIch1PJeh8ENKxwpcwosLiACm
+    K5b6SJ0SRSF5izJbOK+7HSQZ+bp7drR2xIp61udxJxZCYZ/IFgUFEzD60R/43jR0
+    Fv16/rA+/0JPNVDfyxw5UWPLA1WaueUYxNMyIkuWW+T5ILjI8iXQKvsUe8eXrBZv
+    mqsfHQinj0weZNq4whFfChemsQu43svZuwT5yW0tWg2I72cQ5kQo4t0PK4Y+wjCL
+    AxowmvZV+grywyWFSdlYIP0a6UVhitFs4qTsRwIDAQABAoIBAEFsYP0ULwFkCwe8
+    wfJL94ftSY/VvxDuSq78UhGoOP+EnCZhLQZos7R8XWPlepjcWMHTnifpn/2rk+lN
+    q0yY8GTtLd/SIThMRmD8B6rAiKNAKlbf4HYjkLUdmTfsLc1st3PpESZjH0NKFlMx
+    RVutwbpO2B9sCi74RmkOwuHhLaT1qxVrDGpiXhCt5UsiWHCRB3q3AmpGhiWe/IWL
+    CkAsCjA1Wg1jGRyoTp2MBgCh4JvMf7WijICscmeu+muAWAV4ALf9YSWKrnkPkWF5
+    kFrd4rTUGqQ+Y4lLOdtg/mnfj7E+ftR9SI0yqcj+iuDW1RUe6pN1wZgNecYaXtWt
+    JAtOUAECgYEA7LHSqXY9URtxTpfCi6WXiXyM3hY4DBOqTqI9P3DdwnDegwP3HdSa
+    XbZdI0k1EhkYtJUPZv+Ogm7ZCT2keiqwwUAL+ipsktJuWisiVu1QHpEMPaUAPIXc
+    QmmBqVn88vh3SFcLNAs0Be45TP67C3wLrgNzeedTeFcoojpZjPkinKcCgYEA1H0z
+    mZQwrKrM8fzOLHE1TSkKgqEqbVbVsEMcBv29AoFicedaQubA0gPqysNGvtjFFh1h
+    2OWEXWH4ajUwO86fAjS3xg8zeezm0b1LFbUj/kkAqTpjiqIMpX6ybiPs8rZFM8GG
+    mCjAvF4wajV5T91japQYS6uY6Oj2BtI0YeCpB2ECgYACTeDdIXeLWJcLytJsBZqq
+    DfpZFyJIi9B2n4G1ImYmRG8GG33GXpF6JBJYC5hmqrPg3iqeOBKtFmMqgd0eC1hZ
+    KUR0lQEllMLaQd09t2W2Rnc2CmssK6lvRBOtEGE0BFM08xP617kT7bPFGh28COMc
+    OJBhOW1ImKCeo67Hfo1ltQKBgQDFuUcllp6AXWLdnidfdWxqw1DTYxKusYmgPaI7
+    4ypYxXqMkQINlNlB04FMcc9H0T/7pxWglVnI51wXwCyEymxtyg5jj0uQHeBetKzE
+    o0y91sJ1ti5gFxB7gtyX3ngjFXZphaAvwGQwI9kbS2z54wEacHn3F9Luj7A3gqxZ
+    k4rVoQKBgDVRkCWoVWfFUS/ioXrT67boHOPkLgqIYLh2zYXZiYVmWhq+e2QnOQwQ
+    ks+Esr9K11g1D1Bvy+ggy+P85GO1nslo9trqaFrn5lXXTZ5wtXihSI17Y7f+zrLD
+    Nz/yeqVmj4mNwnZ+cGSQ2nifa85lyb7/8zPEeDraPbTFdWPvxjHU
+    -----END RSA PRIVATE KEY-----
+  ipvs_excluded_cidrs:
+    - 3.3.3.0/24
+    - 7.7.7.0/24
+
+  featuregates:
+    bound_service_account_token_volume: false
+  etcd_config:
+    election_timeout: 3001
+    heartbeat_interval: 301
+    snapshot_count: 100001
+  graceful_node_shutdown:
+    shutdown_grace_period: 3m
+    shutdown_grace_period_critical_pods: 30s
+
+license:
+  nels_host: 10.221.171.132
+  licensing_domains:
+    - customer_id: '800119'
+      product_type: ECCD
+      swlt_id: CCD_11
+
+value_packs: [ ]
+# add falco if we are using
+
+addons:
+  - name: calico
+    spec:
+      mtu: 1430
+      interface_name: _calico_interface
+      ipv4_pool_ipip_mode: Always
+  - name: cr-registry
+    spec:
+      replicas_count: 1
+      storage_class: csi-cinder-sc-delete
+      storage_size: 200Gi
+      user_id: admin
+      password: dmVyeXNlY3JldA==
+      hostname: k8s-registry.eccd.local
+  - name: ingress
+    spec:
+      replicas: 4
+      ingress_service:
+        allocate_node_port: true
+        loadbalancer_ip: 10.117.41.209,2001:1b74:20:c003::a
+  - name: metrics-server
+    spec: { }
+  - name: multus
+    spec: { }
+  - name: ecfe
+    spec:
+      speakers_allowed_on_control_plane: false #added for our internal tests
+      allocate_speakers: true
+      enable_guaranteed_qos: false
+      config: |
+        address-pools:
+        -   addresses:
+            - 10.117.41.208/28
+            - 2001:1b74:20:c003::/64
+            name: sc-oam
+            protocol: bgp
+        -   addresses:
+            - 10.117.23.64/30
+            - 2001:1b70:8230:807:1::/80
+            name: sc-sig-scp
+            protocol: bgp
+        -   addresses:
+            - 10.117.23.242/31
+            - 2001:1b70:8230:802:1::/80
+            name: sc-sig-bsf
+            protocol: bgp
+        -   addresses:
+            - 10.117.23.244/32
+            - 2001:1b70:8230:802:2::/80
+            name: sc-sig-dia1
+            protocol: bgp
+        -   addresses:
+            - 10.117.23.245/32
+            - 2001:1b70:8230:802:3::/80
+            name: sc-sig-dia2
+            protocol: bgp
+        -   addresses:
+            - 10.117.23.68/30
+            - 2001:1b74:26:8b00:1::/80
+            name: sc-sig-wcdb1
+            protocol: bgp
+        -   addresses:
+            - 10.117.23.72/30
+            - 2001:1b74:26:8b00:2::/80
+            name: sc-sig-wcdb2
+            protocol: bgp
+        -   addresses:
+            - 10.117.23.76/30
+            - 2001:1b70:8230:807:2::/80
+            name: sc-sig-sepp
+            protocol: bgp
+        bgp-peers:
+        -   my-asn: 8010
+            peer-asn: 4247584777
+            peer-address: 10.117.41.66
+            my-address-pools:
+            - sc-oam
+        -   my-asn: 8010
+            peer-asn: 4247584777
+            peer-address: 10.117.41.67
+            my-address-pools:
+            - sc-oam
+        -   my-asn: 8011
+            peer-asn: 4247584777
+            peer-address: 10.117.23.51
+            my-address-pools:
+            - sc-sig-scp
+            - sc-sig-bsf
+            - sc-sig-dia1
+            - sc-sig-dia2
+            - sc-sig-wcdb1
+            - sc-sig-wcdb2
+            - sc-sig-sepp
+        -   my-asn: 8011
+            peer-asn: 4247584777
+            peer-address: 10.117.23.50
+            my-address-pools:
+            - sc-sig-scp
+            - sc-sig-bsf
+            - sc-sig-dia1
+            - sc-sig-dia2
+            - sc-sig-wcdb1
+            - sc-sig-wcdb2
+            - sc-sig-sepp
+        -   my-asn: 8010
+            peer-asn: 4247584777
+            peer-address: 2001:1b70:8230:700:0:0:0:2
+            my-address-pools:
+            - sc-oam
+        -   my-asn: 8010
+            peer-asn: 4247584777
+            peer-address: 2001:1b70:8230:700:0:0:0:3
+            my-address-pools:
+            - sc-oam
+        -   my-asn: 8011
+            peer-asn: 4247584777
+            peer-address: 2001:1b70:8230:800:0:0:0:2
+            my-address-pools:
+            - sc-sig-scp
+            - sc-sig-bsf
+            - sc-sig-dia1
+            - sc-sig-dia2
+            - sc-sig-wcdb1
+            - sc-sig-wcdb2
+            - sc-sig-sepp
+        -   my-asn: 8011
+            peer-asn: 4247584777
+            peer-address: 2001:1b70:8230:800:0:0:0:3
+            my-address-pools:
+            - sc-sig-scp
+            - sc-sig-bsf
+            - sc-sig-dia1
+            - sc-sig-dia2
+            - sc-sig-wcdb1
+            - sc-sig-wcdb2
+            - sc-sig-sepp
+  - name: pm
+    spec:
+      alertmanager:
+        resources:
+          limits:
+            cpu: 100m
+            memory: 200Mi
+          requests:
+            cpu: 10m
+            memory: 100Mi
+        ingress:
+          enable: "false"
+          hostname: "alertmanager.eccd.local"
+          tls:
+            cert: |
+            key: |
+      node_exporter:
+        default_collectors_disabled: "true"
+        resources:
+          limits:
+            cpu: 400m
+            memory: 500Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+      kube_state_metrics:
+        resources:
+          limits:
+            cpu: 100m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 256M
+      victoria_metrics:
+        deploy_in_workers: true
+        collect_only_ccd_namespace_metrics: False
+        vmselect:
+          ha_enabled: "false"
+          resources:
+            limits:
+              cpu: "1"
+              memory: 1Gi
+            requests:
+              cpu: 250m
+              memory: 256Mi
+          ingress:
+            enable: "true"
+            hostname: "vmselect.eccd.local"
+            tls:
+              cert: |
+              key: |
+        vminsert:
+          ha_enabled: "false"
+          resources:
+            limits:
+              cpu: "1"
+              memory: 2048Mi
+            requests:
+              cpu: 250m
+              memory: 256Mi
+        vmstorage:
+          ha_enabled: "false"
+          resources:
+            limits:
+              cpu: "2"
+              memory: 4Gi
+            requests:
+              cpu: 250m
+              memory: 256Mi
+          volume:
+            size: 8Gi
+            storage_class: csi-cinder-sc-delete
+          retention_time: 15d
+        vmagent:
+          ha_enabled: "false"
+          scrape_interval: 30s
+          maxscrape_size: 128MB
+          maxdisk_size: 5GB
+          resources:
+            limits:
+              cpu: "1"
+              memory: 1Gi
+            requests:
+              cpu: 250m
+              memory: 256Mi
+        vmalert:
+          ha_enabled: "false"
+          resources:
+            limits:
+              cpu: "1"
+              memory: 1Gi
+            requests:
+              cpu: 250m
+              memory: 256Mi
+
+  - name: openstack-cloud-controller-manager
+    spec:
+      timeout: 50h
+  - name: openstack-cinder
+    spec:
+      storage_classes:
+      - name: csi-cinder-sc-delete
+        spec:
+          reclaim_policy: Delete
+          default: true
+          cinder_availability_zone: "nova"
+          cinder_volume_type: "tripleo"
+      - name: network-block
+        default: true
+        spec:
+          reclaim_policy: Delete
+          default: true
+          cinder_availability_zone: "nova"
+          cinder_volume_type: "tripleo"
+      - name: csi-cinder-sc-retain
+        spec:
+          reclaim_policy: Retain
+      openstack_hosts:
+      - http://10.221.146.27
+      openstack_ports:
+      - 5000 # identity
+      - 8774 # compute
+      - 8776 # block storage
+      - 9696 # network
+  - name: ccd-licensing
+    spec:
+      storage_class: csi-cinder-sc-delete
+      db_ha_disabled: true
+      ccd_licensing_lm_db_migration_cpu_req: "100m"
+      ccd_app_sys_info:
+        nels:
+          host_ip: 10.155.142.69
+          host_name: nelsaasvnf2.nels.ericsson.com
+          port: 9099
+  - name: subport_controller_manager
+    spec: {}
+

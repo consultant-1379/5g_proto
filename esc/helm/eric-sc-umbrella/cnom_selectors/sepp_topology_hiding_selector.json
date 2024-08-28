@@ -1,0 +1,119 @@
+{
+  "id": "sepp_th_selector_config",
+  "sourceType": "prometheus",
+  "generalSelectors": [
+    {
+      "selectorId": "groupSelector",
+      "type": "local",
+      "label": "TH group",
+      "placeholder": "Select a Topology Hiding metrics group",
+      "useForLineChartTitle": true,
+      "values": [
+        {
+          "name": "1. IP Address Hiding",
+          "value": "ip_address_hiding"
+        },
+        {
+          "name": "2. FQDN Mapping",
+          "value": "fqdn_mapping"
+        },
+        {
+          "name": "3. FQDN Scrambling",
+          "value": "fqdn_scrambling"
+        }
+      ]
+    },
+    {
+      "selectorId": "rp",
+      "type": "remote",
+      "label": "Roaming Partner",
+      "placeholder": "Select a roaming partner",
+      "multi": true,
+      "selectAllItem": true,
+      "value": "roaming_partner"
+    },
+    {
+      "selectorId": "encryptionId",
+      "type": "remote",
+      "label": "Encryption-Id",
+      "placeholder": "Select an Encryption-Id",
+      "multi": true,
+      "map": { "groupSelector": "fqdn_scrambling" },
+      "selectAllItem": true,
+      "value": "encryption_id"
+    }
+  ],
+  "metricSelector": {
+    "label": "KPI",
+    "placeholder": "Select a KPI",
+    "multi": true,
+    "selectAllItem": true,
+    "metrics": [
+      {
+        "map": { "groupSelector": "ip_address_hiding" },
+        "values": [
+          {"name": "sepp_ip_address_hiding_discovery"},
+          {"name": "sepp_ip_address_hiding_discovery_fqdn_missing"},
+          {"name": "sepp_ip_address_hiding_notify"},
+          {"name": "sepp_ip_address_hiding_notify_fqdn_missing"}
+        ]
+      },
+      {
+        "map": { "groupSelector": "fqdn_mapping" },
+        "values": [
+          {"name": "sepp_fqdn_mapping_map_success"},
+          {"name": "sepp_fqdn_mapping_demap_success"},
+          {"name": "sepp_fqdn_mapping_failure"},
+          {"name": "sepp_fqdn_mapping_unmodified"},
+          {"name": "sepp_fqdn_mapping_req_map_success"},
+          {"name": "sepp_fqdn_mapping_resp_map_success"},
+          {"name": "sepp_fqdn_mapping_req_demap_success"},
+          {"name": "sepp_fqdn_mapping_resp_demap_success"},
+          {"name": "sepp_fqdn_mapping_req_demap_failure"},
+          {"name": "sepp_fqdn_mapping_resp_demap_failure"},
+          {"name": "sepp_fqdn_mapping_req_map_failure"},
+          {"name": "sepp_fqdn_mapping_resp_map_failure"},
+          {"name": "sepp_fqdn_mapping_req_forwarded_unmodified"},
+          {"name": "sepp_fqdn_mapping_resp_forwarded_unmodified"}
+        ]
+      },
+      {
+        "map": { "groupSelector": "fqdn_scrambling" },
+        "values": [
+          {"name": "sepp_fqdn_scrambling_scramble_success"},
+          {"name": "sepp_fqdn_scrambling_descramble_success"},
+          {"name": "sepp_fqdn_scrambling_failure"},
+          {"name": "sepp_fqdn_scrambling_unmodified"},
+          {"name": "sepp_fqdn_scrambling_req_scramble_success"},
+          {"name": "sepp_fqdn_scrambling_req_descramble_success"},
+          {"name": "sepp_fqdn_scrambling_resp_scramble_success"},
+          {"name": "sepp_fqdn_scrambling_resp_descramble_success"},
+          {"name": "sepp_fqdn_scrambling_req_scramble_invalid_fqdn"},
+          {"name": "sepp_fqdn_scrambling_req_descramble_invalid_fqdn"},
+          {"name": "sepp_fqdn_scrambling_resp_scramble_invalid_fqdn"},
+          {"name": "sepp_fqdn_scrambling_resp_descramble_invalid_fqdn"},
+          {"name": "sepp_fqdn_scrambling_req_scramble_encryption_id_not_found"},
+          {"name": "sepp_fqdn_scrambling_req_descramble_encryption_id_not_found"},
+          {"name": "sepp_fqdn_scrambling_resp_scramble_encryption_id_not_found"},
+          {"name": "sepp_fqdn_scrambling_resp_descramble_encryption_id_not_found"},
+          {"name": "sepp_fqdn_scrambling_req_scramble_incorrect_encryption_id"},
+          {"name": "sepp_fqdn_scrambling_req_descramble_incorrect_encryption_id"},
+          {"name": "sepp_fqdn_scrambling_resp_scramble_incorrect_encryption_id"},
+          {"name": "sepp_fqdn_scrambling_resp_descramble_incorrect_encryption_id"},
+          {"name": "sepp_fqdn_scrambling_req_forwarded_unmodified_fqdn"},
+          {"name": "sepp_fqdn_scrambling_resp_forwarded_unmodified_fqdn"},
+          {"name": "sepp_fqdn_scrambling_req_forwarded_unmodified_ip"},
+          {"name": "sepp_fqdn_scrambling_resp_forwarded_unmodified_ip"}
+        ]
+      }
+    ]
+  },
+  "unit": {
+    "targetSelector": "groupSelector",
+    "map": {
+      "ip_address_hiding": " ",
+      "fqdn_mapping": " ",
+      "fqdn_scrambling": " "
+    }
+  }
+}

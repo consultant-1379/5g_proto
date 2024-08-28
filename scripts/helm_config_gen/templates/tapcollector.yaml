@@ -1,0 +1,14 @@
+eric-scp:
+  tapcollector:
+    worker:
+      enabled: true
+
+eric-sepp:
+  tapcollector:
+    worker:
+      enabled: true
+
+eric-bsf:
+  tapcollector:
+    worker:
+      enabled: true

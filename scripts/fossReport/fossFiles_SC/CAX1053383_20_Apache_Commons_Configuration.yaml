@@ -1,0 +1,42 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2023-10-13 09:05
+FOSS:
+    # Available in Bazaar
+    FOSSName: Apache Commons Configuration 
+    # Available in Bazaar
+    FOSSVersion: 2.9.0
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/apache/commons-configuration/archive/refs/tags/rel/commons-configuration-{{FOSSVersion}}.tar.gz 
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 20/CAX1053383 
+    # Not Available in Bazaar
+    Primary: N
+    # Available in Bazaar
+    STAKOCode: General Use
+    # Available in Bazaar
+    STAKOReason: ()
+    # Not Available in Bazaar
+    FunctionalityUsedInTheEricssonProduct: 'Commons Configuration provides a generic configuration interface which enables a Java application to read configuration data from a variety of sources. '
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: Apache License 2.0 
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0 
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'org.apache.commons:commons-configuration2:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ZARISAR Aristeidis Sarras

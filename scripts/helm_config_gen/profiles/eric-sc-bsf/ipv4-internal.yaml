@@ -1,0 +1,6 @@
+# bsf ipv4 internal related parameters
+
+eric-stm-diameter:
+  initialConfig:
+    dsl:
+      enableIPv6: false

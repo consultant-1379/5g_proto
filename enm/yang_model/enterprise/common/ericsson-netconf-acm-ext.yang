@@ -1,0 +1,99 @@
+module ericsson-netconf-acm-ext {
+	yang-version 1.1;
+	namespace urn:rdns:com:ericsson:oammodel:ericsson-netconf-acm-ext;
+	prefix nacmxe;
+	
+	import ericsson-yang-extensions {
+		prefix yexte;
+	}
+
+  	import ietf-netconf-acm {
+    	prefix nacm;
+  	}
+  	
+  	organization "Ericsson AB";
+	contact "Ericsson first line support via email.";
+	description 
+		"The module extends and deviates ietf-netcon-acm.
+		
+		Copyright (c) 2016 Ericsson AB. All rights reserved.";
+
+	revision "2016-06-13" {
+	    description "First version
+	    
+	    ";
+		yexte:version 1;
+		yexte:release 0;
+		yexte:correction 0;
+	}
+	
+	
+	deviation /nacm:nacm/nacm:enable-nacm {
+		description
+			"NACM shall always be enabled.
+			The user is not allowed to change it.";
+
+		deviate replace {
+			config false;
+		}
+	}
+	
+	
+	/* Defaults are set to deny. In general it is cleaner to build groups of 
+	 * permissions than denials or a mix of them. Contradicting denials in different groups
+	 * could harm the additive concept of role-based-access-control and the 
+	 * ordering of groups (at external user management) will start to matter 
+	 * as order of rules is respected.
+	 */
+	
+	deviation /nacm:nacm/nacm:read-default {
+		description
+			"Default read permission is deny. Define permissions for allowed operations.
+			The user is not allowed to change it.";
+
+		deviate replace {
+			config false;
+		}
+		deviate replace {
+			default "deny";
+		}
+	}
+	
+	deviation /nacm:nacm/nacm:write-default {
+		description
+			"Default write permission is deny. Define permissions for allowed operations.
+			The user is not allowed to change it.";
+			
+		deviate replace {
+			config false;
+		}
+	}	
+	
+	deviation /nacm:nacm/nacm:exec-default {
+		description
+			"Default execute permission is deny. Define permissions for allowed operations.
+			The user is not allowed to change it.";
+			
+		deviate replace {
+			config false;
+		}
+		deviate replace {
+			default "deny";
+		}
+	}
+
+	/* The possible use of multiple authentication-methods qualifies 
+	 * external-groups more secure as groups are stored in user records.
+	 * Option for NACM local groups is kept. 
+	 */ 
+	
+	deviation /nacm:nacm/nacm:enable-external-groups {
+		description
+			"External groups are always allowed.
+			The user is not allowed to change it.";
+			
+		deviate replace {
+			config false;
+		}
+	}
+}

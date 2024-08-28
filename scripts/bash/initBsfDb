@@ -1,0 +1,143 @@
+#!/bin/bash -x
+
+## incase of an IPv6 cluster select the LB instead of the k8s worker IP
+#IPV6_NODE=`kubectl get configmap/calico-config -o jsonpath='{.data.cni_network_config}' -n kube-system | grep -v CNI_MTU | jq -r '.plugins[0].ipam.assign_ipv6' `
+#sleep 10
+#IPV6_NODE=`kubectl get configmap/calico-config -o jsonpath='{.data.cni_network_config}' -n kube-system | grep -v CNI_MTU | jq -r '.plugins[0].ipam.assign_ipv6' `
+#sleep 10
+#IPV6_NODE=`kubectl get configmap/calico-config -o jsonpath='{.data.cni_network_config}' -n kube-system | grep -v CNI_MTU | jq -r '.plugins[0].ipam.assign_ipv6' `
+#sleep 10
+#
+#
+#if [ $IPV6_NODE == "true" ];
+#then
+#    echo "The node is IPv6, fetch ipaddress and port from loadbalancer" 
+#    export CMM_IP=$(kubectl get svc --namespace $NAMESPACE eric-cm-yang-provider-ipv6 -o jsonpath="{.status.loadBalancer.ingress[0].ip}")
+#    export CMM_PORT=$(kubectl get svc --namespace $NAMESPACE eric-cm-yang-provider-ipv6 -o jsonpath="{.spec.ports[0].port}")
+#else
+#    echo "The node is not ipv6"
+#    export CMM_IP=$(kubectl get nodes --kubeconfig=$KUBECONFIG --namespace $NAMESPACE -l node-role.kubernetes.io/node -o jsonpath="{.items[0].status.addresses[0].address}")
+#    export CMM_PORT=$(kubectl get --kubeconfig=$KUBECONFIG --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-cm-yang-provider)
+#fi; 
+
+#export CMM_IP=$(kubectl get nodes --kubeconfig=$KUBECONFIG --namespace $NAMESPACE -l node-role.kubernetes.io/node -o jsonpath="{.items[0].status.addresses[0].address}")
+#export CMM_PORT=$(kubectl get --kubeconfig=$KUBECONFIG --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services eric-cm-yang-provider)
+
+export SUFFIXES="0 -ipv4 -ipv6";
+echo $SUFFIXES;
+
+##################
+# Extract CMM_IP #
+##################
+export SVC_BASE_NAME="eric-cm-yang-provider";
+
+for SUFFIX in $SUFFIXES;
+do
+    if [ "$SUFFIX" == "0" ];
+    then
+        export SUFFIX="";
+    fi;
+
+    export VSUF=$(echo $SUFFIX | tr 'a-z,-' 'A-Z,_' );
+    export SVC_NAME="${SVC_BASE_NAME}${SUFFIX}";
+    export SVC_AVAIL=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE}`;
+
+    if [ "${SVC_AVAIL}" != "" ];
+    then
+        ################################
+        # Determining the Service Type #
+        ################################
+
+        export SVC_TYPE=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o 'jsonpath={.spec.type}'`;
+
+        if [ "${SVC_TYPE}" == "LoadBalancer" ];
+        then
+
+            export CMM_IP$VSUF=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o jsonpath='{.status.loadBalancer.ingress[*].ip}'`;
+            export CMM_PORT$VSUF=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"netconf\")].port}"`;
+
+            if [ "${CMM_IP}$VSUF" == "" ];
+            then
+                echo "LoadBalancer seems to be in state <Pending> due to port conflicts on 80 or 443. Falling back to combination of <NodeIP>:<NodePort>.";
+                export CMM_IP$VSUF=`kubectl get nodes --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -l '!node-roleEscTestPropertiesrnetes.io/master' -o jsonpath='{.items[0].status.addresses[?(@.type == "InternalIP" )].address}'`;
+                export CMM_PORT$VSUF=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"netconf\")].nodePort}"`;
+            fi;
+
+        elif [ "${SVC_TYPE}" == "NodePort" ];
+        then
+
+            export CMM_IP$VSUF=`kubectl get nodes --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -l '!node-roleEscTestPropertiesrnetes.io/master' -o jsonpath='{.items[0].status.addresses[?(@.type == "InternalIP" )].address}'`;
+            export CMM_PORT$VSUF=`kubectl get svc ${SVC_NAME} --kubeconfig ./EscTestProperties/${KUBE_HOST}.config --namespace ${NAMESPACE} -o jsonpath="{.spec.ports[?(@.name == \"netconf\")].nodePort}"`;
+
+        else
+
+                echo "Error: The service seems not to be accessible from outside the cluster."; exit 1;
+        fi;
+    fi;
+
+done;
+
+if [ "$IP_VERSION" == "6" ];
+then
+    export DEFAULTCONFIG="./Jenkins/PipeConfig/action_bsf_init_db.netconf";
+    export CMM_IP="${CMM_IP_IPV6}";
+    export CMM_PORT="${CMM_PORT_IPV6}";
+else
+    export DEFAULTCONFIG="./Jenkins/PipeConfig/action_bsf_init_db.netconf"
+    if [ ! -z ${CMM_IP_IPV4} ];
+    then
+            export CMM_IP="${CMM_IP_IPV4}";
+            export CMM_PORT="${CMM_PORT_IPV4}";
+    else
+
+            export CMM_IP="${CMM_IP}";
+            export CMM_PORT="${CMM_PORT}";
+    fi;
+fi;
+
+
+
+echo http://$CMM_IP:$CMM_PORT
+
+ssh-keygen -R [$CMM_IP]:$CMM_PORT
+
+sleep 3
+
+#################
+# Load Config ###
+#################
+
+pwd
+cat ./Jenkins/PipeConfig/action_bsf_init_db.netconf > tempConfig.netconf
+
+/usr/bin/expect <( cat << EOS
+
+exp_internal 0
+set timeout 120
+
+spawn ssh -t -p $CMM_PORT bsf-admin@$CMM_IP -s netconf
+
+expect {
+        "continue connecting (yes/no" {
+        send "yes\r"
+        expect "*Password: "
+        send "bsfbsf\r" }
+                                                                                                                                                                   
+        "*Password: " {
+        send "bsfbsf\r" }
+        }
+                                                                                                                                                                   
+sleep 10
+                                                                                                                                                                   
+expect "]]>]]>"
+                                                                                                                                                                   
+send [ exec cat tempConfig.netconf ]
+expect "]]>]]>"
+                                                                                                                                                                   
+send [ exec cat ./Jenkins/PipeConfig/close.netconf ]
+expect "]]>]]>"
+
+EOS
+)
+
+rm -rf tempConfig.netconf

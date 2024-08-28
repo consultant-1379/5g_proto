@@ -1,0 +1,23 @@
+{{- if and (eq (include "eric-sc-slf.tls" .) "true") (eq (include "eric-sc-slf.dcedsc.tls" .) "true") }}
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+  name: eric-sc-slf-dced-client-cert
+  labels:
+{{- include "eric-sc-slf.labels" . | indent 4 }}
+    app: {{ .Values.service.slf.name | quote }}
+  annotations:
+{{- include "eric-sc-slf.helm-annotations" . | indent 4 }}
+{{- include "eric-sc-slf.config-annotations" . | indent 4 }}
+spec:
+  kubernetes:
+    generatedSecretName: eric-sc-slf-dced-client-cert
+  certificate:
+    subject:
+      cn: root
+    issuer:
+      reference: eric-data-distributed-coordinator-ed-sc-ca
+    extendedKeyUsage:
+      tlsClientAuth: true
+      tlsServerAuth: false
+{{- end }}

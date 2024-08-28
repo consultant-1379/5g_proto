@@ -1,0 +1,19 @@
+a)Deploy kubernetes secret that contains username\passwords for ssh-sftp access:
+
+source createSecrets.sh
+
+b)Download and deploy the Helm chart:
+
+make deploy
+
+c) Configure the service via cm-mediator:
+
+configure.sh
+
+d) Access the service via SFTP:
+
+k port-forward eric-pm-bulk-reporter-6777c54664-22zz4 2222:22
+sftp -P 2222 admin1@localhost:/PerformanceManagementReportFiles
+
+# Get configuration
+curl  http://5g-bsf-echfari.marconi002.rnd.gic.ericsson.se/cmm/cm/api/v1.1/configurations/adp-gs-pm-br|jq

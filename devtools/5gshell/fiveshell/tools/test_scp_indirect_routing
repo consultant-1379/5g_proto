@@ -1,0 +1,337 @@
+#!/usr/bin/perl -w
+#
+# Test program for the SEPP POC
+#
+# Send CC CREATE requests with different target-apiRoot headers
+# to route to different clusters.
+#
+# This tool requires 8 chfsims in sepp-deployments (make deploy-chfsim-sepp)
+# and the sample_pod_config.netconf being loaded.
+#
+# Usage:
+#  -o              no colors
+#  -v              verbose mode: print curl requests and replies
+#  -w worker_name  worker service name, default is 'eric-scp-worker'
+#  -N node_ip
+#  -W worker port
+#  -C chfsim ports string with space-separated port numbers of the chfsim services
+#  -F fiveshellDir directory where fiveshell.py is stored
+#  -P              prompt after each request
+#
+# eedala, 2020-10-06
+
+use strict;
+use Getopt::Std;
+
+getopts("C:hF:N:oPvw:W:");
+$::opt_C = $::opt_C;
+$::opt_h = $::opt_h;
+$::opt_F = $::opt_F;
+$::opt_N = $::opt_N;
+$::opt_o = $::opt_o;
+$::opt_O = $::opt_O;
+$::opt_P = $::opt_P;
+$::opt_W = $::opt_W;
+$::opt_w = $::opt_w;
+
+if ($::opt_h) {
+print"
+Test program for SEPP POC
+
+Send CC CREATE requests with different target-apiRoot headers
+to route to different clusters.
+
+This tool requires 8 chfsims in scp-deployments (make deploy-chfsim-scp)
+and the sample_pod_config.netconf being loaded.
+
+Usage:
+ -o              no colors
+ -v              verbose mode: print curl requests and replies
+ -w worker_name  worker service name, default is 'eric-scp-worker'
+ -N node_ip
+ -W worker port
+ -C chfsim ports string with space-separated port numbers of the chfsim services
+ -F fiveshellDir directory where fiveshell.py is stored
+ -P              prompt after each request
+";
+exit;
+
+}
+
+
+$::opt_w ||= 'eric-scp-worker';
+my $worker_svc = $::opt_w;
+
+##------------------------------------------------------------------------
+## Colors!!
+if ($::opt_o)
+{
+  $::red     = "";
+  $::green   = "";
+  $::yellow  = "";
+  $::blue    = "";
+  $::magenta = "";
+  $::reset   = "";
+}
+else
+{
+  $::red     = "\e[31m";
+  $::green   = "\e[32m";
+  $::yellow  = "\e[33m";
+  $::blue    = "\e[34m";
+  $::magenta = "\e[35m";
+  $::reset   = "\e[0m";
+}
+
+$::yellow  = $::yellow;
+$::blue    = $::blue;
+$::magenta = $::magenta;
+
+##------------------------------------------------------------------------
+my $user = $ENV{"USER"};
+my $worker_port = $::opt_W || `kubectl get --namespace 5g-bsf-$user -o jsonpath="{.spec.ports[0].nodePort}" services $worker_svc`;
+my $worker_tls_port = $::opt_W || `kubectl get --namespace 5g-bsf-$user -o jsonpath="{.spec.ports[1].nodePort}" services $worker_svc`;
+#my $chfsim1_port = $::opt_C || `kubectl get --namespace 5g-bsf-$user -o jsonpath="{.spec.ports[0].nodePort}" services eric-chfsim-1`;
+my $chfsim_portlist = $::opt_C || `kubectl get --namespace 5g-bsf-$user -o jsonpath="{.items[*].spec.ports[0].nodePort}" services -l a=eric-chfsim`;
+$chfsim_portlist =~ s/[\[\],']//g;
+my @chfsim_ports = split(" ", $chfsim_portlist);
+my $node_ip = $::opt_N || `kubectl get nodes --namespace 5g-bsf-$user -o jsonpath="{.items[3].status.addresses[0].address}"`;
+my $pwd = `pwd`; chomp($pwd);
+my $fiveshell_dir = $::opt_F || $pwd . "/..";
+
+##------------------------------------------------------------------------
+# 
+sub cc_create
+{
+    my $targetApiRoot = shift;
+    my $vHost = shift;
+    my $test_case = shift;  # text for the error message on failure
+    my $expected_chf = shift;
+
+    my $envoy_domain = "$vHost.ericsson.se";
+    # Send CC-CREATE
+    my $createCmdCC = <<EOCCC;
+docker run --rm -v "$fiveshell_dir/tools:/data" curlnew -Ssv --stderr - -X POST -H "3gpp-Sbi-target-apiRoot:$targetApiRoot" --resolve $envoy_domain:$worker_port:$node_ip --http2-prior-knowledge  'http://$envoy_domain:$worker_port/nchf-convergedcharging/v1/chargingdata'
+EOCCC
+
+    print "$test_case\n$createCmdCC" if $::opt_v;
+
+    my $createCC = `$createCmdCC`;
+    print "$createCC" if $::opt_v;
+
+    if ($createCC !~ m/HTTP\/2 201/)  # CREATE failed
+    {
+      print $::red . "$test_case failed\n$::reset$createCmdCC\n$createCC\n";
+      exit 1;
+    }
+
+    # CREATE failed:
+    if ($createCC !~ m/location: (\S+)/)
+    {
+      print $::red . "$test_case failed: no 'location:'-header found in reply\n$::reset$createCmdCC\n$createCC\n";
+      exit 1;
+    }
+    # CREATE returned a location header. Good.
+    my $location = $1;
+
+    if ($createCC !~ m/$expected_chf/)
+    {
+      print $::red . "$test_case failed: expected $expected_chf to reply\n$::reset$createCmdCC\n$createCC\n";
+      exit 1;
+    }
+
+    print $::green . "$test_case OK   ". $::reset;
+    print "Location: $location\n";
+    $location =~ m|chargingdata/(.+)$|;
+    my $cdr = $1;
+
+    if ($::opt_P)
+    {
+      print "Press Enter to continue\n";
+      <STDIN>;
+    }
+    
+    return $cdr;
+}
+
+
+##------------------------------------------------------------------------
+# Test error cases
+# Returns the whole response
+sub cc_create_with_error
+{
+    my $targetApiRoot = shift;
+    my $vHost = shift;
+    my $expected_http_code = shift;
+    my $test_case = shift;  # text for the error message on failure
+    my $expected_chf = shift || "";
+    my $min_response_time_ms = shift || 0;
+  
+
+    my $envoy_domain = "$vHost.ericsson.se";
+    # Send CC-CREATE
+    my $createCmdCC = <<EOCCC;
+docker run --rm -v "$fiveshell_dir/tools:/data" curlnew -Ssv --stderr - -X POST -H "3gpp-Sbi-target-apiRoot:$targetApiRoot" --resolve $envoy_domain:$worker_port:$node_ip --http2-prior-knowledge  'http://$envoy_domain:$worker_port/nchf-convergedcharging/v1/chargingdata'
+EOCCC
+
+    print "CC CREATE\n$createCmdCC" if $::opt_v;
+
+    my $createCC = `$createCmdCC`;
+    print "$createCC" if $::opt_v;
+
+    if ($createCC !~ m/HTTP\/2 $expected_http_code/)  # Unexpected result code
+    {
+      print $::red . "Test case $test_case FAILED\n$::reset$createCmdCC\n$createCC\n";
+      exit 1;
+    }
+
+    # When we expect a successful CREATE, then check location header:
+    my $location = "";
+    if ($expected_http_code == 291)
+    {
+      if ($createCC !~ m/location: (\S+)/)
+      {
+        print $::red . "Test case $test_case FAILED: no 'location:'-header found in reply\n$::reset$createCmdCC\n$createCC\n";
+        exit 1;
+      }
+      # CREATE returned a location header. Good.
+      $location = $1;
+
+      if ($createCC !~ m/$expected_chf/)
+      {
+        print $::red . "Test case $test_case FAILED: expected $expected_chf to reply\n$::reset$createCmdCC\n$createCC\n";
+        exit 1;
+      }
+      print "Location: $location\n";
+    }
+
+    # Test min. response time (to see if the delay in chfsim took place)
+    if ($createCC =~ m/x-envoy-upstream-service-time: (\d+)/)
+    {
+      if ($1 < $min_response_time_ms)
+      {
+        print $::red . "Test case $test_case FAILED: upstream service time is $1 (min: $min_response_time_ms)$::reset\n$createCmdCC\n$createCC\n";
+        exit 1;
+      }
+    }
+
+    print $::green . "Test $test_case PASSED.   ". $::reset ."\n";
+
+    if ($::opt_P)
+    {
+      print "Press Enter to continue\n";
+      <STDIN>;
+    }
+
+    return $location;
+}
+
+
+##------------------------------------------------------------------------
+# Disable or Enable load mode in chfsim. Disturbances are only applied
+# when load-mode is off
+sub chfsim_load_mode
+{
+  my $mode = shift || "off";
+  
+  print "Disabling ChfSim load-mode\n";
+  my $path = "/admin/v1/load_test_mode/" . $mode;
+  all_chfsim_http_post($path);
+}
+
+
+##------------------------------------------------------------------------
+# Send a HTTP Post request to all chfsims
+sub all_chfsim_http_post
+{
+  my $path = shift;
+  
+  foreach (@chfsim_ports)
+  {
+    one_chfsim_http_post($path, $_);
+  }
+}
+
+
+##------------------------------------------------------------------------
+# Send a HTTP Post request to one chfsim (first one found)
+sub one_chfsim_http_post
+{
+  my $path = shift;
+  my $port = shift || $chfsim_ports[0];
+
+  print "Sending to chfsim at port $port  $path\n" if $::opt_v;
+  http_post("http://$node_ip:$port$path");
+}
+
+
+##------------------------------------------------------------------------
+# Send a HTTP Post request
+sub http_post
+{
+  my $url = shift;
+
+  # Use non-dockerized curl here because we don't need http/2 and it's
+  # much faster to start
+  my $cmd = <<EOCCMD;
+curl -Ssv --stderr - -X POST '$url'
+EOCCMD
+
+  print "http_post($url) -> $cmd\n" if $::opt_v;
+
+  my $result = `$cmd`;
+  print "$result\n" if $::opt_v;
+}
+
+
+##------------------------------------------------------------------------
+# Set a specified number of flexible disturbances in chfsim.
+# First delay 100 ms, then send 503
+sub chfsim_flexi_disturbance_delay_503
+{
+  my $num_dist = shift || 1;
+  for (my $i = 0; $i < $num_dist; $i++)
+  {
+    one_chfsim_http_post("/admin/v1/add_disturbance/delay-reject:100:503");
+  }
+}
+
+
+##------------------------------------------------------------------------
+
+# Strict routing for mnc-456-mcc-456 and chfsim-6, -7, -8
+cc_create("eric-chfsim-6-mnc-456-mcc-456", "scp", "Strict Routing", "chfsim-6");
+cc_create("eric-chfsim-7-mnc-456-mcc-456", "scp", "Strict Routing", "chfsim-7");
+cc_create("eric-chfsim-8-mnc-456-mcc-456", "scp", "Strict Routing", "chfsim-8");
+
+# Preferred Host routing for mnc-456-mcc-456 and any other chfsim:
+cc_create("eric-chfsim-3-mnc-456-mcc-456", "scp", "Preferred Host Routing", "chfsim-(1|2)");
+cc_create("eric-chfsim-5-mnc-456-mcc-456", "scp", "Preferred Host Routing", "chfsim-(1|2)");
+
+# Everything with mnc-123-mcc-123 is routed to the scp Of RP_A:
+#cc_create("eric-chfsim-1-mnc-123-mcc-123", "scp", "Round-Robin Routing", "chfsim-(1|2)");
+#cc_create("eric-chfsim-9-mnc-123-mcc-123", "scp", "Round-Robin Routing", "chfsim-(1|2)");
+
+# Negative tests:
+# Send to unknown vHost -> 404
+cc_create_with_error("eric-chfsim-1-mnc-123-mcc-123", "nonsense.scp", 404, "Unknown VHost (404)");
+# Send to OCC pool but that doesn't contain chfsim-9 -> 503
+cc_create_with_error("eric-chfsim-9-mnc-456-mcc-456", "scp", 503, "Unknown dest in occ pool (503)");
+
+# Failover cases:
+chfsim_load_mode("off");
+# Strict routing: no failover
+chfsim_flexi_disturbance_delay_503(1);
+cc_create_with_error("eric-chfsim-7-mnc-456-mcc-456", "scp", 201, "Strict-R. Flexi, no-failover", "chfsim-7", 100);
+# Preferred routing: with failover
+chfsim_flexi_disturbance_delay_503(1);
+cc_create_with_error("eric-chfsim-4-mnc-456-mcc-456", "scp", 201, "Preferred-R. Flexi, with failover", "chfsim-3", 100);
+# Round-robin routing: with failover
+#chfsim_flexi_disturbance_delay_503(1);
+#my $l = cc_create_with_error("eric-chfsim-1-mnc-123-mcc-123", "scp", 201, "Round-Robin Flexi, with failover", "chfsim-(1|2)", 100);
+
+#--------------------------
+
+print "All tests complete\n";
+
+

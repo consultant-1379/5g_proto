@@ -1,0 +1,122 @@
+{
+    "metadata": {
+        "serviceHelmChartName": "eric-slt-dsl",
+        "usedSchemaVersion": "1.0.0",
+        "fileVersion": "1.0.0",
+        "dateEdited": "2023-09-07"
+    },
+    "interfaceImpls": [
+        {
+            "id": "ADP.DSL",
+            "pod": "eric-slt-dsl",
+            "container": "dsl",
+            "provides": {
+                "netIf": [
+                    {
+                        "id": "IF.ADP.DSL.IPNS.V1",
+                        "description": "DSL IP Name Service interface INT.STL.DSL.IPNS",
+                        "specVer": "1.1.0",
+                        "type": "Proprietary",
+                        "setup": "direct",
+                        "scope": "clusterInternal",
+                        "maturity": "stable"
+                    },
+                    {
+                        "id": "IF.ADP.DSL.SERVICE.DIR.V1",
+                        "description": "DSL Service Directory interface INT.STL.DSL.SERVICE.DIR",
+                        "specVer": "1.1.0",
+                        "type": "Proprietary",
+                        "setup": "direct",
+                        "scope": "clusterInternal",
+                        "maturity": "stable"
+                    },
+                    {
+                        "id": "IF.ADP.DSL.CONFIG.V1",
+                        "description": "DSL Configuration interface INT.STL.DSL.CONFIG",
+                        "specVer": "1.1.0",
+                        "type": "Proprietary",
+                        "setup": "direct",
+                        "scope": "clusterInternal",
+                        "maturity": "stable"
+                    },
+                    {
+                        "id": "IF.ADP.DSL.DISTR.STORAGE.V1",
+                        "description": "DSL Distributed Storage interface INT.STL.DSL.DISTR.STORAGE",
+                        "specVer": "1.1.0",
+                        "type": "Proprietary",
+                        "setup": "direct",
+                        "scope": "clusterInternal",
+                        "maturity": "stable"
+                    },
+                    {
+                        "id": "IF.ADP.DSL.CLU.REST.V1",
+                        "description": "DSL Command Launch Unit interface INT.STL.DSL.CLU.REST",
+                        "specVer": "1.1.0",
+                        "type": "HttpJson",
+                        "setup": "direct",
+                        "scope": "clusterInternal",
+                        "maturity": "stable"
+                    },
+                    {
+                        "id": "IF.ADP.DSL.STAT.STREAMER.V1",
+                        "description": "DSL Statistics Streamer interface INT.STL.DSL.STAT.STREAMER",
+                        "specVer": "1.1.0",
+                        "type": "Proprietary",
+                        "setup": "direct",
+                        "scope": "clusterInternal",
+                        "maturity": "stable"
+                    },
+                    {
+                        "id": "IF.ADP.DSL.SHORT.ID.V1",
+                        "description": "DSL Short Identification interface INT.STL.DSL.SHORT.ID",
+                        "specVer": "1.1.0",
+                        "type": "Proprietary",
+                        "setup": "direct",
+                        "scope": "clusterInternal",
+                        "maturity": "stable"
+                    }
+                ],
+                "dataIf": [
+                    {
+                        "id": "IF.ADP.DSL.HELM_VALUES_SCHEMA.V1",
+                        "description": "Helm Values Model Schema",
+                        "specUri": "values.schema.json",
+                        "specVer": "1.0.0",
+                        "type": "HelmValues",
+                        "scope": "clusterExternal",
+                        "roles": [
+                            "definer"
+                        ]
+                    }
+                ]
+            },
+            "uses": {
+                "netIf": [
+                    {
+                        "id": "IF.ADP.PM.PROM.SCRAPING.V0",
+                        "specVer": "1.0.0",
+                        "duringPhases": [
+                            "runtime"
+                        ]
+                    },
+                    {
+                        "id": "IF.ADP.DSTC.TRDATA.JAEGER.THRIFT.HTTP.V1",
+                        "specVer": "1.0.0",
+                        "duringPhases": [
+                            "runtime"
+                        ]
+                    },
+                    {
+                        "id": "IF.ADP.DSTC.SAMPLING.JAEGER.PROBUF.GRPC.V2",
+                        "specVer": "2.0.0",
+                        "duringPhases": [
+                            "runtime"
+                        ]
+                    }
+                ],
+                "dataIf": []
+            }
+        }
+    ]
+}
+

@@ -1,0 +1,14 @@
+# Hello-Go
+
+service:
+  name: "###CHART_NAME###"
+
+spec:
+  replicas: "1"
+  image: "###IMAGE_NAME###"
+  tag: "###IMAGE_TAG###"
+  port: "80"
+
+vm:
+  hello-slogan: "Envoy test example fault inject"
+

@@ -1,0 +1,44 @@
+# k6 Load Test
+
+service:
+  tls:
+    enabled: false
+    ## secret names:
+    ## eric-influxdb-trusted-cert with ca-cert in data "ca-certs-SC.pem"
+    ## eric-influxdb-asymmetric-key-cert-secret with
+    ##   certificate in data "tls.crt"
+    ##   private key in data "tls.key"
+    useCr:
+      enabled: true
+      trustedCert: "sc-trusted-default-cas"
+      clientCert: "sc-influxdb-default-cert"
+      clientKey: "sc-influxdb-default-key"
+  name: "eric-influxdb"
+  port: "8086"
+
+imageCredentials:
+  registry:
+    url: "armdocker.rnd.ericsson.se"
+    pullSecret: "regcred"
+  repoPath: "proj-5g-bsf"
+  pullPolicy: Always
+
+persistentVolumeClaim:
+  requestStorage: 400Gi
+  storageClassName: "network-block"
+
+spec:
+  replicas: "1"
+  image:
+  tag: latest
+  port: "8086"
+  resources:
+    requests:
+      cpu: 1
+      memory: 2500Mi
+    limits:
+      cpu: 1800m
+      memory: 5000Mi
+      
+vm:
+  hello-slogan: "This is a HELM packaged Kubernetes POD saying hello to the world!"

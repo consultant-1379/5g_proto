@@ -1,0 +1,888 @@
+{
+    "namespace": "sc",
+    "dashboards": [
+        {
+            "_id": "sepp_overview",
+            "title": "SEPP Overview",
+            "order": 31,
+            "apps": [
+                "statusOverview"
+            ],
+            "dashboardTreeView": { "tree": [["SEPP"]] },
+            "tiles": [
+                {
+                    "xSize": 2,
+                    "ySize": 2,
+                    "widget": "sepp_kpi_mps"
+                },
+                {
+                    "xSize": 6,
+                    "ySize": 2,
+                    "widget": "sepp_mps_timeline"
+                },
+                {
+                    "xSize": 2,
+                    "ySize": 2,
+                    "widget": "builtin:alarm_summary_bar_chart"
+                },
+                {
+                    "xSize": 2,
+                    "ySize": 2,
+                    "widget": "sepp_kpi_success"
+                },
+                {
+                    "xSize": 6,
+                    "ySize": 2,
+                    "widget": "sepp_success_timeline"
+                },
+                {
+                    "xSize": 2,
+                    "ySize": 2,
+                    "widget": "sepp_cpu_percentage"
+                },
+                {
+                    "xSize": 10,
+                    "ySize": 2,
+                    "widget": "sc:pod_table"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_traffic",
+            "title": "SEPP Traffic View",
+            "order": 32,
+            "apps": [
+                "statusOverview"
+            ],
+            "dashboardTreeView": { "tree": [["SEPP"]] },
+            "tiles": [
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "sepp_traffic_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "sepp_traffic_success_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "sepp_rp_mps_timeline_detailed"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "sepp_mps_timeline_detailed"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "sepp_rp_mps_timeline_detailed_class4"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "sepp_mps_timeline_detailed_class4"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "sepp_rp_mps_timeline_detailed_class5"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "sepp_mps_timeline_detailed_class5"
+                },
+                {
+                    "xSize": 10,
+                    "ySize": 2,
+                    "widget": "selectable_sepp_traffic_counters"
+                },
+                {
+                    "xSize": 10,
+                    "ySize": 2,
+                    "variables": {
+                        "podListFilterProp": "metadata.name",
+                        "podListFilterRegex": "^eric-sepp-|^eric-sc-"
+                    },
+                    "widget": "sc:pod_table"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_topology_hiding",
+            "title": "SEPP Topology Hiding View",
+            "order": 33,
+            "apps": [
+                "statusOverview"
+            ],
+            "dashboardTreeView": { "tree": [["SEPP"]] },
+            "tiles": [
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "sepp_ip_hiding_disc_mps_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "sepp_ip_hiding_notify_mps_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "sepp_ip_hiding_disc_fqdn_missing_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "sepp_ip_hiding_notify_fqdn_missing_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "sepp_fqdn_mapping_map_success_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "sepp_fqdn_mapping_demap_success_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "sepp_fqdn_mapping_failure_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "sepp_fqdn_mapping_unmodified_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "sepp_fqdn_scrambling_scramble_success_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "sepp_fqdn_scrambling_descramble_success_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "sepp_fqdn_scrambling_failure_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "sepp_fqdn_scrambling_unmodified_timeline"
+                },
+                {
+                    "xSize": 10,
+                    "ySize": 2,
+                    "widget": "selectable_th_counters"
+                },
+                {
+                    "xSize": 10,
+                    "ySize": 2,
+                    "variables": {
+                        "podListFilterProp": "metadata.name",
+                        "podListFilterRegex": "^eric-sepp-|^eric-sc-"
+                    },
+                    "widget": "sc:pod_table"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_system",
+            "title": "SEPP System View",
+            "order": 39,
+            "apps": [
+                "statusOverview"
+            ],
+            "dashboardTreeView": { "tree": [["SEPP"]] },
+            "tiles": [
+                {
+                    "xSize": 2,
+                    "ySize": 2,
+                    "widget": "sepp_system_kpi"
+                },
+                {
+                    "xSize": 8,
+                    "ySize": 2,
+                    "widget": "sepp_cpu_percentage"
+                },
+                {
+                    "xSize": 2,
+                    "ySize": 2,
+                    "widget": "sepp_worker_number"
+                },
+                {
+                    "xSize": 8,
+                    "ySize": 2,
+                    "widget": "sepp_cpu"
+                },
+                {
+                    "xSize": 2,
+                    "ySize": 2,
+                    "widget": "builtin:alarm_summary_bar_chart"
+                },
+                {
+                    "xSize": 8,
+                    "ySize": 2,
+                    "widget": "sepp_memory"
+                },
+                {
+                    "xSize": 10,
+                    "ySize": 2,
+                    "widget": "selectable_system_counters"
+                },
+                {
+                    "xSize": 10,
+                    "ySize": 2,
+                    "widget": "sc:pod_table"
+                }
+            ]
+        }
+    ],
+    "widgets": [
+        {
+            "_id": "sepp_kpi_mps",
+            "widgetType": "kpi",
+            "title": "KPIs - MPS",
+            "sources": [
+                {
+                    "heading": "Ingress Traffic",
+                    "source": "sepp_ingress_mps"
+                },
+                {
+                    "heading": "Egress Traffic",
+                    "source": "sepp_egress_mps"
+                },
+                {
+                    "heading": "SEPP NRF Discovery Traffic",
+                    "source": "sepp_nrf_discovery_mps"
+                },
+                {
+                    "heading": "Licensed Traffic",
+                    "source": "sepp_licensed_traffic"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_kpi_success",
+            "widgetType": "kpi",
+            "title": "KPIs - Success Rate",
+            "sources": [
+                {
+                    "heading": "Ingress Request Success Rate",
+                    "source": "sepp_ingress_success"
+                },
+                {
+                    "heading": "Egress Request Success Rate",
+                    "source": "sepp_egress_success"
+                },
+                {
+                    "heading": "SEPP NRF Discovery Request Success Rate",
+                    "source": "sepp_nrf_discovery_success"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_system_kpi",
+            "widgetType": "kpi",
+            "title": "SYSTEM KPIs",
+            "sources": [
+                {
+                    "source": "sepp_load"
+                },
+                {
+                    "source": "sepp_manager_cpu"
+                },
+                {
+                    "source": "sepp_worker_cpu_avg"
+                },
+                {
+                    "source": "sepp_manager_memory"
+                },
+                {
+                    "source": "sepp_worker_memory_avg"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_success_timeline",
+            "widgetType": "timeline",
+            "title": "Timeline [%] - Success Rate",
+            "sources": [
+                {
+                    "source": "sepp_ingress_success"
+                },
+                {
+                    "source": "sepp_egress_success"
+                },
+                {
+                    "source": "sepp_nrf_discovery_success"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_traffic_timeline",
+            "widgetType": "timeline",
+            "title": "Timeline [MPS]",
+            "sources": [
+                {
+                    "heading": "Ingress Traffic",
+                    "source": "sepp_ingress_mps"
+                },
+                {
+                    "heading": "Egress Traffic",
+                    "source": "sepp_egress_mps"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_traffic_success_timeline",
+            "widgetType": "timeline",
+            "title": "Timeline [%] - Traffic Success Rate",
+            "sources": [
+                {
+                    "source": "sepp_ingress_success"
+                },
+                {
+                    "source": "sepp_egress_success"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_mps_timeline",
+            "widgetType": "timeline",
+            "title": "Timeline [MPS]",
+            "sources": [
+                {
+                    "source": "sepp_ingress_mps"
+                },
+                {
+                    "source": "sepp_egress_mps"
+                },
+                {
+                    "source": "sepp_nrf_discovery_mps"
+                },
+                {
+                    "source": "sepp_licensed_traffic"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_mps_timeline_detailed",
+            "widgetType": "timeline",
+            "title": "Timeline [MPS] - Pool Details (top)",
+            "sources": [
+                {
+                    "source": "sepp_egress_pool_mps"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_mps_timeline_detailed_class4",
+            "widgetType": "timeline",
+            "title": "Timeline [MPS] - Pool - Response 4xx (top)",
+            "sources": [
+                {
+                    "source": "sepp_egress_pool_class4"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_mps_timeline_detailed_class5",
+            "widgetType": "timeline",
+            "title": "Timeline [MPS] - Pool - Response 5xx (top)",
+            "sources": [
+                {
+                    "source": "sepp_egress_pool_class5"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_rp_mps_timeline_detailed",
+            "widgetType": "timeline",
+            "title": "Timeline [MPS] - RoamingPartner Details (top)",
+            "sources": [
+                {
+                    "source": "sepp_ingress_rp_mps"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_rp_mps_timeline_detailed_class4",
+            "widgetType": "timeline",
+            "title": "Timeline [MPS] - RoamingPartner - Response 4xx (top)",
+            "sources": [
+                {
+                    "source": "sepp_ingress_rp_class4"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_rp_mps_timeline_detailed_class5",
+            "widgetType": "timeline",
+            "title": "Timeline [MPS] - RoamingPartner - Response 5xx (top)",
+            "sources": [
+                {
+                    "source": "sepp_ingress_rp_class5"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_ip_hiding_disc_mps_timeline",
+            "widgetType": "timeline",
+            "title": "IP Address Hiding [MPS] - NF-Discovery - Success (top)",
+            "sources": [
+                {
+                    "source": "sepp_ip_hiding_disc"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_ip_hiding_disc_fqdn_missing_timeline",
+            "widgetType": "timeline",
+            "title": "IP Address Hiding [MPS] - NF-Discovery - FQDN Missing (top)",
+            "sources": [
+                {
+                    "source": "sepp_ip_hiding_disc_fqdn_missing"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_ip_hiding_notify_mps_timeline",
+            "widgetType": "timeline",
+            "title": "IP Address Hiding [MPS] - NF-Status-Notify - Success (top)",
+            "sources": [
+                {
+                    "source": "sepp_ip_hiding_notify"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_ip_hiding_notify_fqdn_missing_timeline",
+            "widgetType": "timeline",
+            "title": "IP Address Hiding [MPS] - NF-Status-Notify - FQDN Missing (top)",
+            "sources": [
+                {
+                    "source": "sepp_ip_hiding_notify_fqdn_missing"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_fqdn_mapping_map_success_timeline",
+            "widgetType": "timeline",
+            "title": "FQDN Mapping [MPS] - Successful Mappings (top)",
+            "sources": [
+                {
+                    "source": "sepp_fqdn_mapping_map_success"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_fqdn_mapping_demap_success_timeline",
+            "widgetType": "timeline",
+            "title": "FQDN Mapping [MPS] - Successful Demappings (top)",
+            "sources": [
+                {
+                    "source": "sepp_fqdn_mapping_demap_success"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_fqdn_mapping_failure_timeline",
+            "widgetType": "timeline",
+            "title": "FQDN Mapping [MPS] - Failures (top)",
+            "sources": [
+                {
+                    "source": "sepp_fqdn_mapping_failure"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_fqdn_mapping_unmodified_timeline",
+            "widgetType": "timeline",
+            "title": "FQDN Mapping [MPS] - Forwarded Unmodified (top)",
+            "sources": [
+                {
+                    "source": "sepp_fqdn_mapping_unmodified"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_fqdn_scrambling_scramble_success_timeline",
+            "widgetType": "timeline",
+            "title": "FQDN Scrambling [MPS] - Successful Scramblings (top)",
+            "sources": [
+                {
+                    "source": "sepp_fqdn_scrambling_scramble_success"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_fqdn_scrambling_descramble_success_timeline",
+            "widgetType": "timeline",
+            "title": "FQDN Scrambling [MPS] - Successful Descramblings (top)",
+            "sources": [
+                {
+                    "source": "sepp_fqdn_scrambling_descramble_success"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_fqdn_scrambling_failure_timeline",
+            "widgetType": "timeline",
+            "title": "FQDN Scrambling [MPS] - Failures (top)",
+            "sources": [
+                {
+                    "source": "sepp_fqdn_scrambling_failure"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_fqdn_scrambling_unmodified_timeline",
+            "widgetType": "timeline",
+            "title": "FQDN Scrambling [MPS] - Forwarded Unmodified (top)",
+            "sources": [
+                {
+                    "source": "sepp_fqdn_scrambling_unmodified"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_cpu",
+            "widgetType": "timeline",
+            "title": "Timeline [CPU millicores] - CPU Usage",
+            "sources": [
+                {
+                    "source": "sepp_manager_cpu"
+                },
+                {
+                    "source": "sepp_worker_cpu_avg"
+                },
+                {
+                    "source": "sepp_worker_cpu_max"
+                },
+                {
+                    "source": "sepp_worker_cpu_min"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_cpu_percentage",
+            "widgetType": "timeline",
+            "title": "Timeline [%] - SEPP Load",
+            "sources": [
+                {
+                    "source": "sepp_load"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_memory",
+            "widgetType": "timeline",
+            "title": "Timeline [MByte,MB]- Memory Usage per Container",
+            "sources": [
+                {
+                    "source": "sepp_manager_memory"
+                },
+                {
+                    "source": "sepp_worker_memory_avg"
+                },
+                {
+                    "source": "sepp_worker_memory_max"
+                },
+                {
+                    "source": "sepp_worker_memory_min"
+                }
+            ]
+        },
+        {
+            "_id": "sepp_worker_number",
+            "widgetType": "timeline",
+            "title": "Number of SEPP worker PODs",
+            "sources": [
+                {
+                    "source": "sepp_worker_pods"
+                }
+            ]
+        },
+        {
+            "_id": "selectable_sepp_traffic_counters",
+            "widgetType": "timeline",
+            "title": "Select metrics to display",
+            "selectionMechanism": { "selectorConfigId": "sepp_traffic_selector_config" },
+            "sources": []
+        },
+        {
+            "_id": "selectable_th_counters",
+            "widgetType": "timeline",
+            "title": "Select metrics to display",
+            "selectionMechanism": { "selectorConfigId": "sepp_th_selector_config" },
+            "sources": []
+        },
+        {
+            "_id": "selectable_system_counters",
+            "widgetType": "timeline",
+            "title": "Select metrics to display",
+            "selectionMechanism": { "selectorConfigId": "system_selector_config" },
+            "sources": []
+        }
+    ],
+    "sources": [
+        {
+            "_id": "sepp_ingress_mps",
+            "sourceType": "prometheus",
+            "query": "sepp_ingress_mps or vector(0)",
+            "label": "SEPP Ingress Requests [MPS]"
+        },
+        {
+            "_id": "sepp_licensed_traffic",
+            "sourceType": "prometheus",
+            "query": "sepp_licensed_traffic",
+            "label": "Licensed Traffic [MPS]"
+        },
+        {
+            "_id": "sepp_ingress_success",
+            "sourceType": "prometheus",
+            "query": "sepp_ingress_success",
+            "label": "SEPP Ingress [%]"
+        },
+        {
+            "_id": "sepp_egress_mps",
+            "sourceType": "prometheus",
+            "query": "sepp_egress_mps or vector(0)",
+            "label": "SEPP Egress Requests [MPS]"
+        },
+        {
+            "_id": "sepp_egress_pool_mps",
+            "sourceType": "prometheus",
+            "query": "topk(5,sepp_egress_pool_mps)",
+            "label": "Pool - ",
+            "splitByLabelName": "pool_name",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "sepp_egress_success",
+            "sourceType": "prometheus",
+            "query": "sepp_egress_success",
+            "label": "SEPP Egress [%]"
+        },
+        {
+            "_id": "sepp_egress_pool_class4",
+            "sourceType": "prometheus",
+            "query": "topk(5,sepp_egress_pool_class4)",
+            "label": "Pool - ",
+            "splitByLabelName": "pool_name",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "sepp_egress_pool_class5",
+            "sourceType": "prometheus",
+            "query": "topk(5,sepp_egress_pool_class5)",
+            "label": "Pool - ",
+            "splitByLabelName": "pool_name",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "sepp_ingress_rp_mps",
+            "sourceType": "prometheus",
+            "query": "topk(5,sepp_ingress_rp_mps)",
+            "label": "RP - ",
+            "splitByLabelName": "roaming_partner",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "sepp_ingress_rp_class4",
+            "sourceType": "prometheus",
+            "query": "topk(5,sepp_ingress_rp_class4)",
+            "label": "RP - ",
+            "splitByLabelName": "roaming_partner",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "sepp_ingress_rp_class5",
+            "sourceType": "prometheus",
+            "query": "topk(5,sepp_ingress_rp_class5)",
+            "label": "RP - ",
+            "splitByLabelName": "roaming_partner",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "sepp_nrf_discovery_mps",
+            "sourceType": "prometheus",
+            "query": "sepp_nrf_discovery_mps or vector(0)",
+            "label": "SEPP NRF Discovery Requests [MPS]"
+        },
+        {
+            "_id": "sepp_nrf_discovery_success",
+            "sourceType": "prometheus",
+            "query": "sepp_nrf_discovery_success",
+            "label": "SEPP NRF Discovery [%]"
+        },
+        {
+            "_id": "sepp_ip_hiding_disc",
+            "sourceType": "prometheus",
+            "query": "topk(5,sepp_ip_address_hiding_discovery)",
+            "label": "RP - ",
+            "splitByLabelName": "roaming_partner",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "sepp_ip_hiding_disc_fqdn_missing",
+            "sourceType": "prometheus",
+            "query": "topk(5,sepp_ip_address_hiding_discovery_fqdn_missing)",
+            "label": "RP - ",
+            "splitByLabelName": "roaming_partner",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "sepp_ip_hiding_notify",
+            "sourceType": "prometheus",
+            "query": "topk(5,sepp_ip_address_hiding_notify)",
+            "label": "RP - ",
+            "splitByLabelName": "roaming_partner",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "sepp_ip_hiding_notify_fqdn_missing",
+            "sourceType": "prometheus",
+            "query": "topk(5,sepp_ip_address_hiding_notify_fqdn_missing)",
+            "label": "RP - ",
+            "splitByLabelName": "roaming_partner",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "sepp_fqdn_mapping_map_success",
+            "sourceType": "prometheus",
+            "query": "topk(5,sepp_fqdn_mapping_map_success)",
+            "label": "RP - ",
+            "splitByLabelName": "roaming_partner",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "sepp_fqdn_mapping_demap_success",
+            "sourceType": "prometheus",
+            "query": "topk(5,sepp_fqdn_mapping_demap_success)",
+            "label": "RP - ",
+            "splitByLabelName": "roaming_partner",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "sepp_fqdn_mapping_failure",
+            "sourceType": "prometheus",
+            "query": "topk(5,sepp_fqdn_mapping_failure)",
+            "label": "RP - ",
+            "splitByLabelName": "roaming_partner",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "sepp_fqdn_mapping_unmodified",
+            "sourceType": "prometheus",
+            "query": "topk(5,sepp_fqdn_mapping_unmodified)",
+            "label": "RP - ",
+            "splitByLabelName": "roaming_partner",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "sepp_fqdn_scrambling_scramble_success",
+            "sourceType": "prometheus",
+            "query": "topk(5,sepp_fqdn_scrambling_scramble_success)",
+            "label": "RP - ",
+            "splitByLabelName": "roaming_partner",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "sepp_fqdn_scrambling_descramble_success",
+            "sourceType": "prometheus",
+            "query": "topk(5,sepp_fqdn_scrambling_descramble_success)",
+            "label": "RP - ",
+            "splitByLabelName": "roaming_partner",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "sepp_fqdn_scrambling_failure",
+            "sourceType": "prometheus",
+            "query": "topk(5,sepp_fqdn_scrambling_failure)",
+            "label": "RP - ",
+            "splitByLabelName": "roaming_partner",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "sepp_fqdn_scrambling_unmodified",
+            "sourceType": "prometheus",
+            "query": "topk(5,sepp_fqdn_scrambling_unmodified)",
+            "label": "RP - ",
+            "splitByLabelName": "roaming_partner",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "sepp_manager_cpu",
+            "sourceType": "prometheus",
+            "query": "sepp_manager_cpu or vector(0)",
+            "label": "SEPP Manager Load [CPU millicores]"
+        },
+        {
+            "_id": "sepp_worker_cpu_avg",
+            "sourceType": "prometheus",
+            "query": "sepp_worker_cpu_avg or vector(0)",
+            "label": "SEPP Worker Load (average) [CPU millicores]"
+        },
+        {
+            "_id": "sepp_worker_cpu_max",
+            "sourceType": "prometheus",
+            "query": "sepp_worker_cpu_max or vector(0)",
+            "label": "SEPP Worker Load (max) [CPU millicores]"
+        },
+        {
+            "_id": "sepp_worker_cpu_min",
+            "sourceType": "prometheus",
+            "query": "sepp_worker_cpu_min or vector(0)",
+            "label": "SEPP Worker Load (min) [CPU millicores]"
+        },
+        {
+            "_id": "sepp_manager_memory",
+            "sourceType": "prometheus",
+            "query": "sepp_manager_memory or vector(0)",
+            "label": "SEPP Manager Memory [MB]"
+        },
+        {
+            "_id": "sepp_worker_memory_avg",
+            "sourceType": "prometheus",
+            "query": "sepp_worker_memory_avg or vector(0)",
+            "label": "SEPP Worker Memory (average) [MB]"
+        },
+        {
+            "_id": "sepp_worker_memory_max",
+            "sourceType": "prometheus",
+            "query": "sepp_worker_memory_max or vector(0)",
+            "label": "SEPP Worker Memory (max) [MB]"
+        },
+        {
+            "_id": "sepp_worker_memory_min",
+            "sourceType": "prometheus",
+            "query": "sepp_worker_memory_min or vector(0)",
+            "label": "SEPP Worker Memory (min) [MB]"
+        },
+        {
+            "_id": "sepp_worker_pods",
+            "sourceType": "prometheus",
+            "query": "sepp_worker_pods or vector(0)",
+            "label": "SEPP Worker PODs"
+        },
+        {
+            "_id": "sepp_load",
+            "sourceType": "prometheus",
+            "query": "sepp_load_avg or vector(0)",
+            "label": "SEPP Load [%]"
+        }
+    ]
+}

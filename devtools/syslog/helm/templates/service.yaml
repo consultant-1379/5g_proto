@@ -1,0 +1,18 @@
+# Copyright 2020 5G ESC Challengers Team
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ template "eric-syslog.name" . }}
+  labels:
+    a: {{ template "eric-syslog.name" . }}
+spec:
+  type: NodePort
+  ports:
+  - name: syslog
+    protocol: TCP
+    port: {{ .Values.spec.port }} 
+    targetPort: {{ .Values.service.syslogPort }}
+  selector:
+    app: {{ .Values.service.name }}
+status:
+  loadBalancer: {}

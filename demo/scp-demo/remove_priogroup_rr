@@ -1,0 +1,7 @@
+
+config	
+no scp-function nf-instance scp_instance_1 nf-pool NfUdm_rr_pool priority-group NfUdm_rr_pg_prio1
+no scp-function nf-instance scp_instance_1 nf-pool NfUdm_rr_pool priority-group NfUdm_rr_pg_prio2
+commit
+exit
+exit

@@ -1,0 +1,36 @@
+{
+  "content": {
+    "section": [
+      {
+        "hello": {
+          "capabilities": {
+            "capability": [
+              "urn:ietf:params:netconf:base:1.0"
+            ]
+          }
+        }
+      },
+      {
+        "rpc": {
+          "edit-config": {
+            "target": {
+              "running": ""
+            },
+            "config": {
+              "pm": {
+                "job": [
+                  {
+                    "name": "scp_system_job",
+                    "type": "measurement-job",
+                    "requested-job-state": "active"
+                  }
+                ]
+              }
+            }
+          },
+          "@message-id": 0
+        }
+      }
+    ]
+  }
+}

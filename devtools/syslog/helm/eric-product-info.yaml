@@ -1,0 +1,11 @@
+productName: "eric-syslog"
+productNumber: "-" 
+productRevision: "-" 
+images: # info about thes image of eric-k6 pod's container
+  syslog: # container name
+    productName: "syslog"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se" # overrides the imageCredentials.registry.url from k6 values.yaml
+    repoPath: syslog_repoPath # overrides the imageCredentials.repoPath from k6 values.yaml
+    name: syslog_image_name
+    tag: syslog_image_tag

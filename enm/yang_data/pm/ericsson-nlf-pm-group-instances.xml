@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ericsson-nlf-pm-group-instances 0.1.0 -->
+<!-- modified: 2023-04-28 -->
+<!-- Copyright (c) 2023 Ericsson AB. All rights reserved.     -->
+<config xmlns="http://tail-f.com/ns/config/1.0">
+    <pm xmlns="urn:rdns:com:ericsson:oammodel:ericsson-pm">
+        <group>
+            <name>nlf_service</name>
+            <validity>true</validity>
+            <version>1.0.0</version>
+            <measurement-type>
+                <id>nlf_in_requests_nnlf_nfdiscovery_total</id>
+                <measurement-name>nlf_in_requests_nnlf_nfdiscovery_total</measurement-name>
+                <size>8</size>
+                <collection-method>cc</collection-method>
+                <description>Number of incoming requests on the internal nnlf_nfdiscovery interface</description>
+                <condition>Incremented: None Decremented: N/A</condition>
+                <aggregation>sum</aggregation>
+                <measurement-status>used</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>true</reset-at-gran-period>
+            </measurement-type>
+            <measurement-type>
+                <id>nlf_out_answers_nnlf_nfdiscovery_total</id>
+                <measurement-name>nlf_out_answers_nnlf_nfdiscovery_total</measurement-name>
+                <size>8</size>
+                <collection-method>cc</collection-method>
+                <description>Number of outgoing answers on the internal nnlf_nfdiscovery interface</description>
+                <condition>Incremented: None Decremented: N/A</condition>
+                <aggregation>sum</aggregation>
+                <measurement-status>used</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>true</reset-at-gran-period>
+            </measurement-type>
+        </group>
+        <group>
+            <name>nlf_system_metrics</name>
+            <description>Metrics to monitor the NLF system</description>
+            <validity>true</validity>
+            <version>1.0.0</version>
+            <measurement-type>
+                <id>nlf_cpu_usage</id>
+                <measurement-name>nlf_cpu_usage</measurement-name>
+                <size>8</size>
+                <collection-method>gauge</collection-method>
+                <description>CPU usage for nlf container</description>
+                <condition>CPU usage increased. CPU usage decreased.</condition>
+                <aggregation>avg</aggregation>
+                <measurement-status>used</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>false</reset-at-gran-period>
+            </measurement-type>
+            <measurement-type>
+                <id>nlf_cpu_load</id>
+                <measurement-name>nlf_cpu_load</measurement-name>
+                <size>8</size>
+                <collection-method>gauge</collection-method>
+                <description>NLF CPU load in percentage</description>
+                <condition>CPU load increased. CPU load decreased.</condition>
+                <aggregation>sum</aggregation>
+                <measurement-status>used</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>false</reset-at-gran-period>
+            </measurement-type>
+            <measurement-type>
+                <id>nlf_container_memory_working_set_bytes</id>
+                <measurement-name>nlf_container_memory_working_set_bytes</measurement-name>
+                <size>8</size>
+                <collection-method>gauge</collection-method>
+                <description>Memory usage per NLF container in bytes</description>
+                <condition>Memory usage increased. Memory usage decreased.</condition>
+                <aggregation>avg</aggregation>
+                <measurement-status>used</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>false</reset-at-gran-period>
+            </measurement-type>
+            <measurement-type>
+                <id>nlf_memory_usage</id>
+                <measurement-name>nlf_memory_usage</measurement-name>
+                <size>8</size>
+                <collection-method>gauge</collection-method>
+                <description>NLF memory usage in percentage</description>
+                <condition>Memory usage increased. Memory usage decreased.</condition>
+                <aggregation>sum</aggregation>
+                <measurement-status>used</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>false</reset-at-gran-period>
+            </measurement-type>
+        </group>
+        <group>
+            <name>nlf_nrf</name>
+            <description>Statistics regarding the connection between NLF and NRF</description>
+            <validity>true</validity>
+            <version>1.0.0</version>
+            <measurement-type>
+                <id>nlf_nrf_discovery_success_rate</id>
+                <measurement-name>nlf_nrf_discovery_success_rate</measurement-name>
+                <size>8</size>
+                <collection-method>gauge</collection-method>
+                <description>Success rate of HTTP transaction requests initiated by the NLF towards NRF</description>
+                <condition>Incremented: None Decremented: N/A</condition>
+                <aggregation>avg</aggregation>
+                <measurement-status>used</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>false</reset-at-gran-period>
+            </measurement-type>
+            <measurement-type>
+                <id>nlf_nrf_out_requests_total</id>
+                <measurement-name>nlf_nrf_out_requests_total</measurement-name>
+                <size>8</size>
+                <collection-method>cc</collection-method>
+                <description>Number of outgoing requests on the Nnrf interface</description>
+                <condition>Incremented: None Decremented: N/A</condition>
+                <aggregation>sum</aggregation>
+                <measurement-status>used</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>true</reset-at-gran-period>
+            </measurement-type>
+            <measurement-type>
+                <id>nlf_nrf_in_answers_total</id>
+                <measurement-name>nlf_nrf_in_answers_total</measurement-name>
+                <size>8</size>
+                <collection-method>cc</collection-method>
+                <description>Number of incoming answers on the Nnrf interface</description>
+                <condition>Incremented: None Decremented: N/A</condition>
+                <aggregation>sum</aggregation>
+                <measurement-status>used</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>true</reset-at-gran-period>
+            </measurement-type>
+            <measurement-type>
+                <id>nlf_nrf_failovers_total</id>
+                <measurement-name>nlf_nrf_failovers_total</measurement-name>
+                <size>8</size>
+                <collection-method>cc</collection-method>
+                <description>Number of failovers between NRF instances within an NRF group</description>
+                <condition>Incremented: None Decremented: N/A</condition>
+                <aggregation>sum</aggregation>
+                <measurement-status>used</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>true</reset-at-gran-period>
+            </measurement-type>
+            <measurement-type>
+                <id>nlf_nrf_endpoint_failovers_total</id>
+                <measurement-name>nlf_nrf_endpoint_failovers_total</measurement-name>
+                <size>8</size>
+                <collection-method>cc</collection-method>
+                <description>Number of failovers between NRF internal endpoints</description>
+                <condition>Incremented: None Decremented: N/A</condition>
+                <aggregation>sum</aggregation>
+                <measurement-status>used</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>true</reset-at-gran-period>
+            </measurement-type>
+        </group>
+    </pm>
+</config>

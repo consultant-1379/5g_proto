@@ -1,0 +1,20 @@
+{{- if eq (include "eric-sc-monitor.tls.enabled" .) "true" }}
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+  name: {{ template "eric-sc-monitor.name" . }}-external-server-certificate
+  annotations:
+{{- include "eric-sc-monitor.helm-annotations" . | indent 4 }}
+{{- include "eric-sc-monitor.config-annotations" . | indent 4 }}
+  labels:
+{{- include "eric-sc-monitor.labels" . | indent 4 }}
+spec:
+  kubernetes:
+    generatedSecretName: {{ template "eric-sc-monitor.name" . }}-tls-external-server-certificate
+  certificate:
+    subject:
+      cn: {{ .Values.service.name }}
+    extendedKeyUsage:
+      tlsClientAuth: false
+      tlsServerAuth: true
+{{- end }}

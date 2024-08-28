@@ -1,0 +1,140 @@
+# MONITOR
+
+# global:
+  # networkPolicy:
+    # enabled: true
+  # pullSecret: ""
+  # registry:
+    # url: "armdocker.rnd.ericsson.se"
+    # imagePullPolicy: IfNotPresent
+
+networkPolicy:
+  enabled: true
+
+seccompProfile:
+  type: ""
+  localhostProfile: ""
+  monitor:
+    type: ""
+    localhostProfile: ""
+
+imageCredentials:
+  # pullSecret:
+  monitor:
+    repoPath: "proj-5g-bsf" #"proj-ldc/common_base_os"
+    registry:
+      url: # overrides global registry url
+      imagePullPolicy: # overrides global image pull policy
+
+service:
+  name: "eric-sc-monitor"
+  internal:
+    port: 8080
+  external:
+    port: 80
+    tlsPort: 443
+
+updateStrategy:
+  type: RollingUpdate
+
+# monitor container webserver configuration
+monitor:
+  credentials:
+    secret: eric-sc-monitor-secret
+  internal:
+    port: 8080
+  external:
+    port: 8081
+
+replicaCount: 0
+
+tolerations:
+  monitor:
+    - key: node.kubernetes.io/not-ready
+      operator: Exists
+      effect: NoExecute
+      tolerationSeconds: 0
+    - key: node.kubernetes.io/unreachable
+      operator: Exists
+      effect: NoExecute
+      tolerationSeconds: 0
+
+resources:
+  monitor:
+    requests:
+      memory: 100Mi
+      cpu: 100m
+      # ephemeral-storage: ""
+    limits:
+      memory: 256Mi
+      cpu: 200m
+      # ephemeral-storage: ""
+  # Logshipper configured for an average throughput of 100logs/sec (covering the case of debug logs)
+  # Refer to the "Sidecar dimensioning recommendations" section of LogShipper
+  logshipper:
+    requests:
+      memory: "20Mi"
+      cpu: "33m"
+      ephemeral-storage:
+    limits:
+      memory: "30Mi"
+      cpu: "40m"
+      ephemeral-storage:
+
+jvm:
+  parameters:
+    monitor: "-server -XX:+ErrorFileToStderr -XX:+UseG1GC -XX:MaxRAMPercentage=80 -Dlogback.configurationFile=/monitor/classes/logback.xml -Dvertx.cacheDirBase=/vertx/vertx-cache -Dio.netty.native.workdir=/vertx"
+
+annotations: {}
+
+labels: {}
+
+log:
+  monitor:
+    level: "info"
+
+## Log Shipper (as a sidecar) configuration
+## Used only if global.log.streamingMethod is "direct" or "dual"
+## Log Shipper also requires Log Transformer
+logShipper:
+  logLevel: "info"
+  storage:
+    path: "/logs"
+    size: "500Mi"
+    medium: "Ephemeral"
+  input:
+    files:
+    - enabled: true
+      paths:
+      - "sc-monitor.log"
+      multilines:
+      - "java"
+  output:
+    logTransformer:
+      enabled: true
+      host: eric-log-transformer
+
+adp:
+  tm:
+    iccr:
+      hostname: "eric-tm-ingress-controller-cr"
+
+sc:
+  bsf:
+    manager:
+      hostname: "eric-bsf-manager"
+    worker:
+      hostname: "eric-bsf-worker"
+  scp:
+    manager:
+      hostname: "eric-scp-manager"
+  sepp:
+    manager:
+      hostname: "eric-sepp-manager"
+  slf:
+    hostname: "eric-sc-slf"
+  rlf:
+    hostname: "eric-sc-rlf"
+  common:
+    manager:
+      hostname: "eric-sc-manager"

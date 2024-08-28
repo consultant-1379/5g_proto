@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package scp.api.v1;
+
+option java_outer_classname = "HealthCheckProto";
+option java_multiple_files = true;
+option java_package = "io.scp.api.v1";
+option go_package = "ericsson.com/5g/scp/api/v1/healthcheck";
+
+import "envoy/data/core/v3/health_check_event.proto";
+
+import "gogoproto/gogo.proto";
+
+option (gogoproto.equal_all) = true;
+option (gogoproto.stable_marshaler_all) = true;
+
+message HealthCheckLogEvent {
+  // The ID of the Envoy pod, consisting of the string "envoy-" followed by
+  // the last part after the dash of the Kubernetes pod name of the SCP worker.
+  // Example: the name of the SCP worker is "eric-scp-worker-c4c6f8f8f-8f4f6",
+  // then the envoy_id is "envoy-8f4f6".
+  string envoy_id = 1;
+
+  // The health check log event as it is/would be logged by Envoy in the log file.
+  envoy.data.core.v3.HealthCheckEvent event_details = 2;
+}
+
+// Empty response, the healthcheck-log-forwarder doesn't need any information from
+// the manager.
+message HealthCheckLogEventResponse {
+}
+

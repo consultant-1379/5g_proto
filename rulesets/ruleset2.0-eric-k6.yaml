@@ -1,0 +1,276 @@
+modelVersion: 2.0
+
+import:
+  base: ruleset2.0-eric-base.yaml
+
+description: "k6 load testing tool"
+
+properties:
+  - K6_VERSION: v0.29.0
+  - INFLUXDB_VERSION: 1.8-alpine
+
+  - K6_SERVICE_NAME: eric-k6
+  - INFLUXDB_SERVICE_NAME: eric-influxdb
+
+  - K6_IMAGE_NAME: ${K6_SERVICE_NAME}
+  - INFLUXDB_IMAGE_NAME: ${INFLUXDB_SERVICE_NAME}
+
+  - EXPORT_DIR: ${base.OUTPUT_DIR}/export-k6
+  - CERTIFICATES_DIR: devtools/k6/certs
+
+  - INSTALLED_CERTS_DIR: ${CERTS_OUT_DIR}/k6
+
+  - CERTS_OUT_DIR: .certificates
+
+env:
+ - BOB_FORCE_IMAGE_PULL (default=false)
+ - HOSTNAME (default=nohost)
+ - RELEASE (default=false)
+ - TEST_TYPE (default=)
+
+var:
+ - build-proxy
+ - influxdb-version
+ - k6-version
+ - namespace
+ - username
+
+rules:
+  init:
+    - task: base.init:create-output-dir
+    - task: base.init:set-namespace
+    - task: base.init:set-kube-config
+    - task: base.init:api-tokens
+    - task: set-supreme-properties
+      cmd: /bin/bash -c "if [[ ! -d ${CERTS_OUT_DIR} ]];
+                        then
+                            mkdir ${CERTS_OUT_DIR};
+                        fi;
+                        cp /proj/sc-tools/bin/supreme/simple_prop3.yaml ${CERTS_OUT_DIR}/k6_supreme.yaml;
+                        sed -i 's/<NAMESPACE>/${var.namespace}/g' ${CERTS_OUT_DIR}/k6_supreme.yaml;
+                        sed -i 's_<DIR>_${CERTS_OUT_DIR}_g' ${CERTS_OUT_DIR}/k6_supreme.yaml"
+    - task: set-build-proxy
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume $PWD:/workspace"
+        - "--workdir /workspace"
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: /bin/bash -c "if [[ ${env.HOSTNAME} =~ seroi ]];
+                        then
+                          echo 'gic_proxy_settings.xml' > ${base.OUTPUT_DIR}/var.build-proxy;
+                        else
+                          echo 'settings.xml' > ${base.OUTPUT_DIR}/var.build-proxy;
+                        fi"
+    - task: influxdb-version
+      docker-image: base.adp-release-auto
+      cmd: generate-version --is-release ${env.RELEASE} --output influxdb-version
+    - task: k6-version
+      docker-image: base.adp-release-auto
+      cmd: generate-version --is-release ${env.RELEASE} --output k6-version
+
+  image:
+    - task: build-influxdb
+      cmd: docker build ./devtools/influxdb
+           --build-arg INFLUXDB_VERSION=${INFLUXDB_VERSION}
+           --file devtools/influxdb/Dockerfile
+           --tag ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${INFLUXDB_IMAGE_NAME}:${var.influxdb-version}
+    - task: create-certs-dir
+      cmd: /bin/bash -c "mkdir -p ${CERTIFICATES_DIR}"
+    - task: build-k6
+      cmd: docker build ./devtools/k6/
+           --build-arg K6_VERSION=${K6_VERSION}
+           --file devtools/k6/Dockerfile
+           --tag ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${K6_IMAGE_NAME}:${var.k6-version}
+
+  lint:
+    - task: helm-influxdb
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: helm lint devtools/influxdb/helm
+    - task: helm-k6
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: helm devtools/k6/helm
+
+          # update_values.rb ${base.OUTPUT_DIR}/${K6_SERVICE_NAME}/values.yaml
+          # imageCredentials:registry:url=${base.DOCKER_REGISTRY_URL} imageCredentials:repoPath=${base.DOCKER_REPO_PATH}/${env.base.USER}
+          # spec:image=${K6_IMAGE_NAME} spec:tag=${var.k6-version} > ${base.OUTPUT_DIR}/${K6_SERVICE_NAME}/values.tmp.yaml;
+          # mv ${base.OUTPUT_DIR}/${K6_SERVICE_NAME}/values.tmp.yaml ${base.OUTPUT_DIR}/${K6_SERVICE_NAME}/values.yaml;
+
+  package:
+    - task: helm-chart-influxdb
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "mkdir -p ${base.OUTPUT_DIR}/${INFLUXDB_SERVICE_NAME}; cp -r devtools/influxdb/helm/* ${base.OUTPUT_DIR}/${INFLUXDB_SERVICE_NAME};
+           update_values.rb ${base.OUTPUT_DIR}/${INFLUXDB_SERVICE_NAME}/values.yaml
+           imageCredentials:registry:url=${base.DOCKER_REGISTRY_URL} imageCredentials:repoPath=${base.DOCKER_REPO_PATH}/${env.base.USER}
+           spec:image=${INFLUXDB_IMAGE_NAME} spec:tag=${var.influxdb-version} > ${base.OUTPUT_DIR}/${INFLUXDB_SERVICE_NAME}/values.tmp.yaml;
+           mv ${base.OUTPUT_DIR}/${INFLUXDB_SERVICE_NAME}/values.tmp.yaml ${base.OUTPUT_DIR}/${INFLUXDB_SERVICE_NAME}/values.yaml;
+           helm package --version ${var.influxdb-version} --app-version ${var.influxdb-version} ${base.OUTPUT_DIR}/${INFLUXDB_SERVICE_NAME}/ -d ${base.OUTPUT_DIR}/";
+    - task: helm-chart-k6
+      docker-image: base.helm-builder
+      docker-flags:
+        - "--volume $PWD:/workspace"
+        - "--workdir /workspace"
+      cmd:
+        - /bin/bash -c "mkdir -p ${base.OUTPUT_DIR}/${K6_SERVICE_NAME}"
+        - /bin/bash -c "cp -r devtools/k6/helm/* ${base.OUTPUT_DIR}/${K6_SERVICE_NAME}"
+        - /bin/bash -c "sed -i 's|k6_repoPath|'${base.DOCKER_REPO_PATH}'/'${env.base.USER}'|g' ${base.OUTPUT_DIR}/${K6_SERVICE_NAME}/eric-product-info.yaml"
+        - /bin/bash -c "sed -i 's/k6_image_name/'${K6_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${K6_SERVICE_NAME}/eric-product-info.yaml"
+        - /bin/bash -c "sed -i 's/k6_image_tag/'${var.k6-version}'/g' ${base.OUTPUT_DIR}/${K6_SERVICE_NAME}/eric-product-info.yaml" # $(echo ${var.k6-version} | sed 's/+/-/')
+        - helm package --version ${var.k6-version} --app-version ${var.k6-version} ${base.OUTPUT_DIR}/${K6_SERVICE_NAME}/ -d ${base.OUTPUT_DIR}/
+
+  push:
+    - task: docker-image-influxdb
+      cmd: docker push ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${INFLUXDB_IMAGE_NAME}:${var.influxdb-version}
+    - task: helm-chart-influxdb
+      cmd: "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\" --upload-file ${base.OUTPUT_DIR}/${INFLUXDB_SERVICE_NAME}-${var.influxdb-version}.tgz \"${base.HELM_CHART_REPO}/${INFLUXDB_SERVICE_NAME}-${var.influxdb-version}.tgz\""
+    - task: docker-image-k6
+      cmd: docker push ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${K6_IMAGE_NAME}:${var.k6-version}
+    - task: helm-chart-k6
+      docker-image: base.helm-builder-py3
+      cmd: "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\" --upload-file ${base.OUTPUT_DIR}/${K6_SERVICE_NAME}-${var.k6-version}.tgz \"${base.HELM_CHART_REPO}/${K6_SERVICE_NAME}-${var.k6-version}.tgz\""
+
+  deploy:
+    - task: deploy-influxdb-tls
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: /bin/bash -c 'if [[ "${env.TEST_TYPE}" = "IaaS_Stability_tools_on_separate_workers" ]];
+                        then
+                            helm install --namespace ${var.namespace} --set usage=tools ${INFLUXDB_SERVICE_NAME}-${var.username} ${base.OUTPUT_DIR}/${INFLUXDB_SERVICE_NAME}-${var.influxdb-version}.tgz --set service.tls.enabled=true;
+                        else
+                            helm install --namespace ${var.namespace} ${INFLUXDB_SERVICE_NAME}-${var.username} ${base.OUTPUT_DIR}/${INFLUXDB_SERVICE_NAME}-${var.influxdb-version}.tgz --set service.tls.enabled=true;
+                        fi;
+                        '
+    - task: deploy-influxdb
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: /bin/bash -c 'if [[ "${env.TEST_TYPE}" = "IaaS_Stability_tools_on_separate_workers" ]];
+                        then
+                            helm install --namespace ${var.namespace} --set usage=tools ${INFLUXDB_SERVICE_NAME}-${var.username} ${base.OUTPUT_DIR}/${INFLUXDB_SERVICE_NAME}-${var.influxdb-version}.tgz;
+                        else
+                            helm install --namespace ${var.namespace} ${INFLUXDB_SERVICE_NAME}-${var.username} ${base.OUTPUT_DIR}/${INFLUXDB_SERVICE_NAME}-${var.influxdb-version}.tgz;
+                        fi;
+                        '
+    - task: deploy-k6
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume $PWD:/workspace"
+        - "--workdir /workspace"
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: /bin/bash -c 'if [[ "${env.TEST_TYPE}" = "IaaS_Stability_tools_on_separate_workers" ]];
+                        then
+                            helm install --namespace ${var.namespace} --set usage=tools ${K6_SERVICE_NAME}-${var.username} ${base.OUTPUT_DIR}/${K6_SERVICE_NAME}-${var.k6-version}.tgz --set spec.replicas=4;
+                        else
+                            helm install --namespace ${var.namespace} ${K6_SERVICE_NAME}-${var.username} ${base.OUTPUT_DIR}/${K6_SERVICE_NAME}-${var.k6-version}.tgz --set spec.replicas=4;
+                        fi;
+                        '
+    - task: deploy-k6-bsf
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume $PWD:/workspace"
+        - "--workdir /workspace"
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: /bin/bash -c 'if [[ "${env.TEST_TYPE}" = "IaaS_Stability_tools_on_separate_workers" ]];
+                        then
+                            helm install --namespace ${var.namespace} --set usage=tools ${K6_SERVICE_NAME}-${var.username} ${base.OUTPUT_DIR}/${K6_SERVICE_NAME}-${var.k6-version}.tgz --set spec.replicas=1;
+                        else
+                            helm install --namespace ${var.namespace} ${K6_SERVICE_NAME}-${var.username} ${base.OUTPUT_DIR}/${K6_SERVICE_NAME}-${var.k6-version}.tgz --set spec.replicas=1;
+                        fi;
+                        '
+    - task: deploy-k6-ci
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume $PWD:/workspace"
+        - "--workdir /workspace"
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: /bin/bash -c 'if [[ "${env.TEST_TYPE}" = "IaaS_Stability_tools_on_separate_workers" ]];
+                        then
+                            helm install --namespace ${var.namespace} --set usage=tools ${K6_SERVICE_NAME}-${var.username} ${base.HELM_CHART_REPO}/${K6_SERVICE_NAME}-1.4.25-hd396f261d.tgz --set spec.replicas=2;
+                        else
+                            helm install --namespace ${var.namespace} ${K6_SERVICE_NAME}-${var.username} ${base.HELM_CHART_REPO}/${K6_SERVICE_NAME}-1.4.25-hd396f261d.tgz --set spec.replicas=2;
+                        fi;
+                        '
+
+  undeploy:
+    - task: undeploy-influxdb
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: helm uninstall ${INFLUXDB_SERVICE_NAME}-${var.username} --namespace ${var.namespace}
+    - task: undeploy-k6
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: helm uninstall ${K6_SERVICE_NAME}-${var.username} --namespace ${var.namespace}
+
+  export:
+    - task: clean:export
+    - task: folders
+      cmd: /bin/bash -c "mkdir -p ${EXPORT_DIR}; mkdir -p ${EXPORT_DIR}/helm; mkdir -p ${EXPORT_DIR}/docker; mkdir -p ${EXPORT_DIR}/certificates";
+    - task: helm
+      cmd: /bin/bash -c 'cp ${base.OUTPUT_DIR}/${K6_SERVICE_NAME}-${var.k6-version}.tgz ${base.OUTPUT_DIR}/${INFLUXDB_SERVICE_NAME}-${var.influxdb-version}.tgz ${EXPORT_DIR}/helm';
+    - task: image
+      cmd: /bin/bash -c 'docker save ${base.DOCKER_REGISTRY_URL}/${base.DOCKER_REPO_PATH}/${env.base.USER}/${K6_IMAGE_NAME}:${var.k6-version} > ${EXPORT_DIR}/docker/${K6_IMAGE_NAME}-${var.k6-version}.tar;
+                         docker save ${base.DOCKER_REGISTRY_URL}/${base.DOCKER_REPO_PATH}/${env.base.USER}/${INFLUXDB_IMAGE_NAME}:${var.influxdb-version} > ${EXPORT_DIR}/docker/${INFLUXDB_IMAGE_NAME}-${var.influxdb-version}.tar';
+
+    - task: certificates # It seems that this task is @Deprecated. Now the certificates are installed through
+                         # scripts/install_certs.sh script and the outpout keys are actually in scripts/certificates/certm_worker/keys/k6
+      cmd: /bin/bash -c 'cp -R ${CERTIFICATES_DIR}/* ${EXPORT_DIR}/certificates'
+
+  install-certs:
+    - task: set-supreme-properties
+      cmd: /bin/bash -c "if [[ ! -d ${CERTS_OUT_DIR} ]];
+                         then
+                            mkdir ${CERTS_OUT_DIR};
+                         fi;
+                         cp /proj/sc-tools/bin/supreme/simple_prop3.yaml ${CERTS_OUT_DIR}/k6_supreme.yaml;
+                         sed -i 's/<NAMESPACE>/${var.namespace}/g' ${CERTS_OUT_DIR}/k6_supreme.yaml;
+                         sed -i 's_<DIR>_${CERTS_OUT_DIR}_g' ${CERTS_OUT_DIR}/k6_supreme.yaml"
+    - task: create
+      docker-image: base.supreme
+      docker-flags:
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d k6 -p ${CERTS_OUT_DIR}/k6_supreme.yaml
+    - task: install-to-dir
+      cmd: /bin/bash -c "cp ${INSTALLED_CERTS_DIR}/cert.pem ${CERTIFICATES_DIR}/K6.crt;
+                         cp ${INSTALLED_CERTS_DIR}/key.pem ${CERTIFICATES_DIR}/K6.key"
+
+  clean:
+    - task: influxdb-helm
+      cmd:
+       - rm -f ${base.OUTPUT_DIR}/${INFLUXDB_SERVICE_NAME}*.tgz
+       - rm -rf ${base.OUTPUT_DIR}/${INFLUXDB_SERVICE_NAME}
+    - task: influxdb-version
+      cmd: rm -f ${base.OUTPUT_DIR}/var.influxdb-version
+    - task: export
+      cmd: rm -rf ${EXPORT_DIR}
+    - task: k6-helm
+      cmd:
+       - rm -f ${base.OUTPUT_DIR}/${K6_SERVICE_NAME}*.tgz
+       - rm -rf ${base.OUTPUT_DIR}/${K6_SERVICE_NAME}
+    - task: k6-version
+      cmd: rm -f ${base.OUTPUT_DIR}/var.k6-version

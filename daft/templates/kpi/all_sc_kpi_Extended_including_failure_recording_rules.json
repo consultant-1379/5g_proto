@@ -1,0 +1,667 @@
+{
+    "kpi-data": [
+        {
+            "description": "SCP Ingress Requests [MPS]",
+            "metrics-query": "sum(rate(envoy_downstream_rq_total{nf_type='scp'}[10s]))",
+            "recording-rule": "scp_ingress_mps"
+        },
+        {
+            "description": "SCP Egress Requests [MPS]",
+            "metrics-query": "sum(rate(envoy_upstream_rq_total{nf_type='scp'}[10s]))",
+            "recording-rule": "scp_egress_mps"
+        },
+        {
+            "description": "SCP Ingress Request Success Rate [%]",
+            "metrics-query": "(sum(rate(envoy_downstream_rq_xx{group='ingress',envoy_response_code_class='2',nf_type='scp'}[10s]))/sum(rate(envoy_downstream_rq_total{nf_type='scp'}[10s])))*100",
+            "recording-rule": "scp_ingress_success"
+        },
+        {
+            "description": "SCP Egress Request Success Rate [%]",
+            "metrics-query": "(sum(rate(envoy_upstream_rq_xx{envoy_response_code_class='2',nf_type='scp'}[10s]))/sum(rate(envoy_upstream_rq_total{nf_type='scp'}[10s])))*100",
+            "recording-rule": "scp_egress_success"
+        },
+        {
+            "description": "SLF NRF Discovery Success Rate [%]",
+            "metrics-query": "(sum(rate(nrf_in_answers_total{app='eric-sc-slf',nf='scp',status=~'2.*',service='nnrf-disc'}[10s]))/sum(rate(nrf_out_requests_total{app='eric-sc-slf',nf='scp',service='nnrf-disc'}[10s])))*100",
+            "recording-rule": "slf_nrf_discovery_success"
+        },
+        {
+            "description": "SLF NRF Discovery Requests [MPS]",
+            "metrics-query": "sum(rate(nrf_out_requests_total{app='eric-sc-slf',nf='scp',service='nnrf-disc'}[10s]))",
+            "recording-rule": "slf_scp_nrf_discovery_mps"
+        },
+        {
+            "description": "SCP NRF Discovery Requests [MPS]",
+            "metrics-query": "sum(rate(nrf_out_requests_total{app='eric-scp-manager',nf='scp',service='nnrf-disc'}[10s]))",
+            "recording-rule": "scp_nrf_discovery_mps"
+        },
+        {
+            "description": "SCP NRF Discovery Success Rate [%]",
+            "metrics-query": "(sum(rate(nrf_in_answers_total{app='eric-scp-manager',nf='scp',status=~'2.*',service='nnrf-disc'}[10s]))/sum(rate(nrf_out_requests_total{app='eric-scp-manager',nf='scp',service='nnrf-disc'}[10s])))*100",
+            "recording-rule": "scp_nrf_discovery_success"
+        },
+        {
+            "description": "SCP Manager Load [CPU Millicores]",
+            "metrics-query": "avg(rate(container_cpu_usage_seconds_total{container='eric-scp-manager'}[1m]))*1000",
+            "recording-rule": "scp_manager_cpu"
+        },
+        {
+            "description": "SCP Worker Load (Average) [CPU Millicores]",
+            "metrics-query": "avg(rate(container_cpu_usage_seconds_total{container='eric-scp-worker'}[1m]))*1000",
+            "recording-rule": "scp_worker_cpu_avg"
+        },
+        {
+            "description": "SCP Manager Memory [MB]",
+            "metrics-query": "avg(container_memory_working_set_bytes{container='eric-scp-manager'})/1024/1024",
+            "recording-rule": "scp_manager_memory"
+        },
+        {
+            "description": "SCP Worker Memory (Average) [MB]",
+            "metrics-query": "avg(container_memory_working_set_bytes{container='eric-scp-worker'})/1024/1024",
+            "recording-rule": "scp_worker_memory_avg"
+        },
+        {
+            "description": "SCP Load [%]",
+            "metrics-query": "avg(scp_load)",
+            "recording-rule": "scp_load_avg"
+        },
+        {
+            "description": "BSF HTTP [TPS]",
+            "metrics-query": "sum(rate(bsf_in_requests_total{nf='bsf'}[10s]))",
+            "recording-rule": "job:bsf_http_tps"
+        },
+        {
+            "description": "BSF HTTP Success Rate [%]",
+            "metrics-query": "(sum(rate(bsf_out_answers_total{nf='bsf',status=~'2.*'}[10s]))/sum(rate(bsf_in_requests_total{nf='bsf'}[10s])))*100",
+            "recording-rule": "job:bsf_http_success_rate"
+        },
+        {
+            "description": "BSF Diameter Transaction Success Rate [%]",
+            "metrics-query": "(sum(rate(Diameter_TransTerm_Succeeded{dsl_class='DiaApp'}[20s]))/sum(rate(Diameter_TransTerm_Ordered{dsl_class='DiaApp'}[20s])))*100",
+            "recording-rule": "job:bsf_diameter_success_rate"
+        },
+        {
+            "description": "BSF Diameter [TPS]",
+            "metrics-query": "sum(rate(Diameter_TransTerm_Ordered{dsl_class='DiaApp'}[10s]))",
+            "recording-rule": "job:bsf_diameter_tps"
+        },
+        {
+            "description": "BSF Manager Load [CPU Millicores]",
+            "metrics-query": "avg(rate(container_cpu_usage_seconds_total{container='eric-bsf-manager'}[1m]))*1000",
+            "recording-rule": "job:bsf_manager_avg_cpu_load_millicores"
+        },
+        {
+            "description": "BSF Worker Load (Average) [CPU Millicores]",
+            "metrics-query": "avg(rate(container_cpu_usage_seconds_total{container='eric-bsf-worker'}[1m]))*1000",
+            "recording-rule": "job:bsf_worker_avg_cpu_load_millicores"
+        },
+        {
+            "description": "BSF Diameter Load (Average) [CPU Millicores]",
+            "metrics-query": "avg(rate(container_cpu_usage_seconds_total{container='bsfdiameter'}[1m]))*1000",
+            "recording-rule": "job:bsf_diameter_avg_cpu_load_millicores"
+        },
+        {
+            "description": "BSF Diameter FE Load (Average) [CPU Millicores]",
+            "metrics-query": "avg(rate(container_cpu_usage_seconds_total{container='diameter'}[1m]))*1000",
+            "recording-rule": "job:stm_diameter_avg_cpu_load_millicores"
+        },
+        {
+            "description": "BSF Diameter Proxy gRPC Load (Average) [CPU Millicores]",
+            "metrics-query": "avg(rate(container_cpu_usage_seconds_total{container='diameterproxygrpc'}[1m]))*1000",
+            "recording-rule": "job:bsf_diameter_grpc_avg_cpu_load_millicores"
+        },
+        {
+            "description": "BSF Wide Column Database (Average) [CPU Millicores]",
+            "metrics-query": "avg(rate(container_cpu_usage_seconds_total{container='cassandra'}[1m]))*1000",
+            "recording-rule": "job:wcdb_avg_cpu_load_millicores"
+        },
+        {
+            "description": "BSF Manager Memory [MB]",
+            "metrics-query": "avg(container_memory_working_set_bytes{container='eric-bsf-manager'})/1024/1024",
+            "recording-rule": "job:bsf_manager_avg_memory_mb"
+        },
+        {
+            "description": "BSF Worker Memory (Average) [MB]",
+            "metrics-query": "avg(container_memory_working_set_bytes{container='eric-bsf-worker'})/1024/1024",
+            "recording-rule": "job:bsf_worker_avg_memory_mb"
+        },
+        {
+            "description": "BSF Diameter Memory (Average) [MB]",
+            "metrics-query": "avg(container_memory_working_set_bytes{container='bsfdiameter'})/1024/1024",
+            "recording-rule": "job:bsf_diameter_avg_memory_mb"
+        },
+        {
+            "description": "BSF Diameter FE Memory (Average) [MB]",
+            "metrics-query": "avg(container_memory_working_set_bytes{container='diameter'})/1024/1024",
+            "recording-rule": "job:stm_diameter_avg_memory_mb"
+        },
+        {
+            "description": "BSF Diameter Proxy gRPC Memory (Average) [MB]",
+            "metrics-query": "avg(container_memory_working_set_bytes{container='diameterproxygrpc'})/1024/1024",
+            "recording-rule": "job:bsf_diameter_grpc_avg_memory_mb"
+        },
+        {
+            "description": "BSF Wide Column Database Memory (Average) [MB]",
+            "metrics-query": "avg(container_memory_working_set_bytes{container='cassandra'})/1024/1024",
+            "recording-rule": "job:wcdb_avg_memory_mb"
+        },
+        {
+            "description": "BSF Load [%]",
+            "metrics-query": "avg(bsf_load)",
+            "recording-rule": "job:avg_bsf_load_percentage"
+        },
+        {
+            "description": "BSF Worker Load [%]",
+            "metrics-query": "avg(bsf_worker_load)",
+            "recording-rule": "job:avg_bsf_worker_load_percentage"
+        },
+        {
+            "description": "BSF Wide Column Database Load [%]",
+            "metrics-query": "avg(bsf_cassandra_load)",
+            "recording-rule": "job:avg_bsf_cassandra_load_percentage"
+        },
+        {
+            "description": "BSF DSL Load [%]",
+            "metrics-query": "avg(bsf_dsl_load)",
+            "recording-rule": "job:avg_bsf_dsl_load_percentage"
+        },
+        {
+            "description": "BSF FE Diameter Load [%]",
+            "metrics-query": "avg(bsf_fe_diameter_load)",
+            "recording-rule": "job:avg_bsf_fe_diameter_load_percentage"
+        },
+        {
+            "description": "BSF Diameter Load [%]",
+            "metrics-query": "avg(bsf_diameter_load)",
+            "recording-rule": "job:avg_bsf_diameter_load_percentage"
+        },
+        {
+            "description": "BSF Proxy gRPC Diameter Load [%]",
+            "metrics-query": "avg(bsf_proxy_grpc_diameter_load)",
+            "recording-rule": "job:avg_bsf_diameter_grpc_load_percentage"
+        },
+        {
+            "description": "SEPP NRF Discovery Requests [MPS]",
+            "metrics-query": "sum(rate(nrf_out_requests_total{nf='sepp',service='nnrf-disc'}[10s]))",
+            "recording-rule": "sepp_nrf_discovery_mps"
+        },
+        {
+            "description": "SEPP NRF Discovery Success Rate [%]",
+            "metrics-query": "(sum(rate(nrf_in_answers_total{jnf='sepp',status=~'2.*',service='nnrf-disc'}[10s]))/sum(rate(nrf_out_requests_total{nf='sepp',service='nnrf-disc'}[10s])))*100",
+            "recording-rule": "sepp_nrf_discovery_success"
+        },
+        {
+            "description": "SEPP Egress Request Success Rate [%]",
+            "metrics-query": "(sum(rate(envoy_upstream_rq_xx{envoy_response_code_class='2',nf_type='sepp'}[10s]))/sum(rate(envoy_upstream_rq_total{nf_type='sepp'}[10s])))*100",
+            "recording-rule": "sepp_egress_success"
+        },
+        {
+            "description": "SEPP Egress Requests [MPS]",
+            "metrics-query": "sum(rate(envoy_upstream_rq_total{nf_type='sepp'}[10s]))",
+            "recording-rule": "sepp_egress_mps"
+        },
+        {
+            "description": "SEPP Ingress Request Success Rate [%]",
+            "metrics-query": "(sum(rate(envoy_downstream_rq_xx{group='ingress',envoy_response_code_class='2',nf_type='sepp'}[10s]))/sum(rate(envoy_downstream_rq_total{nf_type='sepp'}[10s])))*100",
+            "recording-rule": "sepp_ingress_success"
+        },
+        {
+            "description": "SEPP Manager Memory [MB]",
+            "metrics-query": "avg(container_memory_working_set_bytes{container='eric-sepp-manager'})/1024/1024",
+            "recording-rule": "sepp_manager_memory"
+        },
+        {
+            "description": "SEPP Worker Memory (Average) [MB]",
+            "metrics-query": "avg(container_memory_working_set_bytes{container='eric-sepp-worker'})/1024/1024",
+            "recording-rule": "sepp_worker_memory_avg"
+        },
+        {
+            "description": "SEPP Manager Load [CPU Millicores]",
+            "metrics-query": "avg(rate(container_cpu_usage_seconds_total{container='eric-sepp-manager'}[1m]))*1000",
+            "recording-rule": "sepp_manager_cpu"
+        },
+        {
+            "description": "SEPP Worker Load (Average) [CPU Millicores]",
+            "metrics-query": "avg(rate(container_cpu_usage_seconds_total{container='eric-sepp-worker'}[1m]))*1000",
+            "recording-rule": "sepp_worker_cpu_avg"
+        },
+        {
+            "description": "SEPP Ingress Requests [MPS]",
+            "metrics-query": "sum(rate(envoy_downstream_rq_total{nf_type='sepp'}[10s]))",
+            "recording-rule": "sepp_ingress_mps"
+        },
+        {
+            "description": "SEPP Load [%]",
+            "metrics-query": "avg(sepp_load)",
+            "recording-rule": "sepp_load_avg"
+        },
+        {
+            "description": "RLF CPU Load [%]",
+            "metrics-query": "avg(job:container_cpu_usage_100{container='eric-sc-rlf',pod=~'eric-sc-rlf-.+'})",
+            "recording-rule": "rlf_cpu_load"
+        },
+        {
+            "description": "RLF Memory Usage [%]",
+            "metrics-query": "",
+            "recording-rule": "rlf_memory_usage"
+        },
+        {
+            "comment": "2024-04-17 eedstmr: add recording-rule for slf_cpu",
+            "description": "SLF CPU Load [CPU Millicores]",
+            "metrics-query": "avg(rate(container_cpu_usage_seconds_total{container='eric-sc-slf'}[3m]))*1000",
+            "recording-rule": "slf_cpu"
+        },
+        {
+            "comment": "2024-04-17 eedstmr: add recording-rule for slf_memory",
+            "description": "SLF Memory [MB]",
+            "metrics-query": "avg(container_memory_working_set_bytes{container='eric-sc-slf'})/1024/1024",
+            "recording-rule": "slf_memory"
+        },
+        {
+            "comment": "2024-04-17 eedstmr: add recording-rule for nlf_cpu",
+            "description": "NLF CPU Load [CPU Millicores]",
+            "metrics-query": "avg(rate(container_cpu_usage_seconds_total{container='eric-sc-nlf'}[3m]))*1000",
+            "recording-rule": "nlf_cpu"
+        },
+        {
+            "comment": "2024-04-17 eedstmr: add recording-rule for nlf_memory",
+            "description": "NLF Memory [MB]",
+            "metrics-query": "avg(container_memory_working_set_bytes{container='eric-sc-nlf'})/1024/1024",
+            "recording-rule": "nlf_memory"
+        },
+	{
+	    "comment": "2024-04-17 eedstmr: add recording-rule for nlf_nrf_discovery_mps",
+            "description": "NLF NRF Discovery Requests [MPS]",
+            "metrics-query": "sum(rate(nrf_out_requests_total{app='eric-sc-nlf',service='nnrf-disc',}[45s]))",
+            "recording-rule": "nlf_nrf_discovery_mps"
+        },
+        {
+            "comment": "2024-04-17 eedstmr: add recording-rule for nlf_nrf_discovery_success",
+            "description": "NLF NRF Discovery Success Rate [%]",
+            "metrics-query": "(sum(rate(nrf_in_answers_total{app='eric-sc-nlf',status=~'2.*',service='nnrf-disc'}[45s]))/sum(rate(nrf_out_requests_total{app='eric-sc-nlf',service='nnrf-disc'}[45s])))*100",
+            "recording-rule": "nlf_nrf_discovery_success"
+        },
+        {
+            "description": "SEPP Global Rate Limit Accepted [MPS]",
+            "metrics-query": "",
+            "recording-rule": "sepp_ingress_global_rate_limit_accepted"
+        },
+        {
+            "description": "SEPP Global Rate Limit Dropped [MPS]",
+            "metrics-query": "",
+            "recording-rule": "sepp_ingress_global_rate_limit_dropped"
+        },
+        {
+            "description": "SEPP Global Rate Limit Rejected [MPS]",
+            "metrics-query": "",
+            "recording-rule": "sepp_ingress_global_rate_limit_rejected"
+        },
+        {
+            "description": "SEPP Global Rate Limit Acceptance [%]",
+            "metrics-query": "",
+            "recording-rule": "sepp_ingress_global_rate_limit_acceptance_ratio"
+        },
+        {
+            "description": "SEPP Global Rate Limit Drop [%]",
+            "metrics-query": "",
+            "recording-rule": "sepp_ingress_global_rate_limit_drop_ratio"
+        },
+        {
+            "description": "SEPP Global Rate Limit Rejection [%]",
+            "metrics-query": "",
+            "recording-rule": "sepp_ingress_global_rate_limit_rejection_ratio"
+        },
+        {
+            "description": "SEPP Global Rate Limit Internal [MPS]",
+            "metrics-query": "",
+            "recording-rule": "sepp_ingress_global_rate_limit_sent_internal"
+        },
+        {
+            "description": "SEPP Global Rate Limit Internal Success Rate [%]",
+            "metrics-query": "",
+            "recording-rule": "sepp_ingress_global_rate_limit_success_ratio_internal"
+        },
+        {
+            "description": "SCP Global Rate Limit Accepted [MPS]",
+            "metrics-query": "",
+            "recording-rule": "scp_ingress_global_rate_limit_accepted"
+        },
+        {
+            "description": "SCP Global Rate Limit Dropped [MPS]",
+            "metrics-query": "",
+            "recording-rule": "scp_ingress_global_rate_limit_dropped"
+        },
+        {
+            "description": "SCP Global Rate Limit Rejected [MPS]",
+            "metrics-query": "",
+            "recording-rule": "scp_ingress_global_rate_limit_rejected"
+        },
+        {
+            "description": "SCP Global Rate Limit Acceptance [%]",
+            "metrics-query": "",
+            "recording-rule": "scp_ingress_global_rate_limit_acceptance_ratio"
+        },
+        {
+            "description": "SCP Global Rate Limit Drop [%]",
+            "metrics-query": "",
+            "recording-rule": "scp_ingress_global_rate_limit_drop_ratio"
+        },
+        {
+            "description": "SCP Global Rate Limit Rejection [%]",
+            "metrics-query": "",
+            "recording-rule": "scp_ingress_global_rate_limit_rejection_ratio"
+        },
+        {
+            "description": "SCP Global Rate Limit Internal [MPS]",
+            "metrics-query": "",
+            "recording-rule": "scp_ingress_global_rate_limit_sent_internal"
+        },
+        {
+            "description": "SCP Global Rate Limit Internal Success Rate [%]",
+            "metrics-query": "",
+            "recording-rule": "scp_ingress_global_rate_limit_success_ratio_internal"
+        },
+        {
+            "comment": "2022-10-18 eustone",
+            "description": "BSF Database Server Storage Utilization [%]",
+            "metrics-query": "",
+            "recording-rule": "database_server_storage_utilization"
+        },
+        {
+            "comment": "2024-04-15 eedstmr: add recording-rule bsf_vtap_segments_tapped_rate",
+            "description": "BSF vTAP Worker Segments Tapped [MPS]",
+            "metrics-query": "sum(rate(bsf_vtap_segments_tapped_total[90s]))",
+            "recording-rule": "bsf_vtap_segments_tapped_rate"
+        },
+        {
+            "comment": "2024-04-15 eedstmr: add recording-rule bsf_vtap_segments_dropped_ratio",
+            "description": "BSF vTAP Worker Segments Dropped [%]",
+            "metrics-query": "",
+            "recording-rule": "bsf_vtap_segments_dropped_ratio"
+        },
+        {
+            "comment": "2023-04-16 eedstmr: modify recording-rule bsf_pvtb_diff_recv_send_successes_packets_ratio to pvtb_diff_recv_send_successes_packets_ratio",
+            "description": "PVTB difference between successful sent and received packets ratio [%]",
+            "metrics-query": "",
+            "recording-rule": "pvtb_diff_recv_send_successes_packets_ratio"
+        },
+        {
+            "comment": "2024-04-16 eedstmr: add recording-rule bsf_pvtb_received_total_rate",
+            "description": "BSF vTAP Tapped Packets in PVTB Received [MPS]",
+            "metrics-query": "",
+            "recording-rule": "bsf_pvtb_received_total_rate"
+        },
+	{
+            "comment": "2024-04-16 eedstmr: add recording-rule bsf_pvtb_send_total_rate",
+            "description": "BSF vTAP Tapped Packets in PVTB Sent [MPS]",
+            "metrics-query": "",
+            "recording-rule": "bsf_pvtb_send_total_rate"
+        },
+	{
+            "comment": "2024-04-16 eedstmr: recording-rule bsf_pvtb_received_failure_ratio",
+            "description": "BSF vTAP Tapping Failures in PVTB Received [%]",
+            "metrics-query": "",
+            "recording-rule": "bsf_pvtb_received_failure_ratio"
+        },
+	{
+            "comment": "2024-04-16 eedstmr: recording-rule bsf_pvtb_send_failure_ratio",
+            "description": "BSF vTAP Tapping Failures in PVTB Sent [%]",
+            "metrics-query": "",
+            "recording-rule": "bsf_pvtb_send_failure_ratio"
+        },
+        {
+            "comment": "2023-03-06 eustone ./esc/bsf/bsfmgr/src/main/resources/pmbr/configs/group.json",
+            "description": "BSF vTAP Tapped Packets in Tapcollector Dropped [%]",
+            "metrics-query": "",
+            "recording-rule": "bsf_tapcollector_out_tap_frames_dropped_ratio"
+        },
+        {
+            "comment": "2024-04-16 eedstmr: add recording-rule bsf_tapcollector_in_tap_frames_total_rate",
+            "description": "BSF vTAP Tapped Packets in Tapcollector Received [MPS]",
+            "metrics-query": "",
+            "recording-rule": "bsf_tapcollector_in_tap_frames_total_rate"
+        },
+	{
+            "comment": "2024-04-16 eedstmr: add recording-rule bsf_tapcollector_sent_frames_total_rate",
+            "description": "BSF vTAP Tapped Packets in Tapcollector Sent [MPS]",
+            "metrics-query": "",
+            "recording-rule": "bsf_tapcollector_sent_frames_total_rate"
+        },
+	{
+            "comment": "2024-04-16 eedstmr: add recording-rule bsf_tapcollector_recv_frames_failure_ratio",
+            "description": "BSF vTAP Tapping Failures in Tapcollector Received [%]",
+            "metrics-query": "",
+            "recording-rule": "bsf_tapcollector_recv_frames_failure_ratio"
+        },
+	{
+            "comment": "2024-04-16 eedstmr: add recording-rule bsf_tapcollector_sent_frames_failure_ratio",
+            "description": "BSF vTAP Tapping Failures in Tapcollector Sent [%]",
+            "metrics-query": "",
+            "recording-rule": "bsf_tapcollector_sent_frames_failure_ratio"
+        },
+        {
+            "comment": "2022-04-12 eedstmr: add recording_rule scp_envoy_ingress_vtap_segments_tapped_rate",
+            "description": "SCP vTAP Worker Ingress Segments Tapped [MPS]",
+            "metrics-query": "",
+            "recording-rule": "scp_envoy_ingress_vtap_segments_tapped_rate"
+        },
+        {
+            "comment": "2022-04-12 eedstmr: add recording_rule scp_envoy_egress_vtap_segments_tapped_rate",
+            "description": "SCP vTAP Worker Egress Segments Tapped [MPS]",
+            "metrics-query": "",
+            "recording-rule": "scp_envoy_egress_vtap_segments_tapped_rate"
+        },
+        {
+            "comment": "2024-04-16 eedstmr: add recording-rule scp_pvtb_received_total_rate",
+            "description": "SCP vTAP Tapped Packets in PVTB Received [MPS]",
+            "metrics-query": "",
+            "recording-rule": "scp_pvtb_received_total_rate"
+        },
+	{
+            "comment": "2024-04-16 eedstmr: add recording-rule scp_pvtb_send_total_rate",
+            "description": "SCP vTAP Tapped Packets in PVTB Sent [MPS]",
+            "metrics-query": "",
+            "recording-rule": "scp_pvtb_send_total_rate"
+        },
+	{
+            "comment": "2024-04-16 eedstmr: recording-rule bsf_pvtb_received_failure_ratio",
+            "description": "SCP vTAP Tapping Failures in PVTB Received [%]",
+            "metrics-query": "",
+            "recording-rule": "scp_pvtb_received_failure_ratio"
+        },
+	{
+            "comment": "2024-04-16 eedstmr: recording-rule scp_pvtb_send_failure_ratio",
+            "description": "SCP vTAP Tapping Failures in PVTB Sent [%]",
+            "metrics-query": "",
+            "recording-rule": "scp_pvtb_send_failure_ratio"
+        },
+        {
+            "comment": "2024-04-16 eedstmr: add recording-rule scp_tapcollector_in_tap_frames_total_rate",
+            "description": "SCP vTAP Tapped Packets in Tapcollector Received [MPS]",
+            "metrics-query": "",
+            "recording-rule": "scp_tapcollector_in_tap_frames_total_rate"
+        },
+	{
+            "comment": "2024-04-16 eedstmr: add recording-rule scp_tapcollector_sent_frames_total_rate",
+            "description": "SCP vTAP Tapped Packets in Tapcollector Sent [MPS]",
+            "metrics-query": "",
+            "recording-rule": "scp_tapcollector_sent_frames_total_rate"
+        },
+	{
+            "comment": "2024-04-16 eedstmr: add recording-rule scp_tapcollector_recv_frames_failure_ratio",
+            "description": "SCP vTAP Tapping Failures in Tapcollector Received [%]",
+            "metrics-query": "",
+            "recording-rule": "scp_tapcollector_recv_frames_failure_ratio"
+        },
+	{
+            "comment": "2024-04-16 eedstmr: add recording-rule scp_tapcollector_sent_frames_failure_ratio",
+            "description": "SCP vTAP Tapping Failures in Tapcollector Sent [%]",
+            "metrics-query": "",
+            "recording-rule": "scp_tapcollector_sent_frames_failure_ratio"
+        },
+        {
+            "comment": "2024-04-16 eedstmr: add recording-rule scp_envoy_segments_dropped_ratio",
+            "description": "SCP vTAP Worker Segments Dropped [%]",
+            "metrics-query": "",
+            "recording-rule": "scp_envoy_segments_dropped_ratio"
+        },
+        {
+            "comment": "2024-04-16 eedstmr: add recording-rule scp_tapcollector_out_tap_frames_dropped_ratio",
+            "description": "SCP vTAP Tapped Packets in Tapcollector Dropped [%]",
+            "metrics-query": "",
+            "recording-rule": "scp_tapcollector_out_tap_frames_dropped_ratio"
+        },
+        {
+            "comment": "2022-04-12 eedstmr: add recording-rule sepp_envoy_ingress_vtap_segments_tapped_rate",
+            "description": "SEPP vTAP Worker Ingress Segments Tapped [MPS]",
+            "metrics-query": "",
+            "recording-rule": "sepp_envoy_ingress_vtap_segments_tapped_rate"
+        },
+        {
+            "comment": "2022-04-12 eedstmr: add recording-rule sepp_envoy_egress_vtap_segments_tapped_rate",
+            "description": "SEPP vTAP Worker Egress Segments Tapped [MPS]",
+            "metrics-query": "",
+            "recording-rule": "sepp_envoy_egress_vtap_segments_tapped_rate"
+        },
+        {
+            "comment": "2024-04-16 eedstmr: add recording-rule sepp_pvtb_received_total_rate",
+            "description": "SEPP vTAP Tapped Packets in PVTB Received [MPS]",
+            "metrics-query": "",
+            "recording-rule": "sepp_pvtb_received_total_rate"
+        },
+        {
+            "comment": "2024-04-16 eedstmr: add recording-rule sepp_pvtb_send_total_rate",
+            "description": "SEPP vTAP Tapped Packets in PVTB Sent [MPS]",
+            "metrics-query": "",
+            "recording-rule": "sepp_pvtb_send_total_rate"
+        },
+        {
+            "comment": "2024-04-16 eedstmr: recording-rule sepp_pvtb_received_failure_ratio",
+            "description": "SEPP vTAP Tapping Failures in PVTB Received [%]",
+            "metrics-query": "",
+            "recording-rule": "sepp_pvtb_received_failure_ratio"
+        },
+	{
+            "comment": "2024-04-16 eedstmr: recording-rule sepp_pvtb_send_failure_ratio",
+            "description": "SEPP vTAP Tapping Failures in PVTB Sent [%]",
+            "metrics-query": "",
+            "recording-rule": "sepp_pvtb_send_failure_ratio"
+        },
+        {
+            "comment": "2024-04-16 eedstmr: add recording-rule sepp_tapcollector_in_tap_frames_total_rate",
+            "description": "SEPP vTAP Tapped Packets in Tapcollector Received [MPS]",
+            "metrics-query": "",
+            "recording-rule": "sepp_tapcollector_in_tap_frames_total_rate"
+        },
+	{
+            "comment": "2024-04-16 eedstmr: add recording-rule sepp_tapcollector_sent_frames_total_rate",
+            "description": "SEPP vTAP Tapped Packets in Tapcollector Sent [MPS]",
+            "metrics-query": "",
+            "recording-rule": "sepp_tapcollector_sent_frames_total_rate"
+        },
+	{
+            "comment": "2024-04-16 eedstmr: add recording-rule sepp_tapcollector_recv_frames_failure_ratio",
+            "description": "SEPP vTAP Tapping Failures in Tapcollector Received [%]",
+            "metrics-query": "",
+            "recording-rule": "sepp_tapcollector_recv_frames_failure_ratio"
+        },
+	{
+            "comment": "2024-04-16 eedstmr: add recording-rule sepp_tapcollector_sent_frames_failure_ratio",
+            "description": "SEPP vTAP Tapping Failures in Tapcollector Sent [%]",
+            "metrics-query": "",
+            "recording-rule": "sepp_tapcollector_sent_frames_failure_ratio"
+        },
+	{
+            "comment": "2024-04-16 eedstmr: add recording-rule sepp_envoy_segments_dropped_ratio",
+            "description": "SEPP vTAP Worker Segments Dropped [%]",
+            "metrics-query": "",
+            "recording-rule": "sepp_envoy_segments_dropped_ratio"
+        },
+        {
+            "comment": "2024-04-16 eedstmr: add recording-rule sepp_tapcollector_out_tap_frames_dropped_ratio",
+            "description": "SEPP vTAP Tapped Packets in Tapcollector Dropped [%]",
+            "metrics-query": "",
+            "recording-rule": "sepp_tapcollector_out_tap_frames_dropped_ratio"
+        },
+        {
+            "comment": "2024-04-15 eedstmr: add recording-rule sepp_ip_address_hiding_discovery",
+            "description": "SEPP Topology Hiding IP Address Hiding NF-Discovery-Success [MPS]",
+            "metrics-query": "sum(rate(envoy_ip_address_hiding_applied_success{nf='sepp',type='nf_discovery'}[45s]))by(roaming_partner)",
+            "recording-rule": "sepp_ip_address_hiding_discovery"
+        },
+        {
+            "comment": "2024-04-15 eedstmr: add recording-rule sepp_ip_address_hiding_notify",
+            "description": "SEPP Topology Hiding IP Address Hiding NF-Status-Notify-Success [MPS]",
+            "metrics-query": "sum(rate(envoy_ip_address_hiding_applied_success{nf='sepp',type='nf_status_notify'}[45s]))by(roaming_partner)",
+            "recording-rule": "sepp_ip_address_hiding_notify"
+        },
+        {
+            "comment": "2024-04-15 eedstmr: add recording-rule sepp_ip_address_hiding_notify_fqdn_missing",
+            "description": "SEPP Topology Hiding IP Address Hiding NF-Status-Notify-FQDN-Missing [MPS]",
+            "metrics-query": "sum(rate(envoy_ip_address_hiding_fqdn_missing{nf='sepp',type='nf_status_notify'}[45s]))by(roaming_partner)",
+            "recording-rule": "sepp_ip_address_hiding_notify_fqdn_missing"
+        },
+        {
+            "comment": "2024-04-15 eedstmr: add recording-rule sepp_ip_address_hiding_discovery_fqdn_missing",
+            "description": "SEPP Topology Hiding IP Address Hiding NF-Discovery-FQDN-Missing [MPS]",
+            "metrics-query": "sum(rate(envoy_ip_address_hiding_fqdn_missing{nf='sepp',type='nf_discovery'}[45s]))by(roaming_partner)",
+            "recording-rule": "sepp_ip_address_hiding_discovery_fqdn_missing"
+        },
+        {
+            "comment": "2024-04-15 eedstmr: add recording-rule sepp_ip_address_hiding_config_errors",
+            "description": "SEPP Topology Hiding IP Address Hiding NF-Status-Notify-Configuration-Error [MPS]",
+            "metrics-query": "sum(rate(envoy_ip_address_hiding_configuration_error{nf='sepp',type='nf_status_notify'}[45s]))by(roaming_partner)",
+            "recording-rule": "sepp_ip_address_hiding_config_errors"
+        },
+	{
+            "comment": "2024-04-16 eedstmr: add recording-rule sepp_fqdn_mapping_map_success",
+            "description": "SEPP Topology Hiding FQDN Mapping Successful Mappings [MPS]",
+            "metrics-query": "",
+            "recording-rule": "sepp_fqdn_mapping_map_success"
+        },
+	{
+            "comment": "2024-04-16 eedstmr: add recording-rule sepp_fqdn_mapping_demap_success",
+            "description": "SEPP Topology Hiding FQDN Mapping Successful Demappings [MPS]",
+            "metrics-query": "",
+            "recording-rule": "sepp_fqdn_mapping_demap_success"
+        },
+	{
+            "comment": "2024-04-16 eedstmr: add recording-rule sepp_fqdn_mapping_failure",
+            "description": "SEPP Topology Hiding FQDN Mapping Failures [MPS]",
+            "metrics-query": "",
+            "recording-rule": "sepp_fqdn_mapping_failure"
+        },
+	{
+            "comment": "2024-04-16 eedstmr: add recording-rule sepp_fqdn_mapping_unmodified",
+            "description": "SEPP Topology Hiding FQDN Mapping Forwarded Unmodified [MPS]",
+            "metrics-query": "",
+            "recording-rule": "sepp_fqdn_mapping_unmodified"
+        },
+	{
+            "comment": "2024-04-16 eedstmr: add recording-rule sepp_fqdn_scrambling_scramble_success",
+            "description": "SEPP Topology Hiding FQDN Scrambling Successful Scramblings [MPS]",
+            "metrics-query": "",
+            "recording-rule": "sepp_fqdn_scrambling_scramble_success"
+        },
+        {
+            "comment": "2024-04-16 eedstmr: add recording-rule sepp_fqdn_scrambling_descramble_success",
+            "description": "SEPP Topology Hiding FQDN Scrambling Successful Descramblings [MPS]",
+            "metrics-query": "",
+            "recording-rule": "sepp_fqdn_scrambling_descramble_success"
+        },
+        {
+            "comment": "2024-04-16 eedstmr: add recording-rule sepp_fqdn_scrambling_failure",
+            "description": "SEPP Topology Hiding FQDN Scrambling Failures [MPS]",
+            "metrics-query": "",
+            "recording-rule": "sepp_fqdn_scrambling_failure"
+        },
+        {
+            "comment": "2024-04-16 eedstmr: add recording-rule sepp_fqdn_scrambling_unmodified",
+            "description": "SEPP Topology Hiding FQDN Scrambling Forwarded Unmodified [MPS]",
+            "metrics-query": "",
+            "recording-rule": "sepp_fqdn_scrambling_unmodified"
+        }
+
+
+    ]
+}

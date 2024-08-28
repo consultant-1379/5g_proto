@@ -1,0 +1,22 @@
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+  name: {{ template "eric-scp.name" . }}-worker-manager-grpc-client-internal-certificate
+  labels:
+{{- include "eric-scp.labels" . | indent 4 }}
+  annotations:
+{{- include "eric-scp.helm-annotations" . | indent 4 }}
+{{- include "eric-scp.config-annotations" . | indent 4 }}
+spec:
+  kubernetes:
+    generatedSecretName: scp-worker-manager-grpc-client-if-certificate-secret
+    certificateName: tls.crt
+    privateKeyName: tls.key
+  certificate:
+    subject:
+      cn: eric-scp-worker
+    issuer:
+      reference: {{ template "eric-scp.name" . }}-manager-ca
+    extendedKeyUsage:
+      tlsClientAuth: true
+      tlsServerAuth: false

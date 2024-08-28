@@ -1,0 +1,35 @@
+service:
+  name: "eric-bsf-load"
+  type: LoadBalancer
+imageCredentials:
+  registry:
+    url: docker_registry
+    pullSecret: "regcred"
+  repoPath: docker_repo_path
+  pullPolicy: Always
+
+spec:
+  replicaCount: "1"
+  image: image_name
+  tag: image_tag
+  port: 80
+  resources:
+    requests:
+      cpu: 2
+      memory: 4Gi
+    limits:
+      cpu: 2
+      memory: 4Gi
+
+metrics:
+  enabled: true
+  # Export JVM-related metrics. Exports only if metrics.enabled is true.
+  jvmMetrics: false
+  path: "/metrics"
+  port: 8081
+
+jvm:
+  parameters: "-server -XX:+ErrorFileToStderr -XX:+UseG1GC -XX:MaxRAMPercentage=80 -Dcom.sun.management.jmxremote.port=8090 -Dcom.sun.management.jmxremote.rmi.port=8090 -Djava.rmi.server.hostname=127.0.0.1 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.host=127.0.0.1"
+
+configuration:
+  ip-version: 4

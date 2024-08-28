@@ -1,0 +1,35 @@
+generation:
+  certificates:
+  - name: sepp-worker
+    outputDir: /home/sepp
+    algorithm:
+      bits: 4096
+    expirationDays: 365
+    commonName: sepp.ericsson.se
+    sans: ["sepp.ericsson.se", "*.ericsson.se"]
+    sign:
+      certificateAuthority: ca1
+      selfSigned: false
+  certificateAuthorities:
+  - name: ca1
+    outputDir: /home/ca1
+    algorithm:
+      bits: 4096
+    expirationDays: 365
+    commonName: ca1.ericsson.se
+
+installation:
+- name: sepp-worker
+  dir: /home/sepp
+  target:
+    netconf:
+      keyName: sc-traf-def-key
+      certificateName: sc-traf-def-cert
+
+admin:
+  namespace: 5g-bsf-enocakh
+  yangProvider:
+    ip: localhost
+    username: sepp
+    password: seppsepp
+

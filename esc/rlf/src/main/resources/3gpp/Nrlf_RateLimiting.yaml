@@ -1,0 +1,100 @@
+openapi: 3.0.0
+info:
+  version: '1.0.0'
+  title: 'RLF Rate Limiting Service'
+  description: |
+    RLF Rate Limiting Service.
+    © 2022, Ericsson GmbH.
+    All rights reserved.
+servers:
+  - url: '{apiRoot}/nrlf-ratelimiting/v0'
+    variables:
+      apiRoot:
+        default: https://example.com
+        description: apiRoot as defined in clause 4.4 of 3GPP TS 29.501
+security:
+  - {}
+  - oAuth2ClientCredentials:
+      - nrlf-ratelimiting
+paths:
+  /tokens/{namespace}:
+    post:
+      summary: Pull tokens and return the result, one for each token bucket referenced in query parameter buckets and in the same order
+      operationId: PullTokens
+      parameters:
+        - name: namespace
+          in: path
+          description: The namespace of the token buckets to pull the tokens from
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PullTokensContext' 
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PullTokensResult' 
+        '400':
+          $ref: 'TS29571_CommonData.yaml#/components/responses/400'
+        '404':        
+          $ref: 'TS29571_CommonData.yaml#/components/responses/404'
+        '500':
+          $ref: 'TS29571_CommonData.yaml#/components/responses/500'
+        '503':
+          $ref: 'TS29571_CommonData.yaml#/components/responses/503'
+        default:
+          $ref: 'TS29571_CommonData.yaml#/components/responses/default'
+components:
+  securitySchemes:
+    oAuth2ClientCredentials:
+      type: oauth2
+      flows: 
+        clientCredentials: 
+          tokenUrl: '/oauth2/token'
+          scopes:
+            nrlf-ratelimiting: Access to the Nrlf_RateLimiting API
+  schemas:
+    PullTokensResult:
+      type: object
+      required:
+        - rc
+      properties:
+        rc:
+          description: The result of the pull operation
+          type: integer
+          enum: [200, 429, 404, 500]
+          x-enum-varnames: [OK, TOO_MANY_REQUESTS, NOT_FOUND, INTERNAL_SERVER_ERROR]
+        ra:
+          description: Timespan [ms] after which the next pull operation has higher probability to succeed. Included only for rc = 429 (TOO_MANY_REQUESTS)
+          type: integer
+          minimum: 0
+    PullTokensContext:
+      type: object
+      required:
+        - id
+        - wm
+      properties:
+        id:
+          description: The ID of the token bucket, unique within its namespace
+          type: integer
+        wm:
+          description: The watermark for which to pull the token(s) from the token bucket
+          type: number
+          format: double
+          minimum: 0
+        am:
+          description: The amount of tokens to pull from the token bucket, default is 1
+          type: integer
+          minimum: 1
+          default: 1
+     

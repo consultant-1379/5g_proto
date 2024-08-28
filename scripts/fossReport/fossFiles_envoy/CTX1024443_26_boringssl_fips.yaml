@@ -1,0 +1,42 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: Nov 11, 2023
+FOSS:
+    # Available in Bazaar
+    FOSSName: boringssl
+    # Available in Bazaar
+    FOSSVersion: FIPS-20210429
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/google/boringssl/archive/fips-20210429.tar.gz
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 26/CTX1024443
+    # Not Available in Bazaar
+    Primary: N
+    # Available in Bazaar
+    STAKOCode: ESW4
+    # Available in Bazaar
+    STAKOReason: Product version is older than 18 months. Newer versions exists
+    # Not Available in Bazaar
+    FunctionalityUsedInTheEricssonProduct: "BoringSSL is a fork of OpenSSL that is designed to meet Google's needs."
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: Original SSLeay License, OpenSSL License (OpenSSL)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Original SSLeay License 
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Statically
+    # Not Available in Bazaar
+    MavenDependency: NO
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    #Comments
+    Comments: NA
+    ReportAuthor: ERAPRPA Prashant Pratik

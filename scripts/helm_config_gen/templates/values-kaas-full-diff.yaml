@@ -1,0 +1,41 @@
+#Specific settings needed for the full deployment in the Kaas environment
+
+global:
+  ericsson:
+    licensing:     
+      licenseDomains:
+        - productType: "SIGNALING_CONTROLLER" ## DO NOT CHANGE THIS VALUE
+          customerId: "Eric123"
+          swltId: "Palaven"
+  registry:
+    imagePullPolicy: "Always"
+
+eric-data-distributed-coordinator-ed-sc:
+  env:
+    etcd:
+      ETCD_QUOTA_BACKEND_BYTES: "128000000"
+      
+eric-fh-snmp-alarm-provider:
+  ingress:
+    enabled: true
+  service:
+    secretName: snmp-alarm-provider-config      
+
+eric-lm-combined-server:
+  licenseServerClient:
+    licenseServer:
+      thrift:
+        host: eric-test-nels-simulator
+
+eric-data-wide-column-database-cd:
+  resources:
+    cassandra:
+      requests:
+        cpu: "2"
+      limits:
+        cpu: "2" 
+
+
+eric-cnom-server:
+  features:
+    serviceCommunicationProxy: false

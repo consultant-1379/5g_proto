@@ -1,0 +1,5 @@
+userConfig:
+  ldap:
+    enabled: true
+    uri: 'ldaps://eric-sec-ldap-server:636'
+    searchBase: 'ou=people,dc=la,dc=adp,dc=ericsson'

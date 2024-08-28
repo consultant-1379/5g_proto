@@ -1,0 +1,40 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2019-06-10 12:24
+FOSS:
+    # Available in Bazaar
+    FOSSName: Datastax Java Driver
+    # Available in Bazaar
+    FOSSVersion: 3.7.1
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/datastax/java-driver/archive/{{FOSSVersion}}.tar.gz
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 28/CAX1057177
+    # Not Available in Bazaar
+    PRIMNumber(CTC): CTC1014411
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: A Java client driver for Apache Cassandra. This driver works exclusively with the Cassandra Query Language version 3 (CQL3) and Cassandra's binary protocol.
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: Apache License 2.0
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: (SSL, TLS)
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'com.datastax.cassandra:cassandra-driver-core:jar:{{FOSSVersion}}'
+    - 'com.datastax.cassandra:cassandra-driver-extras:jar:{{FOSSVersion}}'
+    - 'com.datastax.cassandra:cassandra-driver-mapping:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ENTNGRG Georgios Antoniou

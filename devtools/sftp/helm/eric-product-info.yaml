@@ -1,0 +1,11 @@
+productName: "eric-atmoz-sftp"
+productNumber: "-" 
+productRevision: "-" 
+images: # info about thes image of eric-k6 pod's container
+  sftp: # container name
+    productName: "sftp"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se" # overrides the imageCredentials.registry.url from k6 values.yaml
+    repoPath: sftp_repoPath # overrides the imageCredentials.repoPath from k6 values.yaml
+    name: sftp_image_name
+    tag: sftp_image_tag

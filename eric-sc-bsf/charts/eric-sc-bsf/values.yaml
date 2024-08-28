@@ -1,0 +1,181 @@
+global:
+  timezone: UTC
+  pullSecret: ""
+  registry:
+    url: "armdocker.rnd.ericsson.se"
+  externalIPv4:
+    enabled:
+  externalIPv6:
+    enabled:
+  internalIPFamily: ""
+  security:
+    tls:
+      enabled: true
+  log:
+    streamingMethod: "indirect" ## supports direct, indirect or dual
+  logShipper:
+    deployment:
+      type: "" ## supports sidecar or empty
+  networkPolicy:
+    enabled: true
+  licenseConsumer:
+    features:
+      monitoring:
+        licenses:
+           enabled: true
+
+eric-bsf-diameter:
+  enabled: false
+
+eric-stm-diameter:
+  enabled: false
+  replicaCount: 2
+  service:
+    certificates:
+      asymmetricKeyCertificateName: "diameter-key-cert"
+      trustedCertificateListName: "sc-trusted-default-cas"
+  initialConfig:
+    dsl:
+      enableControlPlane: true
+      serviceName: "eric-stm-diameter-dsl"  # it should be eric-stm-diameter-dsl if enableControlPlane is true
+    dsl-pvtb-client:
+      pvtbBaseURI: "http://eric-probe-virtual-tap-broker:8080"
+      domain: "sc-bsf"
+  annotations:
+    ericsson.com/nf-name: "BSF"
+  ah:
+    fiapi:
+      enable: true
+  kafka:
+    hostname: ""
+  resources:
+    diameter:
+      limits:
+        cpu: 2
+    dsl:
+      limits:
+        cpu: 2
+
+eric-bsf-wcdb-cd:
+  replicaCount: 2 # used in recording rules
+  sysctls:
+    cassandra: []
+  persistence:
+    dataVolume:
+      persistentVolumeClaim:
+        size: 100Gi
+  resources:
+    cassandra:
+      limits:
+        cpu: 4
+        memory: 16Gi
+      requests:
+        cpu: 4
+        memory: 16Gi
+    brsc:
+      requests:
+        cpu: "0.2"
+      limits:
+        cpu: "0.5"
+  cassandra:
+    yaml:
+      num_tokens: 32
+      allocate_tokens_for_local_replication_factor: 2
+      materialized_views_enabled: true
+    jvmOptions:
+      set:
+        - "Dmv_enable_coordinator_batchlog=true"
+        - "XX:+UseG1GC"
+        - "XX:InitialRAMPercentage=50.0"
+        - "XX:MaxRAMPercentage=50.0"
+        - "XX:MaxGCPauseMillis=200"
+        - "XX:InitiatingHeapOccupancyPercent=70"
+      unset:
+        - "Xmn800M"
+        - "Xmn100M"
+        - "Xmn400M"
+        - "XX:+HeapDumpOnOutOfMemoryError"
+        - "XX:+UseParNewGC"
+        - "XX:+UseConcMarkSweepGC"
+        - "XX:+CMSParallelRemarkEnabled"
+        - "XX:SurvivorRatio=8"
+        - "XX:MaxTenuringThreshold=1"
+        - "XX:CMSInitiatingOccupancyFraction=75"
+        - "XX:+UseCMSInitiatingOccupancyOnly"
+        - "XX:CMSWaitDuration=10000"
+        - "XX:+CMSParallelInitialMarkEnabled"
+        - "XX:+CMSEdenChunksRecordAlways"
+        - "XX:+CMSClassUnloadingEnabled"
+  metrics:
+    cassandra:
+      enabled: true
+  georeplication:
+    certificates:
+      asymmetricKeyCertificateName: "bsf-internode-external-key/bsf-internode-external-cert"
+      trustedCertificateListName: "sc-trusted-default-cas"
+  egress:
+    certificates:
+      asymmetricKeyCertificateName: "bsf-cql-client-external-key/bsf-cql-client-external-cert"
+      trustedCertificateListName: "sc-trusted-default-cas"
+  service:
+    certificates:
+      asymmetricKeyCertificateName: "bsf-cql-server-external-key/bsf-cql-server-external-cert"
+      trustedCertificateListName: "sc-trusted-default-cas"
+      internal:
+        timeToLive: "15778800"
+        renewalLeadTime: "15692400"
+    endpoints:
+      cql:
+        tls:
+          enforced: "optional"
+    external:
+      tls:
+        enabled: true
+  security:
+    auth:
+      cql:
+        enableAuthentication: "true"
+        enableAuthorization: "true"
+        wcdbcdAdminSecret: eric-bsf-wcdb-cd-admin-creds
+        adminSecret: eric-bsf-wcdb-cd-day0-creds
+  annotations:
+    ericsson.com/nf-name: "BSF"
+  repairAgent:
+    enabled: true
+    ecchronos:
+      jvmOptions:
+        set:
+          - "XX:ParallelGCThreads=1"    
+
+eric-sc-bsf-license-consumer:
+  enabled: true
+
+eric-sc-bsf-log-shipper:
+  ## This alias chart name avoids conflicts with the Log Shipper chart defined in other integration charts.
+  ## The default values below can be overridden for deployment specific values.
+  ## In case sidecar deployment needs to be enabled for LS service, the below 'enabled' parameter is to be set to 'true'
+  ## together with the global log streaming parameter
+  enabled: false
+  
+## Used for sc-bsf alarm severities configmap
+severities:
+  - service-name: "eric-bsf-diameter"
+    highest-severity-reported: "Critical"
+    replication-controller-type: "deployment"
+    minimum-replicas-required: 1
+    high-availability-replicas-required: 2
+  - service-name: "eric-bsf-manager"
+    highest-severity-reported: "Critical"
+    replication-controller-type: "deployment"
+    minimum-replicas-required: 1
+    high-availability-replicas-required: 0
+  - service-name: "eric-bsf-worker"
+    highest-severity-reported: "Critical"
+    replication-controller-type: "deployment"
+    minimum-replicas-required: 1
+    high-availability-replicas-required: 2 
+  - service-name: "eric-stm-diameter"
+    highest-severity-reported: "Critical"
+    replication-controller-type: "deployment"
+    minimum-replicas-required: 2
+    high-availability-replicas-required: 0

@@ -1,0 +1,59 @@
+{
+  "content": {
+    "section": [
+      {
+        "hello": {
+          "capabilities": {
+            "capability": [
+              "urn:ietf:params:netconf:base:1.0",
+              "urn:ietf:params:netconf:capability:writable-running:1.0",
+              "urn:ietf:params:netconf:capability:rollback-on-error:1.0"
+            ]
+          }
+        }
+      },
+      {
+        "rpc": {
+          "edit-config": {
+            "target": {
+              "running": ""
+            },
+            "config": {
+              "truststore": {
+                "certificates": [
+                  {
+                    "name": "sc-trusted-default-cas",
+                    "description": "A list of CA certificates"
+                  }
+                ]
+              }
+            }
+          },
+          "@message-id": 1
+        }
+      },
+      {
+        "rpc": {
+          "action": {
+            "truststore": {
+              "certificates": {
+                "name": "sc-trusted-default-cas",
+                "install-certificate-pem": {
+                  "name": "CA_cert_1",
+                  "pem": "certificateauthority"
+                }
+              }
+            }
+          },
+          "@message-id": 1
+        }
+      },
+      {
+        "rpc": {
+          "close-session": {},
+          "@message-id": 1
+        }
+      }
+    ]
+  }
+}

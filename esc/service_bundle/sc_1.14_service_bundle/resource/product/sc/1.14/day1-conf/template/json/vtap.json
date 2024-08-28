@@ -1,0 +1,54 @@
+{
+  "content": {
+    "section": [
+      {
+        "hello": {
+          "capabilities": {
+            "capability": [
+              "urn:ietf:params:netconf:base:1.0"
+            ]
+          }
+        }
+      },
+      {
+        "rpc": {
+          "edit-config": {
+            "target": {
+              "running": ""
+            },
+            "config": {
+              "vtap": {
+                "enabled": true,
+                "profiles": {
+                  "profile": [
+                    {
+                      "name": "profile1",
+                      "domain": [
+                        {
+                          "name": "ccdm-udr-5G",
+                          "protocol": [
+                            "native-http"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "stream-consumers": {
+                  "stream-consumer": [
+                    {
+                      "name": "consumer1",
+                      "address": "10.5.5.65",
+                      "tapping-profile": "profile1"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "@message-id": 101
+        }
+      }
+    ]
+  }
+}

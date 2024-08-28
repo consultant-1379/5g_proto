@@ -1,0 +1,88 @@
+#!/bin/bash
+#export NAMESPACE="$1";
+#export KUBE_HOST="$2";
+
+export HELP_MSG="Use following synopsis for this script:\n setNamespace i-u \$USER -n \$NAMESPACE -h \$KUBE_HOST\n e.g setNamespace -u eiffelesc -n 5g-bsf-eiffeldsc -h hahn135"
+
+if [[ $# = 0 ]];
+then
+
+	echo -e "$HELP_MSG";
+	exit 1 ;
+
+fi;
+
+
+while (( "$#" ));
+do
+        echo -e "Now processing argument: $1 ";
+        case "$1" in
+                -n|--namespace)
+                case "$2" in
+                        -h|--kubehost|"") echo -e "The parameter succeeding the -n|--namespace parameter is empty. NAMESPACE will be set to the default value \"\""; shift; ;;
+                        *) export NAMESPACE="$2"; shift; shift; ;;
+                esac
+                ;;
+                -h|--kubehost)
+                case "$2" in
+                        -n|--namespace|"") echo -e "The parameter succeeding the -h|--kubehost parameter is not set properly. Aborting."; exit 1; ;;
+                        *) export KUBE_HOST="$2"; shift; shift; ;;
+                esac
+                ;;
+                *) echo -e "'$1' is an invalid parameter."; echo -e "$HELP_MSG"; exit 1 ;;
+        esac
+
+done;
+
+if [ "${KUBE_HOST}" != "" ];
+then
+	export KUBE_CFG="--kubeconfig /home/eiffelesc/.kube/${KUBE_HOST}.config";
+else
+	export KUBE_CFG="";
+fi;
+                                                                                                                                                                        
+echo $NAMESPACE | grep "5g-bsf-eiffelesc-";
+                                                                                                                                                                        
+if (( $? ));
+then
+    
+    echo "\n The following kube config will be used \n"
+	cat /home/eiffelesc/.kube/${KUBE_HOST}.config
+
+	echo "\n Output of kubectl get nodes -o wide  \n"
+    kubectl ${KUBE_CFG} get nodes -o wide 
+
+	
+
+	for i in `seq 1 5`;
+	do
+	    export TMP_USRNAME="eiffelesc-$i"
+	    export TMP_NAMESPACE="5g-bsf-${TMP_USRNAME}"
+	    echo "Checking if ${TMP_NAMESPACE} is available for deploy"
+            
+	    helm ls ${KUBE_CFG} --namespace ${TMP_NAMESPACE} | grep ${TMP_NAMESPACE};
+		
+	#    cat namespaceTest | grep -q $TMP_NAMESPACE;
+	    if (( $? ));
+	    then
+	       JENKINS_USR_NAMESPACE="${TMP_NAMESPACE}"
+	       echo "The namespace will be set to: ${JENKINS_USR_NAMESPACE}"
+	       echo "${JENKINS_USR_NAMESPACE}" > .bob/var.namespace
+	       echo "${TMP_USRNAME}" > .bob/var.username
+	       exit 0;
+	    else
+	       echo "Checking for the next possible workspace."
+	    fi;
+	    echo "Checked $TMP_NAMESPACE"
+	done;
+	echo "No free namespace found!"
+	exit 1;
+else
+                                                                                                                                                                        
+       echo "The namespace will be set to: $NAMESPACE"
+       echo "$NAMESPACE" > .bob/var.namespace
+       echo "${NAMESPACE}" > .bob/var.username
+       sed -i "s/5g-bsf-//g" .bob/var.username
+       exit 0;
+
+fi;

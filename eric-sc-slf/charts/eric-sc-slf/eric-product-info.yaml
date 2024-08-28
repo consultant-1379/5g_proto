@@ -1,0 +1,24 @@
+productName: "Subscriber Locator Function (eric-sc-slf)"
+productNumber: "CXC 174 3273"
+images:
+  slf:
+    productName: "SLF"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: slf_repo_path
+    name: slf_image_name
+    tag: slf_image_tag
+  tapagent:
+    productName: "SLF TAP agent"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: tapagent_repo_path
+    name: tapagent_image_name
+    tag: tapagent_image_tag
+  tlskeylogagent:
+    productName: "SCPSLFTLS Keylog Agent"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: tlskeylogagent_repo_path
+    name: tlskeylogagent_image_name
+    tag: tlskeylogagent_image_tag

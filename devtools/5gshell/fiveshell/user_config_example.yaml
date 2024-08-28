@@ -1,0 +1,256 @@
+# Color definitions. They can be referenced from other parts in this document
+# with *color_xxxx
+# The color values are from the Ericsson brand palette.
+colors:
+      - &color_envoy 0014d2  # digital blue
+      - &color_envoy_sa 0082F0  # Blue
+      - &color_chfsim 28a0ff  # Light Blue
+      - &color_test 288964 # Deep Green
+      - &color_test2 0fc373 # Green
+      - &color_deploy DCAF00  # Deep Yellow
+      - &color_config E66E19  # Deep Orange
+      - &color_log AF78D2  # Purple
+      - &color_monitor 8750A0  # Deep Purple
+      - &color_debug 767676  # Ericsson Gray 2
+      - &color_kubernetes cc7007 # Orange 4
+
+
+# This is an example of the configuration of the button box (collection of buttons organized in groups on the left).
+# It is the configuration of the last version in which the config was stored in the global config.
+# This file can be edited in the new preferences window that can be accessed through the main menu of fiveshell.
+# If you still want to edit this file manually, you can add a group by adding a section:
+# - group: <Your new group name>
+#   elements:
+#   - <id of the button you want to add (you can see all the buttons with ids in the global config in the section buttons)>
+#   - <...>
+# You can also add a new button box by adding this section:
+#- name: <your name of the button box>
+#  button_box:
+#  - group: <...>
+#    elements:
+#    - <...>
+button_boxes:
+- name: default
+  button_box:
+  - elements:
+    - reload_config
+    - reload_k8s
+    - exec_linux_cmd
+    group: FiveShell
+  - elements:
+    - view_netconf_config
+    - view_netconf_data
+    - view_netconf_wro
+    - view_conf_json
+    - delete_conf_json
+    - view_schema_json
+    - delete_conf_netconf
+    - view_conf_all_envoys
+    - view_conf_one_envoy_unmodified
+    - view_conf_one_envoy
+    - view_conf_one_envoy_loadable
+    group: Configuration
+  - elements:
+    - port_change_rcc
+    - port_change_rcc_ipv6
+    - provision_supis
+    - all_supi_ranges
+    - cc_notify
+    - cc_reg_test_ct
+    group: Tests CT
+  - elements:
+    - port_change_poc
+    - sepp_reg_test
+    group: Tests SEPP POC
+  - elements:
+    - port_change_netconf
+    - port_change_netconf_nrf
+    - port_change_netconf_dyn
+    - port_change_netconf_dyn_nrf
+    - upload_netconf
+    - enable_dyn_prod_reg
+    - disable_dyn_prod_reg
+    - cc_create
+    - cc_notify
+    - cc_reg_test
+    - sl_subscribe
+    - sl_notify
+    - sl_reg_test
+    - cc_sl_reg_test_v2
+    - spr_registration_occ1
+    - spr_registration_occ2
+    - spr_registration_occ3
+    - spr_heartbeat_occ1
+    - spr_heartbeat_occ2
+    - spr_heartbeat_occ3
+    - spr_deregister_occ1
+    - spr_deregister_occ2
+    - spr_deregister_occ3
+    - spr_get_occ1
+    - spr_get_all
+    group: Tests TMO
+  - elements:
+    - kill_traffic_on_selected_k6
+    - send_cc_cur_100mps_1k6
+    - send_cc_cur_3000mps_1k6
+    - send_cc_cur_max_1k6
+    - send_cc_cur_2000mps_scaling_1k6
+    - send_slc_smu_100mps_2k6
+    - send_slc_smu_3000mps_2k6
+    - send_slc_smu_max_2k6
+    - send_slc_smu_2000_scaling_2k6
+    group: Load
+  - elements:
+    - setup_envoy_port_forwarding
+    - teardown_envoy_port_forwarding
+    - setup_envoy_standalone_port_forwarding
+    - show_envoy_log_level_settings
+    - set_envoy_log_level_to_info
+    - set_envoy_log_level_to_debug
+    - set_envoy_log_level_to_trace
+    - set_envoy_log_level_lua
+    - set_envoy_log_level_config_loading_debug
+    - show_dynamic_listeners_one_envoy
+    - show_envoy_listeners
+    - show_envoy_route_config
+    - show_envoy_clusters
+    - scale_scp_workers_to_selected_number
+    - scale_sepp_workers
+    - show_envoy_certificates
+    group: Envoy
+  - elements:
+    - print_all_pods
+    - print_all_services
+    - print_all_nodes
+    - print_hosts_file_for_wireshark
+    - write_hosts_file_for_wireshark
+    group: Kubernetes
+  - elements:
+    - reset_all_envoy_counters
+    - show_envoy_counters
+    - reset_standalone_envoy_counters
+    - view_envoy_standalone_counters
+    - view_envoy_standalone_counters_prometheus_short
+    - view_envoy_standalone_counters_prometheus
+    - view_envoy_standalone_counters_services
+    group: Counters
+  - elements:
+    - show_chfsim_config_settings
+    - enable_load_test_mode
+    - disable_load_test_mode
+    - enable_load_test_statistic_mode
+    - disable_load_test_statistic_mode
+    - set_envoy_domain_for_notify_sending
+    - release_all_sessions_chfsims
+    - clear_all_flexi_disturbances
+    - configure_chfsim_send_503_reject_x20
+    - configure_chfsim_send_404
+    - configure_chfsim_delay_send_503_reject
+    - set_fixed_disturbances_503_reject
+    - set_fixed_disturbances100%
+    - disable_fixed_disturbances
+    - set_fixed_drop_on
+    - set_fixed_drop_off
+    - restart_all_chfsim_pods
+    group: CHFSim
+  - elements:
+    - set_nrf_address
+    - set_profile_occ1
+    - set_profile_occ2
+    - set_profile_occ2
+    - set_profile_occ1_to_occ3
+    - register_occ3
+    - register_all_chsfsims
+    - update_all_chsfsims
+    - derigister_occ3
+    - deregister_all_chfsims
+    - update_chfsims_set_load
+    - instruct_chfsims_send_HB
+    - instruct_chfsims_dont_send_HB_occ3
+    - instruct_chfsims_dont_send_HB
+    group: CHFSim_NRF_client
+  - elements:
+    - redeploy_baseline
+    - redeploy_scp_only
+    - deploy_k6
+    - scale_k6_to_2_pods
+    - deploy_nrfsim
+    - deploy_chfsim_x3
+    - deploy_chfsim_x7
+    group: Deploy
+  - elements:
+    - view_logs_manager
+    - view_logs_worker
+    - view_logs_chfsim
+    group: Logs
+  - elements:
+    - scale_monitor_to_selected_number
+    - view_commands_monitor_interface
+    - view_version_info_monitor_interface
+    - view_esa_monitor_interface
+    - change_manager_log_level_info
+    - change_manager_log_level_debug
+    - change_chfsim_log_level_warning
+    - change_chfsim_log_level_info
+    - show_chfsim_counters
+    - show_chfsim_counters_summary
+    group: Monitor
+  - elements:
+    - view_global_vars
+    - view_pod_vars
+    - view_service_vars
+    - view_node_vars
+    - test_unicode
+    - show_cur_date_time
+    - test_k8s_var_manager_ip_status
+    - test_linux_var_envoy_pod_names
+    - test_linux_var_show_k6_pod_names
+    group: FiveShell Debugging
+
+
+# You can add new self configured buttons to your fiveshell window.
+# Adding and editing buttons in the preferences window is coming soon!
+# Meanwhile you can add buttons in here as described below:
+# ************** uncomment the following code **************
+#buttons:
+#  example_button_id:  # rename this to your own button id.
+#                      # Attention: Do not use an id that is already used in the buttons section in the global config
+#    action_ids:
+#    - show_cur_date_time  # add all action ids that the button should execute to this list
+#                          # you can find all existing action ids in the global config or you can add your own in the section below
+#    color: *color_debug   # chose a color from the colors defined on the top of this file
+##   label: "Custom show date an time button"  # the label is optional. If no label provided it will take the label of the first action.
+#  example_button_id_with_input:
+#    action_ids:
+#    - exec_linux_cmd
+#    color: *color_test
+#    inputs:  # you can also add inputs that the button should use
+#    - label: 'Linux command:'
+#      store_var: linuxcommand
+#      type: line_edit  # other types are radiobutton, combobox, checkbox  # have a look at the global config to see how to use them
+# *************************************************************
+# Do not forget to also add your new buttons to the button box config!
+
+
+# You can also add new actions as described below:
+# ************** uncomment the following code **************
+#actions:
+#  set_keymap_de:  # rename this to your own action id.
+#    cmd: setxkbmap de  # add a linux or python command
+#    label: Set keymap to DE
+#    tooltip: 'The keyboard layout will be changed to German'
+#    type: linux  # the options are: linux, linux no log, python, python no log
+#                 # (no log prevents the action from making an output window)
+#    # more optional configurations are shortcut, loop, variables, dir # have a look at the global config to see how to use them
+# *************************************************************
+# Do not forget to also add your new action to a button or the main menu
+
+
+# You can also edit the main menu (top row of fiveshell window) as described below:
+# ************** uncomment the following code **************
+#main_window:
+#  elements:
+#  - menu: File  # add the name af the menu here. If it already exists the menus will be merged
+#    actions:
+#    - action_id: set_keymap_de  # list all the action ids you want to have in this menu here
+# *************************************************************

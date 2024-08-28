@@ -1,0 +1,628 @@
+definitions:
+  ## VIP_OAM: the virtual IP address for OAM traffic
+  VIP_OAM: &VIP_OAM ""
+  ## storage class for all OAM state
+  oam_storage_class: &oam_storage_class "network-block"
+
+global:
+  timezone: UTC
+  # nodeSelector: {}
+  pullSecret: ""
+  registry:
+    url: "armdocker.rnd.ericsson.se"
+  externalIPv4:
+     enabled: false    ## empty, true or false
+  externalIPv6:
+     enabled: false    ## empty, true or false
+  ipFamilyPolicy: SingleStack  ## SingleStack or PreferDualStack or RequireDualStack
+  # annotations: {}
+  # labels: {}
+  networkPolicy:
+    enabled: true
+  log:
+    outputs: ["stdout", "k8sLevel"] # supports stream, applicationLevel or stdout (or <old> k8sLevel)
+    streamingMethod: "indirect" # supports direct, indirect or dual
+  logShipper:
+    deployment:
+      type: "" # supports sidecar or empty
+  security:
+    tls:
+      enabled: true
+
+eric-sc-hcagent:
+  enabled: true
+  severities:
+    application:
+      - service-name: "eric-sc-nlf"
+        highest-severity-reported: "Minor"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 2
+        high-availability-replicas-required: 0
+      - service-name: "eric-sc-rlf"
+        highest-severity-reported: "Minor"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 2
+        high-availability-replicas-required: 0
+      - service-name: "eric-bsf-diameter"
+        highest-severity-reported: "Critical"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 2
+      - service-name: "eric-bsf-manager"
+        highest-severity-reported: "Critical"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 0
+      - service-name: "eric-bsf-worker"
+        highest-severity-reported: "Critical"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 2
+      - service-name: "eric-sc-slf"
+        highest-severity-reported: "Critical"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 2
+        high-availability-replicas-required: 0
+      - service-name: "eric-scp-manager"
+        highest-severity-reported: "Critical"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 0
+      - service-name: "eric-scp-worker"
+        highest-severity-reported: "Critical"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 2
+        high-availability-replicas-required: 0
+      - service-name: "eric-sepp-manager"
+        highest-severity-reported: "Critical"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 0
+      - service-name: "eric-sepp-worker"
+        highest-severity-reported: "Critical"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 2
+        high-availability-replicas-required: 0
+      - service-name: "eric-probe-virtual-tap-broker"
+        highest-severity-reported: "Major"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 1
+      - service-name: "eric-cm-mediator"
+        highest-severity-reported: "Critical"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 2
+      - service-name: "eric-cm-mediator-notifier"
+        highest-severity-reported: "Critical"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 0
+      - service-name: "eric-cm-yang-provider"
+        highest-severity-reported: "Major"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 0
+      - service-name: "eric-cnom-server"
+        highest-severity-reported: "Minor"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 0
+      - service-name: "eric-data-document-database-pg-bragent"
+        highest-severity-reported: "Major"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 0
+      - service-name: "eric-data-search-engine-ingest-tls"
+        highest-severity-reported: "Minor"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 0
+      - service-name: "eric-fh-alarm-handler"
+        highest-severity-reported: "Critical"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 2
+      - service-name: "eric-fh-snmp-alarm-provider"
+        highest-severity-reported: "Major"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 0
+      - service-name: "eric-lm-combined-server-license-consumer-handler"
+        highest-severity-reported: "Critical"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 2
+      - service-name: "eric-lm-combined-server-license-server-client"
+        highest-severity-reported: "Major"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 0
+      - service-name: "eric-log-transformer"
+        highest-severity-reported: "Minor"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 0
+      - service-name: "eric-pm-bulk-reporter"
+        highest-severity-reported: "Minor"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 0
+      - service-name: "eric-sec-admin-user-management"
+        highest-severity-reported: "Critical"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 0
+      - service-name: "eric-sec-certm"
+        highest-severity-reported: "Critical"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 0
+      - service-name: "eric-sec-ldap-server-proxy"
+        highest-severity-reported: "Major"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 0
+      - service-name: "eric-sec-sip-tls-main"
+        highest-severity-reported: "Critical"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 0
+      - service-name: "eric-stm-diameter"
+        highest-severity-reported: "Critical"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 2
+        high-availability-replicas-required: 0
+      - service-name: "eric-stm-diameter-cm"
+        highest-severity-reported: "Critical"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 0
+      - service-name: "eric-tm-ingress-controller-cr-contour"
+        highest-severity-reported: "Critical"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 2
+        high-availability-replicas-required: 0
+      - service-name: "eric-tm-ingress-controller-cr-envoy"
+        highest-severity-reported: "Critical"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 2
+      - service-name: "eric-ctrl-bro"
+        highest-severity-reported: "Major"
+        replication-controller-type: "statefulset"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 0
+      - service-name: "eric-data-coordinator-zk"
+        highest-severity-reported: "Critical"
+        replication-controller-type: "statefulset"
+        minimum-replicas-required: 3
+        high-availability-replicas-required: 0
+      - service-name: "eric-data-coordinator-zk-agent"
+        highest-severity-reported: "Major"
+        replication-controller-type: "statefulset"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 0
+      - service-name: "eric-data-distributed-coordinator-ed"
+        highest-severity-reported: "Critical"
+        replication-controller-type: "statefulset"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 3
+      - service-name: "eric-data-distributed-coordinator-ed-agent"
+        highest-severity-reported: "Major"
+        replication-controller-type: "statefulset"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 0
+      - service-name: "eric-data-document-database-pg"
+        highest-severity-reported: "Critical"
+        replication-controller-type: "statefulset"
+        minimum-replicas-required: 2
+        high-availability-replicas-required: 0
+      - service-name: "eric-data-message-bus-kf"
+        highest-severity-reported: "Critical"
+        replication-controller-type: "statefulset"
+        minimum-replicas-required: 2
+        high-availability-replicas-required: 3
+      - service-name: "eric-data-search-engine-data"
+        highest-severity-reported: "Minor"
+        replication-controller-type: "statefulset"
+        minimum-replicas-required: 2
+        high-availability-replicas-required: 0
+      - service-name: "eric-data-search-engine-master"
+        highest-severity-reported: "Minor"
+        replication-controller-type: "statefulset"
+        minimum-replicas-required: 3
+        high-availability-replicas-required: 0
+      - service-name: "eric-data-wide-column-database-cd"
+        highest-severity-reported: "Critical"
+        replication-controller-type: "statefulset"
+        minimum-replicas-required: 2
+        high-availability-replicas-required: 0
+      - service-name: "eric-pm-server"
+        highest-severity-reported: "Minor"
+        replication-controller-type: "statefulset"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 0
+      - service-name: "eric-sec-key-management"
+        highest-severity-reported: "Critical"
+        replication-controller-type: "statefulset"
+        minimum-replicas-required: 2
+        high-availability-replicas-required: 0
+      - service-name: "eric-sec-ldap-server"
+        highest-severity-reported: "Critical"
+        replication-controller-type: "statefulset"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 0
+      - service-name: "eric-si-application-sys-info-handler"
+        highest-severity-reported: "Minor"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 0
+        high-availability-replicas-required: 0
+      - service-name: "eric-log-shipper"
+        highest-severity-reported: "Minor"
+        replication-controller-type: "daemonset"
+        minimum-replicas-required: 0
+        high-availability-replicas-required: 0
+      - service-name: "eric-odca-diagnostic-data-collector"
+        highest-severity-reported: "Minor"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 0
+      - service-name: "eric-odca-diagnostic-data-collector-manual"
+        highest-severity-reported: "Minor"
+        replication-controller-type: "deployment"
+        minimum-replicas-required: 1
+        high-availability-replicas-required: 0
+  # resources:
+    # hcagent:
+      # requests:
+        # cpu: 50m
+        # memory: 100Mi
+        # ephemeral-storage:
+      # limits:
+        # cpu: 250m
+        # memory: 500Mi
+        # ephemeral-storage:
+    # logshipper:
+      # requests:
+        # memory: "20Mi"
+        # cpu: "33m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "30Mi"
+        # cpu: "40m"
+        # ephemeral-storage:
+  # export:
+    # alarmExpirationTimer: 60
+  # spec:
+    # hcagent:
+      # tolerations:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+  # nodeSelector: {}
+  # annotations: {}
+  # labels: {}
+
+eric-sc-manager:
+  enabled: true
+  # spec:
+    # scmanager:
+      # resources:
+        # requests:
+          # memory: 100Mi
+          # cpu: 100m
+          # ephemeral-storage:
+        # limits:
+          # memory: 256Mi
+          # cpu: 200m
+          # ephemeral-storage:
+  # nodeSelector: {}
+  # tolerations:
+  # - key: node.kubernetes.io/not-ready
+    # operator: Exists
+    # effect: NoExecute
+    # tolerationSeconds: 0
+  # - key: node.kubernetes.io/unreachable
+    # operator: Exists
+    # effect: NoExecute
+    # tolerationSeconds: 0
+  # annotations: {}
+  # labels: {}
+  # resources:
+    # logshipper:
+      # requests:
+        # memory: "20Mi"
+        # cpu: "33m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "30Mi"
+        # cpu: "40m"
+        # ephemeral-storage:
+
+eric-data-distributed-coordinator-ed-sc:
+  enabled: true
+  metricsexporter:
+    enabled: true
+  env:
+    dced:
+      ETCD_MAX_SNAPSHOTS: 1
+      ETCD_MAX_WALS: 1
+      ETCD_QUOTA_BACKEND_BYTES: "400000000"
+      DISARM_ALARM_PEER_INTERVAL: 5
+      # ETCD_HEARTBEAT_INTERVAL: 100
+      # ETCD_ELECTION_TIMEOUT: 1000
+  # resources:
+    # init:
+      # requests:
+        # cpu: "200m"
+        # memory: "200Mi"
+        # ephemeral-storage:
+      # limits:
+        # cpu: "500m"
+        # memory: "500Mi"
+        # ephemeral-storage:
+    # dced:
+      # requests:
+        # cpu: "400m"
+        # memory: "400Mi"
+        # ephemeral-storage:
+      # limits:
+        # cpu: "1"
+        # memory: "1Gi"
+        # ephemeral-storage:
+    # metricsexporter:
+      # requests:
+        # cpu: "100m"
+        # memory: "8Mi"
+        # ephemeral-storage:
+      # limits:
+        # cpu: "200m"
+        # memory: "32Mi"
+        # ephemeral-storage:
+  # probes:
+    # dced:
+      # livenessProbe:
+        # initialDelaySeconds: 15
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 15
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 3
+      # startupProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 10
+        # timeoutSeconds: 15
+        # failureThreshold: 12
+    # metricsexporter:
+      # livenessProbe:
+        # initialDelaySeconds: 15
+        # periodSeconds: 15
+        # timeoutSeconds: 15
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 15
+        # timeoutSeconds: 15
+        # successThreshold: 1
+        # failureThreshold: 3
+  persistence:
+    persistentVolumeClaim:
+      storageClassName: *oam_storage_class
+      # size: 1Gi
+  # affinity:
+    # podAntiAffinity: "hard"
+  # nodeSelector:
+    # dced: {}
+  # labels: {}
+  # annotations: {}
+
+eric-sc-monitor:
+  enabled: true
+  # resources:
+    # monitor:
+      # requests:
+        # memory: 100Mi
+        # cpu: 100m
+        # ephemeral-storage:
+      # limits:
+        # memory: 256Mi
+        # cpu: 200m
+        # ephemeral-storage:
+    # logshipper:
+      # requests:
+        # memory: "20Mi"
+        # cpu: "33m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "30Mi"
+        # cpu: "40m"
+        # ephemeral-storage:
+  # tolerations:
+    # monitor:
+    # - key: node.kubernetes.io/not-ready
+      # operator: Exists
+      # effect: NoExecute
+      # tolerationSeconds: 0
+    # - key: node.kubernetes.io/unreachable
+      # operator: Exists
+      # effect: NoExecute
+      # tolerationSeconds: 0
+  # nodeSelector: {}
+  # annotations: {}
+  # labels: {}
+
+eric-sc-rlf:
+  enabled: true
+  spec:
+    rlf:
+      replicaCount: 2
+      # resources:
+        # requests:
+          # memory: 1Gi
+          # cpu: 1500m
+          # ephemeral-storage:
+        # limits:
+          # memory: 2Gi
+          # cpu: 3
+          # ephemeral-storage:
+      # affinity:
+        # podAntiAffinity: "soft"
+      # tolerations:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # podDisruptionBudget:
+        # minAvailable: 1
+  # probes:
+    # rlf:
+      # livenessProbe:
+        # initialDelaySeconds: 30
+        # periodSeconds: 10
+        # timeoutSeconds: 10
+        # successThreshold: 1
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 10
+        # periodSeconds: 10
+        # timeoutSeconds: 1
+        # successThreshold: 1
+        # failureThreshold: 3
+  leaderElection:
+    enabled: true
+  # nodeSelector: {}
+  # annotations: {}
+  # labels: {}
+  # resources:
+    # logshipper:
+      # requests:
+        # memory: "20Mi"
+        # cpu: "33m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "30Mi"
+        # cpu: "40m"
+        # ephemeral-storage:
+
+eric-sc-nlf:
+  enabled: true
+  replicaCount: 2
+  # resources:
+    # nlf:
+      # requests:
+        # memory: "1Gi"
+        # cpu: "1500m"
+        # ephemeral-storage: ""
+      # limits:
+        # memory: "2Gi"
+        # cpu: "3"
+        # ephemeral-storage: ""
+    # tapagent:
+      # requests:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage: ""
+      # limits:
+        # memory: "500Mi"
+        # cpu: "500m"
+        # ephemeral-storage: ""
+    # tlskeylogagent:
+      # requests:
+        # memory: "100Mi"
+        # cpu: "100m"
+        # ephemeral-storage: ""
+      # limits:
+        # memory: "500Mi"
+        # cpu: "500m"
+    # logshipper:
+      # requests:
+        # memory: "20Mi"
+        # cpu: "33m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "30Mi"
+        # cpu: "40m"
+        # ephemeral-storage:
+  # affinity:
+    # podAntiAffinity: "soft"
+  # tolerations:
+  # - key: node.kubernetes.io/not-ready
+    # operator: Exists
+    # effect: NoExecute
+    # tolerationSeconds: 0
+  # - key: node.kubernetes.io/unreachable
+    # operator: Exists
+    # effect: NoExecute
+    # tolerationSeconds: 0
+  # podDisruptionBudget:
+    # minAvailable: 1
+  # probes:
+    # nlf:
+      # livenessProbe:
+        # initialDelaySeconds: 30
+        # periodSeconds: 10
+        # timeoutSeconds: 10
+        # successThreshold: 1
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 10
+        # periodSeconds: 10
+        # timeoutSeconds: 1
+        # successThreshold: 1
+        # failureThreshold: 3
+  # certificates:
+    # nrf:
+      # key: sc-nrf-default-key
+      # certificate: sc-nrf-default-cert
+  # tapagent:
+    # enabled: false
+  leaderElection:
+    enabled: true
+  # nodeSelector: {}
+  # annotations: {}
+  # labels: {}
+
+eric-probe-virtual-tap-broker:
+  enabled: true
+  # replicaCount: 1
+  # resources:
+    # VirtualTapBroker:
+      # limits:
+        # cpu: 4000m
+        # memory: 512Mi
+        # ephemeral-storage:
+      # requests:
+        # cpu: 4000m
+        # memory: 512Mi
+        # ephemeral-storage:
+  # dtls:
+    # enabled: false
+  # egress:
+    # probeVtapUDPClient:
+      # certificates:
+        # asymmetricKeyCertificateName: probe-vtap-udp-client
+        # trustedCertificateListName: probe-vtap-udp-client
+  # tolerations: []
+  # labels: {}
+  # timeorder:
+    # enabled: false
+    # maxWaitTime: 25
+
+eric-sc-cs-log-shipper:
+  enabled: false
+
+eric-tm-senp-nvip:
+  enabled: false

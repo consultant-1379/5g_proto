@@ -1,0 +1,4 @@
+eric-stm-diameter:
+  initialConfig:
+    dsl:
+      enableIPv6: true

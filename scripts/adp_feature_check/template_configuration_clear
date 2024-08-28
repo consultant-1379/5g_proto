@@ -1,0 +1,5 @@
+config
+no <PATH_TO_CLEAR>
+commit
+end
+exit

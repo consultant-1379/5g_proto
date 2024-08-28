@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ericsson-rlf-pm-group-instances 0.1.0 -->
+<!-- modified: 2021-09-22 -->
+<!-- Copyright (c) 2022 Ericsson AB. All rights reserved.     -->
+<config xmlns="http://tail-f.com/ns/config/1.0">
+    <pm xmlns="urn:rdns:com:ericsson:oammodel:ericsson-pm">
+        <group>
+            <name>rlf_service</name>
+            <validity>true</validity>
+            <version>1.0.0</version>
+            <measurement-type>
+                <id>rlf_in_requests_nrlf_ratelimiting_total</id>
+                <measurement-name>rlf_in_requests_nrlf_ratelimiting_total</measurement-name>
+                <size>8</size>
+                <collection-method>cc</collection-method>
+                <description>Number of incoming requests on the internal nrlf_ratelimiting interface</description>
+                <condition>Incremented: None Decremented: N/A</condition>
+                <aggregation>sum</aggregation>
+                <measurement-status>used</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>true</reset-at-gran-period>
+            </measurement-type>
+            <measurement-type>
+                <id>rlf_out_answers_nrlf_ratelimiting_total</id>
+                <measurement-name>rlf_out_answers_nrlf_ratelimiting_total</measurement-name>
+                <size>8</size>
+                <collection-method>cc</collection-method>
+                <description>Number of outgoing answers on the internal nrlf_ratelimiting interface</description>
+                <condition>Incremented: None Decremented: N/A</condition>
+                <aggregation>sum</aggregation>
+                <measurement-status>used</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>true</reset-at-gran-period>
+            </measurement-type>
+            <measurement-type>
+                <id>rlf_tb_pulls_total</id>
+                <measurement-name>rlf_tb_pulls_total</measurement-name>
+                <size>8</size>
+                <collection-method>cc</collection-method>
+                <description>Number of pulls per token bucket</description>
+                <condition>Incremented: None Decremented: N/A</condition>
+                <aggregation>sum</aggregation>
+                <measurement-status>used</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>true</reset-at-gran-period>
+            </measurement-type>
+        </group>
+        <group>
+            <name>rlf_system_metrics</name>
+            <description>Metrics to monitor the RLF system</description>
+            <validity>true</validity>
+            <version>1.0.0</version>
+            <measurement-type>
+                <id>rlf_cpu_usage</id>
+                <measurement-name>rlf_cpu_usage</measurement-name>
+                <size>8</size>
+                <collection-method>gauge</collection-method>
+                <description>CPU usage for rlf container</description>
+                <condition>CPU usage increased. CPU usage decreased.</condition>
+                <aggregation>avg</aggregation>
+                <measurement-status>used</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>false</reset-at-gran-period>
+            </measurement-type>
+            <measurement-type>
+                <id>rlf_cpu_load</id>
+                <measurement-name>rlf_cpu_load</measurement-name>
+                <size>8</size>
+                <collection-method>gauge</collection-method>
+                <description>RLF CPU load in percentage</description>
+                <condition>CPU load increased. CPU load decreased.</condition>
+                <aggregation>sum</aggregation>
+                <measurement-status>used</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>false</reset-at-gran-period>
+            </measurement-type>
+            <measurement-type>
+                <id>rlf_container_memory_working_set_bytes</id>
+                <measurement-name>rlf_container_memory_working_set_bytes</measurement-name>
+                <size>8</size>
+                <collection-method>gauge</collection-method>
+                <description>Memory usage per RLF container in bytes</description>
+                <condition>Memory usage increased. Memory usage decreased.</condition>
+                <aggregation>avg</aggregation>
+                <measurement-status>used</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>false</reset-at-gran-period>
+            </measurement-type>
+            <measurement-type>
+                <id>rlf_memory_usage</id>
+                <measurement-name>rlf_memory_usage</measurement-name>
+                <size>8</size>
+                <collection-method>gauge</collection-method>
+                <description>RLF memory usage in percentage</description>
+                <condition>Memory usage increased. Memory usage decreased.</condition>
+                <aggregation>sum</aggregation>
+                <measurement-status>used</measurement-status>
+                <multiplicity>1</multiplicity>
+                <reset-at-gran-period>false</reset-at-gran-period>
+            </measurement-type>
+        </group>
+    </pm>
+</config>

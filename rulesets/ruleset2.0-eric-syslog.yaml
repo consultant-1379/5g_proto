@@ -1,0 +1,110 @@
+modelVersion: 2.0
+
+import:
+  base: ruleset2.0-eric-base.yaml
+
+description: "Syslog"
+
+properties:
+  - SERVICE_NAME: eric-syslog
+  
+  - IMAGE_NAME: ${SERVICE_NAME}
+
+env:
+ - RELEASE (default=false)
+
+var:
+ - build-proxy
+ - namespace
+ - syslog-version
+
+
+rules:
+  init:
+    - task: set-build-proxy
+      cmd: /bin/bash -c "if [[ ! -d ${base.OUTPUT_DIR} ]];
+                         then
+                            mkdir ${base.OUTPUT_DIR};
+                         fi;
+
+                         echo 'settings.xml' > ${base.OUTPUT_DIR}/var.build-proxy"
+    - task: version
+      docker-image: base.adp-release-auto
+      cmd: generate-version --is-release ${env.RELEASE} --output syslog-version
+    - task: set-namespace
+      cmd: /bin/bash -c "./scripts/bash/setNamespace -u ${env.base.USER} -n ${env.base.NAMESPACE} -h ${env.base.KUBE_HOST}"
+    - task: set-kube-config
+      cmd: /bin/bash -c "cp /home/${env.base.USER}/.kube/${env.base.KUBE_HOST}.config ${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf;"
+
+  image:
+    - task: build-eric-syslog
+      cmd: docker build ./devtools/syslog/
+           --file devtools/syslog/Dockerfile
+           --tag ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${IMAGE_NAME}:${var.syslog-version}
+           
+  lint:
+    - task: helm
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: helm lint devtools/syslog/helm
+
+  package:
+    - task: helm-chart
+      docker-image: base.helm-builder
+      cmd: 
+        - /bin/bash -c "mkdir -p ${base.OUTPUT_DIR}/${SERVICE_NAME}"
+        - /bin/bash -c "cp -r devtools/syslog/helm/* ${base.OUTPUT_DIR}/${SERVICE_NAME}"
+        - /bin/bash -c "sed -i 's|syslog_repoPath|'${base.DOCKER_REPO_PATH}'/'${env.base.USER}'|g' ${base.OUTPUT_DIR}/${SERVICE_NAME}/eric-product-info.yaml"
+        - /bin/bash -c "sed -i 's/syslog_image_name/'${SERVICE_NAME}'/g' ${base.OUTPUT_DIR}/${SERVICE_NAME}/eric-product-info.yaml"
+        - /bin/bash -c "sed -i 's/syslog_image_tag/'${var.syslog-version}'/g' ${base.OUTPUT_DIR}/${SERVICE_NAME}/eric-product-info.yaml" 
+        - helm package --version ${var.syslog-version} --app-version ${var.syslog-version} ${base.OUTPUT_DIR}/${SERVICE_NAME}/ -d ${base.OUTPUT_DIR}/
+
+  push:
+    - task: docker-image
+      cmd: docker push ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${IMAGE_NAME}:${var.syslog-version}
+    - task: helm-chart
+      cmd: curl -f -k -H "X-JFrog-Art-Api:$(cat ~/.secrets/armseli_token)" --upload-file ${base.OUTPUT_DIR}/${SERVICE_NAME}-${var.syslog-version}.tgz "${base.HELM_CHART_REPO}/${SERVICE_NAME}-${var.syslog-version}.tgz"
+
+  deploy:
+    - task: ipv6-cleartext
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: /bin/bash -c 'helm install --namespace ${var.namespace} ${SERVICE_NAME}-${env.base.USER} ${base.OUTPUT_DIR}/${SERVICE_NAME}-${var.syslog-version}.tgz --set service.tls.enabled=false --set ipv6Enabled=true'
+    - task: ipv4-cleartext
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: /bin/bash -c 'helm install --namespace ${var.namespace} ${SERVICE_NAME}-${env.base.USER} ${base.OUTPUT_DIR}/${SERVICE_NAME}-${var.syslog-version}.tgz --set service.tls.enabled=false'
+    - task: ipv6-tls
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: /bin/bash -c 'helm install --namespace ${var.namespace} ${SERVICE_NAME}-${env.base.USER} ${base.OUTPUT_DIR}/${SERVICE_NAME}-${var.syslog-version}.tgz --set ipv6Enabled=true'
+    - task: ipv4-tls
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: /bin/bash -c 'helm install --namespace ${var.namespace} ${SERVICE_NAME}-${env.base.USER} ${base.OUTPUT_DIR}/${SERVICE_NAME}-${var.syslog-version}.tgz'
+
+  undeploy:
+    - task: all
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: helm uninstall --namespace ${var.namespace} ${SERVICE_NAME}-${env.base.USER}
+
+  clean:
+    - task: directories
+      cmd: /bin/bash -c "rm -f ${base.OUTPUT_DIR}/${SERVICE_NAME}-*.tgz"

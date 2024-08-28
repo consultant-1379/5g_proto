@@ -1,0 +1,160 @@
+# Copyright 2020 Ericsson GmbH
+#
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "eric-sc-monitor.name" . }}
+  labels:
+{{- include "eric-sc-monitor.labels" . | indent 4 }}
+  annotations:
+{{- include "eric-sc-monitor.helm-annotations" . | indent 4 }}
+{{- include "eric-sc-monitor.config-annotations" . | indent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: {{ .Values.updateStrategy.type }}
+  selector:
+    matchLabels:
+      app: {{ template "eric-sc-monitor.name" . }}
+  template:
+    metadata:
+      labels:
+        {{- include "eric-sc-monitor.pod.labels" . | nindent 8 }}
+        app: {{ template "eric-sc-monitor.name" . }}
+      annotations:
+{{- include "eric-sc-monitor.helm-annotations" . | indent 8 }}
+{{- include "eric-sc-monitor.config-annotations" . | indent 8 }}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        {{- if not (empty (include "eric-sc-monitor.podSeccompProfile" .)) }}
+        {{ include "eric-sc-monitor.podSeccompProfile" . | indent 8 }}
+        {{- end }}
+{{- if include "eric-sc-monitor.nodeSelector" . }}
+      nodeSelector:
+        {{ template "eric-sc-monitor.nodeSelector" . }}
+{{- end }}
+{{- if .Values.tolerations.monitor }}
+      tolerations:
+{{ toYaml .Values.tolerations.monitor | indent 8 }}
+{{- end }}
+{{- if include "eric-sc-monitor.pullSecrets" . }}
+      imagePullSecrets:
+      - name: {{ template "eric-sc-monitor.pullSecrets" . }}
+{{- end }}
+      containers:
+      - name: monitor
+        image: {{ template "eric-sc-monitor.monitor.registryUrl" . }}/{{ template "eric-sc-monitor.monitor.repoPath" . }}/{{ template "eric-sc-monitor.monitor.image" . }}:{{ template "eric-sc-monitor.monitor.tag" . }}
+        imagePullPolicy: {{ template "eric-sc-monitor.monitor.imagePullPolicy" . }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          privileged: false
+          runAsNonRoot: true
+          capabilities:
+            drop:
+              - ALL
+{{- include "eric-sc-monitor.monitor.seccompProfile" . | indent 10 }}
+        env:
+{{- if .Values.global }}
+{{- if .Values.global.internalIPFamily }}
+        - name: IP_FAMILY
+          value: {{ .Values.global.internalIPFamily | quote }}
+{{- end }}
+{{- end }}
+        - name: TLS_ENABLED
+{{- if eq (include "eric-sc-monitor.tls.enabled" .) "true" }}
+          value: "true"
+{{- else }}
+          value: "false"
+{{- end }}
+        - name: SERVICE_HOSTNAME
+          value: {{ template "eric-sc-monitor.name" . }}
+        - name: EXTERNAL_PORT
+          value: {{ .Values.monitor.external.port | quote }}
+        - name: INTERNAL_PORT
+          value: {{ .Values.monitor.internal.port | quote }}
+        - name: JVM_PARAMS
+          value: {{ .Values.jvm.parameters.monitor | quote }}
+        - name: USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: {{ .Values.monitor.credentials.secret | quote }}
+        - name: PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: {{ .Values.monitor.credentials.secret | quote }}
+        - name: TZ
+          value: {{ include "eric-sc-monitor.timezone" . }}
+        - name: SERVICE_ID
+          value: {{ template "eric-sc-monitor.name" . }}
+        - name: CONTAINER_NAME
+          value: "monitor"
+        - name: LOG_PATH
+          value: {{ .Values.logShipper.storage.path | quote }}
+        - name: LOGBACK_FILENAME
+          value: {{ include "eric-sc-monitor.logbackFileName" . | quote }}
+        ports:
+        - protocol: TCP
+          containerPort: {{ .Values.monitor.external.port }}
+          name: external
+        - containerPort: {{ .Values.monitor.internal.port }}
+          name: internal
+          protocol: TCP
+{{- if .Values.resources.monitor }}
+        resources:
+          requests:
+            memory: {{ .Values.resources.monitor.requests.memory | quote }}
+            cpu: {{ .Values.resources.monitor.requests.cpu | quote }}
+{{- if index .Values.resources.monitor.requests "ephemeral-storage" }}
+            ephemeral-storage: {{ index .Values.resources.monitor.requests "ephemeral-storage" | quote }}
+{{- end }}
+          limits:
+            memory: {{ .Values.resources.monitor.limits.memory | quote }}
+            cpu: {{ .Values.resources.monitor.limits.cpu | quote }}
+{{- if index .Values.resources.monitor.limits "ephemeral-storage" }}
+            ephemeral-storage: {{ index .Values.resources.monitor.limits "ephemeral-storage" | quote }}
+{{- end }}
+{{ end }}
+        volumeMounts:
+        - name: iccr-ca
+          mountPath: /run/secrets/iccr/ca
+        - name: {{ .Values.log.volumeName | quote }}
+          mountPath: /monitor/config/logcontrol
+        - name: vertx
+          mountPath: "/vertx"
+{{- if eq (include "eric-sc-monitor.tls.enabled" .) "true" }}
+        - name: server-certificate
+          mountPath: /run/secrets/monitor/external/certificates
+          readOnly: true
+{{- end }}
+{{- if eq (include "eric-sc-monitor.logshipper-enabled" . ) "true" }}
+      {{- include "eric-log-shipper-sidecar.log-shipper-sidecar-mounts" . | indent 8 }}
+{{- end }}
+{{- if eq (include "eric-sc-monitor.logshipper-enabled" . ) "true" }}
+      {{- $logshipperImageDict := dict "logshipperSidecarImage" ((((.Values).global).logShipper).config).image -}}
+      {{- include "eric-log-shipper-sidecar.log-shipper-sidecar-container" (mergeOverwrite . $logshipperImageDict ) | indent 6 }}
+{{- end }}
+      volumes:
+      - name: iccr-ca
+        secret:
+          secretName: {{ .Values.adp.tm.iccr.hostname }}-client-ca
+          items:
+          - key: ca.pem
+            path: cacertbundle.pem
+      - name: vertx
+        emptyDir:
+          medium: Memory
+      - name: {{ .Values.log.volumeName | quote }}
+        configMap:
+          name: {{ template "eric-sc-monitor.name" . }}-loglevel-config
+{{- if eq (include "eric-sc-monitor.tls.enabled" .) "true" }}
+      - name: server-certificate
+        secret:
+          secretName: {{ template "eric-sc-monitor.name" . }}-server-certificate
+{{- end }}
+{{- if eq (include "eric-sc-monitor.logshipper-enabled" . ) "true" }}
+     {{- include "eric-log-shipper-sidecar.log-shipper-sidecar-volumes" . | indent 6 }}
+{{- end }}

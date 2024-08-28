@@ -1,0 +1,94 @@
+##################################################################################
+#                                                                                #
+#       THIS FILE IS ONLY FOR BUILDING TAPAGENT                                  #
+#                                                                                #
+##################################################################################
+modelVersion: 2.0
+
+import:
+  base: ruleset2.0-eric-base.yaml
+
+description: "Build the tap agent source code"
+
+
+properties:
+  - ARM_DOCKER_REGISTRY: ${base.ARM_DOCKER_REGISTRY}
+  - TAPAGENT_BASE_IMAGE_LABEL_NAME: eric-tap-agent 
+  - TAPAGENT_BASE_IMAGE_NAME: eric-tap-agent-base
+  - TAPAGENT_COMMIT: 57cdc65
+  - TAPAGENT_DIR: esc/tap_agent/build/tapagent
+  - TAPAGENT_VERSION: 1.2.4-1-${TAPAGENT_COMMIT}-4
+  
+  - CBOS_ZYPPER_IMG: ${base.CBOS_ZYPPER_IMG}
+  - ADP_DEV_REPO: ${base.ADP_DEV_REPO}
+  - CBOS_VERSION: ${base.CBOS_VERSION}
+  - CBOS_REPO_URL: ${base.CBOS_REPO_URL}
+  - CBOS_REPO: ${CBOS_REPO_URL}/${CBOS_VERSION}
+  - CBOS_HARDENING_ARCHIVE: ${base.CBOS_HARDENING_ARCHIVE}
+  - CBOS_HARDENING_REPO: ${base.CBOS_HARDENING_REPO}
+  - CBOS_HARDENING_PATH_ARCHIVE: ${CBOS_HARDENING_REPO}/${CBOS_HARDENING_ARCHIVE}
+  - GIT_CRED: aXB3YnVpbGQ6YWJjREVmZ2hpaktMbTZRcQ==
+
+##################################################################################
+#                                                                                #
+#     BACKUP PROPERTIES TO PRODUCE CBOS OLD WAY                                  #
+#                                                                                #
+##################################################################################
+  #- CBOS_IMG_NAME: ${base.CBOS_IMG_NAME}
+  #- CBOS_IMG_NAME: armdocker.rnd.ericsson.se/proj-ldc/common_base_os/sles
+  #- CBOS_VERSION: #5.5.0-18 # Overrides ${base.CBOS_VERSION}
+  #- ADP_BUILD_ENV_VERSION: 5.5.0-18 # Overrides ${base.ADP_BUILD_ENV_VERSION}
+  #- ADP_BUILD_ENV_REPO_URL: ${base.ADP_BUILD_ENV_REPO_URL}
+  
+
+env:
+ - USER (default=anonymous)
+
+rules:
+  build-images:
+    - task: tapagent-release
+      cmd:
+
+      ##################################################################################
+      #                                                                                #
+      #       BACKUP COMMANDS TO PRODUCE CBOS OLD WAY                                  #
+      #                                                                                #
+      ##################################################################################
+      #--build-arg 'CBOS_IMG_NAME=${CBOS_IMG_NAME}'
+      #--build-arg 'ADP_BUILD_ENV_REPO_URL=${ADP_BUILD_ENV_REPO_URL}'
+      #--build-arg 'ADP_BUILD_ENV_VERSION=${ADP_BUILD_ENV_VERSION}'
+      #--build-arg 'CBOS_REPO_URL=${CBOS_REPO_URL}'
+      #--build-arg 'CBOS_VERSION=${CBOS_VERSION}'
+      #--build-arg 'CBOS_HARDENING_ARCHIVE=${CBOS_HARDENING_ARCHIVE}'
+      #--build-arg 'CBOS_HARDENING_REPO=${CBOS_HARDENING_REPO}'
+      >
+        docker build --no-cache
+        --build-arg 'CBOS_ZYPPER_IMG=${CBOS_ZYPPER_IMG}'
+        --build-arg 'CBOS_REPO=${CBOS_REPO}'
+        --build-arg 'ADP_DEV_REPO=${ADP_DEV_REPO}'
+        --build-arg 'CBOS_HARDENING_PATH_ARCHIVE=${CBOS_HARDENING_PATH_ARCHIVE}'
+        --build-arg 'GIT_VERSION=${TAPAGENT_COMMIT}'
+        --build-arg 'TAP_AGENT_IMAGE_TAG=${TAPAGENT_VERSION}'
+        --build-arg 'TAP_AGENT_IMAGE_NAME=${TAPAGENT_BASE_IMAGE_LABEL_NAME}'
+        --build-arg 'GIT_CRED=${GIT_CRED}'
+        -f ./${TAPAGENT_DIR}/Dockerfile.ci
+        -t ${ARM_DOCKER_REGISTRY}/${TAPAGENT_BASE_IMAGE_NAME}:${TAPAGENT_VERSION} ${TAPAGENT_DIR}
+    - task: tapagent
+      cmd: >
+        docker build --no-cache  
+        --build-arg 'CBOS_IMG_NAME=${CBOS_IMG_NAME}'
+        --build-arg 'CBOS_REPO_URL=${CBOS_REPO_URL}'
+        --build-arg 'ADP_BUILD_ENV_REPO_URL=${ADP_BUILD_ENV_REPO_URL}'
+        --build-arg 'ADP_BUILD_ENV_VERSION=${ADP_BUILD_ENV_VERSION}'
+        --build-arg 'CBOS_VERSION=${CBOS_VERSION}'
+        --build-arg 'GIT_VERSION=${TAPAGENT_COMMIT}'
+        --build-arg 'TAP_AGENT_IMAGE_TAG=${TAPAGENT_VERSION}'
+        --build-arg 'TAP_AGENT_IMAGE_NAME=${TAPAGENT_BASE_IMAGE_LABEL_NAME}'
+        --build-arg 'GIT_CRED=${GIT_CRED}'
+        -f ./${TAPAGENT_DIR}/Dockerfile.ci 
+        -t ${ARM_DOCKER_REGISTRY}/${env.USER}/${TAPAGENT_BASE_IMAGE_NAME}:${TAPAGENT_VERSION} ${TAPAGENT_DIR}
+  push-images:
+    - task: tapagent-release
+      cmd: docker push ${ARM_DOCKER_REGISTRY}/${TAPAGENT_BASE_IMAGE_NAME}:${TAPAGENT_VERSION}
+    - task: tapagent
+      cmd: docker push ${ARM_DOCKER_REGISTRY}/${env.USER}/${TAPAGENT_BASE_IMAGE_NAME}:${TAPAGENT_VERSION}

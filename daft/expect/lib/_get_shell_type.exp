@@ -1,0 +1,311 @@
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.10
+#  Date     : 2022-04-26 16:29:22
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2016, 2017, 2020, 2021, 2022
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Description:
+#
+# Try to determine what kind of shell we are connected to and return a string
+# describing the shell type.
+#
+# Input:
+#
+# Output:
+#  - Type of shell, one of the following
+#      CLISS
+#      CMXB-LINUX
+#      CYGWIN
+#      DIRECTOR-LINUX
+#      DMX
+#      GEP-LINUX
+#      GEP-SIGNMCLI
+#      ISS
+#      LINUX
+#      SCXB-LINUX-DMX
+#      SCXB-LINUX-BSP
+#      UNKNOWN
+#
+proc get_shell_type {} {
+
+    # Set below value to 1 if you want to get extra debug printouts for prompt handling
+    set debug_prompt 0
+
+    # Retrieve the global spawn_id
+    global spawn_id
+
+    global timeout
+    set default_timeout $timeout
+
+    # Fetch any previously detected prompt and update the local prompt variable
+    global detected_prompt
+    if {$detected_prompt == ""} {
+        set default_prompt "aPromptThatShouldNeverBeMatched1234567890"
+        set prompt $default_prompt
+    } else {
+        set default_prompt $detected_prompt
+        set prompt $default_prompt
+    }
+    if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG get_shell_type 0: prompt='$prompt' <<<<<<<<<<<<<<<<<<<\n" }
+
+    set potential_prompt 0
+    set shell_type "UNKNOWN"
+
+    # Send a CR to see what kind of prompt we get back
+    send -- "\r"
+
+    expect {
+        "\n" {
+            # New line received, continue waiting
+            # Restore timeout valye
+            set timeout $default_timeout
+            set prompt $default_prompt
+            set potential_prompt 0
+            exp_continue
+        }
+        -re ">$" {
+            # CLISS prompt which can be on GEP, BSP or CMXB, Ready for next command
+            set shell_type "CLISS"
+            set prompt $expect_out(0,string)
+        }
+        -re "SC-2-\[12\]\[^\n\]*$" {
+            # BSP SCXB prompt, Ready for next command
+            set shell_type "SCXB-LINUX-BSP"
+            set prompt $expect_out(0,string)
+        }
+        -re "SC-\[12\]\[^\n\]*$" {
+            # GEP Controller prompt, Ready for next command
+            set shell_type "GEP-LINUX"
+            set prompt $expect_out(0,string)
+        }
+        -re "PL-\[0-9\]+\[^\n\]*$" {
+            # GEP Payload prompt, Ready for next command
+            set shell_type "GEP-LINUX"
+            set prompt $expect_out(0,string)
+        }
+        -re "CMX\[-_\]0\[-_\]\[0-9\]+.*\[#>\]$" {
+            # CMX Bridge prompt, Ready for next command
+            set shell_type "CMXB-IMISH"
+            set prompt $expect_out(0,string)
+        }
+        -re "CMX_\[LR\]_.+\[#>\]$" {
+            # CMX Bridge prompt, Ready for next command
+            set shell_type "CMXB-IMISH"
+            set prompt $expect_out(0,string)
+        }
+        -re "expert@blade_0_0\[^\n\]*$" {
+            # DMX3.1 DMX prompt, Ready for next command
+            set shell_type "DMX"
+            set prompt $expect_out(0,string)
+        }
+        -re "expert@blade_0_25\[^\n\]*$" {
+            # DMX3.1 DMX prompt, Ready for next command
+            set shell_type "DMX"
+            set prompt $expect_out(0,string)
+        }
+        -re "(advanced|root)@blade_0_0\[^\n\]*$" {
+            # DMX3.1 SCXB Linux or DMX prompt, Ready for next command
+            set shell_type "SCXB-LINUX-DMX"
+            set prompt $expect_out(0,string)
+        }
+        -re "(advanced|root)@blade_0_25\[^\n\]*$" {
+            # DMX3.1 SCXB Linux prompt, Ready for next command
+            set shell_type "SCXB-LINUX-DMX"
+            set prompt $expect_out(0,string)
+        }
+        -re "(advanced|root)@blade_0_2\[68\]\[^\n\]*$" {
+            # DMX3.1 CMXB Linux or DMX prompt, Ready for next command
+            set shell_type "CMXB-LINUX"
+            set prompt $expect_out(0,string)
+        }
+        -re "bash-3\.2#\[^\n\]*$" {
+            # DMX3.1 CMXB Linux prompt, Ready for next command
+            set shell_type "CMXB-LINUX"
+            set prompt $expect_out(0,string)
+        }
+        -re "^\[\r\]*dmx\[^\n\]*#\[^\n\]*$" {
+            # ISS prompt, Ready for next command
+            set shell_type "ISS"
+            set prompt $expect_out(0,string)
+        }
+        -re "cli> $" {
+            # Signaling CLI, Ready for next command
+            set shell_type "GEP-SIGNMCLI"
+            set prompt $expect_out(0,string)
+        }
+        -re "director\[^\n\]*> $" {
+            # The director on the SC node Linux prompt, Ready for next command
+            set shell_type "DIRECTOR-LINUX"
+            set prompt $expect_out(0,string)
+        }
+        -re "^\[^@\]*@5gc-sc-testnode#$" {
+            # The CMYP-CLI shell on the SC node, Ready for next command
+            set shell_type "CMYP-CLI"
+            set prompt $expect_out(0,string)
+        }
+        -re "^\[^@\]*@eric-cm-yang-provider-\[^#\]*#$" {
+            # The CMYP-CLI shell on the SC node, Ready for next command
+            set shell_type "CMYP-CLI"
+            set prompt $expect_out(0,string)
+        }
+        -re "^\[^@\]*@\[^#\]*#$" {
+            # The CMYP-CLI shell on the SC node, Ready for next command
+            set shell_type "CMYP-CLI"
+            set prompt $expect_out(0,string)
+        }
+        -re "$prompt$" {
+            if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG get_shell_type 1: prompt='$prompt' <<<<<<<<<<<<<<<<<<<\n" }
+            # Restore timeout valye
+            if { $prompt == "" } {
+                # Continue looking for prompt
+                exp_continue
+            } else {
+                # Ready for next command
+                set timeout $default_timeout
+            }
+        }
+        -re "(\[^\r\n\]+)$" {
+            # We have received a potential prompt, wait max 1 second for something more to come
+            set timeout 1
+            set potential_prompt 1
+            set prompt $expect_out(1,string)
+            if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG get_shell_type 2: prompt='$prompt' <<<<<<<<<<<<<<<<<<<\n" }
+
+            exp_continue
+        }
+        eof {
+            # Lost connection to the node
+            set timeout $default_timeout
+            return $shell_type
+        }
+        timeout {
+            if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG get_shell_type: TIMEOUT <<<<<<<<<<<<<<<<<<<\n" }
+            if { $potential_prompt == 1 } {
+                # Treat this as a success but first restore timeout value
+                set timeout $default_timeout
+            } else {
+                puts "\nWe were unable to detect shell type due to a timeout\n"
+                set timeout $default_timeout
+                return $shell_type
+            }
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    set timeout $default_timeout
+
+    # Update the detected prompt , if needed
+    if {$prompt != $detected_prompt} {
+        # Convert all non-ASCII and Tcl-significant characters into \u escape sequences by using regsub and subst in combination
+        # Code copied from example on web page: https://www.tcl.tk/man/tcl8.4/TclCmd/regsub.htm
+        set RE {[][{}\$\s\u0100-\uffff]}
+        set substitution {[format \\\\u%04x [scan "\\&" %c]]}
+        set prompt [subst [regsub -all $RE $prompt $substitution]]
+
+        set default_prompt $prompt
+        set detected_prompt $prompt
+    }
+    if {$debug_prompt == 1} { puts "\n>>>>>>>>>>>>>>>>>>> DBG get_shell_type 3: prompt='$prompt' <<<<<<<<<<<<<<<<<<<\n" }
+
+    if { $shell_type == "UNKNOWN" } {
+        # Try to determine shell type from OS Type using "uname -o"
+        send -- "uname -o\r"
+
+        # Shorten the timeout
+        set timeout 2
+
+        expect {
+            "Linux" {
+                set shell_type "LINUX"
+
+                # New line received, continue waiting
+                exp_continue
+            }
+            "Cygwin" {
+                set shell_type "CYGWIN"
+
+                # New line received, continue waiting
+                exp_continue
+            }
+            "\n" {
+                # New line received, continue waiting
+                set timeout 2
+                set prompt $default_prompt
+                exp_continue
+            }
+            -re "$prompt$" {
+                if { $prompt == "" } {
+                    # Continue looking for prompt
+                    exp_continue
+                } else {
+                    # Restore timeout valye
+                    set timeout $default_timeout
+                    # Ready for next command
+                }
+            }
+            -re "(\[^\r\n\]+)$" {
+                # We have received a potential prompt, wait max 1 second for something more to come
+                set timeout 1
+                set potential_prompt 1
+                set prompt $expect_out(1,string)
+
+                exp_continue
+            }
+            eof {
+                # Lost connection to the node
+
+                # Restore timeout valye
+                set timeout $default_timeout
+
+                return $shell_type
+            }
+            timeout {
+
+                if { $potential_prompt == 1 } {
+                    # Treat this as a success but first restore timeout value
+                    set timeout $default_timeout
+                } else {
+                    puts "\nWe were unable to login to the node due to a timeout\n"
+                    set timeout $default_timeout
+                    return $shell_type
+                }
+
+                return $shell_type
+            }
+        }
+
+        # Read any pending output
+        expect -re ".*"
+
+    }
+
+    # Update the detected prompt , if needed
+    if {$prompt != $detected_prompt} {
+        # Convert all non-ASCII and Tcl-significant characters into \u escape sequences by using regsub and subst in combination
+        # Code copied from example on web page: https://www.tcl.tk/man/tcl8.4/TclCmd/regsub.htm
+        set RE {[][{}\$\s\u0100-\uffff]}
+        set substitution {[format \\\\u%04x [scan "\\&" %c]]}
+        set prompt [subst [regsub -all $RE $prompt $substitution]]
+
+        set detected_prompt $prompt
+    }
+
+    return $shell_type
+}

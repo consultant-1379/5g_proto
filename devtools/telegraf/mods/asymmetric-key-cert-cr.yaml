@@ -1,0 +1,14 @@
+{{- if .Values.service.tls.enabled }}
+{{- if .Values.service.tls.useCR }}
+apiVersion: certm.sec.ericsson.com/v1
+kind: ExternalCertificate
+metadata:
+  name: {{ include "telegraf.fullname" . }}-asymmetric-key-cert
+  labels:
+    {{- include "telegraf.labels" . | nindent 4 }}
+spec:
+  generated-secret-name: {{ include "telegraf.fullname" . }}-asymmetric-key-cert-secret
+  generated-secret-type: tls
+  asymmetric-key-certificate-name: {{ .Values.service.tls.clientKey }}/{{ .Values.service.tls.clientCert }}
+{{- end -}}
+{{- end -}}

@@ -1,0 +1,8 @@
+
+config	
+scp-function nf-instance scp_instance_1 failover-profile fop1 preferred-host-retries-max 1
+commit
+exit
+show running-config scp-function nf-instance scp_instance_1 failover-profile fop1 
+exit
+

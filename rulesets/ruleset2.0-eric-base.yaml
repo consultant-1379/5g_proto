@@ -1,0 +1,329 @@
+modelVersion: 2.0
+
+description: "Base ruleset containing builder definitions and common properties."
+#https://gerrit.ericsson.se/plugins/gitiles/OSS/com.ericsson.orchestration.mgmt.packaging/am-package-manager/
+#Image catalog: https://eteamspace.internal.ericsson.com/display/ACD/ADP+CICD+Docker+Image+Catalog
+
+docker-images:
+  - adp-cicd-deprecations-tool: armdocker.rnd.ericsson.se/proj-adp-cicd-drop/eric-adp-cicd-deprecations-tool:3.2.1
+  - adp-helm-dr-check: armdocker.rnd.ericsson.se/proj-adp-cicd-drop/common-library-adp-helm-dr-check:58.1.2
+  - adp-release-auto: armdocker.rnd.ericsson.se/proj-adp-cicd-drop/bob-adp-release-auto:3.28.7
+  - boringssl-builder: ${ARM_DOCKER_REGISTRY}/builder/boringssl-builder:${BORINGSSL_BUILDER_VERSION}
+  - cbos: armdocker.rnd.ericsson.se/proj-ldc/common_base_os_release/sles:${CBOS_VERSION}
+  - certificates-builder: armdocker.rnd.ericsson.se/proj-5g-bsf/certificates-builder:1.0
+  - envoy-builder: armdocker.rnd.ericsson.se/proj-5g-bsf/envoybuilder:3.0.0-21
+  - helm-builder: armdocker.rnd.ericsson.se/proj-adp-cicd-drop/bob-helmbuilder:1.2.1-4
+  - helm-builder-py3: ${ARM_DOCKER_REGISTRY}/builder/sc-${PY3_HELM_BUILDER_NAME}:${PY3_HELM_BUILDER_VERSION}
+  - java-maven-builder: ${JAVA_MAVEN_BUILDER}
+  - package-manager: armdocker.rnd.ericsson.se/proj-am/releases/eric-am-package-manager:2.113.0-9
+  - python3-builder: armdocker.rnd.ericsson.se/proj-5g-bsf/python3-builder:1.0.0
+  - supreme: armdocker.rnd.ericsson.se/proj-5g-bsf/supreme/supreme:1.0.22
+  - inca: armdocker.rnd.ericsson.se/proj-adp-cicd-drop/adp-int-helm-chart-auto:0.23.0-1
+  - cihelm: serodocker.sero.gic.ericsson.se/proj-pc-tools-released/cihelm:0.6.2
+
+properties:
+  - ENVOY_VERSION: 1.29.4-7
+
+  - GIT_REPO_URL: https://gerrit.ericsson.se/a/MC_5G/5g_proto
+
+  - CERTS_OUT_DIR: .certificates
+
+  - GO_BUILDER: armdocker.rnd.ericsson.se/proj-adp-cicd-drop/bob-gobuilder.adp-base-os:4.93.0
+  - JAVA_MAVEN_BUILDER: armdocker.rnd.ericsson.se/proj-adp-cicd-drop/bob-java17mvnbuilder:1.32.0
+
+  - PY3_HELM_BUILDER_NAME: bob-py3kubehelmbuilder
+  - PY3_HELM_BUILDER_VERSION: 2.3.1-8
+  - PY3_HELM_BUILDER: armdocker.rnd.ericsson.se/sandbox/adp-staging/adp-cicd/${PY3_HELM_BUILDER_NAME}:${PY3_HELM_BUILDER_VERSION}
+
+  - BORINGSSL_BUILDER_VERSION: 1.0.2
+
+  - CBOS_VERSION: 6.14.0-10
+
+  # The micro CBOS image
+  - CBOS_IMG: armdocker.rnd.ericsson.se/proj-ldc/common_base_os_micro_release/sles:${CBOS_VERSION}
+
+  - CBOS_PATH: cbos
+
+  # Tmages created for the SC:
+  # CBOS_ZYPPER              : MicroCBOS, zypper                                                 - Generic image that allows to install additional packages
+  # SC_CBOS                  : MicroCBOS, java, openssl                                          - Suitable for running most of our java-based pods
+  # SC_CBOS_ZYPPER           : MicroCBOS, java, openssl, zypper                                  - For java-based pods that need additional RPMs (e.g. loadgen)
+  # SC_CBOS_TAPCOLLECTOR     : MicroCBOS, java, openssl, libpcap                                 - For the tapcollector
+  # SC_CBOS_ENVOY_PRODUCTION : MicroCBOS, curl, net-tools                                        - Envoy production base image
+  # SC_CBOS_ENVOY_DEBUG      : MicroCBOS, curl, net-tools, binutils, tar, wget, zypper, gdb, vim - Envoy base image for debugging purpose
+  # Additional images for cis-cat scanning: SC_CBOS_IMG/SC_CBOS_TAPCOLLECTOR/SC_CBOS_ENVOY_PRODUCTION
+
+  - CBOS_ZYPPER_IMG_NAME: sles-zypper
+  - CBOS_ZYPPER_IMG: ${ARM_DOCKER_REGISTRY}/${CBOS_PATH}/${CBOS_ZYPPER_IMG_NAME}:${CBOS_VERSION}
+
+  - SC_CBOS_IMG_NAME: sc-sles
+  - SC_CBOS_IMG: ${ARM_DOCKER_REGISTRY}/${CBOS_PATH}/${SC_CBOS_IMG_NAME}:${CBOS_VERSION}
+
+  - SC_CBOS_ZYPPER_IMG_NAME: sc-sles-zypper
+  - SC_CBOS_ZYPPER_IMG: ${ARM_DOCKER_REGISTRY}/${CBOS_PATH}/${SC_CBOS_ZYPPER_IMG_NAME}:${CBOS_VERSION}
+
+  - SC_CBOS_TAPCOLLECTOR_IMG_NAME: sc-sles-tapcollector
+  - SC_CBOS_TAPCOLLECTOR_IMG: ${ARM_DOCKER_REGISTRY}/${CBOS_PATH}/${SC_CBOS_TAPCOLLECTOR_IMG_NAME}:${CBOS_VERSION}
+
+  - SC_CBOS_ENVOY_PRODUCTION_IMG_NAME: sc-sles-envoy-production
+  - SC_CBOS_ENVOY_PRODUCTION_IMG: ${ARM_DOCKER_REGISTRY}/${CBOS_PATH}/${SC_CBOS_ENVOY_PRODUCTION_IMG_NAME}:${CBOS_VERSION}
+
+  - SC_CBOS_ENVOY_DEBUG_IMG_NAME: sc-sles-envoy-debug
+  - SC_CBOS_ENVOY_DEBUG_IMG: ${ARM_DOCKER_REGISTRY}/${CBOS_PATH}/${SC_CBOS_ENVOY_DEBUG_IMG_NAME}:${CBOS_VERSION}
+
+  - CBOS_HARDENING_ARCHIVE: common-base-os-hardening-cxa301047-${CBOS_VERSION}.tar.gz
+  - CBOS_HARDENING_REPO: https://arm.sero.gic.ericsson.se/artifactory/proj-ldc-repo-rpm-local/common_base_os/hardening/${CBOS_VERSION}
+
+  - CBOS_REPO: ${CBOS_REPO_URL}/${CBOS_VERSION}/
+  - CBOS_REPO_URL: https://arm.sero.gic.ericsson.se/artifactory/proj-ldc-repo-rpm-local/common_base_os/sles
+
+  - ADP_BUILD_ENV_VERSION: ${CBOS_VERSION}
+  - ADP_BUILD_ENV_REPO_URL: https://arm.sero.gic.ericsson.se/artifactory/proj-ldc-repo-rpm-local/adp-dev/adp-build-env
+  - ADP_DEV_REPO: ${ADP_BUILD_ENV_REPO_URL}/${ADP_BUILD_ENV_VERSION}/
+
+  - ARM_DOCKER_REGISTRY: ${DOCKER_REGISTRY_URL}/${DOCKER_REPO_PATH}
+  - DOCKER_REGISTRY_URL: armdocker.rnd.ericsson.se
+  - ARMSERO_REGISTRY_URL: selndocker.mo.sw.ericsson.se
+  - ARMSERO_ARTIFACTORY_URL: "https://arm.sero.gic.ericsson.se/artifactory"
+  - DOCKER_REPO_PATH: proj-5g-bsf
+  - HELM_CHART_REPO: https://armdocker.rnd.ericsson.se/artifactory/proj-5g-bsf-helm
+
+  # This JENKINS_URL is only for validating the code of the Jenkinsfile
+  # it could be any working Jenkins instance...
+  - JENKINS_URL: https://fem1s10-eiffel029.eiffel.gic.ericsson.se:8443/jenkins
+
+  - MVN_ARGS: ${env.MVN_ARGS}
+  - DEBUG_CURL_FLAGS: ${env.DEBUG_CURL_FLAG1} ${env.DEBUG_CURL_FLAG2}
+
+# helm/kubectl version slected in the bob-py3kubehelmbuilder image
+  - HELM_VERSION_HELMBUILDERPY3: 3.12.3
+  - KUBECTL_VERSION_HELMBUILDERPY3: 1.28.4
+
+  - OUTPUT_DIR: .bob
+  - REPO_CREDENTIALS_FILE: "helm_repositories.yaml"
+
+env:
+ - ARTIFACTORY_TOKEN
+ - BOB_FORCE_IMAGE_PULL (default=false)
+ - DEBUG_FLAG (default=)
+ - DEBUG_CURL_FLAG1 (default=)
+ - DEBUG_CURL_FLAG2 (default=)
+ - DOCKER_NETWORK (default=bridge)
+ - HOME (default=)
+ - KUBE_HOST
+ - NAMESPACE (default=)
+ - MVN_ARGS (default=-Daether.connector.http.retryHandler.count=10)
+ - SPEED (default=normal)
+ - USER (default=anonymous)
+ - RELEASE (default=false)
+
+var:
+ - armdocker-api-token
+ - build-proxy
+ - git-commit-date
+ - git-commit-hash
+ - policy-api-version
+ - mvn-args
+ - namespace
+ - selndocker-api-token
+ - serodocker-api-token
+ - gerrit-password
+
+rules:
+  init:
+    - task: create-output-dir
+      cmd: mkdir -p ${OUTPUT_DIR}
+    - task: copy-docker-config
+      cmd:
+        #The docker config-file needs to be copied as only the owner has access rights, so just mounting won't work
+        #Running the container as user gives access to the file, but the image building needs root access
+        - cp ${env.HOME}/.docker/config.json ${OUTPUT_DIR}/config.json
+        - chmod 604 ${OUTPUT_DIR}/config.json
+    # The helm-repositories credentials are required for the INCA tool to fetch dependencies
+    - task: copy-helm-credentials
+      cmd:
+        - cp ${env.HOME}/.artifactory/helm_repositories.yaml ${OUTPUT_DIR}/${REPO_CREDENTIALS_FILE}
+        - chmod 604 ${OUTPUT_DIR}/${REPO_CREDENTIALS_FILE}
+    - task: set-namespace
+      cmd: /bin/bash -c "./scripts/bash/setNamespace -u ${env.USER} -n ${env.NAMESPACE} -h ${env.KUBE_HOST}"
+    - task: set-kube-config
+      cmd: /bin/bash -c "cp /home/${env.USER}/.kube/${env.KUBE_HOST}.config ${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf;"
+    - task: set-build-proxy
+      cmd: echo 'settings.xml' > ${OUTPUT_DIR}/var.build-proxy
+    - task: set-supreme-properties
+      cmd:
+        - mkdir -p ${CERTS_OUT_DIR}
+        - cp /proj/sc-tools/bin/supreme/simple_prop3.yaml ${CERTS_OUT_DIR}/supreme.yaml
+        - sed -i 's/<NAMESPACE>/${var.namespace}/g' ${CERTS_OUT_DIR}/supreme.yaml
+        - sed -i 's_<DIR>_${CERTS_OUT_DIR}_g' ${CERTS_OUT_DIR}/supreme.yaml
+    #Needed for chart linting. See DND-40194.
+    - task: policy-api-version
+      cmd: read major minor < <(echo $(kubectl version -o json | jq -r '.serverVersion | .major , .minor'));
+           if [ $major -eq 1 ] && [ $minor -le 24 ];
+           then echo "policy/v1beta1/PodDisruptionBudget" > ${OUTPUT_DIR}/var.policy-api-version;
+           else echo "policy/v1/PodDisruptionBudget" > ${OUTPUT_DIR}/var.policy-api-version;
+           fi;
+    - task: api-tokens
+      cmd:
+        - jq '.auths."armdocker.rnd.ericsson.se".auth' ~/.docker/config.json | cut -d'"' -f2 | base64 -d | cut -d':' -f2 > ${OUTPUT_DIR}/var.armdocker-api-token
+        - jq '.auths."selndocker.mo.sw.ericsson.se".auth' ~/.docker/config.json | cut -d'"' -f2 | base64 -d | cut -d':' -f2 > ${OUTPUT_DIR}/var.selndocker-api-token
+        - jq '.auths."serodocker.sero.gic.ericsson.se".auth' ~/.docker/config.json | cut -d'"' -f2 | base64 -d | cut -d':' -f2 > ${OUTPUT_DIR}/var.serodocker-api-token
+    - task: git-properties
+      cmd:
+          #Convert to ISO8601 UTC timestamp
+        - date -d @$(git log -1 --format=%ct) --utc +%FT%TZ > ${OUTPUT_DIR}/var.git-commit-date
+        - git rev-parse --short HEAD > ${OUTPUT_DIR}/var.git-commit-hash
+
+    #The jsonschema2pojo and OpenAPI generator maven plugins do not offer a proper stalecheck for regenerating sources.
+    #This compares the epoch timestamps of the sourcefiles and the latest targetclasse and skips the plugins if no update was performed
+    #Needs to be adapted if paths change, e.g. 3.0.1 is added for PM
+    - task: mvn-args
+      cmd:
+        - echo -n > ${OUTPUT_DIR}/var.mvn-args
+        - if [ "${env.SPEED}" == "fast" ];
+          then
+            echo -n "-DskipTests=true -Djacoco.skip=true " > ${OUTPUT_DIR}/var.mvn-args;
+          else
+            echo -n "-DskipTests=false -Djacoco.skip=false " > ${OUTPUT_DIR}/var.mvn-args;
+          fi;
+        - $([ "$(ls -lrt --time-style=+%s fm-lib/src/resources/eric-fh-alarm-handler/aal/schema | tail -n1 | awk '{print $6}')" \< "$(ls -Rlrt --time-style=+%s fm-lib/target/classes/com/ericsson/sc/fm/model/aal/ 2>/dev/null | tail -n1 | awk '{print $6}')" ] && echo -n "-Dfm-lib.skipAal=true " >> ${OUTPUT_DIR}/var.mvn-args || echo -n "-Dfm-lib.skipAal=false " >> ${OUTPUT_DIR}/var.mvn-args)
+        - $([ "$(ls -lrt --time-style=+%s fm-lib/src/resources/eric-fh-alarm-handler/fi/schema | tail -n1 | awk '{print $6}')" \< "$(ls -Rlrt --time-style=+%s fm-lib/target/classes/com/ericsson/sc/fm/model/fi/ 2>/dev/null | tail -n1 | awk '{print $6}')" ] && echo -n "-Dfm-lib.skipFi=true " >> ${OUTPUT_DIR}/var.mvn-args || echo -n "-Dfm-lib.skipFi=false " >> ${OUTPUT_DIR}/var.mvn-args)
+        - $([ "$(ls -lrt --time-style=+%s pm-lib/adp-gs-pm-bulk-reporter/doc/API/OAS/3.0.0/pm-service.json | tail -n1 | awk '{print $6}')" \< "$(ls -Rlrt --time-style=+%s pm-lib/target/classes/com/ericsson/sc/pm/model/pmbr 2>/dev/null | tail -n1 | awk '{print $6}')" ] && echo -n "-Dpm-lib.skip=true " >> ${OUTPUT_DIR}/var.mvn-args || echo -n "-Dpm-lib.skip=false " >> ${OUTPUT_DIR}/var.mvn-args)
+
+  cncs-init:
+    - task: gerrit-password
+      cmd: cat /home/${env.USER}/.secrets/gerrit_password > ${OUTPUT_DIR}/var.gerrit-password
+
+  conditions:
+      #The micro cbos build is not cached.
+      #This check allows to only rebuild the image if it is not available
+      #A bit clunky, but works. Investigate how to use layer caching with buildah
+    - task: cbos-micro-not-found
+      cmd: /bin/bash -c "if [[ \"$(docker pull ${SC_CBOS_IMG} 2>&1)\" =~ \"manifest unknown\" ]];
+                         then exit 0;
+                         else exit 1;
+                         fi;"
+    - task: cbos-micro-zypper-not-found
+      cmd: /bin/bash -c "if [[ \"$(docker pull ${SC_CBOS_ZYPPER_IMG} 2>&1)\" =~ \"manifest unknown\" ]];
+                         then exit 0;
+                         else exit 1;
+                         fi;"
+    - task: minikube-true
+      cmd: test "${env.KUBE_HOST}" = "minikube"
+
+  base-image:
+    - rule: init
+    - task: build-micro-cbos-images
+      docker-image: cbos
+      docker-flags:
+        - --user root:root
+        - --privileged
+        - --volume $PWD/.bob/config.json:/config.json
+        - -e CBOS_HARDENING_ARCHIVE=${CBOS_HARDENING_ARCHIVE}
+        - -e CBOS_HARDENING_REPO=${CBOS_HARDENING_REPO}
+        - -e CBO_REPO=${CBOS_REPO_URL}
+        - -e CBO_VERSION=${CBOS_VERSION}
+        - -e CBO_DEVENV_REPO=${ADP_BUILD_ENV_REPO_URL}
+        - -e CBO_DEVENV_VERSION=${ADP_BUILD_ENV_VERSION}
+        - -e MICROCBO_IMAGE=${CBOS_IMG}
+        - -e REGISTRY=${ARM_DOCKER_REGISTRY}/${CBOS_PATH}
+        - -e VERSION=${CBOS_VERSION}
+      cmd:
+       - esc/sc-sles/build_micro_cbos.sh ${CBOS_ZYPPER_IMG_NAME} "CBO_REPO:zypper"
+       - esc/sc-sles/build_micro_cbos.sh ${SC_CBOS_IMG_NAME} "CBO_REPO:java-17-openjdk-headless CBO_REPO:libcrypt1 CBO_REPO:openssl"
+       - esc/sc-sles/build_micro_cbos.sh ${SC_CBOS_ZYPPER_IMG_NAME} "CBO_REPO:java-17-openjdk-headless CBO_REPO:libcrypt1 CBO_REPO:openssl CBO_REPO:zypper"
+       - esc/sc-sles/build_micro_cbos.sh ${SC_CBOS_TAPCOLLECTOR_IMG_NAME} "CBO_REPO:java-17-openjdk-headless CBO_REPO:libcrypt1 CBO_REPO:libpcap CBO_REPO:openssl"
+       - esc/sc-sles/build_micro_cbos.sh ${SC_CBOS_ENVOY_PRODUCTION_IMG_NAME} "CBO_REPO:curl CBO_REPO:net-tools"
+       - esc/sc-sles/build_micro_cbos.sh ${SC_CBOS_ENVOY_DEBUG_IMG_NAME} "CBO_REPO:binutils CBO_REPO:curl CBO_REPO:gzip CBO_REPO:net-tools CBO_REPO:tar CBO_REPO:wget CBO_REPO:zypper CBO_DEVENV:gdb CBO_DEVENV:vim"
+       - esc/sc-sles/build_micro_cbos.sh ${SC_CBOS_IMG_NAME}-cis-cat "CBO_REPO:java-17-openjdk-headless CBO_REPO:libcrypt1 CBO_REPO:openssl CBO_REPO:iproute2 CBO_REPO:util-linux CBO_REPO:which CBO_REPO:rpm CBO_REPO:hostname CBO_REPO:gawk"
+       - esc/sc-sles/build_micro_cbos.sh ${SC_CBOS_TAPCOLLECTOR_IMG_NAME}-cis-cat "CBO_REPO:java-17-openjdk-headless CBO_REPO:libcrypt1 CBO_REPO:libpcap CBO_REPO:openssl CBO_REPO:iproute2 CBO_REPO:util-linux CBO_REPO:which CBO_REPO:rpm CBO_REPO:hostname CBO_REPO:gawk"
+       - esc/sc-sles/build_micro_cbos.sh ${SC_CBOS_ENVOY_PRODUCTION_IMG_NAME}-cis-cat "CBO_REPO:curl CBO_REPO:net-tools CBO_REPO:iproute2 CBO_REPO:util-linux CBO_REPO:which CBO_REPO:rpm CBO_REPO:hostname CBO_REPO:gawk"
+    - task: pull-micro-cbos-images
+      cmd:
+       - docker pull ${CBOS_ZYPPER_IMG}
+       - docker pull ${SC_CBOS_IMG}
+       - docker pull ${SC_CBOS_ZYPPER_IMG}
+       - docker pull ${SC_CBOS_TAPCOLLECTOR_IMG}
+       - docker pull ${SC_CBOS_ENVOY_PRODUCTION_IMG}
+       - docker pull ${SC_CBOS_ENVOY_DEBUG_IMG}
+
+  py3-helmbuilder:
+    - task: build
+      cmd:
+        - docker build ./devtools/images-builder/py3-helm-builder
+          --file ./devtools/images-builder/py3-helm-builder/Dockerfile
+          --build-arg BASE_IMAGE=${PY3_HELM_BUILDER}
+          --tag ${ARM_DOCKER_REGISTRY}/builder/sc-${PY3_HELM_BUILDER_NAME}:${PY3_HELM_BUILDER_VERSION}
+        - docker push ${ARM_DOCKER_REGISTRY}/builder/sc-${PY3_HELM_BUILDER_NAME}:${PY3_HELM_BUILDER_VERSION}
+
+  boringssl-builder:
+    - task: build
+      cmd:
+        - docker build ./devtools/images-builder/boringssl-builder
+          --file ./devtools/images-builder/boringssl-builder/Dockerfile
+          --build-arg BASE_IMAGE=${JAVA_MAVEN_BUILDER}
+          --tag ${ARM_DOCKER_REGISTRY}/builder/boringssl-builder:${BORINGSSL_BUILDER_VERSION}
+        - docker push ${ARM_DOCKER_REGISTRY}/builder/boringssl-builder:${BORINGSSL_BUILDER_VERSION}
+
+  libs:
+    - task: eclipse-java-formatter
+      docker-image: java-maven-builder
+      cmd:
+        - mvn -f libs/eclipse-formatter/pom.xml -s settings.xml -Duser.home=. -am -Dmaven.deploy.skip=false -DcreateChecksum=true -DdeployAtEnd=true clean deploy install
+    - task: rx-kms-client-compile
+      docker-image: java-maven-builder
+      cmd:
+        - mvn -f rx-kms-client/pom.xml -s settings.xml -am -DskipTests clean compile
+    - task: rx-kms-client-push
+      docker-image: java-maven-builder
+      cmd:
+        - mvn -f rx-kms-client/pom.xml -s settings.xml -am -Dmaven.deploy.skip=false -DcreateChecksum=true -DdeployAtEnd=true -DskipTests clean deploy
+    - task: certm-cr-handler-compile
+      docker-image: java-maven-builder
+      cmd:
+        - mvn -f certm-cr-handler/pom.xml -s settings.xml -am -DskipTests clean compile
+      docker-image: java-maven-builder
+      cmd:
+        - mvn -f libs/super-pom/pom.xml -s settings.xml -Duser.home=. -am -Dmaven.deploy.skip=false -DcreateChecksum=true -DdeployAtEnd=true clean deploy install
+
+
+### Deprecated ###
+  create-output-dir:
+    - task: create-output-dir
+      cmd: mkdir -p ${OUTPUT_DIR}
+  set-build-proxy:
+    - task: set-build-proxy
+      cmd: echo 'settings.xml' > ${OUTPUT_DIR}/var.build-proxy
+  set-kube-config:
+    - task: set-kube-config
+      cmd: /bin/bash -c "cp /home/${env.USER}/.kube/${env.KUBE_HOST}.config ${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf;"
+  set-namespace:
+    - task: set-namespace
+      cmd: /bin/bash -c "./scripts/bash/setNamespace -u ${env.USER} -n ${env.NAMESPACE} -h ${env.KUBE_HOST}"
+  set-supreme-properties:
+    - task: set-supreme-properties
+      cmd:
+        - cp /proj/sc-tools/bin/supreme/simple_prop.yaml ${OUTPUT_DIR}/supreme.yaml
+        - sed -i 's/<NAMESPACE>/${var.namespace}/g' ${OUTPUT_DIR}/supreme.yaml
+        - sed -i 's_<DIR>_${OUTPUT_DIR}/certificates_g' ${OUTPUT_DIR}/supreme.yaml
+### Deprecated ###
+
+  zypper:
+    - task: build
+      cmd:
+       - scripts/zypper/create_zypper.sh ${CBOS_VERSION} ${OUTPUT_DIR}
+       - cp scripts/zypper/install_zypper.sh ${OUTPUT_DIR}/zypper/
+       - sed -i 's/CBOS_VERSION=/CBOS_VERSION=${CBOS_VERSION}/g' ${OUTPUT_DIR}/zypper/install_zypper.sh
+
+  clean:
+    - task: output-dir
+      cmd:
+        - rm -rf ${OUTPUT_DIR}/config.json
+        - rm -rf ${OUTPUT_DIR}/var.build-proxy
+        - rm -rf ${OUTPUT_DIR}/var.policy-api-version
+        - rm -rf ${OUTPUT_DIR}/var.git-commit-date
+        - rm -rf ${OUTPUT_DIR}/var.git-commit-hash
+        - rm -rf ${OUTPUT_DIR}/var.armdocker-api-token
+        - rm -rf ${OUTPUT_DIR}/var.selndocker-api-token
+        - rm -rf ${OUTPUT_DIR}/var.serodocker-api-token
+        - rm -rf ${OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf

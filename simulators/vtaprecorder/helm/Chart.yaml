@@ -1,0 +1,4 @@
+apiVersion: v1
+description: vTap Consumer Simulator.
+name: eric-vtaprecorder
+version: 0.0.1

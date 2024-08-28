@@ -1,0 +1,208 @@
+{
+    "id": "scp_traffic_selector_config",
+    "sourceType": "prometheus",
+    "generalSelectors": [
+        {
+            "selectorId": "groupSelector",
+            "type": "local",
+            "label": "Traffic group",
+            "placeholder": "Select an SCP traffic metrics group",
+            "useForLineChartTitle": true,
+            "values": [
+                {
+                    "name": "1. Ingress/Egress Traffic",
+                    "value": "scp_ingress_egress_traffic"
+                },
+                {
+                    "name": "2. Traffic Success Rate",
+                    "value": "scp_traffic_success_rate"
+                },
+                {
+                    "name": "3. Egress Traffic per Pool",
+                    "value": "scp_egress_traffic_pool"
+                },
+                {
+                    "name": "4. Egress Traffic per NF",
+                    "value": "scp_egress_traffic_nf"
+                },
+                {
+                    "name": "5. Egress Traffic Success Rate per NF",
+                    "value": "scp_egress_traffic_success_nf"
+                }
+            ]
+        },
+        {
+            "selectorId": "pool",
+            "type": "remote",
+            "label": "Pool",
+            "placeholder": "Select an egress traffic pool",
+            "map": {
+                "groupSelector": "scp_egress_traffic_pool"
+            },
+            "multi": true,
+            "selectAllItem": true,
+            "value": "pool_name"
+        },
+        {
+            "selectorId": "nf_instance_id",
+            "type": "remote",
+            "label": "NF Instance ID",
+            "placeholder": "Select an egress NF instance ID",
+            "map": {
+                "groupSelector": "scp_egress_traffic_nf"
+            },
+            "multi": true,
+            "selectAllItem": true,
+            "value": "nf_instance_id"
+        },
+        {
+            "selectorId": "pool_nf",
+            "type": "remote",
+            "label": "Pool",
+            "placeholder": "Select an egress traffic pool",
+            "map": {
+                "groupSelector": "scp_egress_traffic_nf"
+            },
+            "multi": true,
+            "selectAllItem": true,
+            "value": "pool_name"
+        },
+        {
+            "selectorId": "nf_instance_id_success",
+            "type": "remote",
+            "label": "NF Instance ID",
+            "placeholder": "Select an egress NF instance ID",
+            "map": {
+                "groupSelector": "scp_egress_traffic_success_nf"
+            },
+            "multi": true,
+            "selectAllItem": true,
+            "value": "nf_instance_id"
+        },
+        {
+            "selectorId": "pool_nf_success",
+            "type": "remote",
+            "label": "Pool",
+            "placeholder": "Select an egress traffic pool",
+            "map": {
+                "groupSelector": "scp_egress_traffic_success_nf"
+            },
+            "multi": true,
+            "selectAllItem": true,
+            "value": "pool_name"
+        }
+    ],
+    "metricSelector": {
+        "label": "KPI",
+        "placeholder": "Select a KPI",
+        "multi": true,
+        "metrics": [
+            {
+                "map": {
+                    "groupSelector": "scp_ingress_egress_traffic"
+                },
+                "values": [
+                    {
+                        "name": "scp_ingress_mps"
+                    },
+                    {
+                        "name": "scp_egress_mps"
+                    },
+                    {
+                        "name": "scp_nrf_discovery_mps"
+                    },
+                    {
+                        "name": "scp_licensed_traffic"
+                    }
+                ]
+            },
+            {
+                "map": {
+                    "groupSelector": "scp_traffic_success_rate"
+                },
+                "values": [
+                    {
+                        "name": "scp_ingress_success"
+                    },
+                    {
+                        "name": "scp_egress_success"
+                    },
+                    {
+                        "name": "scp_nrf_discovery_success"
+                    }
+                ]
+            },
+            {
+                "map": {
+                    "groupSelector": "scp_egress_traffic_pool"
+                },
+                "values": [
+                    {
+                        "name": "scp_egress_pool_mps"
+                    },
+                    {
+                        "name": "scp_egress_pool_class4"
+                    },
+                    {
+                        "name": "scp_egress_pool_class5"
+                    }
+                ]
+            },
+            {
+                "map": {
+                    "groupSelector": "scp_egress_traffic_nf"
+                },
+                "values": [
+                    {
+                        "name": "scp_egress_pool_nf_mps"
+                    },
+                    {
+                        "name": "scp_egress_pool_nf_class2"
+                    },
+                    {
+                        "name": "scp_egress_pool_nf_class4"
+                    },
+                    {
+                        "name": "scp_egress_pool_nf_class5"
+                    },
+                    {
+                        "name": "scp_egress_pool_nf_timeout"
+                    },
+                    {
+                        "name": "scp_egress_pool_nf_rx_reset"
+                    },
+                    {
+                        "name": "scp_egress_pool_nf_tx_reset"
+                    },
+                    {
+                        "name": "scp_egress_pool_nf_rq_after_reselect"
+                    },
+                    {
+                        "name": "scp_egress_pool_nf_rq_after_retry"
+                    }
+                ]
+            },
+            {
+                "map": {
+                    "groupSelector": "scp_egress_traffic_success_nf"
+                },
+                "values": [
+                    {
+                        "name": "scp_egress_pool_nf_success"
+                    }
+                ]
+            }
+        ]
+    },
+    "unit": {
+        "targetSelector": "groupSelector",
+        "map": {
+            "scp_ingress_egress_traffic": " [MPS]",
+            "scp_traffic_success_rate": " %",
+            "roaming_partner_traffic": " [MPS]",
+            "scp_egress_traffic_pool": " [MPS]",
+            "scp_egress_traffic_nf": " [MPS]",
+            "scp_egress_traffic_success_nf": " %"
+        }
+    }
+}

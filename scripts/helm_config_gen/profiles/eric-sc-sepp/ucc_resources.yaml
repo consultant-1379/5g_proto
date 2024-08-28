@@ -1,0 +1,19 @@
+# This file is intended to be used for UCC deployments
+# It contains settings to reduce memory, cpu,
+# disk space requests and limits.
+# Original base is the cloud native small footprint located
+# inside eric-sepp/profiles/small_footprint_resources.yaml
+# If values have been modified from this template,
+# the original values are mentioned in the same line after ##.
+
+#eric-sepp
+eric-sepp:
+  tapagent:
+    worker:
+      enabled: "false" ## can probably be removed
+    manager:
+      enabled: "false" ## can probably be removed
+  tapcollector:
+    worker:
+      enabled: false
+

@@ -1,0 +1,14 @@
+eric-scp:
+  manager:
+    leaderElection:
+      enabled: false
+  spec:
+    manager:
+      replicaCount: 1
+    worker:
+      replicaCount: 1
+
+eric-sc-slf:
+  spec:
+    slf:
+      replicaCount: 1

@@ -1,0 +1,15 @@
+{
+	"duration": 1500,
+	"execution-type": "serial",
+	"target-host": 80,
+	"target-port": "192.168.1.1",
+	"traffic-mix": [
+		{
+			"order": 1,
+			"tps": 2000,
+			"type": "register",
+			"num-requests": 2000000,
+			"ip-range": "2"
+		}
+	]
+}

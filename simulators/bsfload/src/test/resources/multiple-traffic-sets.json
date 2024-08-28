@@ -1,0 +1,48 @@
+{
+	"duration": 1500,
+	"execution-type": "serial",
+	"target-port": 80,
+	"max-tcp-connections-per-client": 2,
+	"tcp-clients": 40,
+	"http2-streams": 40,
+	"max-parallel-transactions": 20000,
+	"timeout": 2000,
+	"http2-keep-alive-timeout": 40,
+	"traffic-mix": [
+		{
+			"id": "b5659381-336f-45cd-b985-50720490154d",
+			"name": "set1",
+			"order": 1,
+			"tps": 2000,
+			"target-host": "192.168.1.1",
+			"type": "register",
+			"num-requests": 2000000,
+			"ip-range": {
+				"start-ip": "10.10.10.10",
+				"range": 2000000
+			}
+		},
+		{
+			"id": "1a144b98-bbdf-11ec-8422-0242ac120002",
+			"name": "set2",
+			"order": 2,
+			"tps": 500,
+			"target-host": "192.168.1.1",
+			"type": "discovery",
+			"num-requests": 2000000,
+			"ip-range": {
+				"start-ip": "10.10.10.10",
+				"range": 100
+			}
+		},
+		{
+			"id": "9b98a920-bbdf-11ec-8422-0242ac120002",
+			"name": "set3",
+			"order": 3,
+			"tps": 100,
+			"target-host": "192.168.1.1",
+			"type": "deregister",
+			"traffic-set-ref": "set1"
+		}
+	]
+}

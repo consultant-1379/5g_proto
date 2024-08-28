@@ -1,0 +1,4 @@
+!*.tar.gz
+!*.json
+
+test_data/

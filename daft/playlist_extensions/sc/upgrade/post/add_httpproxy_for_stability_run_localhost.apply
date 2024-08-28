@@ -1,0 +1,294 @@
+#!/usr/bin/perl
+
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.1
+#  Date     : 2024-05-06 16:16:02
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2022,2024
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+#
+# This script is used as a DAFT playlist extension for upgrades to enable httpproxy
+# definitions used by the stability traffic scripts to fetch counters and metrics
+# from the node.
+# This script will remove any previously loaded httpproxy settings and then load
+# back the settings after the upgrade. This is done by calling other bash scripts
+# that are used during the normal Jenkins deploy-pipeline.groovy script execution.
+#
+# Script was introduced by user story DND-32931 and DND-32944.
+# https://eteamproject.internal.ericsson.com/browse/DND-32931
+# https://eteamproject.internal.ericsson.com/browse/DND-32944
+#
+################################################################################
+
+use strict;
+use Cwd qw(abs_path cwd);
+use File::Basename qw(dirname);
+
+my $debug_cmd = "";    # Modify this to read "echo " to enable debugging of script without changing data
+my $daft_script_path = "";
+my $job_log_file = "";
+my $job_params_file = "";
+my %job_params_hash;
+
+my $command;
+my $current_dir;
+my $error_cnt = 0;
+my $new_sc_release_version;
+my $nodename;
+my $nodetype;
+my $old_sc_release_version;
+my $osmn;
+my @pod_names = ();
+my $rc = 0;
+my @result;
+my $sc_namespace;
+
+# Check if the needed environment variables exist
+print "Reading environment variables\n";
+if (exists $ENV{'TOOL_PATH_DAFT'} && $ENV{'TOOL_PATH_DAFT'} ne "") {
+    $daft_script_path = $ENV{'TOOL_PATH_DAFT'};
+} else {
+    print "The environment variable TOOL_PATH_DAFT does not exist or is empty\n";
+    exit 1;
+}
+if (exists $ENV{'JOB_WORKSPACE_PATH_DAFT'} && $ENV{'JOB_WORKSPACE_PATH_DAFT'} ne "") {
+    $job_params_file = "$ENV{'JOB_WORKSPACE_PATH_DAFT'}/job_parameters.conf";
+    $job_log_file = "$ENV{'JOB_WORKSPACE_PATH_DAFT'}/all.log";
+} else {
+    print "The environment variable JOB_WORKSPACE_PATH_DAFT does not exist or is empty\n";
+    exit 1;
+}
+
+# Check if the job parameters file exist
+unless (-f "$job_params_file") {
+    print "The job parameters file '$job_params_file' does not exist\n";
+    exit 1;
+}
+
+# Update the Perl library path to allow this script to use existing library files
+use lib abs_path $ENV{'TOOL_PATH_DAFT'} . '/perl/lib';
+
+# Import existing library files
+use ADP::Kubernetes_Operations;
+use General::Logging;
+use General::Message_Generation;
+use General::OS_Operations;
+use General::Playlist_Operations;
+
+# Read the job parameters file into an hash
+print "Reading job variables from file: $job_params_file\n";
+if (General::Playlist_Operations::job_parameters_read($job_params_file, \%job_params_hash) != 0) {
+    print "Failure to read the job parameters file '$job_params_file'\n";
+    exit 1;
+}
+
+# Check for job parameters to see if we should skip this playlist extension script
+if (exists $job_params_hash{'SKIP_DEPLOY_UPGRADE_SC'} && $job_params_hash{'SKIP_DEPLOY_UPGRADE_SC'} eq "yes") {
+    print "Job parameter SKIP_DEPLOY_UPGRADE_SC=yes, we shall not execute this script\n";
+    exit 0;
+}
+
+# Check for job parameters needed by this script
+if (exists $job_params_hash{'SC_RELEASE_VERSION'}) {
+    $new_sc_release_version = $job_params_hash{'SC_RELEASE_VERSION'};
+    print "New Software Version: $new_sc_release_version\n";
+} else {
+    print "Job parameter SC_RELEASE_VERSION does not exist in the job parameter file\n";
+    exit 1;
+}
+if (exists $job_params_hash{'OLD_SC_RELEASE_VERSION'}) {
+    $old_sc_release_version = $job_params_hash{'OLD_SC_RELEASE_VERSION'};
+    print "Old Software Version: $old_sc_release_version\n";
+} else {
+    print "Job parameter OLD_SC_RELEASE_VERSION does not exist in the job parameter file\n";
+    exit 1;
+}
+if (exists $job_params_hash{'SC_NAMESPACE'}) {
+    $sc_namespace = $job_params_hash{'SC_NAMESPACE'};
+    print "SC Namespace: $sc_namespace\n";
+} else {
+    print "Job parameter SC_NAMESPACE does not exist in the job parameter file\n";
+    exit 1;
+}
+unless (exists $job_params_hash{'KUBECTL_EXECUTABLE'}) {
+    print "Job parameter KUBECTL_EXECUTABLE does not exist in the job parameter file\n";
+    exit 1;
+}
+if (exists $job_params_hash{'nodetype'}) {
+    # Should be something that is a comma separated list of e.g. bsf, scp, setc etc.
+    $nodetype = $job_params_hash{'nodetype'};
+    print "Node Type: $nodetype\n";
+} else {
+    print "Job parameter 'nodetype' does not exist in the job parameter file\n";
+    exit 1;
+}
+
+# Try to find the name of the node.
+if (exists $job_params_hash{'eric_sc_values_hash_parameter_eric-sc.routes.nbi.fqdn'}) {
+    if ($job_params_hash{'eric_sc_values_hash_parameter_eric-sc.routes.nbi.fqdn'} =~ /^nbi\.([^.]+)\..+/) {
+        $nodename = $1;
+        print "Node Name: $nodename\n";
+    } else {
+        print "Job parameter 'eric_sc_values_hash_parameter_eric-sc.routes.nbi.fqdn' does not contain the expected 'nbi.....' format ($job_params_hash{'eric_sc_values_hash_parameter_eric-sc.routes.nbi.fqdn'})\n";
+        exit 1;
+    }
+} elsif (exists $job_params_hash{'eric_sc_values_hash_parameter_ingress.nbi.fqdn'}) {
+    if ($job_params_hash{'eric_sc_values_hash_parameter_ingress.nbi.fqdn'} =~ /^nbi\.([^.]+)\..+/) {
+        $nodename = $1;
+        print "Node Name: $nodename\n";
+    } else {
+        print "Job parameter 'eric_sc_values_hash_parameter_ingress.nbi.fqdn' does not contain the expected 'nbi.....' format ($job_params_hash{'eric_sc_values_hash_parameter_eric-sc.routes.nbi.fqdn'})\n";
+        exit 1;
+    }
+} else {
+    print "Job parameter 'eric_sc_values_hash_parameter_eric-sc.routes.nbi.fqdn' or 'eric_sc_values_hash_parameter_ingress.nbi.fqdn' does not exist in the job parameter file\n";
+    exit 1;
+}
+
+# Enable logging of all executed commands to the job all.log file
+General::Logging::log_enable($job_log_file);
+
+# Find out if OSMN service is enabled to determine if the osmn_httpproxy.sh script should be called at all.
+@pod_names = ADP::Kubernetes_Operations::get_pod_names(
+    {
+        "hide-output"       => 1,
+        "namespace"         => $sc_namespace,
+        "pod-include-list"  => [ "eric-data-object-storage-mn-" ],
+    }
+);
+if (scalar @pod_names > 0) {
+    $osmn = "true";
+} else {
+    $osmn = "false";
+}
+
+# Fetch current working directory so we can restore back to this at the end.
+$current_dir = Cwd::cwd();
+
+# Change directory into the top level DAFT script directory.
+chdir($daft_script_path);
+
+# Set needed KUBE_NAMESPACE environment variable before calling the scripts.
+$ENV{'KUBE_NAMESPACE'} = $sc_namespace;
+
+# Call the different scripts with the "delete" option.
+
+# **********
+# * delete *
+# **********
+
+$command = "$debug_cmd$daft_script_path/scripts/httpproxy/pm_httpproxy.sh delete $nodename";
+$rc = General::OS_Operations::send_command(
+    {
+        "command"       => $command,
+        "hide-output"   => 1,
+        "return-output" => \@result,
+    }
+);
+if ($rc != 0) {
+    print "Failed to execute command: $command\nReturn Code: $rc\nDetails:\n" . (join "\n", @result) . "\n";
+    $error_cnt++;
+}
+
+$command = "$debug_cmd$daft_script_path/scripts/httpproxy/osmn_httpproxy.sh delete $nodename $osmn";
+$rc = General::OS_Operations::send_command(
+    {
+        "command"       => $command,
+        "hide-output"   => 1,
+        "return-output" => \@result,
+    }
+);
+if ($rc != 0) {
+    print "Failed to execute command: $command\nReturn Code: $rc\nDetails:\n" . (join "\n", @result) . "\n";
+    $error_cnt++;
+}
+
+$command = "$debug_cmd$daft_script_path/scripts/httpproxy/worker-envoy-admin.sh delete $nodename";
+$rc = General::OS_Operations::send_command(
+    {
+        "command"       => $command,
+        "hide-output"   => 1,
+        "return-output" => \@result,
+    }
+);
+if ($rc != 0) {
+    print "Failed to execute command: $command\nReturn Code: $rc\nDetails:\n" . (join "\n", @result) . "\n";
+    $error_cnt++;
+}
+
+# Call the different scripts with the "create" option.
+
+#
+# **********
+# * create *
+# **********
+
+$command = "$debug_cmd$daft_script_path/scripts/httpproxy/pm_httpproxy.sh create $nodename";
+$rc = General::OS_Operations::send_command(
+    {
+        "command"       => $command,
+        "hide-output"   => 1,
+        "return-output" => \@result,
+    }
+);
+if ($rc != 0) {
+    print "Failed to execute command: $command\nReturn Code: $rc\nDetails:\n" . (join "\n", @result) . "\n";
+    $error_cnt++;
+}
+
+$command = "$debug_cmd$daft_script_path/scripts/httpproxy/osmn_httpproxy.sh create $nodename $osmn";
+$rc = General::OS_Operations::send_command(
+    {
+        "command"       => $command,
+        "hide-output"   => 1,
+        "return-output" => \@result,
+    }
+);
+if ($rc != 0) {
+    print "Failed to execute command: $command\nReturn Code: $rc\nDetails:\n" . (join "\n", @result) . "\n";
+    $error_cnt++;
+}
+
+$command = "$debug_cmd$daft_script_path/scripts/httpproxy/worker-envoy-admin.sh create $nodename";
+$rc = General::OS_Operations::send_command(
+    {
+        "command"       => $command,
+        "hide-output"   => 1,
+        "return-output" => \@result,
+    }
+);
+if ($rc != 0) {
+    print "Failed to execute command: $command\nReturn Code: $rc\nDetails:\n" . (join "\n", @result) . "\n";
+    $error_cnt++;
+}
+
+# Remove any left over temporary files inside the top level DAFT script directory.
+# The temporary files created by worker-envoy-admin.sh script should also be deleted but these files will get their
+# names during runtime so it makes it hard to delete them here, we can only hope that the script does a good job
+# cleaning up after itself.
+unlink("$daft_script_path/scripts/httpproxy/temp_pm_httpproxy.yaml", "$daft_script_path/scripts/httpproxy/temp_osmn_httpproxy.yaml");
+
+# Disable logging
+General::Logging::log_disable();
+
+if ($error_cnt == 0) {
+    exit 0;
+} else {
+    print "$error_cnt errors detected, see above for more information.\n";
+    exit 1;
+}
+
+exit $rc;

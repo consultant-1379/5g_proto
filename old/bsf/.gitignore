@@ -1,0 +1,3 @@
+*.tgz
+helm/bsf
+bsfmgr/.gradle

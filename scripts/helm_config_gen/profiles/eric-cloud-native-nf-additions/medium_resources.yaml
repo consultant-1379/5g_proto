@@ -1,0 +1,141 @@
+eric-cm-yang-provider:
+  resources:
+    yangEngine:
+      requests:
+        # memory: 500Mi #500Mi (max)
+        cpu: 200m #250m (max)
+      limits:
+        # memory: 2Gi #2Gi (max)
+        cpu: 400m #4000m (max)
+    yangDbAdapter:
+      requests:
+        memory: 64Mi #100Mi (max)
+        cpu: 50m #100m (max)
+      limits:
+        # memory: 250Mi #250Mi (max)
+        cpu: 200m #2000m (max)
+    sshd:
+      # requests:
+        # memory: 50Mi #50Mi (max)
+        # cpu: 50m #50m (max)
+      limits:
+        memory: 128Mi #250Mi (max)
+        cpu: 200m #1000m (max)
+    schemaSynchronizer:
+      # requests:
+        # memory: 32Mi #50Mi (max)
+        # cpu: 100m #100m (max)
+      limits:
+        memory: 128Mi #2Gi (max)
+        cpu: 400m #4000m (max)
+    externalNotifSender:
+      requests:
+        memory: 32Mi #50Mi (max)
+        # cpu: 50m #50m (max)
+      limits:
+        memory: 128Mi #250Mi (max)
+        cpu: 200m #1000m (max)
+    yangLibExt:
+      requests:
+        memory: 32Mi #50Mi (max)
+        # cpu: 50m #50m (max)
+      limits:
+        memory: 128Mi #250Mi (max)
+        cpu: 200m #1000m (max)
+    notificationController:
+      requests:
+        memory: 32Mi #50Mi (max)
+        # cpu: 50m #50m (max)
+      limits:
+        memory: 128Mi #250Mi (max)
+        cpu: 200m #1000m (max)
+# object storage is not active but still reduce resources
+    objectStorageAdapter:
+      requests:
+        cpu: 50m #50m (max)
+        memory: 32Mi #50Mi (max)
+      limits:
+        cpu: 200m #1000m (max)
+        memory: 128Mi #250Mi (max)
+    pmMetrics:
+      # requests:
+        # cpu: 50m #50m (max)
+        # memory: 50Mi #50Mi (max)
+      limits:
+        cpu: 500m #1000m (max)
+        # memory: 250Mi #250Mi (max)
+    # cliExtensionCmds:
+      # requests:
+        # cpu: 50m #50m (max)
+        # memory: 50Mi #50Mi (max)
+      # limits:
+        # cpu: 500m #50m (max)
+        # memory: 128Mi #128Mi (max)
+
+eric-pm-bulk-reporter:
+  resources:
+    bulkreporter:
+      requests:
+        cpu: 50m #100m
+#        memory: 50Mi
+      limits:
+        cpu: '0.4' #'1'
+#        memory: 200Mi
+    alarmreporter:
+      requests:
+        cpu: 50m #100m
+#        memory: 50Mi
+      limits:
+        cpu: '0.5' #'1'
+#        memory: 200Mi
+    pmsftp:
+#      requests:
+#        cpu: 50m
+#        memory: 50Mi
+      limits:
+        cpu: '0.5' #'1'
+#        memory: 200Mi
+
+eric-sec-admin-user-management:
+  resources:
+    aum:
+      requests:
+        memory: "128Mi" #"256Mi" (max)
+        cpu: "100m" #"250m" (max)
+      limits:
+        memory: "256Mi" #"512Mi" (max) 256Mi (min)
+        cpu: "250m" #"500m" (max) 250m (min)
+
+eric-sec-ldap-server:
+  resources:
+    ldap:
+      requests:
+        memory: "768Mi" #"512Mi"
+        cpu: 150m #"300m"
+      limits:
+#        memory: "2036Mi"
+        cpu: 500m #"3000m"
+    ldapagent:
+      requests:
+        memory: "128Mi" #"512Mi"
+        cpu: "100m" #"500m"
+      limits:
+        memory: "512Mi" #"2036Mi"
+        cpu: "400m" #"1"
+    ldapproxy:
+      requests:
+        memory: "256Mi" #"512Mi"
+        cpu: 250m #"500m"
+      limits:
+        memory: "1024Mi" #"2036Mi"
+        cpu: "500m" #"3000m"
+
+eric-cnom-server:
+  resources:
+    server:
+      requests:
+        cpu: 200m #150m (max)
+        memory: 256Mi #400Mi (max)
+      limits:
+        cpu: 500m #150m (max)
+        memory: 512Mi #400Mi (max)

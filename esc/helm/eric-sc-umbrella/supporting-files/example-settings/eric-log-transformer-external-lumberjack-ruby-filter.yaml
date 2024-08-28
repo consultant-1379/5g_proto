@@ -1,0 +1,42 @@
+# This file represents a filtering example using the Logstash ruby plugin.
+# The filter should be added to the "eric-log-transformer-external-lumberjack-server-config.yaml"
+# file under the desired remote host.
+
+eric-log-transformer:
+  egress:
+    lumberjack:
+      enabled: true
+      certificates:
+        asymmetricKeyCertificateName:
+        trustedCertificateListName: sc-trusted-default-cas
+      remoteHosts:
+        - id: ext-lj-1
+          host: eric-ext-log-transformer
+          port: 5044
+          codec: json
+          exclusions:
+            - field: "[extra_data][asi][log_plane]"
+              value: "alarm"
+            - field: "[facility]"
+              contains: "security"
+          filter: |
+            ruby {
+              code => "
+                metadata = event.get('metadata')
+                if !(metadata.nil?) && metadata.is_a?(Hash)
+                  if metadata.key?('node_name')
+                    event.set('[kubernetes][node][name]', metadata['node_name'])
+                  end
+                  if metadata.key?('container_name')
+                    event.set('[kubernetes][container][name]', metadata['container_name'])
+                  end
+                  if metadata.key?('pod_name')
+                    event.set('[kubernetes][pod][name]', metadata['pod_name'])
+                  end
+                  if metadata.key?('pod_uid')
+                    event.set('[kubernetes][pod][uid]', metadata['pod_uid'])
+                  end
+                  event.remove('metadata')
+                end
+              "
+            }

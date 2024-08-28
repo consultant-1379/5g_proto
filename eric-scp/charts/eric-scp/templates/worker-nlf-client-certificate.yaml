@@ -1,0 +1,27 @@
+{{- if eq (include "eric-scp.tls" .) "true" }}
+{{- if (.Values.nlf).enabled -}}
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+  name: {{ template "eric-scp.name" . }}-worker-nlf-client-certificate
+  labels:
+{{- include "eric-scp.labels" . | indent 4 }}
+    app: {{ template "eric-scp.name" . }}-worker
+  annotations:
+{{- include "eric-scp.helm-annotations" . | indent 4 }}
+{{- include "eric-scp.config-annotations" . | indent 4 }}
+spec:
+  kubernetes:
+    generatedSecretName: {{ template "eric-scp.name" . }}-worker-nlf-client-certificate
+    certificateName: tls.crt
+    privateKeyName: tls.key
+  certificate:
+    subject:
+      cn: {{ template "eric-scp.name" . }}-worker
+    issuer:
+      reference: {{ .Values.sc.common.nlf.hostname }}-ca
+    extendedKeyUsage:
+      tlsClientAuth: true
+      tlsServerAuth: false
+{{- end }}
+{{- end }}

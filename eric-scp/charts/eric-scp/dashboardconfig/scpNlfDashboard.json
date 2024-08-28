@@ -1,0 +1,559 @@
+{
+    "namespace": "sc",
+    "dashboards": [
+        {
+            "_id": "scp_overview",
+            "title": "SCP Overview",
+            "order": 21,
+            "apps": [
+                "statusOverview"
+            ],
+            "dashboardTreeView": { "tree": [["SCP"]] },
+            "tiles": [
+                {
+                    "xSize": 2,
+                    "ySize": 2,
+                    "widget": "scp_kpi_mps"
+                },
+                {
+                    "xSize": 6,
+                    "ySize": 2,
+                    "widget": "scp_mps_timeline"
+                },
+                {
+                    "xSize": 2,
+                    "ySize": 2,
+                    "widget": "builtin:alarm_summary_bar_chart"
+                },
+                {
+                    "xSize": 2,
+                    "ySize": 2,
+                    "widget": "scp_kpi_success"
+                },
+                {
+                    "xSize": 6,
+                    "ySize": 2,
+                    "widget": "scp_success_timeline"
+                },
+                {
+                    "xSize": 2,
+                    "ySize": 2,
+                    "widget": "scp_cpu_percentage"
+                },
+                {
+                    "xSize": 10,
+                    "ySize": 2,
+                    "widget": "sc:pod_table"
+                }
+            ]
+        },
+        {
+            "_id": "scp_traffic",
+            "title": "SCP Traffic View",
+            "order": 22,
+            "apps": [
+                "statusOverview"
+            ],
+            "dashboardTreeView": { "tree": [["SCP"]] },
+            "tiles": [
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "scp_mps_timeline_detailed"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "scp_mps_timeline_detailed_class4"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "scp_traffic_success_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "scp_mps_timeline_detailed_class5"
+                },
+                {
+                    "xSize": 10,
+                    "ySize": 2,
+                    "widget": "selectable_scp_traffic_counters"
+                },
+                {
+                    "xSize": 10,
+                    "ySize": 2,
+                    "variables": {
+                        "podListFilterProp": "metadata.name",
+                        "podListFilterRegex": "^eric-scp|^eric-sc-"
+                    },
+                    "widget": "sc:pod_table"
+                }
+            ]
+        },
+        {
+            "_id": "scp_system",
+            "title": "SCP System View",
+            "order": 29,
+            "apps": [
+                "statusOverview"
+            ],
+            "dashboardTreeView": { "tree": [["SCP"]] },
+            "tiles": [
+                {
+                    "xSize": 2,
+                    "ySize": 2,
+                    "widget": "scp_system_kpi"
+                },
+                {
+                    "xSize": 8,
+                    "ySize": 2,
+                    "widget": "scp_cpu_percentage"
+                },
+                {
+                    "xSize": 2,
+                    "ySize": 2,
+                    "widget": "scp_worker_number"
+                },
+                {
+                    "xSize": 8,
+                    "ySize": 2,
+                    "widget": "scp_cpu"
+                },
+                {
+                    "xSize": 2,
+                    "ySize": 2,
+                    "widget": "builtin:alarm_summary_bar_chart"
+                },
+                {
+                    "xSize": 8,
+                    "ySize": 2,
+                    "widget": "scp_memory"
+                },
+                {
+                    "xSize": 10,
+                    "ySize": 2,
+                    "widget": "selectable_scp_system_counters"
+                },
+                {
+                    "xSize": 10,
+                    "ySize": 2,
+                    "widget": "sc:pod_table"
+                }
+            ]
+        }
+    ],
+    "widgets": [
+        {
+            "_id": "scp_kpi_mps",
+            "widgetType": "kpi",
+             "acceptTime": false,
+            "title": "KPIs - MPS",
+            "sources": [
+                {
+                    "heading": "Ingress Traffic",
+                    "source": "scp_ingress_mps"
+                },
+                {
+                    "heading": "Egress Traffic",
+                    "source": "scp_egress_mps"
+                },
+                {
+                    "heading": "SCP NRF Discovery Traffic",
+                    "source": "scp_nrf_discovery_mps"
+                },
+                {
+                    "heading": "Licensed Traffic",
+                    "source": "scp_licensed_traffic"
+                },
+                {
+                    "heading": "NLF NRF Discovery Traffic",
+                    "source": "nlf_nrf_discovery_mps"
+                }
+            ]
+        },
+        {
+            "_id": "scp_kpi_success",
+            "widgetType": "kpi",
+             "acceptTime": false,
+            "title": "KPIs - Success Rate",
+            "sources": [
+                {
+                    "heading": "Ingress Request Success Rate",
+                    "source": "scp_ingress_success"
+                },
+                {
+                    "heading": "Egress Request Success Rate",
+                    "source": "scp_egress_success"
+                },
+                {
+                    "heading": "SCP NRF Discovery Request Success Rate",
+                    "source": "scp_nrf_discovery_success"
+                },
+                {
+                    "heading": "NLF NRF Discovery Request Success Rate",
+                    "source": "nlf_nrf_discovery_success"
+                }
+            ]
+        },
+        {
+            "_id": "scp_system_kpi",
+            "widgetType": "kpi",
+             "acceptTime": false,
+            "title": "SYSTEM KPIs",
+            "sources": [
+                {
+                    "source": "scp_load"
+                },
+                {
+                    "source": "scp_manager_cpu"
+                },
+                {
+                    "source": "scp_worker_cpu_avg"
+                },
+                {
+                    "source": "nlf_cpu"
+                },
+                {
+                    "source": "scp_manager_memory"
+                },
+                {
+                    "source": "scp_worker_memory_avg"
+                },
+                {
+                    "source": "nlf_memory"
+                }
+            ]
+        },
+        {
+            "_id": "scp_success_timeline",
+            "widgetType": "timeline",
+            "title": "Timeline [%] - Success Rate",
+            "rightPanelContent": { "features": ["settings","valuesTable","promql"] },
+            "sources": [
+                {
+                    "source": "scp_ingress_success"
+                },
+                {
+                    "source": "scp_egress_success"
+                },
+                {
+                    "source": "scp_nrf_discovery_success"
+                },
+                {
+                    "source": "nlf_nrf_discovery_success"
+                }
+            ]
+        },
+        {
+            "_id": "scp_traffic_success_timeline",
+            "widgetType": "timeline",
+            "title": "Timeline [%] - Traffic Success Rate",
+            "rightPanelContent": { "features": ["settings","valuesTable","promql"] },
+            "sources": [
+                {
+                    "source": "scp_ingress_success"
+                },
+                {
+                    "source": "scp_egress_success"
+                }
+            ]
+        },
+        {
+            "_id": "scp_mps_timeline",
+            "widgetType": "timeline",
+            "title": "Timeline [MPS]",
+            "rightPanelContent": { "features": ["settings","valuesTable","promql"] },
+            "sources": [
+                {
+                    "source": "scp_ingress_mps"
+                },
+                {
+                    "source": "scp_egress_mps"
+                },
+                {
+                    "source": "scp_nrf_discovery_mps"
+                },
+                {
+                    "source": "scp_licensed_traffic"
+                },
+                {
+                    "source": "nlf_nrf_discovery_mps"
+                }
+            ]
+        },
+        {
+            "_id": "scp_mps_timeline_detailed",
+            "widgetType": "timeline",
+            "title": "Timeline [MPS] - Pool Details (top)",
+            "rightPanelContent": { "features": ["settings","valuesTable","promql"] },
+            "sources": [
+                {
+                    "source": "scp_ingress_mps"
+                },
+                {
+                    "source": "scp_egress_mps"
+                },
+                {
+                    "source": "scp_egress_pool_mps"
+                }
+            ]
+        },
+        {
+            "_id": "scp_mps_timeline_detailed_class4",
+            "widgetType": "timeline",
+            "title": "Timeline [MPS] - Pool - Response 4xx (top)",
+            "rightPanelContent": { "features": ["settings","valuesTable","promql"] },
+            "sources": [
+                {
+                    "source": "scp_egress_pool_class4"
+                }
+            ]
+        },
+        {
+            "_id": "scp_mps_timeline_detailed_class5",
+            "widgetType": "timeline",
+            "title": "Timeline [MPS] - Pool - Response 5xx (top)",
+            "rightPanelContent": { "features": ["settings","valuesTable","promql"] },
+            "sources": [
+                {
+                    "source": "scp_egress_pool_class5"
+                }
+            ]
+        },
+        {
+            "_id": "scp_cpu",
+            "widgetType": "timeline",
+            "title": "Timeline [CPU millicores] - CPU Usage",
+            "rightPanelContent": { "features": ["settings","valuesTable","promql"] },
+            "sources": [
+                {
+                    "source": "scp_manager_cpu"
+                },
+                {
+                    "source": "scp_worker_cpu_avg"
+                },
+                {
+                    "source": "scp_worker_cpu_max"
+                },
+                {
+                    "source": "scp_worker_cpu_min"
+                },
+                {
+                    "source": "nlf_cpu"
+                }
+            ]
+        },
+        {
+            "_id": "scp_cpu_percentage",
+            "widgetType": "timeline",
+            "title": "Timeline [%] - SCP Load",
+            "rightPanelContent": { "features": ["settings","valuesTable","promql"] },
+            "sources": [
+                {
+                    "source": "scp_load"
+                }
+            ]
+        },
+        {
+            "_id": "scp_memory",
+            "widgetType": "timeline",
+            "title": "Timeline [MByte,MB] - Memory Usage per Container",
+            "rightPanelContent": { "features": ["settings","valuesTable","promql"] },
+            "sources": [
+                {
+                    "source": "scp_manager_memory"
+                },
+                {
+                    "source": "scp_worker_memory_avg"
+                },
+                {
+                    "source": "scp_worker_memory_max"
+                },
+                {
+                    "source": "scp_worker_memory_min"
+                },
+                {
+                    "source": "nlf_memory"
+                }
+            ]
+        },
+        {
+            "_id": "scp_worker_number",
+            "widgetType": "timeline",
+            "title": "Number of SCP worker PODs",
+            "sources": [
+                {
+                    "source": "scp_worker_pods"
+                }
+            ]
+        },
+        {
+            "_id": "selectable_scp_traffic_counters",
+            "widgetType": "timeline",
+            "title": "Select metrics to display",
+            "selectionMechanism": { "selectorConfigId": "scp_traffic_selector_config" },
+            "sources": []
+        },
+        {
+            "_id": "selectable_scp_system_counters",
+            "widgetType": "timeline",
+            "title": "Select metrics to display",
+            "selectionMechanism": { "selectorConfigId": "system_selector_config" },
+            "sources": []
+        }
+    ],
+    "sources": [
+        {
+            "_id": "scp_ingress_mps",
+            "sourceType": "prometheus",
+            "query": "scp_ingress_mps or vector(0)",
+            "label": "SCP Ingress Requests [MPS]"
+        },
+        {
+            "_id": "scp_licensed_traffic",
+            "sourceType": "prometheus",
+            "query": "scp_licensed_traffic",
+            "label": "Licensed Traffic [MPS]"
+        },
+        {
+            "_id": "scp_ingress_success",
+            "sourceType": "prometheus",
+            "query": "scp_ingress_success",
+            "label": "SCP Ingress [%]"
+        },
+        {
+            "_id": "scp_egress_mps",
+            "sourceType": "prometheus",
+            "query": "scp_egress_mps or vector(0)",
+            "label": "SCP Egress Requests [MPS]"
+        },
+        {
+            "_id": "scp_egress_pool_mps",
+            "sourceType": "prometheus",
+            "query": "scp_egress_pool_mps or vector(0)",
+            "label": "Pool - ",
+            "splitByLabelName": "pool_name",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "scp_egress_success",
+            "sourceType": "prometheus",
+            "query": "scp_egress_success",
+            "label": "SCP Egress [%]"
+        },
+        {
+            "_id": "scp_egress_pool_class4",
+            "sourceType": "prometheus",
+            "query": "scp_egress_pool_class4 or vector(0)",
+            "label": "Pool - ",
+            "splitByLabelName": "pool_name",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "scp_egress_pool_class5",
+            "sourceType": "prometheus",
+            "query": "scp_egress_pool_class5 or vector(0)",
+            "label": "Pool - ",
+            "splitByLabelName": "pool_name",
+            "labelOrder": "prometheusLabelLast"
+        },
+        {
+            "_id": "scp_nrf_discovery_mps",
+            "sourceType": "prometheus",
+            "query": "scp_nrf_discovery_mps or vector(0)",
+            "label": "SCP NRF Discovery Requests [MPS]"
+        },
+        {
+            "_id": "scp_nrf_discovery_success",
+            "sourceType": "prometheus",
+            "query": "scp_nrf_discovery_success",
+            "label": "SCP NRF Discovery [%]"
+        },
+        {
+            "_id": "nlf_nrf_discovery_mps",
+            "sourceType": "prometheus",
+            "query": "nlf_nrf_discovery_mps or vector(0)",
+            "label": "NLF NRF Discovery Requests [MPS]"
+        },
+        {
+            "_id": "nlf_nrf_discovery_success",
+            "sourceType": "prometheus",
+            "query": "nlf_nrf_discovery_success",
+            "label": "NLF NRF Discovery [%]"
+        },
+        {
+            "_id": "scp_manager_cpu",
+            "sourceType": "prometheus",
+            "query": "scp_manager_cpu or vector(0)",
+            "label": "SCP Manager Load [CPU millicores]"
+        },
+        {
+            "_id": "scp_worker_cpu_avg",
+            "sourceType": "prometheus",
+            "query": "scp_worker_cpu_avg or vector(0)",
+            "label": "SCP Worker Load (average) [CPU millicores]"
+        },
+        {
+            "_id": "scp_worker_cpu_max",
+            "sourceType": "prometheus",
+            "query": "scp_worker_cpu_max or vector(0)",
+            "label": "SCP Worker Load (max) [CPU millicores]"
+        },
+        {
+            "_id": "scp_worker_cpu_min",
+            "sourceType": "prometheus",
+            "query": "scp_worker_cpu_min or vector(0)",
+            "label": "SCP Worker Load (min) [CPU millicores]"
+        },
+        {
+            "_id": "scp_manager_memory",
+            "sourceType": "prometheus",
+            "query": "scp_manager_memory or vector(0)",
+            "label": "SCP Manager Memory [MB]"
+        },
+        {
+            "_id": "scp_worker_memory_avg",
+            "sourceType": "prometheus",
+            "query": "scp_worker_memory_avg or vector(0)",
+            "label": "SCP Worker Memory (average) [MB]"
+        },
+        {
+            "_id": "scp_worker_memory_max",
+            "sourceType": "prometheus",
+            "query": "scp_worker_memory_max or vector(0)",
+            "label": "SCP Worker Memory (max) [MB]"
+        },
+        {
+            "_id": "scp_worker_memory_min",
+            "sourceType": "prometheus",
+            "query": "scp_worker_memory_min or vector(0)",
+            "label": "SCP Worker Memory (min) [MB]"
+        },
+        {
+            "_id": "scp_worker_pods",
+            "sourceType": "prometheus",
+            "query": "scp_worker_pods or vector(0)",
+            "label": "SCP Worker PODs"
+        },
+        {
+            "_id": "scp_load",
+            "sourceType": "prometheus",
+            "query": "scp_load_avg or vector(0)",
+            "label": "SCP Load [%]"
+        },
+        {
+            "_id": "nlf_cpu",
+            "sourceType": "prometheus",
+            "query": "nlf_cpu or vector(0)",
+            "label": "NLF Load (average) [CPU millicores]"
+        },
+        {
+            "_id": "nlf_memory",
+            "sourceType": "prometheus",
+            "query": "nlf_memory or vector(0)",
+            "label": "NLF Memory (average) [MB]"
+        }
+    ]
+}

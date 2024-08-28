@@ -1,0 +1,7 @@
+server:
+  extraConfigmapMounts:
+    - name: eric-sc-bsf-rr-volume
+      configMap: eric-sc-bsf-rr
+      mountPath: /etc/config/scbsf
+      subPath: ""
+      readOnly: true

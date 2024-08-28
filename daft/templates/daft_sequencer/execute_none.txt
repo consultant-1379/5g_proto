@@ -1,0 +1,55 @@
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.0
+#  Date     : 2023-11-24 14:01:00
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2023
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+################################################################################
+# This file is used by the daft_sequencer.pl script and it contains commands to
+# be executed one-after-another.
+#
+# The file will just set environment variables for skipping execution of all
+# known commands and it should be used together with the file that contains
+# the commands to execute.
+# The inclusion of this file should be added after the other file and then
+# after this you should add -e commands to just enable the commands that you
+# want to execute.
+#
+# NOTE:
+# This should be executed on the node.
+################################################################################
+
+# Environment variables
+# ---------------------
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_ADD_CERTIFICATES=no
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_ADD_USERS=no
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_CLEAN_REGISTRY=no
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_CONFIGURE=no
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_DEPLOY_SC=no
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_DEPLOY_TOOLS=no
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_DOWNLOAD_CSAR=no
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_MASTER_RESTART=no
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_MODERATE_NETWORK_IMPAIRMENT=no
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_REMOVE_LABEL=no
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_RESERVE_WORKERS=no
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_START_TRAFFIC=no
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_TIMEZONE_CHANGE=no
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_UNDEPLOY_SC=no
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_UNDEPLOY_TOOLS=no
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_UPGRADE_SC=no
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_WORKER_DRAIN=no
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_WORKER_RESTART=no

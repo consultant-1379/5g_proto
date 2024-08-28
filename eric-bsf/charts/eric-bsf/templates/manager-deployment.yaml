@@ -1,0 +1,599 @@
+# Copyright 2019 Ericsson GmbH
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "eric-bsf.name" . }}-manager
+  labels:
+{{- include "eric-bsf.labels" . | indent 4 }}
+    app: {{ template "eric-bsf.name" . }}-manager
+  annotations:
+{{- include "eric-bsf.helm-annotations" . | indent 4 }}
+{{- include "eric-bsf.config-annotations" . | indent 4 }}
+spec:
+  replicas: {{ .Values.spec.manager.replicaCount }}
+  strategy:
+    type: {{ .Values.updateStrategy.type | quote }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.updateStrategy.rollingUpdate.maxUnavailable | quote }}
+  selector:
+    matchLabels:
+      app: {{ template "eric-bsf.name" . }}-manager
+  template:
+    metadata:
+      labels:
+        {{- include "eric-bsf-manager.pod.labels" . | nindent 8 }}
+        app: {{ template "eric-bsf.name" . }}-manager
+      annotations:
+{{- include "eric-bsf.helm-annotations" . | indent 8 }}
+{{- include "eric-bsf.config-annotations" . | indent 8 }}
+    spec:
+      {{- if include "eric-bsf-manager.nodeSelector" . }}
+      nodeSelector:
+        {{ template "eric-bsf-manager.nodeSelector" . }}
+      {{- end }}
+      {{- if eq .Values.spec.manager.affinity.podAntiAffinity "hard" }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - {{ template "eric-bsf.name" . }}-manager
+              topologyKey: "kubernetes.io/hostname"
+      {{- else if eq .Values.spec.manager.affinity.podAntiAffinity  "soft" }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - {{ template "eric-bsf.name" . }}-manager
+              topologyKey: "kubernetes.io/hostname"
+      {{- end }}
+      {{- if .Values.spec.manager.tolerations }}
+      tolerations:
+{{ toYaml .Values.spec.manager.tolerations | indent 8 }}
+      {{- end }}
+      serviceAccountName: {{ template "eric-bsf.name" . }}-manager-cm-key
+      {{- if include "eric-bsf.pullSecrets" . }}
+      imagePullSecrets:
+      - name: {{ template "eric-bsf.pullSecrets" . }}
+      {{- end }}
+      initContainers:
+      - name: setup
+        image: {{ template "eric-bsf.setupmanager.registryUrl" . }}/{{ template "eric-bsf.setupmanager.repoPath" . }}/{{ template "eric-bsf.setupmanager.image" . }}:{{ template "eric-bsf.setupmanager.tag" . }}
+        imagePullPolicy: {{ template "eric-bsf.setupmanager.imagePullPolicy" . }}
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 278885
+          allowPrivilegeEscalation: false
+          privileged: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - all
+        resources:
+          requests:
+            memory: {{ .Values.spec.setup.resources.requests.memory | quote }}
+            cpu: {{ .Values.spec.setup.resources.requests.cpu | quote }}
+            {{- if index .Values.spec.setup.resources.requests "ephemeral-storage" }}
+            ephemeral-storage: {{ index .Values.spec.setup.resources.requests "ephemeral-storage" | quote }}
+            {{- end }}
+          limits:
+            memory: {{ .Values.spec.setup.resources.limits.memory | quote }}
+            cpu: {{ .Values.spec.setup.resources.limits.cpu | quote }}
+            {{- if index .Values.spec.setup.resources.limits "ephemeral-storage" }}
+            ephemeral-storage: {{ index .Values.spec.setup.resources.limits "ephemeral-storage" | quote }}
+            {{- end }}
+        env:
+        - name: CM_MEDIATOR
+          value: {{ .Values.adp.cm.mediator.hostname | quote }}
+        - name: SUBSCRIBE_VALIDITY
+          value: {{ int .Values.adp.cm.mediator.subscription.validity | quote }}
+        - name: SUBSCRIBE_RENEWAL
+          value: {{ float64 .Values.adp.cm.mediator.subscription.renewal | quote }}
+        - name: SUBSCRIBE_HEARTBEAT
+          value: {{ int .Values.adp.cm.mediator.subscription.heartbeat | quote }}
+        - name: GLOBAL_TLS_ENABLED
+          value: {{ include "eric-bsf.tls" . | quote }}
+        - name: CM_MEDIATOR_PORT
+          value: {{ .Values.adp.cm.mediator.port | quote }}
+        - name: JVM_PARAMS
+          value: {{ .Values.jvm.parameters.setup | quote }}
+{{- if eq (include "eric-bsf.tls" .) "true" }}
+        - name: MANAGER_MEDIATOR_CLIENT_CERT_PATH
+          value: "/run/secrets/mediator/certificates"
+        - name: SIP_TLS_TRUSTED_ROOT_CA_PATH
+          value: "/run/secrets/siptls/ca"
+{{- end }}
+        - name: TZ
+          value: {{ include "eric-bsf.timezone" . }}
+        - name: SERVICE_ID
+          value: {{ template "eric-bsf.name" . }}-manager
+        volumeMounts:
+{{- if eq (include "eric-bsf.tls" .) "true" }}
+        - name: mediator-client-certificate
+          mountPath: "/run/secrets/mediator/certificates"
+          readOnly: true
+        - name: siptls-trusted-root-cacert
+          mountPath: "/run/secrets/siptls/ca"
+          readOnly: true
+{{- end }}
+        - name: vertx
+          mountPath: "/vertx"
+        command: ["/bin/bash", "-c", "/java-exec/entrypoint.sh java -cp /java-exec/libs/*:/java-exec/classes ${JVM_PARAMS} com.ericsson.esc.bsf.manager.upgrade.ConfigTransformer"]
+      containers:
+{{- if eq (include "eric-bsf.logshipper-enabled" . ) "true" }}
+{{- $logshipperImageDict := dict "logshipperSidecarImage" ((((.Values).global).logShipper).config).image -}}
+{{- include "eric-log-shipper-sidecar.log-shipper-sidecar-container" (mergeOverwrite . $logshipperImageDict ) | indent 6 }}
+{{- end }}
+{{- if eq (include "eric-bsf.tapagent.manager.enabled" .) "true" }}
+      - name: tapagent
+        image: {{ template "eric-bsf.tapagent.registryUrl" . }}/{{ template "eric-bsf.tapagent.repoPath" . }}/{{ template "eric-bsf.tapagent.image" . }}:{{ template "eric-bsf.tapagent.tag" . }}
+        imagePullPolicy: {{ template "eric-bsf.tapagent.imagePullPolicy" . }}
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: true
+          readOnlyRootFilesystem: true
+          privileged: false
+          capabilities:
+            drop:
+              - all
+            add:
+              - NET_ADMIN
+              - NET_RAW
+        resources:
+          requests:
+            cpu: {{ .Values.spec.tapagent.resources.requests.cpu | quote }}
+            memory: {{ .Values.spec.tapagent.resources.requests.memory | quote }}
+            {{- if index .Values.spec.tapagent.resources.requests "ephemeral-storage" }}
+            ephemeral-storage: {{ index .Values.spec.tapagent.resources.requests "ephemeral-storage" | quote }}
+            {{- end }}
+          limits:
+            cpu: {{ .Values.spec.tapagent.resources.limits.cpu | quote }}
+            memory: {{ .Values.spec.tapagent.resources.limits.memory | quote }}
+            {{- if index .Values.spec.tapagent.resources.limits "ephemeral-storage" }}
+            ephemeral-storage: {{ index .Values.spec.tapagent.resources.limits "ephemeral-storage" | quote }}
+            {{- end }}
+        volumeMounts:
+          - name: tap-config
+            mountPath: /etc/cm-config/
+          - name: sftp-server-config
+            mountPath: /etc/ftpserver/
+        env:
+          - name: CM_CONFIG_FILE_PATH
+            value: /etc/cm-config/
+          - name: CM_CONFIG_FILE_NAME
+            value: "tap_config.json"
+          - name: SERVICE_NAME
+            value: {{ template "eric-bsf.name" . }}-manager
+          - name: TZ
+            value: {{ include "eric-bsf.timezone" . }}
+          - name: SERVICE_ID
+            value: {{ template "eric-bsf.name" . }}-manager
+      - name: tlskeylogagent
+        image: {{ template "eric-bsf.tlskeylogagent.registryUrl" . }}/{{ template "eric-bsf.tlskeylogagent.repoPath" . }}/{{ template "eric-bsf.tlskeylogagent.image" . }}:{{ template "eric-bsf.tlskeylogagent.tag" . }}
+        imagePullPolicy: {{ template "eric-bsf.tlskeylogagent.imagePullPolicy" . }}
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          privileged: false
+          capabilities:
+            drop:
+              - all
+          runAsGroup: {{ .Values.spec.tlskeylogagent.mgid }}
+          runAsUser: {{ .Values.spec.tlskeylogagent.uid }}
+        resources:
+          requests:
+            cpu: {{ .Values.spec.tlskeylogagent.resources.requests.cpu | quote }}
+            memory: {{ .Values.spec.tlskeylogagent.resources.requests.memory | quote }}
+          limits:
+            cpu: {{ .Values.spec.tlskeylogagent.resources.limits.cpu | quote }}
+            memory: {{ .Values.spec.tlskeylogagent.resources.limits.memory | quote }}
+        volumeMounts:
+          - name: tap-config
+            mountPath: /etc/cm-config/
+          - name: sftp-server-config
+            mountPath: /etc/ftpserver/
+          - name: custom
+            mountPath: /mnt
+          - name: {{ .Values.log.volumeName | quote }}
+            mountPath: "/logcontrol/config"
+{{- if eq (include "eric-bsf.logshipper-enabled" . ) "true" }}
+      {{- include "eric-log-shipper-sidecar.log-shipper-sidecar-mounts" . | indent 10 }}
+{{- end }}
+        env:
+          - name: VTAP_CONFIG_DIR
+            value: /etc/cm-config/
+          - name: VTAP_SFTP_CONFIG_DIR
+            value: /etc/ftpserver/
+          - name: TLS_KEYLOGGER_FIFO_PATH
+            value: /mnt/tlskeylogger.fifo
+          - name: JVM_PARAMS
+            value: {{ .Values.jvm.parameters.tlskeylogagent | quote }}
+          - name: SERVICE_NAME
+            value: {{ template "eric-bsf.name" . }}-manager
+          - name: TZ
+            value: {{ include "eric-bsf.timezone" . }}
+          - name: FILE_SIZE_LIMIT
+            value: {{ .Values.tlskeylogagent.fileSizeLimit | quote }}
+          - name: SERVICE_ID
+            value: {{ template "eric-bsf.name" . }}-manager
+          - name: CONTAINER_NAME
+            value: "tlskeylogagent"
+          - name: LOG_PATH
+            value: {{ .Values.logShipper.storage.path | quote }}
+          - name: LOGBACK_FILENAME
+            value: {{ include "eric-bsf.logbackFileName" . | quote }}
+{{- end }}
+      - name: eric-bsf-manager
+        image: {{ template "eric-bsf.manager.registryUrl" . }}/{{ template "eric-bsf.manager.repoPath" . }}/{{ template "eric-bsf.manager.image" . }}:{{ template "eric-bsf.manager.tag" . }}
+        imagePullPolicy: {{ template "eric-bsf.manager.imagePullPolicy" . }}
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          privileged: false
+          capabilities:
+            drop:
+              - all
+        env:
+        - name: BSFMANAGER_CONTAINER_NAME
+          value: {{ template "eric-bsf.name" . }}-manager
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+{{- if eq (include "eric-bsf.tapagent.manager.enabled" .) "true" }}
+        - name: TLS_KEYLOGGER_FIFO_PATH
+          value: /mnt/tlskeylogger.fifo
+        - name: TLS_KEYLOGGER_FIFO_UID
+          value: {{ .Values.spec.tlskeylogagent.mgid | quote }}
+{{- end }}
+        - name: BSF_DIAMETER_ENABLED
+          value: {{ .Values.bsfdiameter.enabled | quote }}
+        - name: CHECK_RECOVERY_TIME
+          value: {{ .Values.manager.checkRecoveryTime  | quote }}
+        - name: PAGE_SIZE
+          value: {{ .Values.manager.bindingDatabaseScan.pageSize | quote }}
+        - name: PAGE_THROTTLING_MILLIS
+          value: {{ .Values.manager.bindingDatabaseScan.pageThrottlingMillis | quote }}
+        - name: DELETE_THROTTLING_MILLIS
+          value: {{ .Values.manager.bindingDatabaseScan.deleteThrottlingMillis | quote }}
+        - name: AUTO_SCAN_INTERVAL_MINUTES
+          value: {{ .Values.manager.bindingDatabaseScan.autoScanIntervalMinutes | quote }}
+        - name: PCFRT_TTL_SEC
+          value: {{ .Values.manager.pcfRecoveryTimeTTL  | quote }}
+        - name: CM_MEDIATOR
+          value: {{ .Values.adp.cm.mediator.hostname | quote }}
+        - name: SUBSCRIBE_VALIDITY
+          value: {{ int .Values.adp.cm.mediator.subscription.validity | quote }}
+        - name: SUBSCRIBE_RENEWAL
+          value: {{ float64 .Values.adp.cm.mediator.subscription.renewal | quote }}
+        - name: SUBSCRIBE_HEARTBEAT
+          value: {{ int .Values.adp.cm.mediator.subscription.heartbeat | quote }}
+        - name: GLOBAL_TLS_ENABLED
+          value: {{ include "eric-bsf.tls" . | quote }}
+        - name: IP_FAMILY
+          value: {{ template "eric-bsf.ipfamily" . }}
+{{- if eq (include "eric-bsf.tls" .) "true" }}
+        - name: DCED_TLS_ENABLED
+          value: {{ include "eric-bsf.manager.dcedsc.tls" . | quote }}
+{{- end }}
+        - name: CM_MEDIATOR_PORT
+          value: {{ .Values.adp.cm.mediator.port | quote }}
+        - name: EGRESS_NRF_DSCP
+{{- if lt (int .Values.egress.nrf.dscp) 0 }}
+          value: 0
+{{- else if gt (int .Values.egress.nrf.dscp) 63 }}
+          value: 63
+{{- else }}
+          value: {{ int .Values.egress.nrf.dscp | quote }}
+{{- end }}
+        - name: VAULT_HOST
+          value: {{ .Values.adp.sec.kms.hostname | quote }}
+        - name: VAULT_PORT
+          value: {{ .Values.adp.sec.kms.port | quote }}
+        - name: VAULT_KEY_NAME
+          value: eric-cm-key-v1
+        - name: ACCOUNT_TOKEN_PATH
+          value: /var/run/secrets/kubernetes.io/serviceaccount/token
+        - name: SERVICE_HOST
+          value: {{ template "eric-bsf.name" . }}-manager
+        - name: SERVICE_PORT
+          value: {{ .Values.service.manager.port | quote }}
+        - name: SERVICE_OAM_TARGET_PORT
+          value: {{ .Values.service.manager.server.oam.targetPort | quote }}
+        - name: SERVICE_PROBE_PORT
+          value: {{ .Values.probes.manager.port | quote }}
+{{- if eq (include "eric-bsf.tls" .) "true" }}
+        - name: MANAGER_SERVER_CERT_PATH
+          value: "/run/secrets/oam/certificates"
+        - name: YANG_SERVER_CA_PATH
+          value: "/run/secrets/yang/ca"
+        - name: MEDIATOR_SERVER_CA_PATH
+          value: "/run/secrets/mediator/ca"
+        - name: PM_SERVER_CA_PATH
+          value: "/run/secrets/pm/ca"
+        - name: MANAGER_MEDIATOR_CLIENT_CERT_PATH
+          value: "/run/secrets/mediator/certificates"
+        - name: MANAGER_TRAFFIC_CERTIFICATE_PATH
+          value: "/run/secrets/bsfmanager/certificates"
+        - name: MANAGER_TRAFFIC_ROOT_CA_PATH
+          value: "/run/secrets/bsfmanager/certificates/trustCA"
+        - name: MANAGER_WCDBCD_CLIENT_CERT_PATH
+          value: "/run/secrets/wcdbcd/certificates"
+        - name: SIP_TLS_TRUSTED_ROOT_CA_PATH
+          value: "/run/secrets/siptls/ca"
+{{- if eq (include "eric-bsf.manager.dcedsc.tls" .) "true" }}
+        - name: MANAGER_DCEDSC_CLIENT_CERT_PATH
+          value: "/run/secrets/dcedsc/certificates"
+{{- end }}
+        - name: ALARM_HANDLER_CLIENT_CERT_PATH
+          value: "/run/secrets/fhah/certificates"
+{{- end }}
+        - name: SERVICE_TARGET_PORT
+          value: {{ .Values.spec.manager.port | quote }}
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: VALIDATOR_ENABLED
+          value: {{ .Values.validator.enabled | quote }}
+        - name: JVM_PARAMS
+          value: {{ .Values.jvm.parameters.manager | quote }}
+        - name: CASSANDRA_TLS_ENABLED
+          value: {{ .Values.cassandra.tls.enabled | quote }}
+        - name: CASSANDRA_TLS_HOSTNAME_VERIFICATION
+          value: {{ .Values.cassandra.tls.hostnameVerification | quote }}
+        - name: CASSANDRA_CONTACT_POINT
+          value: "{{ template "eric-bsf.wcdbcd.hostname" . }}-{{ template "eric-bsf.wcdbcd.datacenter" . }}-{{ template "eric-bsf.wcdbcd.rack" . }}:9042"
+        - name: CASSANDRA_HOSTNAME
+          value: "{{ template "eric-bsf.wcdbcd.hostname" . }}"          
+        - name: CASSANDRA_CONTACT_POINT_REPLICAS
+          value: {{ .Values.cassandra.contact_point_replicas | quote }}
+        - name: CASSANDRA_KEYSPACE
+          value: {{ .Values.cassandra.keyspace | quote }}
+        - name:  CASSANDRA_LOCAL_DATACENTER
+          value: {{ .Values.cassandra.datacenter | quote }}
+        - name: CASSANDRA_GC_GRACE
+          value: {{ .Values.cassandra.gc_grace | quote }}
+        - name: CASSANDRA_MEMTABLE_FLUSH_PERIOD
+          value: {{ .Values.cassandra.memtable_flush_period | quote }}
+        - name: CASSANDRA_COMPACTION_BUCKET_HIGH
+          value: {{ .Values.cassandra.compaction.sizeTieredCompactionStrategy.bucketHigh | quote }}
+        - name: CASSANDRA_COMPACTION_BUCKET_LOW
+          value: {{ .Values.cassandra.compaction.sizeTieredCompactionStrategy.bucketLow | quote }}
+        - name: CASSANDRA_COMPACTION_MAX_THRESHOLD
+          value: {{ .Values.cassandra.compaction.sizeTieredCompactionStrategy.maxThreshold | quote }}
+        - name: CASSANDRA_COMPACTION_MIN_THRESHOLD
+          value: {{ .Values.cassandra.compaction.sizeTieredCompactionStrategy.minThreshold | quote }}
+        - name: CASSANDRA_THROTTLER_CLASS
+          value: {{ .Values.cassandra.throttler.class | quote }}
+        - name: CASSANDRA_THROTTLER_MAX_QUEUE_SIZE
+          value: {{ .Values.cassandra.throttler.max_queue_size | quote }}
+        - name: CASSANDRA_THROTTLER_MAX_CONCURRENT_REQUESTS
+          value: {{ .Values.cassandra.throttler.max_concurrent_requests | quote }}
+        - name: CASSANDRA_CONSISTENCY
+{{- if .Values.cassandra.consistency }}
+          value: {{ .Values.cassandra.consistency | quote }}
+{{ else }}
+          value: "ONE"
+{{- end }}
+        - name: CASSANDRA_STORAGE_MAX_PERCENTAGE
+          value: {{ .Values.cassandra.storage_max_percentage | quote }}
+        - name: CASSANDRA_ADMIN
+          value: "admin"
+        - name: CASSANDRA_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "eric-bsf-data-wide-column-database-cd.security.auth.cql.adminSecret" . }}
+              key: "admin_password"
+        - name: CASSANDRA_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cassandra.auth.userSecret | quote }}
+              key: "bsf_user"
+        - name: CASSANDRA_USER_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cassandra.auth.userSecret | quote }}
+              key: "bsf_password"
+        - name: ETCD_ENDPOINT
+          value: {{ .Values.etcd.endpoint | quote }}
+{{- if eq (include "eric-bsf.manager.dcedsc.tls" .) "false" }}
+        - name: ETCD_USERNAME
+          value: {{ .Values.etcd.username | quote }}
+        - name: ETCD_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.etcd.secretName | quote }}
+              key: {{ .Values.etcd.passwordKey | quote }}
+{{- end }}
+        - name: LEADER_ELECTION_ENABLED
+          value: {{ .Values.manager.leaderElection.enabled | quote }}
+        - name: TZ
+          value: {{ include "eric-bsf.timezone" . }}
+        - name: SERVICE_ID
+          value: {{ template "eric-bsf.name" . }}-manager
+        - name: ALARM_HANDLER_HOSTNAME
+          value: {{ .Values.adp.fh.alarmHandler.hostname | quote }}
+        - name: ALARM_HANDLER_PORT
+          value: {{ .Values.adp.fh.alarmHandler.port | quote }}
+        - name: LOG_PATH
+          value: {{ .Values.logShipper.storage.path | quote }}
+        - name: LOGBACK_FILENAME
+          value: {{ include "eric-bsf.logbackFileName" . | quote }}
+        ports:
+        - containerPort: {{ .Values.service.manager.server.oam.targetPort }}
+{{- if eq (include "eric-bsf.tls" .) "true" }}
+          name: "metrics-tls"
+{{- else }}
+          name: "metrics"
+{{- end }}
+        livenessProbe:
+          httpGet:
+            path: /probes/liveness
+            port: {{ .Values.probes.manager.port }} # No quotes should be used!
+          initialDelaySeconds: {{ .Values.probes.manager.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.manager.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.probes.manager.livenessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.probes.manager.livenessProbe.successThreshold }}
+          failureThreshold: {{ .Values.probes.manager.livenessProbe.failureThreshold }}
+        readinessProbe:
+          httpGet:
+            path: /probes/readiness
+            port: {{ .Values.probes.manager.port }} # No quotes should be used!
+          initialDelaySeconds: {{ .Values.probes.manager.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.manager.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.probes.manager.readinessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.probes.manager.readinessProbe.successThreshold }}
+          failureThreshold: {{ .Values.probes.manager.readinessProbe.failureThreshold }}
+        {{- if .Values.spec.manager.resources }}
+        resources:
+          requests:
+            memory: {{ .Values.spec.manager.resources.requests.memory | quote }}
+            cpu: {{ .Values.spec.manager.resources.requests.cpu | quote }}
+            {{- if index .Values.spec.manager.resources.requests "ephemeral-storage" }}
+            ephemeral-storage: {{ index .Values.spec.manager.resources.requests "ephemeral-storage" | quote }}
+            {{- end }}
+          limits:
+            memory: {{ .Values.spec.manager.resources.limits.memory | quote }}
+            cpu: {{ .Values.spec.manager.resources.limits.cpu | quote }}
+            {{- if index .Values.spec.manager.resources.limits "ephemeral-storage" }}
+            ephemeral-storage: {{ index .Values.spec.manager.resources.limits "ephemeral-storage" | quote }}
+            {{- end }}
+        {{ end }}
+        volumeMounts:
+        - name: {{ .Values.log.volumeName | quote }}
+          mountPath: "/manager/config/logcontrol"
+        - name: vertx
+          mountPath: "/vertx"
+        - name: leader-election
+          mountPath: /leaderElection
+        - name: nrf-client-certificate
+          mountPath: "/run/secrets/bsfmanager/certificates"
+          readOnly: true
+        - name: nrf-ca-certificate
+          mountPath: "/run/secrets/bsfmanager/certificates/trustCA"
+          readOnly: true
+        - name: custom
+          mountPath: /mnt
+{{- if eq (include "eric-bsf.tls" .) "true" }}
+        - name: oam-server-certificate
+          mountPath: "/run/secrets/oam/certificates"
+          readOnly: true
+        - name: yangprovider-ca-certificate
+          mountPath: "/run/secrets/yang/ca"
+          readOnly: true
+        - name: mediator-ca-certificate
+          mountPath: "/run/secrets/mediator/ca"
+          readOnly: true
+        - name: pms-ca-certificate
+          mountPath: "/run/secrets/pm/ca"
+          readOnly: true
+        - name: mediator-client-certificate
+          mountPath: "/run/secrets/mediator/certificates"
+          readOnly: true
+        - name: wcdbcd-client-certificate
+          mountPath: "/run/secrets/wcdbcd/certificates"
+          readOnly: true
+        - name: siptls-trusted-root-cacert
+          mountPath: "/run/secrets/siptls/ca"
+          readOnly: true
+        - name: fhah-client-certificate
+          mountPath: "/run/secrets/fhah/certificates"
+          readOnly: true
+{{- end }}
+{{- if eq (include "eric-bsf.manager.dcedsc.tls" .) "true" }}
+        - name: dcedsc-client-certificate
+          mountPath: "/run/secrets/dcedsc/certificates"
+          readOnly: true
+{{- end }}
+{{- if eq (include "eric-bsf.logshipper-enabled" . ) "true" }}
+      {{- include "eric-log-shipper-sidecar.log-shipper-sidecar-mounts" . | indent 8 }}
+{{- end }}
+{{- if eq (include "eric-bsf.license-consumer.enabled" . ) "true" }}
+      {{- include "eric-sc-license-consumer.sidecar-container" . | nindent 6 }}
+{{- end }}
+      volumes:
+      - name: {{ .Values.log.volumeName | quote }}
+        configMap:
+          name: {{ template "eric-bsf.name" . }}-manager-log-ctrl
+{{- if eq (include "eric-bsf.tapagent.manager.enabled" .) "true" }}
+      - name: sftp-server-config
+        secret:
+          secretName: {{ .Values.spec.tapagent.secret.name }}
+      - name: tap-config
+        configMap:
+          name: {{ .Values.spec.tapagent.configmap.name }}
+{{- end }}
+      - name: nrf-client-certificate
+        secret:
+          secretName: {{ template "eric-bsf.name" . }}-manager-nrf-client-certificate
+          items:
+            - key: tls.crt
+              path: certificate.pem
+            - key: tls.key
+              path: key.pem
+      - name: nrf-ca-certificate
+        secret:
+          secretName: {{ template "eric-bsf.name" . }}-manager-nrf-ca-certificate
+      - name: custom
+        emptyDir: {}
+      - name: leader-election
+        emptyDir: {}
+{{- if eq (include "eric-bsf.tls" .) "true" }}
+      - name: oam-server-certificate
+        secret:
+          secretName: {{ template "eric-bsf.name" . }}-manager-oam-server-certificate
+      - name: yangprovider-ca-certificate
+        secret:
+          secretName: {{ .Values.adp.cm.yangProvider.hostname }}-ca-secret
+          items:
+          - key: client-cacert.pem
+            path: cacertbundle.pem
+      - name: mediator-ca-certificate
+        secret:
+          secretName: {{ .Values.adp.cm.mediator.hostname }}-tls-client-ca-secret
+          items:
+          - key: client-cacertbundle.pem
+            path: cacertbundle.pem
+      - name: pms-ca-certificate
+        secret:
+          secretName: {{ .Values.adp.pm.server.hostname }}-ca
+          items:
+          - key: client-cacertbundle.pem
+            path: cacertbundle.pem
+      - name: mediator-client-certificate
+        secret:
+          secretName: {{ template "eric-bsf.name" . }}-manager-mediator-client-certificate
+      - name: siptls-trusted-root-cacert
+        secret:
+          secretName: eric-sec-sip-tls-trusted-root-cert
+      - name: wcdbcd-client-certificate
+        secret:
+          secretName: {{ template "eric-bsf.name" . }}-wcdbcd-client-certificate
+      - name: fhah-client-certificate
+        secret:
+          secretName: {{ template "eric-bsf.name" . }}-manager-fhah-client-certificate
+{{- if eq (include "eric-bsf.license-consumer.enabled" . ) "true" }}
+      {{- include "eric-sc-license-consumer.sidecar.volumes" . | indent 6 }}
+{{- end }}
+{{- end }}
+{{- if eq (include "eric-bsf.manager.dcedsc.tls" .) "true" }}
+      - name: dcedsc-client-certificate
+        secret:
+          secretName: {{ template "eric-bsf.name" . }}-dcedsc-client-certificate
+{{- end }}
+{{- if eq (include "eric-bsf.logshipper-enabled" . ) "true" }}
+     {{- include "eric-log-shipper-sidecar.log-shipper-sidecar-volumes" . | indent 6 }}
+{{- end }}
+      - name: vertx
+        emptyDir:
+          medium: Memory

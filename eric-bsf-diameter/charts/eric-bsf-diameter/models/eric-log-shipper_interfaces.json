@@ -1,0 +1,47 @@
+{
+    "metadata": {
+      "serviceHelmChartName": "eric-log-shipper",
+      "usedSchemaVersion": "1.0.0",
+      "fileVersion": "1.0.0",
+      "dateEdited": "2023-04-25"
+    },
+    "interfaceImpls": [
+      {
+        "id": "ERIC.LOG.SHIPPER",
+        "pod": "eric-log-shipper",
+        "container": "log-shipper",
+        "provides": {
+          "netIf": [
+          ],
+          "dataIf": [
+            {
+              "id": "IF.ADP.LS.HELM.VALUES.SCHEMA.V1",
+              "description": "Helm Values Model Schema",
+              "specUri": "values.schema.json",
+              "specVer": "1.1.0",
+              "type": "HelmValues",
+              "scope": "clusterExternal"
+            }
+          ]
+        },
+        "uses": {
+          "netIf": [
+            {
+              "id": "IF.ADP.LT.LOGSTREAM.LUMBERJACK.V1",
+              "specVer": "1.0.0",
+              "duringPhases": [
+                "runtime"
+              ]
+            },
+            {
+              "id": "IF.ADP.PM.PROM.SCRAPING.V0",
+              "specVer": "0.0.4",
+              "duringPhases": [
+                "runtime"
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }

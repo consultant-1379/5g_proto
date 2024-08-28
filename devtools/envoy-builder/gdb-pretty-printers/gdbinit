@@ -1,0 +1,16 @@
+python
+import sys
+sys.path.insert(0, '/gdb-pretty-printers/python')
+from libstdcxx.v6.printers import register_libstdcxx_printers
+register_libstdcxx_printers (None)
+end
+
+source /gdb-pretty-printers/nlohmann_json.py
+
+set pagination off
+set confirmation off
+set print pretty on
+set history save on
+set history expansion on
+
+

@@ -1,0 +1,74 @@
+modelVersion: 2.0
+
+description: "Cddjmxexporter PRA"
+
+import:
+  base: ../rulesets/ruleset2.0-eric-base.yaml
+  cddjmxexp: ruleset2.0.yaml
+
+properties:
+  - DOCKER_REPO_RELEASED: "proj-sc-all-released"
+  - IMAGE_CANDIDATE_PATH: ${base.DOCKER_REGISTRY_URL}/${cddjmxexp.DOCKER_REPO_DROP}/${cddjmxexp.IMAGE_NAME}:${env.RELEASE_CANDIDATE}
+  - IMAGE_RELEASED_PATH: ${base.DOCKER_REGISTRY_URL}/${cddjmxexp.DOCKER_REPO_RELEASED}/${cddjmxexp.IMAGE_NAME}:${env.RELEASE_CANDIDATE}
+
+env:
+  # the microservice release candidate version (e.g. 1.0.0-3)
+  - RELEASE_CANDIDATE
+  # type of release version update (e.g. MINOR, PATCH)
+  - VERSION_UPDATE (default=MINOR)
+  # the name of branch where Git commit is merged
+  - BRANCH (default=master)
+  # the GERRIT username
+  - GERRIT_USERNAME
+  # the GERRIT password (Gerrit HTTP password)
+  - GERRIT_PASSWORD
+  # Run git related actions in dry-run
+  - DRY_RUN (default=true)
+  # committer email
+  - COMMITTER_EMAIL (default = eiffelesc-noreply@ericsson.com)
+
+
+rules:
+
+  pre-publish:
+    - task: image-pull
+      cmd: docker pull ${IMAGE_CANDIDATE_PATH}
+
+  publish:
+    - task: image-tag-released
+      cmd: docker tag ${IMAGE_CANDIDATE_PATH} ${IMAGE_RELEASED_PATH}
+    - task: image-release
+      cmd: docker push ${IMAGE_RELEASED_PATH}
+
+  post-publish:
+    - task: pra-git-tag
+      description: Create and push git tag. Example "eric-sc-cddjmxexporter/pra/1.0.0-55"
+      docker-image: base.adp-release-auto
+      docker-envs:
+        - GERRIT_USERNAME
+        - GERRIT_PASSWORD
+      cmd: version-handler create-git-tag
+           --tag ${cddjmxexp.IMAGE_NAME}/pra/${env.RELEASE_CANDIDATE}
+           --message "PRA Release ${env.RELEASE_CANDIDATE}"
+           --git-repo-url ${base.GIT_REPO_URL}
+           --commitid ${cddjmxexp.IMAGE_NAME}/${env.RELEASE_CANDIDATE}
+           --branch ${env.BRANCH}
+           --dry-run ${env.DRY_RUN}
+           --debug
+    - task: version-prefix-increment
+      description: Step version in VERSION_PREFIX (e.g. 1.0.0 -> 1.1.0) and push it to git
+      docker-image: base.adp-release-auto
+      docker-envs:
+        - GERRIT_USERNAME
+        - GERRIT_PASSWORD
+      cmd: version-handler increment
+           --step-version-prefix ${env.VERSION_UPDATE}
+           --git-repo-url ${base.GIT_REPO_URL}
+           --branch ${env.BRANCH}
+           --version-prefix-file ${IMAGE_NAME}/VERSION_PREFIX
+           --dry-run ${env.DRY_RUN}
+           --email ${env.COMMITTER_EMAIL}
+    - task: archive
+      cmd: /bin/bash -c 'echo "IMAGE_NAME=${cddjmxexp.IMAGE_NAME}" > artifact.properties;
+                         echo "IMAGE_REPO_PATH=${cddjmxexp.DOCKER_REPO_RELEASED}" >> artifact.properties;
+                         echo "IMAGE_VERSION=${env.RELEASE_CANDIDATE}" >> artifact.properties;'

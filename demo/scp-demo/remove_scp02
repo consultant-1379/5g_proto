@@ -1,0 +1,9 @@
+
+config	
+no scp-function nf-instance scp_instance_1 static-scp-instance-data scp02
+no scp-function nf-instance scp_instance_1 nf-pool peer_scp
+no scp-function nf-instance scp_instance_1 nf-pool NfUdm_pr_pool_set3
+no scp-function nf-instance scp_instance_1 routing-case default_routing routing-rule Send_to_ownPLMN_NfUdm_set3_pr
+commit
+exit
+exit

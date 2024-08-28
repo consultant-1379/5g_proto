@@ -1,0 +1,42 @@
+Version: v1
+Decription: FOSS list
+LastUpdate: 2023-10-24 11:25
+FOSS:
+    # Available in Bazaar
+    FOSSName: Quartz
+    # Available in Bazaar
+    FOSSVersion: 2.5.0-RC1
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://repo1.maven.org/maven2/org/quartz-scheduler/quartz/2.5.0-rc1/quartz-2.5.0-rc1-sources.jar
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 27/CAX1053199
+    # Not Available in Bazaar
+    Primary: Y
+    # Available in Bazaar
+    STAKOCode: Restricted use
+    # Available in Bazaar
+    STAKOReason:  Low activity community
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: 'Quartz is an enterprise-class job scheduler for integration with stand-alone Java applications and full-scale J2EE applications. Advanced features include clustering and participation in container managed transactions. It is highly scalable, very lightweight, and supports very complex scheduling.' 
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: Apache License 2.0
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'org.quartz-scheduler:quartz:jar:2.5.0-rc1'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ZARISAR Aristeidis Sarras

@@ -1,0 +1,22 @@
+eric-cm-yang-provider:
+  pmMetrics:
+    enabled: false
+    
+eric-cnom-server:
+  enabled: false
+  
+eric-data-document-database-pg:
+  metrics:
+    enabled: false
+    
+eric-cloud-native-nf-additions-log-shipper:
+  metrics:
+    enabled: false
+    
+eric-sec-admin-user-management:
+  metrics:
+    enabled: false
+    
+eric-sec-ldap-server:
+  metrics:
+    enabled: false

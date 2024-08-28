@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scp-function xmlns="urn:rdns:com:ericsson:oammodel:ericsson-scp">
+    <nf-instance xmlns="urn:rdns:com:ericsson:oammodel:ericsson-scp">
+        <name>West1</name>
+        <producer-pool xmlns="urn:rdns:com:ericsson:oammodel:ericsson-scp">
+            <name>Pool1</name>
+            <producer xmlns="urn:rdns:com:ericsson:oammodel:ericsson-scp">
+                <name>OCC 3</name>
+                <capacity operation="replace">100</capacity>
+                <label operation="replace">occ3</label>
+                <address xmlns="urn:rdns:com:ericsson:oammodel:ericsson-scp">
+                    <port operation="replace">80</port>
+                    <fqdn operation="replace">eric-chfsim-3</fqdn>
+                    <name operation="replace">occ3Sa</name>
+                    <tls operation="replace">off</tls>
+                </address>
+            </producer>
+        </producer-pool>
+    </nf-instance>
+</scp-function>

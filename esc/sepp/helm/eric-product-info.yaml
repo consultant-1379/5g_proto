@@ -1,0 +1,75 @@
+productName: "eric-sepp"
+productNumber: product_number
+productRevision: product_revision
+images:
+  setupmanager:
+    productName: "SEPP Manager"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+    name: sepp_manager_image_name
+    tag: sepp_manager_image_tag
+  manager:
+    productName: "SEPP Manager"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+    name: sepp_manager_image_name
+    tag: sepp_manager_image_tag
+  setupworker:
+    productName: "SEPP Worker"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+    name: sepp_worker_image_name
+    tag: sepp_worker_image_tag
+  worker:
+    productName: "SEPP Worker"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+    name: sepp_worker_image_name
+    tag: sepp_worker_image_tag
+  sds:
+    productName: "SEPP SDS"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+    name: sds_image_name
+    tag: sds_image_tag
+  certnotifier:
+    productName: "SEPP Certificate Notifier"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+    name: certnotifier_image_name
+    tag: certnotifier_image_tag
+  logfwdr:
+    productName: "SEPP Log Forwarder"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+    name: logfwdr_image_name
+    tag: logfwdr_image_tag
+  tapagent:
+    productName: "SEPP TAP agent"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+
+    name: tap_agent_image_name
+    tag: tap_agent_image_tag
+  tlskeylogagent:
+    productName: "SEPP TLS Keylog Agent"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+    name: tlskeylogagent_image_name
+    tag: tlskeylogagent_image_tag
+  tapcollector:
+    productName: "SEPP Tap Collector"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+    name: tapcollector_image_name
+    tag: tapcollector_image_tag

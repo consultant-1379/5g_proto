@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<!-- ericsson-sec-certm-fm-instances 0.1.4 -->
+<!-- modified: 2021-09-17 -->
+<!-- Copyright (c) 2020 Ericsson AB. All rights reserved.     -->
+<config xmlns="http://tail-f.com/ns/config/1.0">
+	<fm xmlns="urn:rdns:com:ericsson:oammodel:ericsson-fm">
+		<alarm-model>
+			<id>eric-sec-certm-fm</id>
+			<alarm-type>
+				<id>CertMCertificateToExpire</id>
+				<major-type>193</major-type>
+				<minor-type>9699329</minor-type>
+				<specific-problem>Certificate Management, Certificate is about to Expire</specific-problem>
+				<event-type>processing-error-alarm</event-type>
+				<probable-cause>x733-threshold-crossed</probable-cause>
+				<is-stateful>true</is-stateful>
+				<additional-text>The certificate will expire in (x) days and should be renewed to prevent service failure</additional-text>
+				<configured-severity />
+				<default-severity>warning</default-severity>
+			</alarm-type>
+			<alarm-type>
+				<id>CertMTrustedCertificateToExpire</id>
+				<major-type>193</major-type>
+				<minor-type>9699330</minor-type>
+				<specific-problem>Certificate Management, Trusted Certificate is about to Expire</specific-problem>
+				<event-type>processing-error-alarm</event-type>
+				<probable-cause>x733-threshold-crossed</probable-cause>
+				<is-stateful>true</is-stateful>
+				<additional-text>The trusted certificate will expire in (x) days and should be renewed to prevent service failure</additional-text>
+				<configured-severity />
+				<default-severity>warning</default-severity>
+			</alarm-type>
+			<alarm-type>
+				<id>CertMAutomaticEnrollmentFailed</id>
+				<major-type>193</major-type>
+				<minor-type>9699331</minor-type>
+				<specific-problem>Certificate Management, Automatic Enrollment Failed</specific-problem>
+				<event-type>processing-error-alarm</event-type>
+				<probable-cause>x733-configuration-or-customization-error</probable-cause>
+				<is-stateful>true</is-stateful>
+				<additional-text>Automatic certificate renewal using enrollment protocol (protocol) failed due to local misconfiguration or remote enrollment service denial</additional-text>
+				<configured-severity />
+				<default-severity>warning</default-severity>
+			</alarm-type>
+		</alarm-model>
+	</fm>
+</config>

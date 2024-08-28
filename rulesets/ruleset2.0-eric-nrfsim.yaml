@@ -1,0 +1,188 @@
+modelVersion: 2.0
+
+import:
+  base: ruleset2.0-eric-base.yaml
+
+description: "NF Repository Function (NRF) Simulator"
+
+properties:
+  - EXPORT_DIR: ${base.OUTPUT_DIR}/export-nrfsim
+  - IMAGE_NAME: ${SERVICE_NAME}
+  - SERVICE_NAME: eric-nrfsim
+
+env:
+ - BOB_FORCE_IMAGE_PULL (default=false)
+ - RELEASE (default=false)
+ - TEST_TYPE (default=)
+
+var:
+ - nrfsim-cxu-number
+ - nrfsim-cxu-rev-number
+ - nrfsim-version
+
+
+rules:
+  init:
+    - task: base.init:create-output-dir
+    - task: base.init:set-namespace
+    - task: base.init:set-kube-config
+    - task: base.init:set-build-proxy
+    - task: base.init:set-supreme-properties
+    - task: base.init:api-tokens
+    - task: base.init:mvn-args
+    - task: version
+      docker-image: base.adp-release-auto
+      cmd: generate-version --is-release ${env.RELEASE} --output nrfsim-version
+    - task: nrfsim-cxu-number
+      cmd:
+        - VP=$(cat VERSION_PREFIX) && arr=(${VP//./ }) && X_VERSION=${arr[0]}
+        - cat NRFSIM_CXU_PREFIX | sed -e "s/ /_/g" -e "s/$/$X_VERSION/" > ${base.OUTPUT_DIR}/var.nrfsim-cxu-number
+    - task: nrfsim-cxu-rev-number
+      docker-image: base.adp-release-auto
+      cmd: /bin/bash -c "
+        if ${env.RELEASE}; then 
+          /usr/local/bin/get_rstate.py  $(cat ${base.OUTPUT_DIR}/var.nrfsim-version) > ${base.OUTPUT_DIR}/var.nrfsim-cxu-rev-number; 
+          echo -n $(cat ${base.OUTPUT_DIR}/var.nrfsim-version|awk -F'-' '{print $2}')|tee -a ${base.OUTPUT_DIR}/var.nrfsim-cxu-rev-number;
+          sed -i ':a;$!{N;s/\n//;ba;}' ${base.OUTPUT_DIR}/var.nrfsim-cxu-rev-number;
+          echo '' | tee -a ${base.OUTPUT_DIR}/var.nrfsim-cxu-rev-number;
+        else
+          /usr/local/bin/get_rstate.py  $(cat ${base.OUTPUT_DIR}/var.nrfsim-version) > ${base.OUTPUT_DIR}/var.nrfsim-cxu-rev-number;
+        fi"
+
+  build:
+    - task: esc-parent
+      docker-image: base.java-maven-builder
+      cmd: mvn -s ${var.base.build-proxy} -Duser.home=. -DskipTests -Djacoco.skip=true -am -pl :eric-nrfsim ${base.MVN_ARGS} package
+
+  image:
+    - task: build-eric-nrfsim
+      cmd: docker build ./simulators/nrfsim/
+           --file simulators/nrfsim/Dockerfile
+           --build-arg DOCKER_BASE_IMG=${base.SC_CBOS_IMG}
+           --tag ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${IMAGE_NAME}:${var.nrfsim-version}
+
+  lint:
+    - task: helm
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: helm lint ${base.OUTPUT_DIR}/${SERVICE_NAME}
+
+  package:
+    - task: helm-chart
+      docker-image: base.adp-release-auto
+      cmd: /bin/bash -c "
+        rm -rf ${base.OUTPUT_DIR}/${SERVICE_NAME}*.tgz;
+        mkdir -p ${base.OUTPUT_DIR}/${SERVICE_NAME};
+        cp -r simulators/nrfsim/helm/* ${base.OUTPUT_DIR}/${SERVICE_NAME};
+        rm -r ${base.OUTPUT_DIR}/${SERVICE_NAME}/templates/nrfsim1.yaml ${base.OUTPUT_DIR}/${SERVICE_NAME}/templates/nrfsim2.yaml
+                 ${base.OUTPUT_DIR}/${SERVICE_NAME}/templates/nrfsim3.yaml ${base.OUTPUT_DIR}/${SERVICE_NAME}/templates/nrfsim4.yaml
+                 ${base.OUTPUT_DIR}/${SERVICE_NAME}/templates/nrfsim5.yaml ${base.OUTPUT_DIR}/${SERVICE_NAME}/templates/nrfsim6.yaml ;
+        helm-package
+        --folder ${base.OUTPUT_DIR}/${SERVICE_NAME}
+        --output ${base.OUTPUT_DIR}
+        --version ${var.nrfsim-version}
+        --replace eric-product-info.yaml:product_number=${var.nrfsim-cxu-number}
+        --replace eric-product-info.yaml:product_revision=${var.nrfsim-cxu-rev-number}
+        --replace eric-product-info.yaml:nrfsim_image_name=${IMAGE_NAME}
+        --replace eric-product-info.yaml:nrfsim_image_tag=$(echo ${var.nrfsim-version} | sed 's/+/-/')
+        --replace eric-product-info.yaml:docker_registry=$(echo ${base.DOCKER_REGISTRY_URL})
+        --replace eric-product-info.yaml:docker_repo_path=$(echo ${base.DOCKER_REPO_PATH}/${env.base.USER})";
+  
+  package-full:
+    - task: helm-chart
+      docker-image: base.adp-release-auto
+      cmd: /bin/bash -c "
+        rm -rf ${base.OUTPUT_DIR}/${SERVICE_NAME}*.tgz;
+        mkdir -p ${base.OUTPUT_DIR}/${SERVICE_NAME};
+        cp -r simulators/nrfsim/helm/* ${base.OUTPUT_DIR}/${SERVICE_NAME};
+        rm -r ${base.OUTPUT_DIR}/${SERVICE_NAME}/templates/nrfsim.yaml ;
+        helm-package
+        --folder ${base.OUTPUT_DIR}/${SERVICE_NAME}
+        --output ${base.OUTPUT_DIR}
+        --version ${var.nrfsim-version}
+        --replace eric-product-info.yaml:product_number=${var.nrfsim-cxu-number}
+        --replace eric-product-info.yaml:product_revision=${var.nrfsim-cxu-rev-number}
+        --replace eric-product-info.yaml:nrfsim_image_name=${IMAGE_NAME}
+        --replace eric-product-info.yaml:nrfsim_image_tag=$(echo ${var.nrfsim-version} | sed 's/+/-/')
+        --replace eric-product-info.yaml:docker_registry=$(echo ${base.DOCKER_REGISTRY_URL})
+        --replace eric-product-info.yaml:docker_repo_path=$(echo ${base.DOCKER_REPO_PATH}/${env.base.USER})";
+
+  push:
+    - task: docker-image
+      cmd: docker push ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${IMAGE_NAME}:${var.nrfsim-version}
+    - task: helm-chart
+      cmd: "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\" --upload-file ${base.OUTPUT_DIR}/${SERVICE_NAME}-${var.nrfsim-version}.tgz \"${base.HELM_CHART_REPO}/${SERVICE_NAME}-${var.nrfsim-version}.tgz\""
+
+  deploy:
+    - task: all
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: /bin/bash -c 'if [[ "${env.TEST_TYPE}" = "IaaS_Stability_tools_on_separate_workers" ]];
+                        then
+                            helm install --namespace ${var.base.namespace} --set usage=tools ${SERVICE_NAME}-${env.base.USER} ${base.OUTPUT_DIR}/${SERVICE_NAME}-${var.nrfsim-version}.tgz;
+                        else
+                            helm install --namespace ${var.base.namespace} ${SERVICE_NAME}-${env.base.USER} ${base.OUTPUT_DIR}/${SERVICE_NAME}-${var.nrfsim-version}.tgz;
+                        fi;
+                        '
+
+  undeploy:
+    - task: all
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: helm uninstall --namespace ${var.base.namespace} ${SERVICE_NAME}-${env.base.USER}
+
+  download:
+    - task: download-nrfsim
+      cmd: "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\" -O https://arm.seli.gic.ericsson.se/artifactory/proj-5g-bsf-helm-local/${SERVICE_NAME}-${var.nrfsim-version}.tgz"
+
+  export:
+    - task: clean:export
+    - task: clean:certificates
+    - task: folders
+      cmd:
+        - mkdir -p ${EXPORT_DIR}
+        - mkdir -p ${EXPORT_DIR}/helm
+        - mkdir -p ${EXPORT_DIR}/docker
+        - mkdir -p ${EXPORT_DIR}/certificates/nrfsim
+    - task: helm
+      cmd: cp ${base.OUTPUT_DIR}/${SERVICE_NAME}-${var.nrfsim-version}.tgz ${EXPORT_DIR}/helm
+    - task: image
+      cmd: docker save ${base.DOCKER_REGISTRY_URL}/${base.DOCKER_REPO_PATH}/${env.base.USER}/${IMAGE_NAME}:${var.nrfsim-version} > ${EXPORT_DIR}/docker/${IMAGE_NAME}-${var.nrfsim-version}.tar
+    - task: create-certificates
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.base.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d nrfsim -p ${base.CERTS_OUT_DIR}/supreme.yaml
+    - task: copy-certificates
+      cmd: cp -R ${base.CERTS_OUT_DIR}/nrfsim/* ${EXPORT_DIR}/certificates/nrfsim
+
+  clean:
+    - task: base.init:create-output-dir
+    - task: base.init:set-build-proxy  
+    - task: export
+      cmd: rm -rf ${EXPORT_DIR}
+    - task: certificates
+      cmd: rm -rf ${base.CERTS_OUT_DIR}/nrfsim
+    - task: maven
+      docker-image: base.java-maven-builder
+      cmd: mvn -s ${var.base.build-proxy} -Duser.home=. -DskipTests -am -pl :eric-nrfsim ${base.MVN_ARGS} clean
+    - task: clean
+      cmd:
+        - rm -f ${base.OUTPUT_DIR}/var.nrfsim-cxu-number
+        - rm -f ${base.OUTPUT_DIR}/var.nrfsim-cxu-rev-number
+        - rm -f ${base.OUTPUT_DIR}/var.nrfsim-version
+        - rm -f ${base.OUTPUT_DIR}/${SERVICE_NAME}-*.tgz        
+        - rm -rf ${base.CERTS_OUT_DIR}/nrfsim
+        - rm -rf ${base.OUTPUT_DIR}/${SERVICE_NAME}
+        - rm -rf ${EXPORT_DIR}

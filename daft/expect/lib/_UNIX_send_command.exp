@@ -1,0 +1,350 @@
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.19
+#  Date     : 2024-01-16 17:37:53
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2017, 2020-2024
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+source [file join [file dirname [info script]] ../lib/_debug_message.exp]
+
+# -----------------------------------------------------------------------------
+# Send a command to the UNIX host board.
+#
+# This subroutine expects that it is already connected to the UNIX/Linux prompt.
+#
+# Input:
+#  - Command to send
+#
+# Output:
+#  -  0: Success
+#    >0: Command returned an error
+#    -1: Timeout
+#    -2: Connection lost
+#
+proc UNIX_send_command {command { hide_cmd 0 }} {
+    global prompt_detect_timeout
+    global spawn_id
+    global timeout
+    global shell_type
+
+    # Fetch any previously detected prompt and update the local prompt variable
+    global detected_prompt
+    global detected_prompt_raw
+    if {$detected_prompt == ""} {
+        set default_prompt "aPromptThatShouldNeverBeMatched1234567890"
+        set prompt $default_prompt
+    } else {
+        set default_prompt $detected_prompt
+        set prompt $default_prompt
+    }
+
+    set errorcnt 0
+
+    debug_message "UNIX_send_command: $command"
+
+    # Send the command
+    send -- "$command\r"
+    debug_message "    Prompt before sending command: $prompt"
+
+    # Save currently set timeout value
+    set default_timeout $timeout
+
+    set potential_prompt 0
+
+    if { $hide_cmd == 1 } {
+        # Hide any output from the command so we can control to only print the data from the command.
+        log_user 0
+
+        # Eat the echoed command, basically discarding it from the printout to the user and put just a comment to the user
+        expect "$command\r"
+        puts "***** Hidden Command ****"
+
+        # Clear the collected buffer
+        unset expect_out(buffer)
+
+        # Show any output from the command again.
+        log_user 1
+    }
+
+    expect {
+        -re "No such file or directory\r*\n" {
+            # Some invalid command have been given, increment an error counter
+            # Following line was commented out 2021-12-21 because the printout from
+            # DAFT playlist contained the following:
+            #     pm_files
+            #     --------
+            #     Check failed because kubectl command failed or nothing was returned.
+            #     ls: cannot access '/PerformanceManagementReportFiles': No such file or directory
+            #     command terminated with exit code 2
+            # And it should not cause the whole send_command_to_ssh.exp script to fail.
+            # Anyway for most cases we should rely on the fact that "echo $?" is done
+            # below which should catch any issue with the sent Unix command.
+
+            # incr errorcnt
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt $default_prompt
+
+            exp_continue
+        }
+        -re "command not found\r*\n" {
+            # Some invalid command have been given, increment an error counter
+            # Following line was commented out 2021-12-21 see reason above.
+            # incr errorcnt
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt $default_prompt
+
+            exp_continue
+        }
+        -re "Retry\/Cancel\?\[^\n\]*$" {
+            # Probably the "parted /dev/sdX u s print" command on some invalid partition, send "c" and increment an error counter
+            debug_message "    Retry/Cancel?"
+            send -- "c\r"
+            incr errorcnt
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt $default_prompt
+
+            exp_continue
+        }
+        -re "^syntax error: \[^\r\n\]*\r*\n" {
+            # Looks like a CMYP CLI shell error, check to make sure
+            debug_message "    syntax error:..., shell_type=$shell_type"
+            if {$shell_type == "CMYP-CLI"} {
+                # Some invalid command have been given, increment an error counter
+                incr errorcnt
+            }
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt $default_prompt
+
+            exp_continue
+        }
+        -re "^Error:\[^\r\n\]*\r*\n" {
+            # Looks like a CMYP CLI shell error, check to make sure
+            debug_message "    Error:..., shell_type=$shell_type"
+            if {$shell_type == "CMYP-CLI"} {
+                # Some invalid command have been given, increment an error counter
+                incr errorcnt
+            }
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt $default_prompt
+
+            exp_continue
+        }
+        -re "^Are you sure you want to continue connecting (yes/no(/\[fingerprint\])?)\?" {
+            # OpenSSH 8.0 added the option to use a fingerprint as authentication
+            send "yes\r"
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt $default_prompt
+
+            exp_continue
+        }
+        -re "^Original contents retained as \[^\r\n\]*\r*\n" {
+            # Special case to avoid "couldn't compile regular expression pattern: invalid character range" error
+            # when reinstalling ECCD and changing the known_hosts file with command:
+            # ssh-keygen -R 10.117.19.198 -f ~/.ssh/known_hosts
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt $default_prompt
+
+            exp_continue
+        }
+        "\n" {
+            # New line received, continue waiting
+
+            # Restore default timeout value since we have not received the prompt
+            set timeout $default_timeout
+            set potential_prompt 0
+            set prompt $default_prompt
+
+            exp_continue
+        }
+        -re "\\-\\-More\\-\\-\[^\r\n\]*$" {
+            # Most likely the command "show running-config" have been given
+            # which produces paged output requiring the user to press a space
+            # for getting the next page.
+            send -- " "
+
+            exp_continue
+        }
+        -re "\(END\)\[^\r\n\]*$" {
+            # Most likely the command "show running-config" have been given
+            # which produces paged output requiring the user to press a space
+            # for getting the next page.
+            send -- " "
+
+            exp_continue
+        }
+        -re "$prompt$" {
+            debug_message "    Prompt detected: $prompt"
+
+            if { $prompt == "" } {
+                # Continue looking for prompt
+                exp_continue
+            } else {
+                # Restore timeout value
+                set timeout $default_timeout
+                # Ready for next command
+            }
+        }
+        -re "(\[^\r\n\]+)$" {
+            # We have received a potential prompt, wait max 1 second for something more to come
+            set timeout $prompt_detect_timeout
+            if { $potential_prompt == 0 } {
+                # A new prompt possibly detected
+                set new_prompt $expect_out(1,string)
+            } else {
+                # More data received for the new prompt, append it to existing new prompt
+                set extra_prompt $expect_out(1,string)
+                set new_prompt "$prompt$extra_prompt"
+            }
+            set potential_prompt 1
+            debug_message "    Potential Prompt detected: $new_prompt"
+
+            exp_continue
+        }
+        eof {
+            puts "\nWe lost the connection to the node\n"
+            set timeout $default_timeout
+            debug_message "    eof detected"
+
+            return -2
+        }
+        timeout {
+            debug_message "    timeout detected, potential_prompt=$potential_prompt"
+
+            if { $potential_prompt == 1 } {
+                # Treat this as a success because a new prompt was detecte,dbut first restore timeout value
+                set timeout $default_timeout
+                # Update the prompt variable with the new value
+                set prompt $new_prompt
+            } else {
+                puts "\nWe were unable to send the command due to a timeout\n"
+                set timeout $default_timeout
+                return -1
+            }
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    debug_message "    Command finished, errorcnt=$errorcnt"
+
+    # Update the detected prompt , if needed
+    if {$prompt != $default_prompt} {
+        set detected_prompt_raw $prompt
+        # Convert all non-ASCII and Tcl-significant characters into \u escape sequences by using regsub and subst in combination
+        # Code copied from example on web page: https://www.tcl.tk/man/tcl8.4/TclCmd/regsub.htm
+        set RE {[][{}\$\s\u0100-\uffff]}
+        set substitution {[format \\\\u%04x [scan "\\&" %c]]}
+        debug_message "    Prompt has been changed from: $default_prompt"
+        set prompt [subst [regsub -all $RE $prompt $substitution]]
+        debug_message "    Prompt has been changed to:   $prompt"
+
+        set default_prompt $prompt
+        set detected_prompt $prompt
+    }
+
+    # Special handling for CMYP-CLI which does not support "echo $?"
+    if {$shell_type == "CMYP-CLI"} {
+        return $errorcnt
+    }
+
+    set exitcode -1
+
+    # No need for a long timeout here
+    set timeout 1
+
+    # Check exitcode from previous command
+    send -- "echo \$?\r"
+
+    expect {
+        -re "^(\[^\n\r\]*)\r*\n" {
+            # Single lines
+            set line $expect_out(1,string)
+
+            if {[regexp {^([0-9]+)$} $line match exitcode]} {
+                # Exit status returned
+                debug_message "    exitcode=$exitcode"
+            } else {
+                debug_message "    A new line was received: $line"
+            }
+            exp_continue
+        }
+        -re "$prompt$" {
+            debug_message "    Prompt detected: $prompt"
+            if { $prompt == "" } {
+                # Continue looking for prompt
+                exp_continue
+            } elseif { $exitcode == -1 } {
+                # Something strange has happened, we got a prompt before the exit code value, wait a bit longer
+                debug_message "    exitcode not yet received, wait longer"
+                exp_continue
+            } else {
+                # Ready for next command
+                set timeout $default_timeout
+            }
+        }
+        eof {
+            puts "\nWe lost the connection to the node\n"
+            set timeout $default_timeout
+            debug_message "    eof detected"
+            return -2
+        }
+        timeout {
+            if { $exitcode != -1 } {
+                # Somehow we got the exit code but the prompt was not detected, ignore this and let the actual
+                # exitcode determine if the command failed or not.
+                # This might result in strange prompt detection for commands that follow.
+                debug_message "    Timeout detected while waiting for prompt, exitcode=$exitcode received, ignore this issue"
+                set timeout $default_timeout
+            } else {
+                debug_message "    Timeout detected while waiting for prompt, exitcode not yet received"
+                puts "\nWe were unable to send the command due to a timeout\n"
+                set timeout $default_timeout
+                return -1
+            }
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    if { $exitcode != 0 } {
+        incr errorcnt
+    }
+
+    return $errorcnt
+}

@@ -1,0 +1,13 @@
+## Feature Description:
+## 1) All container logs are sent to stdout (in their node)
+## 2) Log Shipper is deployed as Daemonset to ship the logs from the nodes
+
+global:
+  log:
+    streamingMethod: "indirect" # logs to stdout
+  logShipper:
+    deployment:
+      type: "" # deploys Log Shipper as Deamonset
+
+eric-sc-cs-log-shipper:
+  enabled: false

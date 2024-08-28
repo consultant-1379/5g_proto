@@ -1,0 +1,9 @@
+config
+system ldap options timeout 5 enable-referrals true
+system ldap security user-base-dn ou=people,dc=ericsson,dc=com
+system ldap security simple-authenticated bind-dn cn=admin,dc=ericsson,dc=com bind-password challengers_2021
+system ldap security <CLEAR_OR_TLS>
+system ldap server eric-referral-ldap tcp address eric-referral-ldap <LDAP_OR_LDAPS> port <389_OR_636>
+commit
+end
+exit

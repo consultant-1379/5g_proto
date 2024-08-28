@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cr-configmap
+  labels:
+{{- include "eric-sepp.labels" . | indent 4 }}
+    app: {{ .Values.service.manager.name }}
+  annotations:
+{{- include "eric-sepp.helm-annotations" . | indent 4 }}
+{{- include "eric-sepp.config-annotations" . | indent 4 }}
+data: 
+  ca: |-
+    {{- range $ca := .Values.certificates.traf.trustedAuthority }}
+    {{ $ca.caList }}
+    {{- end }}
+  asymmetricKeyCert: |-
+    {{- range $asymmetric := .Values.certificates.traf.asymmetric }}
+    {{ $asymmetric.key }}
+    {{ $asymmetric.certificate }}
+    {{- end }}

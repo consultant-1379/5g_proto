@@ -1,0 +1,21 @@
+{{- if .Values.rbac.createServiceAccount }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ template "eric-bsf.name" . }}-worker
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{- include "eric-bsf.labels" . | indent 4 }}
+    app: {{ template "eric-bsf.name" . }}-worker
+  annotations:
+{{- include "eric-bsf.helm-annotations" . | indent 4 }}
+{{- include "eric-bsf.config-annotations" . | indent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: {{ template "eric-bsf.name" . }}-worker-cm-key
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ template "eric-bsf.name" . }}-worker
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}

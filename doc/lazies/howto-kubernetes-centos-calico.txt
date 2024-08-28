@@ -1,0 +1,409 @@
+
+
+
+
+Kubernetes HowTOs (using CentOS)
+================================
+
+    - Get latest CentOS image from https://www.centos.org/
+    - Start vSphere Client from within Windows Server Hub env started from Citrix
+        (failed with all other variants to upload large ISO images)
+    - Upload ISO image to psm20-vdsc-peanuts-sto1/iso
+    - Create new Kubernets cluster (VMware resource pool "kube$K")
+    - Create new VM for Kubernets master or (worker) node:
+        - In the following $N is 0 in case of a Kubernets master node and $N = 1,2,.. for the Nth Kubernets (worker) node
+        - Right-click pool -> Create new VM
+        - Typical
+        - Name "kube$K-master" or "kube$K-node$N"
+        - Iventory Location: "HP vDSC - HPc7000-006 - Peanuts"
+        - Destination storage = local disk on blade $N+1
+        - Guest OS: Linux CentOS 64bit
+        - 1 NIC, NIC 1 = "ESXi_mgmt (dvSwitch2)", adapter: "VMXNET 3"
+        - Disk size 16GB, thin provisioning
+        - "Finish"
+       ==> New VM occurs in the GUI
+    - Before starting VM first time:
+        - Right Click "Edit Settings"
+        - Keep every HW setting as is (mem should be on 2GB) but:
+            - Extend CPUs to 2 # of cores per socket
+            - CD/DVD drive 1
+                - Pick Datastore ISO File from psm20-vdsc-peanuts-sto1/iso
+                - Check "Connect at power on"
+        - Press OK
+    - Start VM first time:
+        - Open console and start VM
+        - From RHEL menu select "Install Red Hat..."
+        - On installation summary keep everything as is but:
+            - Set date/time TZ to "Berlin"
+            - Confirm "Installation Destination", the 16GB VMware provided disk
+            - Network and Hostname:
+                - Select Ethernet (ensxxx) -> "Configure..."
+                    - General -> Check "Automatically connect to this network when it is available"
+                    - Proxy -> Method: "Automatic". Type following lines in text field (no cut'n'paste possible to the console :-( )
+function FindProxyForURL(url, host) {
+    return "PROXY 10.87.68.86:3128";
+}
+                    - IPv4 Settings:
+                        - Method: "Manual"
+                        - Add: address 10.87.193.224+$N, mask: 24, gw: 10.87.193.1
+                        - DNS server: 10.87.68.70
+                        - Check "Require IPv4 addressing for this connection to complete"
+                    - "Save"
+            - Set hostname to "kube$K-master" or "kube$K-node$N"
+        - By turning Ethernet i/f on check connectivity
+            - Problems can be fixed later but status should show "connected" by now
+        - "Begin Installation"
+        - Set Root Password to "rootroot"
+        - No user creation
+        - Wait for installation to finish (~ 3min)
+        - Press "Reboot"
+    - First console login as root:
+        - "ip a" and "ping google.com" to check NW connectivity
+        - uncomment "PermitRootLogin yes" in /etc/ssh/sshd_config
+        - Check remote ssh login as root.
+    - Bring CentOS up-to-date:
+        - Define proxy=http://10.87.68.86:3128 in /etc/yum.conf under the [main] section
+        > yum -y update
+    - Enable NTP
+        - yum install -y ntp bind-utils
+        - Make a reverse lookup on 10.87.68.70 to find FQDN name:
+            > dig -x 10.87.68.70
+            Use result in server line below
+        - In /etc/ntp.conf:
+            - Comment all lines starting with "server"
+            - Add line "server ddi-vip.de.eld.ericsson.se iburst" or the one returned by "dig" if different
+            - Add line "logfile /var/log/ntp.log"
+            - Start ntpd:
+                > systemctl start ntpd
+                > systemctl enable ntpd
+                > systemctl status ntpd
+            - Check ntpd:
+                > ntpq -p
+                  remote           refid      st t when poll reach   delay   offset  jitter
+                  ==============================================================================
+                  ddi-vip.de.eld. 153.88.112.224   3 u    1   64    1    0.390   -2.879   0.259
+
+
+
+===== One master and at least two worker nodes should be available at this point in time =====>
+    - Add cluster nodes in /etc/hosts:
+        > cat <<EOF >> /etc/hosts
+
+10.87.193.224   kube1-master master
+10.87.193.225   kube1-node1 node1
+10.87.193.226   kube1-node2 node2
+10.87.193.227   kube1-node3 node3
+10.87.193.228   kube1-node4 node4
+10.87.193.229   kube1-node5 node5
+10.87.193.230   kube1-node6 node6
+10.87.193.231   kube1-node7 node7
+EOF
+
+    - Apply Ericsson proxy settings to environment:
+        - Add the following lines to /etc/profile:
+        > cat <<EOF >> /etc/profile
+
+# Ericsson proxy settings
+ERIC_PROXY=http://10.87.68.86:3128
+
+HTTP_PROXY=\$ERIC_PROXY
+HTTPS_PROXY=\$ERIC_PROXY
+FTP_PROXY=\$ERIC_PROXY
+http_proxy=\$HTTP_PROXY
+https_proxy=\$HTTPS_PROXY
+ftp_proxy=\$FTP_PROXY
+
+printf -v NO_PROXY '%s,' 10.87.193.{224..231} 127.0.0.1;
+NO_PROXY="\${NO_PROXY%,}";
+no_proxy=\$NO_PROXY
+
+export HTTP_PROXY HTTPS_PROXY FTP_PROXY NO_PROXY http_proxy https_proxy ftp_proxy no_proxy
+EOF
+        - Save and source /etc/profile afterwards:
+            > . /etc/profile
+    - Install Kubernetes following the kubadm approach described here on _all_ nodes:
+        https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/
+
+        - Install Docker/replace existing Docker by different version:
+            - Remove possibly existing Docker version:
+                > yum remove -y docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-selinux docker-engine-selinux docker-engine-selinux
+            > yum install -y yum-utils device-mapper-persistent-data lvm2
+            > yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+            - List available versions:
+                > yum list docker-ce --showduplicates | sort -r
+            - Install version (17.03.2 here)
+            > yum install -y --setopt=obsoletes=0 docker-ce-17.03.2.ce-1.el7.centos.x86_64 docker-ce-selinux-17.03.2.ce-1.el7.centos.noarch
+        - Set HTTP proxy for Docker:
+            > mkdir -p /etc/systemd/system/docker.service.d
+            - Add the following to the new file "/etc/systemd/system/docker.service.d/http-proxy.conf":
+            > cat <<EOF > /etc/systemd/system/docker.service.d/http-proxy.conf
+[Service]
+Environment="HTTP_PROXY=http://10.87.68.86:3128/"
+EOF
+            - Likewise, add the following to the new file "/etc/systemd/system/docker.service.d/https-proxy.conf" (no https in the proxy URL!):
+            > cat <<EOF > /etc/systemd/system/docker.service.d/https-proxy.conf
+[Service]
+Environment="HTTPS_PROXY=http://10.87.68.86:3128/"
+EOF
+        - Change Docker to use the cgroups driver:
+            > mkdir /etc/docker
+            > cat << EOF > /etc/docker/daemon.json
+{
+"exec-opts": ["native.cgroupdriver=cgroupfs"]
+}
+EOF
+        - Start and test Docker:
+            > systemctl enable docker && systemctl start docker
+            > docker run hello-world
+
+
+        - Install kubelet, kubectl, kubeadm (see https://kubernetes.io/docs/setup/independent/install-kubeadm/):
+            - Add Kubernetes repo and install:
+                > cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-\$basearch
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOF
+                > setenforce 0
+                > yum install -y kubelet kubeadm kubectl
+                > systemctl enable kubelet && systemctl start kubelet
+            - Fix iptable issue on RHEL/CentOS:
+                > cat <<EOF >  /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+                > sysctl --system
+
+            - Disable firewall (otherwise worker nodes' join won't work later and to avoid many other issues)
+                > systemctl disable iptables.service && systemctl stop iptables.service
+                > systemctl disable firewalld && systemctl stop firewalld
+
+            - Adapt cgroup driver used by Kubernetes
+                - Check which driver is in use:
+                    > docker info | grep -i cgroup
+                - Compare with driver defined in "/etc/systemd/system/kubelet.service.d/10-kubeadm.conf". Replace if different like e.g. so:
+                    > sed -i "s/cgroup-driver=systemd/cgroup-driver=cgroupfs/g" /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+                    > systemctl daemon-reload
+                    > systemctl restart kubelet
+            - Disable swapping (Kubernetes insists on swapping turned off for performance reasons)
+                - Disable swap
+                    > swapoff -a
+                - Comment swap FS in /etc/fstab
+                - Reboot
+                    > shutdown -r now
+                - Afterwards: check whether swap is turned off
+                    > free -h
+                                  total        used        free      shared  buff/cache   available
+                    Mem:           1.8G        107M        1.4G        8.5M        308M        1.5G
+                    Swap:            0B          0B          0B
+            - Install crictl (needed by kubeadm)
+                > yum -y install go git
+                - Append line "export PATH=/root/go/bin:$PATH" to /etc/profile and source it:
+                    > cat <<EOF >> /etc/profile
+
+export PATH=/root/go/bin:\$PATH
+
+EOF
+                - Source /etc/profile:
+                    > . /etc/profile
+                > go get github.com/kubernetes-incubator/cri-tools/cmd/crictl
+
+
+    - Create Kubernetes Cluster
+        - On master:
+            - Configure a Kubernetes master node:
+                - In case kubeadm complains about pre-conditions not met check the former steps of this lazy to see what's wrong:
+                > kubeadm init --pod-network-cidr=192.168.0.0/16 --apiserver-advertise-address=10.87.193.224
+            - On success "kubeadm  init" prints a command line for how to join workers to the new master node. Note this command down for later use:
+                Example: "kubeadm join 10.87.193.224:6443 --token 1vzj1v.79lnuuinpea8llyx --discovery-token-ca-cert-hash sha256:b9a50fd6398137674fb76453a0fdc0b89fb4596eed6cc2e7cbbc54f0af9c3fde"
+            - Create Kubernetes environment for the root user (refer to Kubernets doc for other users' environments if you really need non-root users):
+                - Add following lines to /etc/profile:
+export KUBECONFIG=/etc/kubernetes/admin.conf
+# source <(kubectl completion bash) does not work together with CentOS' bash-autocomplete version :-(
+                - Eventually source it /etc/profile:
+                    > . /etc/profile
+            - Install Calico pod network:
+                > kubectl apply -f https://docs.projectcalico.org/v3.0/getting-started/kubernetes/installation/hosted/kubeadm/1.7/calico.yaml
+                - The above takes some time. Afterwards you can check the NW running properly. The kubectl command should respond similar to this:
+                    >  kubectl get pods --all-namespaces
+                        NAMESPACE     NAME                                       READY     STATUS    RESTARTS   AGE
+                        kube-system   calico-etcd-b2nq5                          1/1       Running   0          3m
+                        kube-system   calico-kube-controllers-5d74847676-bprff   1/1       Running   0          3m
+                        kube-system   calico-node-nj8qw                          2/2       Running   0          3m
+                        kube-system   etcd-kube1-master                          1/1       Running   0          5m
+                        kube-system   kube-apiserver-kube1-master                1/1       Running   0          4m
+                        kube-system   kube-controller-manager-kube1-master       1/1       Running   0          4m
+                        kube-system   kube-dns-86f4d74b45-9jt26                  3/3       Running   0          4m
+                        kube-system   kube-proxy-r6fm4                           1/1       Running   0          4m
+                        kube-system   kube-scheduler-kube1-master                1/1       Running   0          4m
+            - Switch to basic authentication:
+                - Create authentication file (<password>,<user name>,<user id>):
+                    > cat <<EOF > /etc/kubernetes/auth.csv
+admin,admin,admin
+EOF
+                - Edit manifest of API server (/etc/kubernetes/manifests/kube-apiserver.yaml) and
+                    - add '--basic-auth-file=/etc/kubernetes/auth.csv' to the 'command:' section
+                    - add volume mounts and volumes to let the auth.csv file become visible to the container:
+                           volumeMounts:
+                        - mountPath: /etc/kubernetes/auth.csv
+                          name: kubernetes-dashboard
+                          readOnly: true
+                      volumes:
+                      - hostPath:
+                          path: /etc/kubernetes/auth.csv
+                        name: kubernetes-dashboard   
+                    - Add role binding for cluster-admin:
+                        - Create file admin-rolebinding.yaml
+                            > cat <<EOF > admin-rolebinding.yaml
+ # This role binding allows "admin" to administer this kube cluster
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cluster-admin
+  namespace: kube-system
+subjects:
+- kind: User
+  name: admin # Name is case sensitive
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole #this must be Role or ClusterRole
+  name: cluster-admin # this must match the name of the Role or ClusterRole you wish to bind to
+  apiGroup: rbac.authorization.k8s.io
+EOF                   
+                        > kubectl apply -f admin-rolebinding.yaml
+
+                - From the hub:
+                    > mkdir -p $HOME/.kube
+                    > scp root@master:/etc/kubernetes/controller-manager.conf /home/eedsvs/.kube/config
+                    > kubectl -s="https://10.87.193.224:6443" --username="admin" --password="admin" get pods
+                        ...lists the pods as if you were local.
+
+
+        - On every of the worker nodes:
+            - ssh to the worker node to join and become root
+            - Invoke join command as output by 'kubeadm init' on the master. Note that, probably due to a bug in Kubernetes 1.10, you need to add the --ignore-preflight-errors=cri flag for this to run properly:
+                > kubeadm join 10.87.193.224:6443 --ignore-preflight-errors=cri --token 1vzj1v.79lnuuinpea8llyx --discovery-token-ca-cert-hash sha256:b9a50fd6398137674fb76453a0fdc0b89fb4596eed6cc2e7cbbc54f0af9c3fde
+            - Validate new node has joined the Kubernetes cluster on the master:
+                > kubectl get nodes
+                    NAME           STATUS     ROLES     AGE       VERSION
+                    kube1-master   Ready      master    1h        v1.10.2
+                    kube1-node1    NotReady   <none>    25s       v1.10.1
+            - After a minute or so the new node will show status "Ready"
+
+
+===== You're DONE :-) =======
+
+
+            
+
+
+===== Install HELM on Kubernetes Master =====>
+    - Get a HELM version from https://github.com/kubernetes/helm/releases or use the following:
+        > yum install -y wget
+        > wget https://storage.googleapis.com/kubernetes-helm/helm-v2.9.0-linux-amd64.tar.gz
+    > tar -xvzf helm-v2.9.0-linux-amd64.tar.gz
+    > chmod a+x linux-amd64/helm
+    > mv linux-amd64/helm /usr/local/bin/
+    - Clean-up:
+        > rm -rf linux-amd64/ helm-v2.9.0-linux-amd64.tar.gz
+    > kubectl create serviceaccount --namespace kube-system tiller
+    > kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+    > helm init --service-account tiller
+
+
+===== Design Environment =====>
+    - Make sure GOTPATH and GOROOT point to the same directory then:
+    > curl https://glide.sh/get | sh
+        ...installs glide.
+    > mkdir -p $GOPATH/src/k8s.io
+    > cd $GOPATH/src/k8s.io
+    > git clone https://github.com/kubernetes/helm.git
+    > cd helm
+    > make bootstrap build
+
+
+
+===== Install SPINNAKER Kubernetes Master =====>
+    - Prerequisite: HELM installed
+    - Install NFS on master (based on https://www.howtoforge.com/tutorial/setting-up-an-nfs-server-and-client-on-centos-7/)
+        > yum -y install nfs-utils
+        > systemctl enable nfs-server.service
+        > systemctl start nfs-server.service
+        > mkdir /var/nfs
+        > chown nfsnobody:nfsnobody /var/nfs
+        > chmod 755 /var/nfs
+        - Allow 10.87.193.193-254 to mount the master:
+            > cat <<EOF >  /etc/exports
+/var/nfs        10.87.193.192/26(rw,sync,no_subtree_check)
+EOF
+        > exportfs -a
+        > Afterwards install nfs on all workers (using: yum -y install nfs-utils)
+
+
+
+    > kubectl proxy --port=8080 &
+    > 
+
+
+
+
+
+
+
+===== Re-Install Master (no worker nodes yet) =====>
+    > kubeadm reset
+    > rm -rf .kube
+    - Proceed with "Create Kubernetes Cluster"
+
+
+===== Kubernetes Troubleshooting Sites =====>
+    - https://kubernetes.io/docs/setup/independent/troubleshooting-kubeadm/
+    - https://github.com/kubernetes/kubernetes/issues/54910
+
+===== Kubernetes Troubleshooting Commands =====>
+    > kubectl logs --namespace=kube-system $(kubectl get pods --namespace=kube-system -l k8s-app=kube-dns -o name) -c kubedns
+
+
+
+
+
+===== In the HUB environment =====>
+    - Once for all Kubernets cluster nodes add the following lines in ~/.ssh/config
+# Kubernets kube1
+Host kube1-master master
+User root
+Hostname 10.87.193.224
+
+Host kube1-node1 node1
+User root
+Hostname 10.87.193.225
+
+Host kube1-node2 node2
+User root
+Hostname 10.87.193.226
+
+Host kube1-node3 node3
+User root
+Hostname 10.87.193.227
+
+Host kube1-node4 node4
+User root
+Hostname 10.87.193.228
+
+Host kube1-node5 node5
+User root
+Hostname 10.87.193.229
+
+Host kube1-node6 node6
+User root
+Hostname 10.87.193.230
+
+Host kube1-node7 node7
+User root
+Hostname 10.87.193.231
+
+

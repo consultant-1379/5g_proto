@@ -1,0 +1,12 @@
+# NRF-Interrogator
+
+service:
+  name: "###CHART_NAME###"
+
+spec:
+  replicas: "1"
+  image: "###IMAGE_NAME###"
+  tag: "###IMAGE_TAG###"
+  port: "80"
+
+

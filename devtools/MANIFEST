@@ -1,0 +1,6 @@
+e406f217ecd1c6bce9eb807f061862c2eb77766375a7734f90e8ce5262bd1a55	t	docker	Docker version 18.06.1-ce, build e68fc7a
+9c3945725935058c1db07d3f1c0a153acbd9f8f013c38db2bcdccc95b14d2bfe	t	java	openjdk 10.0.2 2018-07-17
+5b38fc17abb1640becc6e546feae4aa156529babc4fca4aed39e8959bf356329	t	gradle	Gradle 4.10.2
+e70bfe4fe12f05838fa2f55e3fc3bfeb47d229fac8a20f9414cb648a728c3ff2	i	kubectl	armdocker.rnd.ericsson.se/proj-5g-bsf/kubectl:v0.1
+349ad40ed639b24c35f19aab465fe30ef61a4479a74a618c6e26fe59709c2d43	i	helm	armdocker.rnd.ericsson.se/proj-5g-bsf/helm:v0.10
+63f1ca33133020499e4162df2f9725254d09c7cb5c003978bff000d554855593	t	swagger	3.0.0-SNAPSHOT

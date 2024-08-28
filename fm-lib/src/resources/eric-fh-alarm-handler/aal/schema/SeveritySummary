@@ -1,0 +1,40 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema",
+    "id": "file://schema/SeveritySummary#",
+    "title": "Alarm severity summary",
+    "description":"A summary of the active alarms in the system per severity",
+    "type": "object",
+    "properties": {
+        "lastChanged": {
+            "description": "The timestamp of the latest alarm state change. With this attribute, an external system can determine if a resynchronization operation is needed, such as following a loss and restore of a communications link. The timestamp format is depending on requested timeOutputFormat. 'Normal' timestamp format is: YYYY-MM-DDTHH:MM:SS[.mmmmmm] TZ, the microsecond part is optional if 0. TZ is the abbreviation of the time zone used. By default UTC is used. 'Iso8601' timstamp format is: YYYY-MM-DDTHH:MM:SS.mmmmmmz. z is the relative time zone offset in hours and minutes to UTC in the format +hhmm or -hhmm. If UTC is used z will be 'Z' instead of '+0000'. 'Source' timestamp format is number of microseconds since 1 Jan 1970 minus any leap seconds in UTC. 'Source' is in integer type, while the other are in string type. This property is not set until the first alarm is raised.",
+            "type":  [ "string", "integer" ]
+        },
+        "sumCritical": {
+            "description": "Shows the number of active alarms with perceived severity 'Critical'.",
+            "type": "integer"
+        },
+        "sumMajor": {
+            "description": "Shows the number of active alarms with perceived severity 'Major'.",
+            "type": "integer"
+        },
+        "sumMinor": {
+            "description": "Shows the number of active alarms with perceived severity 'Minor'.",
+            "type" : "integer"
+        },
+        "sumWarning": {
+            "description": "Shows the number of active alarms with perceived severity 'Warning'.",
+            "type": "integer"
+        },
+        "total": {
+            "description": "Shows the total number of currently active alarms. This corresponds to the the total number of active alarms.",
+            "type" : "integer"
+        }
+    },
+    "required": [
+        "sumCritical",
+        "sumMajor",
+        "sumMinor",
+        "sumWarning",
+        "total"
+    ]
+}

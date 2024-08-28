@@ -1,0 +1,21 @@
+<hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <capabilities>
+        <capability>urn:ietf:params:netconf:base:1.0</capability>
+    </capabilities>
+</hello>]]>]]>
+
+ <rpc message-id="101" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <edit-config>
+    <target>
+      <running/>
+    </target>
+    <config>
+      <scp-function xmlns="urn:rdns:com:ericsson:oammodel:ericsson-scp">
+        <nf-instance xmlns="urn:rdns:com:ericsson:oammodel:ericsson-scp" operation="delete">
+            <name>West1</name>
+        </nf-instance>
+      </scp-function>
+    </config>
+  </edit-config>
+</rpc> ]]>]]>
+

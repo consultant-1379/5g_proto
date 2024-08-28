@@ -1,0 +1,146 @@
+#!/usr/bin/perl
+
+################################################################################
+#
+#  Author   : ehenkay
+#
+#  Revision : 1.2
+#  Date     : 2023-11-07 11:11:02
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2023
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+#
+# This script is used as a DAFT playlist extension for deployment and upgrades
+# to SC 1.12.0 and it removes a path for the sc-httpproxy.
+#
+################################################################################
+
+use strict;
+use Cwd qw(abs_path);
+use File::Basename qw(dirname);
+
+my $debug_cmd = "";    # Modify this to read "echo " to enable debugging of script without changing data
+my $daft_script_path = "";
+my $job_log_file = "";
+my $job_params_file = "";
+my %job_params_hash;
+my $sc_namespace = $::JOB_PARAMS{'SC_NAMESPACE'};
+
+my $helm_executable;
+my $rc = 0;
+
+# Check if the needed environment variables exist
+print "Reading environment variables\n";
+if (exists $ENV{'TOOL_PATH_DAFT'} && $ENV{'TOOL_PATH_DAFT'} ne "") {
+    $daft_script_path = $ENV{'TOOL_PATH_DAFT'};
+} else {
+    print "The environment variable TOOL_PATH_DAFT does not exist or is empty\n";
+    exit 1;
+}
+if (exists $ENV{'JOB_WORKSPACE_PATH_DAFT'} && $ENV{'JOB_WORKSPACE_PATH_DAFT'} ne "") {
+    $job_params_file = "$ENV{'JOB_WORKSPACE_PATH_DAFT'}/job_parameters.conf";
+    $job_log_file = "$ENV{'JOB_WORKSPACE_PATH_DAFT'}/all.log";
+} else {
+    print "The environment variable JOB_WORKSPACE_PATH_DAFT does not exist or is empty\n";
+    exit 1;
+}
+
+# Check if the job parameters file exist
+unless (-f "$job_params_file") {
+    print "The job parameters file '$job_params_file' does not exist\n";
+    exit 1;
+}
+
+# Update the Perl library path to allow this script to use existing library files
+use lib abs_path $ENV{'TOOL_PATH_DAFT'} . '/perl/lib';
+
+# Import existing library files
+use General::Logging;
+use General::Message_Generation;
+use General::OS_Operations;
+use General::Playlist_Operations;
+
+# Read the job parameters file into an hash
+print "Reading job variables from file: $job_params_file\n";
+if (General::Playlist_Operations::job_parameters_read($job_params_file, \%job_params_hash) != 0) {
+    print "Failure to read the job parameters file '$job_params_file'\n";
+    exit 1;
+}
+
+
+# Check for job parameters needed by this script
+if (exists $job_params_hash{'SC_NAMESPACE'}) {
+    $sc_namespace = $job_params_hash{'SC_NAMESPACE'};
+    print "Namespace: $sc_namespace\n";
+} else {
+    print "Job parameter Namespace does not exist in the job parameter file\n";
+    exit 1;
+}
+
+# Check for job parameters to see if we should just print and not change anything
+if (exists $job_params_hash{'DEBUG_PLAYLIST'} && $job_params_hash{'DEBUG_PLAYLIST'} eq "yes") {
+    print "Job parameter DEBUG_PLAYLIST=yes, we shall not change anything by this script\n";
+    $debug_cmd = "echo ";
+}
+
+# Enable logging of all executed commands to the job all.log file
+General::Logging::log_enable($job_log_file);
+
+my $sc_namespace_alt = $::JOB_PARAMS{'SC_NAMESPACE'};
+
+
+
+# Patch the httpproxy
+# kubectl -n eiffelesc-2 patch httpproxies sc-httpproxy  --type=json -p="[{'op': 'remove', 'path': '/spec/virtualhost/tls/clientValidation'}]"
+General::Logging::log_user_message("Namespace read as $sc_namespace. Also reading alt-ns $sc_namespace_alt..\n");
+
+print "Writing job variables to file: $job_params_file\n";
+
+if (General::Playlist_Operations::job_parameters_write($job_params_file, \%job_params_hash) != 0) {
+    print "Failure to write the job parameters file '$job_params_file'\n";
+}
+
+
+my $rc = General::OS_Operations::send_command(
+    {
+        "command"       => "kubectl -n $sc_namespace  get httpproxies sc-httpproxy -o yaml ",
+        "hide-output"   => 1,
+    }
+);
+
+
+my $rc = General::OS_Operations::send_command(
+    {
+        "command"       => "kubectl -n $sc_namespace  patch httpproxies sc-httpproxy --type=json -p='[{'op': 'remove', 'path': '/spec/virtualhost/tls/clientValidation'}]' ",
+        "hide-output"   => 1,
+    }
+);
+if ($rc != 0) {
+    #Display the result in case of error
+    General::OS_Operations::write_last_temporary_output_to_progress();
+
+    print "Failed to pathc in ns $sc_namespace\n";
+    exit 1;
+}
+
+my $rc = General::OS_Operations::send_command(
+    {
+        "command"       => "kubectl -n $sc_namespace  get httpproxies sc-httpproxy -o yaml ",
+        "hide-output"   => 1,
+    }
+);
+
+# Disable logging
+General::Logging::log_disable();
+
+exit $rc;

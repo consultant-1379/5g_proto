@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "eric-sc-bsf.name" . }}-rr
+  labels:
+{{- include "eric-sc-bsf.labels" . | indent 4 }}
+  annotations:
+{{- include "eric-sc-bsf.common-annotations" . | indent 4 }}
+data:
+  {{ template "eric-sc-bsf.name" . }}-rr.yml: |
+{{- include "eric-sc-bsf.recording-rules" . | indent 4 }}

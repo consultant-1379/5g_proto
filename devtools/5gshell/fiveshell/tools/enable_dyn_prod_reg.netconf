@@ -1,0 +1,26 @@
+<hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <capabilities>
+        <capability>urn:ietf:params:netconf:base:1.0</capability>
+    </capabilities>
+</hello>]]>]]>
+
+<?xml version="1.0"?>
+<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:ns2="urn:com:ericsson:ecim:1.0" xmlns:ns3="http://tail-f.com/ns/netconf/actions/1.0" xmlns:ns4="urn:ietf:params:xml:ns:yang:ietf-netconf-monitoring" xmlns:ns5="urn:ietf:params:xml:ns:netconf:notification:1.0" message-id="0">
+  <edit-config>
+    <target>
+      <running/>
+    </target>
+    <config>
+      <scp-function xmlns="urn:rdns:com:ericsson:oammodel:ericsson-scp">
+        <nf-instance xmlns="urn:rdns:com:ericsson:oammodel:ericsson-scp">
+          <name>West1</name>
+          <dynamic-producer-registration>
+            <producer-heartbeat>60</producer-heartbeat>
+            <deregistration-time>300</deregistration-time>
+          </dynamic-producer-registration>
+        </nf-instance>
+      </scp-function>
+    </config>
+  </edit-config>
+</rpc>
+]]>]]>

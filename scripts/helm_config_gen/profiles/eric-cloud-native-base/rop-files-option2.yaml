@@ -1,0 +1,14 @@
+eric-data-object-storage-mn:
+  enabled: true
+  environment:
+    MINIO_BROWSER: "on"
+  imageCredentials:
+    init:
+      registry:
+        url: serodocker.sero.gic.ericsson.se
+    osmn:
+      registry:
+        url: serodocker.sero.gic.ericsson.se
+    kes:
+      registry:
+        url: serodocker.sero.gic.ericsson.se

@@ -1,0 +1,11 @@
+productName: "eric-k6"
+productNumber: "-" 
+productRevision: "-" 
+images: # info about thes image of eric-k6 pod's container
+  k6: # container name
+    productName: "k6"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se" # overrides the imageCredentials.registry.url from k6 values.yaml
+    repoPath: k6_repoPath # overrides the imageCredentials.repoPath from k6 values.yaml
+    name: k6_image_name
+    tag: k6_image_tag

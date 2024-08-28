@@ -1,0 +1,30 @@
+# Copyright 2019 Ericsson GmbH#
+{{- if eq (include "eric-bsf.tls" .) "true" }}
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+  name: {{ template "eric-bsf.name" . }}-manager-server-certificate
+  # labels: eric-bsf-tls-certificate 
+  labels:
+{{- include "eric-bsf.labels" . | indent 4 }}
+  annotations:
+{{- include "eric-bsf.helm-annotations" . | indent 4 }}
+{{- include "eric-bsf.config-annotations" . | indent 4 }}
+spec:
+  kubernetes:
+    generatedSecretName: eric-bsf-manager-secret  #this has to be mounted in the deployment yaml 
+    certificateName: srvcert.pem
+    privateKeyName: srvprivkey.pem
+  certificate:
+    subject:
+      cn: eric-bsf-manager # cn 
+    subjectAlternativeName:
+      dns:
+        - certified-scrape-target
+    extendedKeyUsage:
+      tlsClientAuth: false
+      tlsServerAuth: true
+    validity:
+      # one week validity
+      overrideTtl: 604800
+{{- end }}

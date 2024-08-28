@@ -1,0 +1,33 @@
+{{- if .Values.global -}}
+{{- if and .Values.global.networkPolicy .Values.networkPolicy -}}
+{{- if and .Values.global.networkPolicy.enabled .Values.networkPolicy.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ template "eric-sc-nlf.name" . }}-default-access
+  labels:
+{{- include "eric-sc-nlf.labels" . | indent 4 }}
+    app: {{ template "eric-sc-nlf.name" . }}
+  annotations:
+{{- include "eric-sc-nlf.helm-annotations" . | indent 4 }}
+{{- include "eric-sc-nlf.config-annotations" . | indent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "eric-sc-nlf.name" . }}
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          {{ template "eric-sc-nlf.name" . }}-access: "true"
+    ports:
+    - port: {{ .Values.service.nlf.restOam.targetPortName }}
+      protocol: TCP
+    - port: {{ .Values.service.nlf.rest.targetPortName }}
+      protocol: TCP
+{{- end }}
+{{- end }}
+{{- end }}
+

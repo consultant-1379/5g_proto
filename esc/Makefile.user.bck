@@ -1,0 +1,258 @@
+# If true, deploys CNCS
+# If false, deploys NON-CNCS
+export CNCS=true
+
+##------------------------- CRDS -------------------------##
+
+############################### NON-CNCS ONLY ###############################
+# default namespace for crds releases
+# export CRDS_NAMESPACE=eric-crds
+#############################################################################
+
+
+##------------------------ BUILDING ----------------------##
+
+############################### NON-CNCS ONLY ###############################
+# normal = unit tests, helm chart linting and helm design rule checks
+# fast   = skip all of the above, parallel maven build
+export SPEED=fast
+
+export PRODUCTION=false
+#############################################################################
+
+
+##---------------------- CONFIGURATION ----------------------##
+
+# Set resource profile.
+# Applicable for LEGACY and CNCS with differences in selectable profiles.
+#
+# Profiles available for CNCS:
+# full (default)            = Original resources for ADP and SC
+# minikube                  = For use with minikube only
+# mini                      = Smallest footprint for ADP and SC
+# small_footprint           = Uses small footprint profile from ADP, SC full resources
+# medium                    = ADP reduced, but significantly higher than mini/small, SC full resources
+# ucc                       = SEPP Ultra Compact Core
+#
+# Profiles available for LEGACY: full, minikube, mini, normal (=medium in CNCS)
+
+export RESOURCES=full
+
+# If true, eric-dsc integration chart will be deployed
+export DIAMETER=true
+
+# If true, eric-sc-scp integration chart will be deployed
+export SCP=true
+
+# If true, eric-sc-sepp integration chart will be deployed
+export SEPP=true
+
+# If true, eric-sc-bsf integration chart will be deployed
+export BSF=true
+
+# Explicitly disable DDC when LOGGING is true
+# Note: Do not enable DDC when LOGGING is false
+# export DDC=true
+
+# If true, deploys Ingress Controller
+export CONTOUR=true
+# If true, enables mutual TLS for CNOM access
+export CONTOUR_MTLS=false
+
+############################### NON-CNCS ONLY ###############################
+# If true, cassandra will be deployed
+export WCDB=true
+
+# vTAP agent. If true, it deploys SFTP where traces will be stored +
+# SFTP secrets + configmaps and it enables vTAP tracing
+export TAPAGENT=true
+
+# PVTB tap collector. If true, the tap collector is deployed as sidecar
+# container for SCP/SEPP worker.
+export TAPCOLLECTOR=true
+
+# Probe vTAP broker. If true, it deploys the PVTB, together with the sidecars
+# for SCP / SEPP worker unless they are deactivated on subchart level.
+export PVTB=true
+
+# VTap recorder. If true it deploys the vTap recorder.
+export VTAPRECORDER=true
+
+export PVTB_DTLS=true
+
+# GeoRed deployment. If true, it deploys 1+1 GeoRed using the namespaces
+# defined below for the two data centers.
+# In order for GeoRed to be deployed, set DC1_NAMESPACE=<your_namespace> and
+# DC2_NAMESPACE=<other_namespace>.
+export GEORED=false
+export DC1_NAMESPACE=
+export DC2_NAMESPACE=
+#############################################################################
+
+# Replaces the IP_VERSION parameter, set to 4, 6 or DS for internal/external IP Family
+export IP_VERSION_INT=4
+export IP_VERSION_EXT=DS
+
+# If true, loads dummy config (based on NFs), otherwise startup without configuration
+export LOAD_DUMMY_CFG=true
+
+# If true, skips the installation of default users
+export SKIP_DEFAULT_USERS=false
+
+# If true, skips the installation of any certificates
+export SKIP_CERTS=false
+
+# Centralized authentication (AUM)
+# using external <referral> ldap
+# true - enable centralized authentication (default)
+#        external LDAP server required (devtools)
+# false - disable centralised authentication
+export REFERRAL_LDAP=true
+
+# If true, enables netconf over tls for yang-provider
+export NETCONF_TLS=true
+
+##---------------------- FEATURES ----------------------##
+
+############################### NON-CNCS ONLY ###############################
+# Leader Election feature for SCP,SEPP and BSF managers.
+# Manager needs to be scaled manually after deployment,
+# if leader election is enabled (default manager replicaCount=1).
+export SCP_LEADER_ELECTION=true
+export SEPP_LEADER_ELECTION=true
+export BSF_LEADER_ELECTION=true
+export NLF_LEADER_ELECTION=true
+export RLF_LEADER_ELECTION=true
+# CNCS has leader election enabled by default and manager replicas 2 for
+# deployments with high availability
+
+# Enables MultiVPN for SCP and disables MultiVPN for SEPP respectively,
+# overriding their default values
+export SCP_MULTIVPN=true
+export SEPP_MULTIVPN=true
+#############################################################################
+
+# Enable MultiVPN
+export MULTIVPN=true
+
+# Enable CM GUI
+export CM_GUI=false
+
+##---------------------- PROFILES ----------------------##
+
+#############################################################################
+
+# If true, deploys shared DB PG to be used by CMM, FHAH, LMCS and CNOM
+# Otherwise, dedicated DB PG services will be used for each case
+export SHARED_DBPG=false
+
+# If true, deploys services with maximum replicas and leader election
+# There is a "noHA.yaml" file in each integration helm chart
+export HIGH_AVAILABILITY=true
+
+# If true, enables pvtb, vtaprecorder and tapcollector
+export VTAP=true
+
+# If true, enables tapagent and atmoz_sftp
+export VTAP_LITE=true
+
+# If true, enables DTLS for vtap
+export VTAP_DTLS=true
+
+# If true:
+# 1. eric-bsf-diameter and eric-stm-diameter subcharts of eric-sc-bsf integration chart will be deployed
+# 2. BSF Diameter functionality will be enabled in eric-bsf subchart
+export BSF_DIAMETER=true
+
+# If true:
+# 1. SLF subchart of eric-sc-scp integration chart will be deployed
+# 2. Subscriber Locator functionality will be enabled in eric-scp subchart
+export SLF=true
+
+# If true:
+# 1. RLF subchart of eric-sc-cs integration chart will be deployed
+# 2. Global Rate Limiting functionality will be enabled in eric-scp and eric-sepp subcharts
+export RLF=true
+
+# If true:
+# 1. NLF subchart of eric-sc-cs integration chart will be deployed
+# 2. NF Lookup functionality will be enabled in eric-scp subchart
+export NLF=true
+
+# If true, allocates LoadBalancer NodePorts
+export LOADBALANCER_NODEPORTS=true
+
+# If false, disables:
+# 1. the logging services (Log Shipper, Log Transformer, Search Engine)
+# 2. the Diagnostic Data Collector
+# 3. the CNOM log viewer
+# If true, configure the log streaming method via the LOG_STREAMING parameter 
+export LOGGING=true
+
+# Has effect only if LOGGING=true.
+# Determines how the logs are sent to the logging backend (Log Transformer and Search Engine)
+# Possible values "indirect", "direct", "dual":
+# 1. indirect: logs in stdout, Log Shipper deployed as Daemonset
+# 2. direct: logs NOT in stdout, logs sent directly to Log Transformer via a streaming method (logshipper sidecar, TCP, syslog client etc.)
+# 3. dual: logs in stdout, Log Shipper NOT deployed as Daemonset, logs sent directly to Log Transformer via a streaming method (logshipper sidecar, TCP, syslog client etc.)
+export LOG_STREAMING="dual"
+
+# If true, enables syslog external interface
+export SYSLOG=false
+
+# If true, lumberjack external interface
+export LUMBERJACK=false
+
+# If true, controls the deployment of the metrics sidecars
+export METRICS=true
+
+# Enable pm remote writes
+# true - remote write enable to ddc
+#        and external influxdb (devtools)
+#        install internal/external ldap certificates
+# false - disable (default)
+export PM_REMOTE_WRITE=false
+
+# PMBR ROP File Storage Backend
+# If true, deploys object storage, sftp server, and pmbr with object storage option
+# If false, enables sftp server sidecar container in pmbr and deploys deploys object storage
+export ROP_FILES_OPT2=true
+
+############################### NON-CNCS ONLY ###############################
+# PMBR ROP File Storage Backend (Alpha Feature)
+export PMBR_OBJECT_STORAGE=true
+export OBJECT_STORAGE=true
+export SFTP=true
+#############################################################################
+
+
+##---------------------- SIM Tools ----------------------##
+
+export TOOLS_TLS=true
+export K6=true
+export NRFSIM=true
+export CHFSIM=true
+export SEPPSIM=true
+export DSCLOAD=true
+export ATMOZ_SFTP=true
+export REDIS=true
+export CSAR=true
+export INFLUXDB2=true
+export GRAFANA=true
+export TELEGRAF=true
+
+
+##---------------------- OTHER ----------------------##
+
+# If true, InCA does not commit the changes in "ihc-auto prepare" command
+export INCA_SKIP_GIT_COMMIT=true
+
+## Docker Network (Needed for WSL), default for VDI is set in ruleset
+#export DOCKER_NETWORK=k3d-ericsson
+
+## TestNG Files for Minikube test execution
+#export TESTNG_COMMON=""
+#export TESTNG_SEPP=""
+#export TESTNG_SCP=""
+#export TESTNG_BSF=""
+

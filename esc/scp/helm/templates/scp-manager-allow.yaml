@@ -1,0 +1,50 @@
+{{- if .Values.global -}}
+{{- if and .Values.global.networkPolicy .Values.networkPolicy -}}
+{{- if and .Values.global.networkPolicy.enabled .Values.networkPolicy.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Values.service.manager.name }}-allow
+  labels:
+{{- include "eric-scp.labels" . | indent 4 }}
+    app: {{ .Values.service.worker.name | quote }}
+  annotations:
+{{- include "eric-scp.helm-annotations" . | indent 4 }}
+{{- include "eric-scp.config-annotations" . | indent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ .Values.service.manager.name }}
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: {{ .Values.sc.common.monitor.hostname }}
+    ports:
+      - port: {{ .Values.service.manager.server.k8sProbe.port }}
+        protocol: TCP
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: {{ .Values.adp.cm.mediator.hostname }}
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: {{ .Values.adp.cm.yangProvider.hostname }}
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: {{ .Values.adp.pm.server.hostname }}
+    ports:
+      - port: {{ .Values.service.manager.server.oam.port }}
+        protocol: TCP
+  - from:
+    - podSelector:
+        matchLabels:
+          app: {{ .Values.service.worker.name }}
+    ports:
+      - port: {{ .Values.service.manager.server.grpc.port }}
+        protocol: TCP
+{{- end }}
+{{- end }}
+{{- end }}

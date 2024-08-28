@@ -1,0 +1,468 @@
+##################################################################################
+#                                                                                #
+#       THIS FILE IS ONLY FOR BUILDING ENVOY                                     #
+#                                                                                #
+##################################################################################
+modelVersion: 2.0
+
+import:
+  base: rulesets/ruleset2.0-eric-base.yaml
+
+description: "Build the Envoy Builder and the Envoy Base Image"
+
+properties:
+  # This is for **BUILDING** Envoy! If you want to **use** a different Envoy image in
+  # your deployment, please change it in rulesets/ruleset2.0-eric-base.yaml -> ENVOY_VERSION:
+  - LLVM_REPO_PATH: /local/eedbjhe/git/llvm-project
+  - LLVM_VERSION: 12.0.0
+  - ENVOY_GIT_TAG: 1.29.4
+  - ENVOY_VERSION: ${ENVOY_GIT_TAG}-7
+  - ENVOY_BAZEL_BUILD: remote
+  - ENVOY_BAZEL_JOBS: 8
+  - ENVOY_BAZEL_JOBS_REMOTE: 20
+  - ENVOY_BAZEL_OUTPUT_DIR: .bazel/output/
+  - ENVOY_BORING_SSL_FIPS: 1
+  - ENVOY_RUN_TESTS: 0
+  - ENVOY_SKIP_BUILD: 0 
+  - ENVOY_BUILD_DOCS: 0 
+  - ENVOY_BUILD_TYPE: RELEASE
+  - ENVOY_BUILDER_VERSION: 3.0.0-21
+  - ENVOY_BUILDER_CBOS: 6.15.0-9
+  - ENVOY_BUILDER_ADP_DEV: ${ENVOY_BUILDER_CBOS}
+  - ENVOY_DEBUG_SYMBOLS_ARCHIVE: envoy_dwo.tgz
+  - ENVOY_SOURCE_ARCHIVE: envoy_source.tgz
+  - ENVOY_SOURCE_FOLDER: devtools/envoy-builder/sc_envoy
+  - ENVOY_SSL_KEY_LOGGING: 1
+  - ENVOY_WORKER_DIR: envoyproxy/envoywrk
+  - ENVOY_WORKER_BASE_IMAGE_NAME: ${SCP_SERVICE_NAME}-envoy-base
+
+  - SCP_SERVICE_NAME: eric-scp
+  - ARM_DOCKER_REGISTRY: ${base.ARM_DOCKER_REGISTRY}
+  
+  - DOCKER_ENV_DEFAULT: "--env ENVOY_BAZEL_JOBS=${ENVOY_BAZEL_JOBS}
+                         --env ENVOY_BAZEL_OUTPUT_DIR=${ENVOY_BAZEL_OUTPUT_DIR}
+                         --env ENVOY_BORING_SSL_FIPS=${ENVOY_BORING_SSL_FIPS}
+                         --env ENVOY_BUILDER_VERSION=${ENVOY_BUILDER_VERSION}
+                         --env ENVOY_BUILD_TYPE=${ENVOY_BUILD_TYPE}
+                         --env ENVOY_DEBUG_SYMBOLS_ARCHIVE=${ENVOY_DEBUG_SYMBOLS_ARCHIVE}
+                         --env ENVOY_GIT_TAG=${ENVOY_GIT_TAG}
+                         --env ENVOY_SSL_KEY_LOGGING=${ENVOY_SSL_KEY_LOGGING}
+                         --env ENVOY_SOURCE_ARCHIVE=${ENVOY_SOURCE_ARCHIVE}
+                         --env ENVOY_VERSION=${ENVOY_VERSION}
+                         --env ENVOY_WORKER_DIR=${ENVOY_WORKER_DIR}
+                         --env ENVOY_RUN_TESTS=${ENVOY_RUN_TESTS}
+                         --env ENVOY_BUILD_DOCS=${ENVOY_BUILD_DOCS}                         
+                         --env ENVOY_SKIP_BUILD=${ENVOY_SKIP_BUILD}                         
+                         --env LLVM_VERSION=${LLVM_VERSION}
+                         --env OUTPUT_DIR=${base.OUTPUT_DIR}
+                         --env HOME=${env.PWD}
+                         --env SSH_USER=${env.USER}
+                         --env USER=${env.USER}
+                         --cap-add=SYS_PTRACE
+                         --privileged
+                         --volume ${env.PWD}/.bob/passwd:/etc/passwd:ro
+                         --volume ${env.PWD}:${env.PWD}"
+
+  - DOCKER_VOLUME_SSH:    "--volume /home/${env.USER}/.ssh:/local/${env.USER}/.ssh"
+
+  - STDOUT_REDIRECT_ARTIFACTORY: "https://arm.seli.gic.ericsson.se/artifactory"
+  - STDOUT_REDIRECT_VERSION: "1.37.0"
+
+env:
+ - ARTIFACTORY_TOKEN
+ - BOB_FORCE_IMAGE_PULL (default=false)
+ - PWD
+ - SSH_AUTH_SOCK
+ - USER (default=anonymous)
+
+var:
+ - bazel-build-type
+ - docker-flags
+
+ 
+rules:
+  build-vanilla-envoy:
+   - task: set-bazel-build-type:local
+   - rule: init
+   - rule: build-clean
+   - rule: vanilla-envoy
+   - rule: build-images
+
+  build-vanilla-envoy-remote:
+   - task: set-bazel-build-type:remote
+   - rule: init
+   - rule: build-clean
+   - rule: vanilla-envoy-remote
+   - rule: build-images
+
+  build-sc-envoy:
+   - task: set-bazel-build-type:local
+   - rule: init
+   - rule: build-clean
+   - rule: sc-envoy
+   - rule: build-images
+
+  build-sc-envoy-docs:
+   - task: set-bazel-build-type:local
+   - rule: init
+   - rule: sc-envoy-build-docs
+
+  test-sc-envoy:
+   - task: set-bazel-build-type:local
+   - rule: init
+   - rule: sc-envoy-test
+
+  test-sc-envoy-remote:
+   - task: set-bazel-build-type:remote
+   - rule: init
+   - rule: sc-envoy-remote-test
+
+  build-sc-envoy-remote:
+   - task: set-bazel-build-type:remote
+   - rule: init
+   - rule: build-clean
+   - rule: sc-envoy-remote
+   - rule: build-images
+
+  build-sc-envoy-fips:
+   - task: set-bazel-build-type:local
+   - rule: init
+   - rule: build-clean
+   - rule: sc-envoy-fips
+   - rule: build-images
+
+  build-sc-envoy-fips-remote:
+   - task: set-bazel-build-type:remote
+   - rule: init
+   - rule: build-clean
+   - rule: sc-envoy-fips-remote
+   - rule: build-images
+
+  build-images:
+   - rule: image-clean
+   - rule: stdout-redirect
+   - rule: image-prepare
+   - rule: image-production
+   - rule: image-debug  
+  
+  push-images:
+   - rule: image-clean
+   - rule: stdout-redirect
+   - rule: image-prepare
+   - rule: image-production
+   - rule: image-debug  
+   - rule: push-image-production
+   - rule: push-image-debug
+
+#It stores the docker flags in a variable and adds volumes needed for remote builds if configured
+#/etc/passwd is fetched from the builder, stored in a file and the current user is appended to it.
+#This file is then mounted into the build container as /etc/password
+#This allows builds to performed as the current user and not as root
+  init:    
+    - task: init-flags
+      #No linebreaks in this file as it will ignore all parameters after it
+      cmd: echo -n ${DOCKER_ENV_DEFAULT} > ${base.OUTPUT_DIR}/var.docker-flags
+    - task: add-flags
+      condition: conditions:remote-build-true
+      cmd:
+        - echo -n " " >> ${base.OUTPUT_DIR}/var.docker-flags
+        - echo -n ${DOCKER_VOLUME_SSH} >> ${base.OUTPUT_DIR}/var.docker-flags
+    - task: fetch-passwd
+      docker-image: base.envoy-builder
+      docker-flags:
+        - "--env OUTPUT_DIR=${base.OUTPUT_DIR}"
+      cmd: cat /etc/passwd > ${base.OUTPUT_DIR}/passwd
+    - task: update-passwd    
+      cmd: getent passwd ${env.USER} | sed -e "s/home/local/g" >> ${base.OUTPUT_DIR}/passwd
+    - task: add-bazel-build-type
+      cmd:
+        - echo -n " " >> ${base.OUTPUT_DIR}/var.docker-flags
+        - echo -n --env ENVOY_BAZEL_BUILD=${var.bazel-build-type} >> ${base.OUTPUT_DIR}/var.docker-flags
+
+  set-bazel-build-type:
+    - task: local
+      cmd: echo "local" > ${base.OUTPUT_DIR}/var.bazel-build-type
+    - task: remote
+      cmd: echo "remote" > ${base.OUTPUT_DIR}/var.bazel-build-type
+      
+  vanilla-envoy:
+    - task: build
+      docker-image: base.envoy-builder
+      docker-flags:
+        - ${var.docker-flags}
+        #Overrides the default value set in the docker-flags variable
+        - "--env ENVOY_LOCAL_BUILD=0"
+      cmd: /bin/bash -e -c "/build/build_envoy.sh"
+
+  vanilla-envoy-remote:
+    - task: build
+      docker-image: base.envoy-builder
+      docker-flags:
+        - ${var.docker-flags}
+        #Overrides the default value set in the docker-flags variable
+        - "--env ENVOY_BAZEL_BUILD=remote"
+        - "--env ENVOY_BAZEL_JOBS=${ENVOY_BAZEL_JOBS_REMOTE}"
+        - "--env ENVOY_LOCAL_BUILD=0"
+      cmd: /bin/bash -e -c "/build/build_envoy.sh"
+
+  sc-envoy:
+    - task: build
+      docker-image: base.envoy-builder
+      docker-flags:
+        - ${var.docker-flags}
+        #Overrides the default value set in the docker-flags variable
+        - "--env ENVOY_BORING_SSL_FIPS=0"
+        - "--env ENVOY_LOCAL_BUILD=1"
+      cmd: /bin/bash -e -c "/build/build_envoy.sh"
+
+  sc-envoy-build-docs:
+    - task: build-docs
+      docker-image: base.envoy-builder
+      docker-flags:
+        - ${var.docker-flags}
+        #Overrides the default value set in the docker-flags variable
+        - "--env ENVOY_BORING_SSL_FIPS=0"
+        - "--env ENVOY_LOCAL_BUILD=1"
+        - "--env ENVOY_SKIP_BUILD=1"
+        - "--env ENVOY_BUILD_DOCS=1"        
+      cmd: /bin/bash -e -c "/build/build_envoy.sh"   
+      
+  sc-envoy-test:
+    - task: test
+      docker-image: base.envoy-builder
+      docker-flags:
+        - ${var.docker-flags}
+        #Overrides the default value set in the docker-flags variable
+        - "--env ENVOY_BORING_SSL_FIPS=0"
+        - "--env ENVOY_LOCAL_BUILD=1"
+        - "--env ENVOY_SKIP_BUILD=1"
+        - "--env ENVOY_RUN_TESTS=1"
+        - "--env ENVOY_BUILD_DOCS=0"                      
+      cmd: /bin/bash -e -c "/build/build_envoy.sh"     
+
+  sc-envoy-remote:
+    - task: build
+      docker-image: base.envoy-builder
+      docker-flags:
+        - ${var.docker-flags}
+        #Overrides the default value set in the docker-flags variable
+        - "--env ENVOY_BAZEL_BUILD=remote"
+        - "--env ENVOY_BAZEL_JOBS=${ENVOY_BAZEL_JOBS_REMOTE}"
+        - "--env ENVOY_BORING_SSL_FIPS=0"
+        - "--env ENVOY_LOCAL_BUILD=1"
+      cmd: /bin/bash -e -c "/build/build_envoy.sh"
+
+  sc-envoy-remote-test:
+    - task: test
+      docker-image: base.envoy-builder
+      docker-flags:
+        - ${var.docker-flags}
+        #Overrides the default value set in the docker-flags variable
+        - "--env ENVOY_BORING_SSL_FIPS=0"
+        - "--env ENVOY_LOCAL_BUILD=1"
+        - "--env ENVOY_SKIP_BUILD=1"
+        - "--env ENVOY_BAZEL_BUILD=remote"
+        - "--env ENVOY_BAZEL_JOBS=${ENVOY_BAZEL_JOBS_REMOTE}"
+        - "--env ENVOY_RUN_TESTS=1"
+        - "--env ENVOY_BUILD_DOCS=0"                      
+      cmd: /bin/bash -e -c "/build/build_envoy.sh" 
+
+  sc-envoy-fips:
+    - task: build
+      docker-image: base.envoy-builder
+      docker-flags:
+        - ${var.docker-flags}
+        #Overrides the default value set in the docker-flags variable
+        - "--env ENVOY_BORING_SSL_FIPS=1"
+        - "--env ENVOY_LOCAL_BUILD=1"
+      cmd: /bin/bash -e -c "/build/build_envoy.sh"
+
+  sc-envoy-fips-remote:
+    - task: build
+      docker-image: base.envoy-builder
+      docker-flags:
+        - ${var.docker-flags}
+        #Overrides the default value set in the docker-flags variable
+        - "--env ENVOY_BAZEL_BUILD=remote"
+        - "--env ENVOY_BAZEL_JOBS=${ENVOY_BAZEL_JOBS_REMOTE}"
+        - "--env ENVOY_BORING_SSL_FIPS=1"
+        - "--env ENVOY_LOCAL_BUILD=1"
+      cmd: /bin/bash -e -c "/build/build_envoy.sh"
+
+  build-user-dev:
+    - task: start
+      docker-image: base.envoy-builder
+      docker-flags:
+        - "--env ENVOY_BAZEL_JOBS=${ENVOY_BAZEL_JOBS}"
+        - "--env ENVOY_BAZEL_OUTPUT_DIR=${ENVOY_BAZEL_OUTPUT_DIR}"
+        - "--env ENVOY_BORING_SSL_FIPS=${ENVOY_BORING_SSL_FIPS}"
+        - "--env ENVOY_GIT_TAG=${ENVOY_GIT_TAG}"
+        - "--env ENVOY_SSL_KEY_LOGGING=${ENVOY_SSL_KEY_LOGGING}"
+        - "--env ENVOY_VERSION=${ENVOY_VERSION}"
+        - "--env ENVOY_WORKER_DIR=${ENVOY_WORKER_DIR}"
+        - "--env HOME=/local/${env.USER}"
+        - "--env OUTPUT_DIR=${base.OUTPUT_DIR}"
+        - "--env USER=${env.USER}" 
+        - "--volume /local/${env.USER}:/local/${env.USER}" 
+        - "--volume /home/${env.USER}:/home/${env.USER}"         
+        - "--publish 8088:8088"
+        - "--name envoy-dev-env-${env.USER}"
+        - "--cap-add SYS_PTRACE"
+        - "--cap-add=NET_RAW"
+        - "--cap-add=NET_ADMIN"
+        - "--security-opt=seccomp=unconfined"
+      cmd: sleep infinity
+
+  build-clean:
+    - task: clean
+      cmd:
+        - rm -rf ${base.OUTPUT_DIR}/envoy-static
+        - rm -rf ${base.OUTPUT_DIR}/envoy-static.version
+        - rm -rf ${base.OUTPUT_DIR}/envoy-static.stripped
+        - rm -rf ${base.OUTPUT_DIR}/envoy-static.stripped.version
+        - rm -rf ${base.OUTPUT_DIR}/${ENVOY_DEBUG_SYMBOLS_ARCHIVE}
+        - rm -rf ${base.OUTPUT_DIR}/${ENVOY_SOURCE_ARCHIVE}
+
+  image-clean:
+    - task: clean
+      cmd:
+        - rm -rf ${ENVOY_WORKER_DIR}/envoy-static
+        - rm -rf ${ENVOY_WORKER_DIR}/envoy-static.version
+        - rm -rf ${ENVOY_WORKER_DIR}/envoy-static.stripped
+        - rm -rf ${ENVOY_WORKER_DIR}/envoy-static.stripped.version
+        - rm -rf ${ENVOY_WORKER_DIR}/${ENVOY_DEBUG_SYMBOLS_ARCHIVE}
+        - rm -rf ${ENVOY_WORKER_DIR}/${ENVOY_SOURCE_ARCHIVE}
+        - rm -rf ${base.OUTPUT_DIR}/envoy/stdout-redirect
+        - rm -rf ${ENVOY_WORKER_DIR}/stdout-redirect
+
+  image-prepare:
+    - task: general
+      cmd:
+        - cp ${base.OUTPUT_DIR}/${ENVOY_DEBUG_SYMBOLS_ARCHIVE} ${ENVOY_WORKER_DIR}
+        - cp ${base.OUTPUT_DIR}/${ENVOY_SOURCE_ARCHIVE} ${ENVOY_WORKER_DIR}
+        - cp ${base.OUTPUT_DIR}/envoy/stdout-redirect ${ENVOY_WORKER_DIR}
+        - chmod 755 ${ENVOY_WORKER_DIR}/${ENVOY_DEBUG_SYMBOLS_ARCHIVE}
+        - chmod 755 ${ENVOY_WORKER_DIR}/${ENVOY_SOURCE_ARCHIVE}
+        - chmod 755 ${ENVOY_WORKER_DIR}/stdout-redirect
+    - task: stripped
+      condition: conditions:release-true
+      cmd:    
+        - cp ${base.OUTPUT_DIR}/envoy-static.stripped ${ENVOY_WORKER_DIR}
+        - cp ${base.OUTPUT_DIR}/envoy-static.stripped.version ${ENVOY_WORKER_DIR}
+    - task: unstripped
+      cmd:        
+        - cp ${base.OUTPUT_DIR}/envoy-static ${ENVOY_WORKER_DIR}
+        - cp ${base.OUTPUT_DIR}/envoy-static.version ${ENVOY_WORKER_DIR}
+
+  image-production:
+    - task: build
+      condition: conditions:release-true
+      cmd: 
+        - docker build ./${ENVOY_WORKER_DIR}
+           --file ${ENVOY_WORKER_DIR}/Dockerfile.base.production
+           --build-arg BINARY=envoy-static.stripped
+           --build-arg DOCKER_BASE_IMG=${base.SC_CBOS_ENVOY_PRODUCTION_IMG}
+           --tag ${ARM_DOCKER_REGISTRY}/envoy/${ENVOY_WORKER_BASE_IMAGE_NAME}:${ENVOY_VERSION}
+
+  image-debug:
+    - task: build
+      cmd: 
+        - docker build ./${ENVOY_WORKER_DIR}
+           --file ${ENVOY_WORKER_DIR}/Dockerfile.base.debug
+           --build-arg BINARY=envoy-static
+           --build-arg DOCKER_BASE_IMG=${base.SC_CBOS_ENVOY_DEBUG_IMG}
+           --build-arg ENVOY_DEBUG_SYMBOLS_ARCHIVE=${ENVOY_DEBUG_SYMBOLS_ARCHIVE}
+           --build-arg ENVOY_SOURCE_ARCHIVE=${ENVOY_SOURCE_ARCHIVE}
+           --tag ${ARM_DOCKER_REGISTRY}/envoy/${ENVOY_WORKER_BASE_IMAGE_NAME}-debug:${ENVOY_VERSION}
+
+  push-image-production:
+    - task: push-production
+      condition: conditions:release-true
+      cmd: docker push ${ARM_DOCKER_REGISTRY}/envoy/${ENVOY_WORKER_BASE_IMAGE_NAME}:${ENVOY_VERSION}
+
+  push-image-debug:
+    - task: push-debug
+      cmd: docker push ${ARM_DOCKER_REGISTRY}/envoy/${ENVOY_WORKER_BASE_IMAGE_NAME}-debug:${ENVOY_VERSION}
+
+  builder:
+    - task: build
+      cmd:
+        - docker build ./devtools/envoy-builder/
+           --file ./devtools/envoy-builder/Dockerfile.sles
+           --build-arg ADP_BUILD_ENV_REPO_URL=${base.ADP_BUILD_ENV_REPO_URL}
+           --build-arg CBOS_REPO_URL=${base.CBOS_REPO_URL}
+           --build-arg ENVOY_BUILDER_CBOS=${ENVOY_BUILDER_CBOS}
+           --build-arg ENVOY_BUILDER_ADP_DEV=${ENVOY_BUILDER_ADP_DEV}
+           --tag ${ARM_DOCKER_REGISTRY}/envoybuilder:${ENVOY_BUILDER_VERSION}
+    - task: push
+      cmd: docker push ${ARM_DOCKER_REGISTRY}/envoybuilder:${ENVOY_BUILDER_VERSION}
+
+  #Can't be done in the Dockerfile as there is not tar command
+  stdout-redirect:
+    - task: download
+      cmd: 
+        # Cleanup old existing dir to avoid error, can be removed later
+        - rm -rf envoyproxy/envoywrk/stdout-redirect
+        - rm -f ${base.OUTPUT_DIR}/envoy/eric-log-libstdout-redirect-golang-cxa30176-${STDOUT_REDIRECT_VERSION}.x86_64.tar ${base.OUTPUT_DIR}/envoy/stdout-redirect
+        - curl --create-dirs --output ${base.OUTPUT_DIR}/envoy/eric-log-libstdout-redirect-golang-cxa30176-${STDOUT_REDIRECT_VERSION}.x86_64.tar --silent --user ${env.base.USER}:${var.base.armdocker-api-token} ${STDOUT_REDIRECT_ARTIFACTORY}/proj-adp-log-release/com/ericsson/bss/adp/log/stdout-redirect/${STDOUT_REDIRECT_VERSION}/eric-log-libstdout-redirect-golang-cxa30176-${STDOUT_REDIRECT_VERSION}.x86_64.tar
+        - tar --directory=${base.OUTPUT_DIR}/envoy --extract --file=${base.OUTPUT_DIR}/envoy/eric-log-libstdout-redirect-golang-cxa30176-${STDOUT_REDIRECT_VERSION}.x86_64.tar
+        - chmod 755 ${base.OUTPUT_DIR}/envoy/stdout-redirect
+        - rm -f ${base.OUTPUT_DIR}/envoy/eric-log-libstdout-redirect-golang-cxa30176-${STDOUT_REDIRECT_VERSION}.x86_64.tar
+
+  conditions:
+    - task: release-true
+      cmd: test "${ENVOY_BUILD_TYPE}" = RELEASE
+    - task: remote-build-true
+      cmd: test "${var.bazel-build-type}" = remote
+
+
+  #Not maintained
+  builder-libs:
+    - task: build
+      cmd: /bin/bash -e -c "docker build ./devtools/envoy-builder/
+           --file ./devtools/envoy-builder/Dockerfile-libs.sles
+           --build-arg DOCKER_BASE_IMG=${base.CBOS_IMG}
+           --build-arg ENVOY_BUILDER_CBOS=${ENVOY_BUILDER_CBOS}
+           --tag ${ARM_DOCKER_REGISTRY}/eiffelesc/envoybuilder-libs:${ENVOY_BUILDER_VERSION}";
+    - task: push
+      cmd: /bin/bash -e -c "docker push ${ARM_DOCKER_REGISTRY}/eiffelesc/envoybuilder-libs:${ENVOY_BUILDER_VERSION}";
+
+#Just testing
+  llvm:
+    - task: clean
+      cmd:
+        - rm -rf ${LLVM_REPO_PATH}/build
+    - task: configure
+      docker-image: base.envoy-builder
+      docker-flags:
+        - "--volume ${LLVM_REPO_PATH}:${LLVM_REPO_PATH}"
+      cmd: /bin/bash -e -c 'cd ${LLVM_REPO_PATH};
+                            git checkout tags/llvmorg-${LLVM_VERSION};
+                            cmake -S llvm -B build -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;lld;lldb" -DLLVM_TARGETS_TO_BUILD="X86" -DCMAKE_CXX_COMPILER=g++-11 -DCMAKE_C_COMPILER=gcc-11'
+#clang;clang-tools-extra;cross-project-tests;libc;libclc;lld;lldb;openmp;polly;pstl
+    - task: build
+      docker-image: base.envoy-builder
+      docker-flags:
+        - "--volume ${LLVM_REPO_PATH}:${LLVM_REPO_PATH}"
+      cmd: /bin/bash -e -c 'cd ${LLVM_REPO_PATH};
+                            cmake --build build -j 3'
+    - task: copy
+      cmd:
+        - rm -rf devtools/envoy-builder/llvm/${LLVM_VERSION}
+        - mkdir -p devtools/envoy-builder/llvm/${LLVM_VERSION}/bin
+        - mkdir -p devtools/envoy-builder/llvm/${LLVM_VERSION}/include
+        - mkdir -p devtools/envoy-builder/llvm/${LLVM_VERSION}/lib
+        - mkdir -p devtools/envoy-builder/llvm/${LLVM_VERSION}/libexec
+        - mkdir -p devtools/envoy-builder/llvm/${LLVM_VERSION}/share
+        - cp -r ${LLVM_REPO_PATH}/build/bin/* devtools/envoy-builder/llvm/${LLVM_VERSION}/bin
+        - cp -r ${LLVM_REPO_PATH}/build/include/* devtools/envoy-builder/llvm/${LLVM_VERSION}/include         
+        - cp -r ${LLVM_REPO_PATH}/build/lib/* devtools/envoy-builder/llvm/${LLVM_VERSION}/lib         
+        - cp -r ${LLVM_REPO_PATH}/build/libexec/* devtools/envoy-builder/llvm/${LLVM_VERSION}/libexec
+        - cp -r ${LLVM_REPO_PATH}/build/share/* devtools/envoy-builder/llvm/${LLVM_VERSION}/share
+    - task: manifest
+      cmd:
+        - echo "CBOS   : ${ENVOY_BUILDER_CBOS} > devtools/envoy-builder/llvm/${LLVM_VERSION}/${LLVM_VERSION}.info
+        - echo "Builder: ${ENVOY_BUILDER_VERSION} >> devtools/envoy-builder/llvm/${LLVM_VERSION}/${LLVM_VERSION}.info
+    - task: package
+      cmd: "cd devtools/envoy-builder/llvm && tar -cvJf llvm-${LLVM_VERSION}.tar.xz ${LLVM_VERSION}"
+

@@ -1,0 +1,27 @@
+global:
+  internalIPFamily: "IPv6"
+
+eric-bsf:
+  service:
+    worker:
+      externalIPv6:
+        enabled: true
+
+eric-bsf-diameter:
+  initialConfig:
+    dsl:
+      enableIPv6: true
+
+eric-bsf-wcdb-cd:
+  resources:
+    cassandra:
+      network:
+        useIPv6: true
+
+eric-stm-diameter:
+  initialConfig:
+    dsl:
+      enableIPv6: true
+  service:
+    externalIPv6:
+      enabled: true

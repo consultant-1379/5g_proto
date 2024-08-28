@@ -1,0 +1,39 @@
+# Copyright 2019 Ericsson GmbH
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ template "eric-sc-slf.serviceName" . }}
+  labels:
+{{- include "eric-sc-slf.labels" . | indent 4 }}
+    app: {{ .Values.service.slf.name | quote }}
+  annotations:
+{{- include "eric-sc-slf.helm-annotations" . | indent 4 }}
+{{- include "eric-sc-slf.config-annotations" . | indent 4 }}
+{{- if .Values.metrics.enabled }}
+    prometheus.io/scrape: {{ .Values.metrics.enabled | quote }}
+    prometheus.io/port: {{ .Values.service.slf.server.oam.port | quote }}
+{{- if eq (include "eric-sc-slf.tls" .) "true" }}
+    prometheus.io/scheme: https
+{{- else }}
+    prometheus.io/scheme: http
+{{- end }}
+{{- end }}
+spec:
+  ipFamilyPolicy: PreferDualStack
+  type: ClusterIP
+  clusterIP: None
+{{- include "eric-sc-slf.ipfamilies" . | indent 2 }}
+  ports:
+  - name: https
+    protocol: TCP
+    port: {{ .Values.service.slf.portTls }}
+    targetPort: {{ .Values.spec.slf.portTlsName }}
+{{- if .Values.metrics.enabled }}
+  - name: oam-server
+    protocol: TCP
+    port: {{ .Values.service.slf.server.oam.port }}
+    targetPort: {{ .Values.service.slf.server.oam.targetPort }}
+{{- end }}
+  selector:
+    app: {{ .Values.service.slf.name | quote }}

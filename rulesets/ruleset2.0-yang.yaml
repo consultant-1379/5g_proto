@@ -1,0 +1,360 @@
+modelVersion: 2.0
+
+import:
+  base: ruleset2.0-eric-base.yaml
+
+description: "5G Rules for YANG"
+
+properties:
+ - TOOLS: devtools/yang
+ - FOLDER: yang
+ - IMF_OUTPUT: ${FOLDER}/IMF
+ - IMFTOOL: IMFYANGCLI
+ - YANG_MODEL: esc/common/src/main/resources/com/ericsson/esc/services/cm/model/yang
+ - YANG_DEPENDENCIES: ${YANG_MODEL}/import
+ - YANG_EXTERNAL: ${YANG_MODEL}/external
+ - COMMON_MODEL: esc/common/src/main/java/com/ericsson/esc/services/cm/model
+ - MGR_RESOURCES: esc/bsf/bsfmgr/src/main/resources/com/ericsson/esc/services/cm/model
+ - PACKAGE: com.ericsson.esc.services.cm.model
+ - MODEL_PACKAGE: com.ericsson.sc
+ - GLUE_PACKAGE: com.ericsson.sc.glue
+ - NFM_PACKAGE: com.ericsson.sc.nfm.model
+ - RELEASEPACKAGE: ${env.RELEASE_PACKAGE}
+ - OUTPUT_DIR: .bob
+ - CPI_PROD_NUM: '155 54-CSH 109 710/1'
+ - CPI_TITLE: 'YANG Data Model'
+ - SOURCE: ${FOLDER}/schema
+ - COLON: ':'
+ - ENM_DELIVERY_FOLDER: ${ENM_OUTPUT_DIR}/SC_${ENM_SC_VERSION}
+ - ENM_FOLDER: enm
+ - ENM_OUTPUT_DIR: ${OUTPUT_DIR}/enm-delivery
+ - ENM_SC_VERSION: 1.8.0
+ - ENM_VALIDATOR_VERSION: 1.0.33
+ - ENM_YANG_FOLDER: ${ENM_OUTPUT_DIR}/yang
+ - ENM_JSON_FOLDER: ${ENM_DELIVERY_FOLDER}/json
+ - BSF_JSON_FILE: esc/bsf/bsfmgr/src/main/resources/pmbr/configs/group.json
+ - BSF_DIAMETER_JSON_FILE: esc/bsf/bsfmgr/src/main/resources/pmbr/configs/group-diameter.json
+ - RLF_JSON_FILE: esc/rlf/src/main/resources/pmbr/configs/group.json
+ - SCP_JSON_FILE: esc/scp/scpmgr/src/main/resources/pmbr/configs/group.json
+ - SEPP_JSON_FILE: esc/sepp/seppmgr/src/main/resources/pmbr/configs/group.json
+ - YANG_STANDALONE_UTILS_VERSION: 1.29.0-74
+
+
+var:
+ - cpi-version
+ - ericsson-yang-utilities-standalone-version
+ - importyangfile2exclude
+ - package
+ - releasepackage
+ - svc
+ - yangfile
+ - yangmodule
+
+
+env:
+ - COMPONENT
+ - LONGINT (default= )
+ - RELEASE_PACKAGE
+ - USER (default=anonymous)
+
+rules:
+ init:
+    - task: create-output-dir
+      cmd: mkdir -p ${OUTPUT_DIR}
+    - rule: ericsson-yang-utils
+    - task: set-nf-module
+      cmd: /bin/bash -c "if [ "${env.COMPONENT}" == "PVTB" ];
+                         then
+                           echo ericsson-vtap-pc5gc | tr '[:upper:]' '[:lower:]' > ${OUTPUT_DIR}/var.yangmodule;
+                         elif [ "${env.COMPONENT}" == "DIAMETER" ];
+                         then
+                           echo ericsson-diameter-adp | tr '[:upper:]' '[:lower:]' > ${OUTPUT_DIR}/var.yangmodule;
+                         else
+                           echo ericsson-${env.COMPONENT} | tr '[:upper:]' '[:lower:]' > ${OUTPUT_DIR}/var.yangmodule;
+                         fi;"
+    - task: set-package-name
+      cmd: /bin/bash -c "if [ "${env.COMPONENT}" == "CSA" ];
+                         then
+                           echo ${PACKAGE}.scp | tr '[:upper:]' '[:lower:]' > ${OUTPUT_DIR}/var.package;
+                         elif [ "${env.COMPONENT}" == "DIAMETER" ];
+                         then
+                           echo "com.ericsson.esc.services.cm.model.diameter_adp" > ${OUTPUT_DIR}/var.package;
+                         else
+                           echo ${MODEL_PACKAGE}.${env.COMPONENT}.model | tr '[:upper:]' '[:lower:]' > ${OUTPUT_DIR}/var.package;
+                         fi;"
+    - task: set-version
+      cmd: /bin/bash -c "if [ -e ${OUTPUT_DIR}/var.cpi-version ];
+                        then
+                              echo $(($(cat '${OUTPUT_DIR}/var.cpi-version')+1)) > ${OUTPUT_DIR}/var.cpi-version;
+                        else
+                              echo 1 > ${OUTPUT_DIR}/var.cpi-version;
+                        fi;"
+    - task: determine-import-to-exclude
+      cmd: /bin/bash -c "if [ "${env.COMPONENT}" == "SCP" ] || [ "${env.COMPONENT}" == "PVTB" ] ||[ "${env.COMPONENT}" == "BSF" ] || [ "${env.COMPONENT}" == "SC" ];
+                        then
+                              echo 'ericsson-sc-common.yang iana-asymmetric-algs@2019-11-20.yang iana-symmetric-algs@2019-11-20.yang ietf-crypto-types@2019-11-20.yang ietf-keystore@2019-11-20.yang ietf-truststore@2019-11-20.yang ietf-netconf-acm@2018-02-14.yang' > ${OUTPUT_DIR}/var.importyangfile2exclude;
+                        elif [ "${env.COMPONENT}" == "DIAMETER" ] || [ "${env.COMPONENT}" == "SEPP" ];
+                        then
+                              echo 'ericsson-sc-common.yang' > ${OUTPUT_DIR}/var.importyangfile2exclude;
+                        else
+                              echo 'ericsson-sc-common-r16.yang iana-asymmetric-algs@2019-11-20.yang iana-symmetric-algs@2019-11-20.yang ietf-crypto-types@2019-11-20.yang ietf-keystore@2019-11-20.yang ietf-truststore@2019-11-20.yang ietf-netconf-acm@2018-02-14.yang' > ${OUTPUT_DIR}/var.importyangfile2exclude;
+                        fi;"
+
+ conditions:
+    - task: ericsson-yang-utils-not-found
+      cmd: test ! -f ${OUTPUT_DIR}/ericsson-yang-utilities-standalone.jar
+    - task: ericsson-yang-utils-version-not-equal
+      cmd: test "$(cat ${OUTPUT_DIR}/var.ericsson-yang-utilities-standalone)" != "${YANG_STANDALONE_UTILS_VERSION}"
+
+ ericsson-yang-utils:
+    - task: fetch
+      condition: conditions:ericsson-yang-utils-not-found OR conditions:ericsson-yang-utils-version-not-equal
+      cmd:
+        - wget --no-verbose -P ${OUTPUT_DIR} https://eecs-eclipse.sero.wh.rnd.internal.ericsson.com/updates/customer/dx/dropbox/yt-utilities/cmyp-certified-releases/ericsson-yang-utilities-standalone-${YANG_STANDALONE_UTILS_VERSION}.jar
+        - mv ${OUTPUT_DIR}/ericsson-yang-utilities-standalone-${YANG_STANDALONE_UTILS_VERSION}.jar ${OUTPUT_DIR}/ericsson-yang-utilities-standalone.jar
+        - java -jar ${OUTPUT_DIR}/ericsson-yang-utilities-standalone.jar --version  | awk '{print $1}' > ${OUTPUT_DIR}/var.ericsson-yang-utilities-standalone
+
+ setreleasepackageversion:
+    - task: set-release-package-version
+      cmd: /bin/bash -c "echo ${RELEASEPACKAGE} > ${OUTPUT_DIR}/var.releasepackage"
+
+ zipyangfiles:
+   - task: copy
+     cmd: /bin/bash -c "if [[ -f ${FOLDER}/YANG-files.zip ]];
+                        then
+                              cp ${FOLDER}/YANG-files.zip ${FOLDER}/YANG-files-old.zip;
+                              rm ${FOLDER}/YANG-files.zip;
+                        fi;"
+   - task: zip
+     cmd: /bin/bash -c "cd ${YANG_DEPENDENCIES}/ && zip -r ../../../../../../../../../../../../../${FOLDER}/YANG-files.zip *.yang -x ${var.importyangfile2exclude} && cd - &&
+                        if [ "${env.COMPONENT}" != "SC" ];
+                        then
+                          if [ "${env.COMPONENT}" == "ALL" ];
+                          then
+                             cd ${YANG_MODEL}/ && zip -r ../../../../../../../../../../../../${FOLDER}/YANG-files.zip *.yang -x ericsson-csa.yang && cd -;
+                          else
+                            cd ${YANG_MODEL}/ && zip -r ../../../../../../../../../../../../${FOLDER}/YANG-files.zip ${var.yangmodule}.yang && cd -;
+                          fi;
+                        fi;"
+
+ generate:
+   - task: clean
+     cmd: /bin/bash -c "rm -rf ${FOLDER}/java-gen &&  rm -f ${FOLDER}/models.json && rm -rf ${FOLDER}/preprocess && rm -rf ${FOLDER}/schema;"
+   - task: validate
+     docker-image: base.java-maven-builder
+     cmd: /bin/bash -c "if [ "${env.COMPONENT}" == "PVTB" ] || [ "${env.COMPONENT}" == "DIAMETER" ];
+                        then
+                          java --add-opens java.base/java.lang=ALL-UNNAMED -jar ${OUTPUT_DIR}/ericsson-yang-utilities-standalone.jar yangval --files ${YANG_EXTERNAL}/${var.yangmodule}.yang --module-dirs ${YANG_DEPENDENCIES};
+                        else
+                          java --add-opens java.base/java.lang=ALL-UNNAMED -jar ${OUTPUT_DIR}/ericsson-yang-utilities-standalone.jar yangval --files ${YANG_MODEL}/${var.yangmodule}.yang --module-dirs ${YANG_DEPENDENCIES};
+                        fi;"
+   - task: preprocess
+     docker-image: base.java-maven-builder
+     cmd: /bin/bash -c "if [ "${env.COMPONENT}" == "PVTB" ] || [ "${env.COMPONENT}" == "DIAMETER" ];
+                        then
+                          java --add-opens java.base/java.lang=ALL-UNNAMED -jar ${OUTPUT_DIR}/ericsson-yang-utilities-standalone.jar eyang-preprocessor --generate-extension-for adp --state-data-node-xpaths ${YANG_MODEL}/statedata/${var.yangmodule} --files ${YANG_EXTERNAL}/${var.yangmodule}.yang ${YANG_DEPENDENCIES}/*.yang --module-dirs ${YANG_DEPENDENCIES} -o ${FOLDER}/preprocess; echo ${FOLDER}/preprocess> ${OUTPUT_DIR}/var.yangfile;
+                        else
+                          java --add-opens java.base/java.lang=ALL-UNNAMED -jar ${OUTPUT_DIR}/ericsson-yang-utilities-standalone.jar eyang-preprocessor --generate-extension-for adp --state-data-node-xpaths ${YANG_MODEL}/statedata/${var.yangmodule} --files ${YANG_MODEL}/${var.yangmodule}.yang ${YANG_DEPENDENCIES}/*.yang --module-dirs ${YANG_DEPENDENCIES} -o ${FOLDER}/preprocess; echo ${FOLDER}/preprocess> ${OUTPUT_DIR}/var.yangfile;
+                        fi;"
+   - task: adapt-import-yang-file
+     cmd: /bin/bash -c "cd ${FOLDER}/preprocess/; rm -f ${var.importyangfile2exclude}; cd -;"
+   - task: model
+     docker-image: base.java-maven-builder
+     cmd: /bin/bash -c "java --add-opens java.base/java.lang=ALL-UNNAMED -jar ${OUTPUT_DIR}/ericsson-yang-utilities-standalone.jar adp-models-generator --files ${var.yangfile}/*.yang --imported-modules iana-asymmetric-algs@2019-11-20.yang iana-symmetric-algs@2019-11-20.yang ietf-keystore@2019-11-20.yang ietf-truststore@2019-11-20.yang --module-dirs ${YANG_DEPENDENCIES} -o ${FOLDER}"
+
+#Sometimes the first validation will fail, because the adp-models-generator creates a yangfile needed for the inputfile (ie 5gcudmpol-common)
+   - task: validatePreprocessed
+     docker-image: base.java-maven-builder
+     cmd: /bin/bash -c "java --add-opens java.base/java.lang=ALL-UNNAMED -jar ${OUTPUT_DIR}/ericsson-yang-utilities-standalone.jar yangval --files ${var.yangfile}/*.yang  --module-dirs ${YANG_DEPENDENCIES}"
+   - task: schema
+     docker-image: base.java-maven-builder
+     cmd: /bin/bash -c "java --add-opens java.base/java.lang=ALL-UNNAMED -jar ${OUTPUT_DIR}/ericsson-yang-utilities-standalone.jar jsonschema-generator --ignore-rfc7951-prefixing-for-extension-modules --check-linking-error false --include-actions true --configuration ${FOLDER}/models.json --files ${var.yangfile}/${var.yangmodule}.yang --module-dirs ${YANG_DEPENDENCIES} -o ${FOLDER}/schema && sed -i 's/number/integer/g' ${FOLDER}/schema/${var.yangmodule}.json"
+   - task: postProcess
+     cmd: /bin/bash -c "if [ "${env.COMPONENT}" == "SEPP" ] || [ "${env.COMPONENT}" == "SCP" ] || [ "${env.COMPONENT}" == "BSF" ];
+                        then
+                          python3 scripts/processJsonSchema.py --packageName ${var.package} --commonPkgName ${MODEL_PACKAGE} --gluePkgName ${GLUE_PACKAGE} --nfmPkgName ${NFM_PACKAGE} --schemaName ${var.yangmodule} --output ${FOLDER}/schema;
+                        fi;"
+   - task: java-classes
+     cmd: /bin/bash -c "if [ "${env.COMPONENT}" == "SEPP" ] || [ "${env.COMPONENT}" == "SCP" ] || [ "${env.COMPONENT}" == "BSF" ];
+                        then
+                          sed -i -r 's/("uniqueItems"[^a-z]+)true/\1false/g' ${FOLDER}/schema/${var.yangmodule}-processed.json;
+                          ${TOOLS}/jsonschema2pojo-1.0.0/bin/jsonschema2pojo ${env.LONGINT} --source ${FOLDER}/schema/${var.yangmodule}-processed.json --target ${FOLDER}/java-gen --generate-builders --package ${var.package};
+                        else
+                          ${TOOLS}/jsonschema2pojo-1.0.0/bin/jsonschema2pojo ${env.LONGINT} --source ${SOURCE} --target ${FOLDER}/java-gen --generate-builders --package ${var.package};
+                        fi;"
+   - task: archive
+     cmd: /bin/bash -c "cp ${FOLDER}/models.json ${var.yangfile}/; cd ${var.yangfile}/ && tar zcf ../${var.yangmodule}.tar.gz *.yang models.json && cd -"
+#to generate the zip file needed for the CPI you need to execute publish first
+
+ cpi:
+   - task: zip
+     cmd: /bin/bash -c "cd ${YANG_DEPENDENCIES}/ && zip -r ../../../../../../../../../../../../../${FOLDER}/YANG-files.zip *.yang -x ${var.importyangfile2exclude} && cd - && cd ${YANG_MODEL}/ && zip -r ../../../../../../../../../../../../${FOLDER}/YANG-files.zip ${var.yangmodule}.yang && cd -"
+   - task: test
+     cmd: /bin/bash -c "cd ${TOOLS}/MAKEMOMC/ && ./makemomc -inp ../../../${FOLDER}/YANG-files.zip -eoi -tit '${CPI_TITLE}' -oud ../../../yang/ -num '${CPI_PROD_NUM}' -lng 'en' -rev 'PB${var.cpi-version}' -log cpi_log.txt && cd -"
+
+   - task: delivery
+     cmd: /bin/bash -c "cd ${TOOLS}/MAKEMOMC/ && ./makemomc -inp ../../../${FOLDER}/YANG-files.zip -cpi -eoi -tit '${CPI_TITLE}' -num '${CPI_PROD_NUM}' -lng 'en' -rev 'PB${var.cpi-version}' -log cpi_log.txt && cd -"
+
+##### Move generated files to required location -> update to make generic #################################
+ copy-output:
+   - task: generate-nf-name
+     cmd: /bin/bash -c "if [ "${env.COMPONENT}" == "PVTB" ];
+                        then
+                          echo scp  | tr '[:upper:]' '[:lower:]' > ${OUTPUT_DIR}/var.svc;
+                        else
+                          echo ${env.COMPONENT}  | tr '[:upper:]' '[:lower:]' > ${OUTPUT_DIR}/var.svc;
+                        fi;"
+   - task: make-archive-folder
+     cmd: mkdir -p ${OUTPUT_DIR}/eric-${var.svc}/configarchives
+   - task: tar-file
+     cmd: /bin/bash -c "if [ "${env.COMPONENT}" == "PVTB" ] || [ "${env.COMPONENT}" == "SCP" ]; 
+                        then 
+                          cp ${FOLDER}/${var.yangmodule}.tar.gz ${OUTPUT_DIR}/eric-${var.svc}/configarchives/;
+                        else
+                          mkdir -p esc/${var.svc}/${var.svc}mgr/target/classes/com/ericsson/sc/${var.svc}/model;
+                          cp ${FOLDER}/${var.yangmodule}.tar.gz esc/${var.svc}/${var.svc}mgr/target/classes/com/ericsson/sc/${var.svc}/model;
+                        fi;"
+   - task: schema
+     cmd: /bin/bash -c "if [ "${env.COMPONENT}" == "PVTB" ] || [ "${env.COMPONENT}" == "SCP" ]; 
+                        then
+                          cp ${FOLDER}/schema/*.json ${OUTPUT_DIR}/eric-${var.svc}/configarchives/;
+                        else
+                          cp ${FOLDER}/schema/*.json esc/${var.svc}/${var.svc}mgr/target/classes/com/ericsson/sc/${var.svc}/model;
+                        fi;"
+  #  - task: java-classes
+    # cmd: /bin/bash -c "cp ${FOLDER}/java-gen/com/ericsson/esc/services/cm/model/*.java ${COMMON_MODEL}" #
+
+ copy-output-cncs:
+   - task: generate-nf-name
+     cmd: /bin/bash -c "if [ "${env.COMPONENT}" == "PVTB" ];
+                        then
+                          echo scp  | tr '[:upper:]' '[:lower:]' > ${OUTPUT_DIR}/var.svc;
+                        else
+                          echo ${env.COMPONENT}  | tr '[:upper:]' '[:lower:]' > ${OUTPUT_DIR}/var.svc;
+                        fi;"
+   - task: tar-file
+     cmd: /bin/bash -c "if [ "${env.COMPONENT}" == "PVTB" ] || [ "${env.COMPONENT}" == "SCP" ];
+                        then
+                          mkdir -p ./eric-${var.svc}/charts/eric-${var.svc}/configarchives;
+                          cp ${FOLDER}/${var.yangmodule}.tar.gz ./eric-${var.svc}/charts/eric-${var.svc}/configarchives/;
+                        else
+                          mkdir -p esc/${var.svc}/${var.svc}mgr/target/classes/com/ericsson/sc/${var.svc}/model;
+                          cp ${FOLDER}/${var.yangmodule}.tar.gz esc/${var.svc}/${var.svc}mgr/target/classes/com/ericsson/sc/${var.svc}/model;
+                        fi;"
+   - task: schema
+     cmd: /bin/bash -c "if [ "${env.COMPONENT}" == "PVTB" ] || [ "${env.COMPONENT}" == "SCP" ];
+                        then
+                          cp ${FOLDER}/schema/*.json ./eric-${var.svc}/charts/eric-${var.svc}/configarchives/;
+                        else
+                          cp ${FOLDER}/schema/*.json esc/${var.svc}/${var.svc}mgr/target/classes/com/ericsson/sc/${var.svc}/model;
+                        fi;"
+###########################################################################################################
+
+ publish:
+   - task: check_package
+     cmd: /bin/bash -c "echo 'Release version extracted from file '5g_proto/VERSION_PREFIX' is'${COLON} ${var.releasepackage};"
+   - task: copy
+     cmd: /bin/bash -c "if [[ -f ${FOLDER}/YANG-files.zip ]];
+                        then
+                              cp ${FOLDER}/YANG-files.zip ${FOLDER}/YANG-files-old.zip;
+                              rm ${FOLDER}/YANG-files.zip;
+                        fi;"
+   - task: zip
+     cmd: /bin/bash -c "cd ${YANG_DEPENDENCIES}/ && zip -r ../../../../../../../../../../../../../${FOLDER}/YANG-files.zip *.yang -x ${var.importyangfile2exclude} && cd - &&
+                        if [ "${env.COMPONENT}" != "SC" ];
+                        then
+                         cd ${YANG_MODEL}/ && zip -r ../../../../../../../../../../../../${FOLDER}/YANG-files.zip ${var.yangmodule}.yang && cd -;
+                        fi;"
+   - task: validate
+     cmd: /bin/bash -c "mkdir -p ${IMF_OUTPUT}/validate && java -jar ./${TOOLS}/${IMFTOOL}/imfyangcli.jar --validate ${FOLDER}/YANG-files.zip --signum ${env.USER} --component ${env.COMPONENT} --package ${var.releasepackage} --output_directory ${IMF_OUTPUT}/validate"
+   - task: check-bwc
+     cmd: /bin/bash -c "java -jar ${TOOLS}/${IMFTOOL}/imfyangcli.jar --mbwc --newzip ${FOLDER}/YANG-files.zip --oldzip ${FOLDER}/YANG-files-old.zip --signum ${env.USER} --output_directory ${IMF_OUTPUT}/"
+   - task: zip-only-sc-yang-files
+     cmd: /bin/bash -c "mv ${FOLDER}/YANG-files.zip ${FOLDER}/YANG-files-complete.zip && cd ${YANG_DEPENDENCIES}/ && cd - &&
+                        if [ "${env.COMPONENT}" == "SC" ];
+                        then
+                          cd ${YANG_DEPENDENCIES}/ && zip -r ../../../../../../../../../../../../../${FOLDER}/YANG-files.zip ericsson-sc-*.yang -x ${var.importyangfile2exclude};
+                        else
+                          cd ${YANG_MODEL}/ && zip -r ../../../../../../../../../../../../${FOLDER}/YANG-files.zip ${var.yangmodule}.yang && cd -;
+                        fi;"
+   - task: publish
+     cmd: /bin/bash -c "java -jar ${TOOLS}/${IMFTOOL}/imfyangcli.jar --publish ${FOLDER}/YANG-files.zip --signum ${env.USER} --component ${env.COMPONENT} --package ${var.releasepackage} --output_directory ${IMF_OUTPUT}/; mv ${FOLDER}/YANG-files-complete.zip ${FOLDER}/YANG-files.zip"
+
+ create-enm-package:
+   - task: clean:cleanEnm
+   - task: get-yang-tools
+     cmd:
+       - mkdir -p ${ENM_OUTPUT_DIR}
+       - wget --no-verbose -P ${ENM_OUTPUT_DIR} https://arm1s11-eiffel004.eiffel.gic.ericsson.se:8443/nexus/service/local/repositories/releases/content/com/ericsson/oss/mediation/modeling/yangtools/yang-standalone-validator/${ENM_VALIDATOR_VERSION}/yang-standalone-validator-${ENM_VALIDATOR_VERSION}.jar
+       #TODO: Fetch from the web
+       - cp ${ENM_FOLDER}/files/yang-validator-severities.txt ${ENM_OUTPUT_DIR}/yang-validator-severities.txt
+   - task: create-yang-folder
+     cmd:
+       - mkdir -p ${ENM_OUTPUT_DIR}/yang/yang_library/modules/adp
+       - cp ${ENM_FOLDER}/files/adp/* ${ENM_OUTPUT_DIR}/yang/yang_library/modules/adp
+       - ln -s ../../../../../esc/common/src/main/resources/com/ericsson/esc/services/cm/model/yang/ericsson-bsf.yang ${ENM_OUTPUT_DIR}/yang/yang_library/modules/ericsson-bsf.yang
+       - ln -s ../../../../../esc/common/src/main/resources/com/ericsson/esc/services/cm/model/yang/import/ericsson-sc-common-r16.yang ${ENM_OUTPUT_DIR}/yang/yang_library/modules/ericsson-sc-common-r16.yang
+       - ln -s ../../../../../esc/common/src/main/resources/com/ericsson/esc/services/cm/model/yang/ericsson-scp.yang ${ENM_OUTPUT_DIR}/yang/yang_library/modules/ericsson-scp.yang
+       - ln -s ../../../../../esc/common/src/main/resources/com/ericsson/esc/services/cm/model/yang/ericsson-sepp.yang ${ENM_OUTPUT_DIR}/yang/yang_library/modules/ericsson-sepp.yang
+       - ln -s ../../../../../esc/common/src/main/resources/com/ericsson/esc/services/cm/model/yang/import/ericsson-yang-extensions.yang ${ENM_OUTPUT_DIR}/yang/yang_library/modules/ericsson-yang-extensions.yang
+       - ln -s ../../../../../esc/common/src/main/resources/com/ericsson/esc/services/cm/model/yang/import/ericsson-yang-types.yang ${ENM_OUTPUT_DIR}/yang/yang_library/modules/ericsson-yang-types.yang
+       - ln -s ../../../../../esc/common/src/main/resources/com/ericsson/esc/services/cm/model/yang/import/ietf-inet-types.yang ${ENM_OUTPUT_DIR}/yang/yang_library/modules/ietf-inet-types.yang
+       - ln -s ../../../../../esc/common/src/main/resources/com/ericsson/esc/services/cm/model/yang/import/ietf-yang-types.yang ${ENM_OUTPUT_DIR}/yang/yang_library/modules/ietf-yang-types.yang
+       - ln -s ../../../../../esc/common/src/main/resources/com/ericsson/esc/services/cm/model/yang/import/tailf-cli-extensions.yang ${ENM_OUTPUT_DIR}/yang/yang_library/modules/tailf-cli-extensions.yang
+       - ln -s ../../../../../esc/common/src/main/resources/com/ericsson/esc/services/cm/model/yang/import/tailf-common.yang ${ENM_OUTPUT_DIR}/yang/yang_library/modules/tailf-common.yang
+       - ln -s ../../../../../esc/common/src/main/resources/com/ericsson/esc/services/cm/model/yang/import/tailf-meta-extensions.yang ${ENM_OUTPUT_DIR}/yang/yang_library/modules/tailf-meta-extensions.yang
+   - task: generate-models-json
+     docker-image: base.java-maven-builder
+     cmd: java -jar ${OUTPUT_DIR}/ericsson-yang-utilities-standalone.jar adp-models-generator --files ${ENM_YANG_FOLDER}/yang_library/modules/\*.yang --module-dirs ${ENM_YANG_FOLDER}/yang_library/modules/ --output-dir ${ENM_YANG_FOLDER}/yang_library/
+   - task: generate-intermediate-library
+     docker-image: base.java-maven-builder
+     cmd: java -jar ${OUTPUT_DIR}/ericsson-yang-utilities-standalone.jar adp2ietf-yang-library-instance --files ${ENM_YANG_FOLDER}/yang_library/models.json --module-dirs ${ENM_YANG_FOLDER}/yang_library/modules --instance-data-set-name sc_yang_library_intermediate --output-dir ${ENM_YANG_FOLDER}/yang_library
+   - task: merge-intermediate-with-adp-library
+     docker-image: base.java-maven-builder
+     cmd: java -jar ${OUTPUT_DIR}/ericsson-yang-utilities-standalone.jar ietf-yang-library-merger --files ${ENM_YANG_FOLDER}/yang_library/sc_yang_library_intermediate.xml ${ENM_YANG_FOLDER}/yang_library/modules/adp/cmyp_yang_library.xml --output-dir ${ENM_YANG_FOLDER}/yang_library/ --instance-data-set-name sc_yang_library
+   - task: prepare-delivery-folder
+     cmd:
+       - mkdir -p ${ENM_DELIVERY_FOLDER}
+       - cp -r -L enm/* ${ENM_DELIVERY_FOLDER}
+       - rm -rf ${ENM_DELIVERY_FOLDER}/files
+   - task: copy-generated-library-to-delivery-folder
+     cmd: cp ${ENM_YANG_FOLDER}/yang_library/sc_yang_library.xml ${ENM_DELIVERY_FOLDER}/yang_data/
+   - task: validate-yang
+     docker-image: base.java-maven-builder
+     cmd: java --add-modules java.xml.bind -cp ${ENM_OUTPUT_DIR}/yang-standalone-validator-${ENM_VALIDATOR_VERSION}.jar com.ericsson.oss.mediation.modeling.yangtools.validator.standalone.ui.StandaloneValidatorCliMain ${ENM_DELIVERY_FOLDER}/ -data ${ENM_DELIVERY_FOLDER}/ -severities-file ${ENM_OUTPUT_DIR}/yang-validator-severities.txt -useYangLibraryAsSourceOfModules -ignoreModulesNotReferencedByYangLibrary > ${ENM_OUTPUT_DIR}/enm_yang_validator_log_${ENM_SC_VERSION}.log
+   - task: show-result
+     cmd:
+       - echo "----- Checking validator output file for Errors. -----"
+       - if grep -c "ERROR" ${ENM_OUTPUT_DIR}/enm_yang_validator_log_${ENM_SC_VERSION}.log; then echo "----- Errors found, please check the validator logfile. -----"; else echo "----- No errors found in validator logfile. -----"; fi
+   - task: copy-json-files
+     cmd:
+       - mkdir -p ${ENM_JSON_FOLDER}
+       - cp ${BSF_JSON_FILE} ${ENM_JSON_FOLDER}/BSF_group.json
+       - cp ${BSF_DIAMETER_JSON_FILE} ${ENM_JSON_FOLDER}/BSF_DIAMETER_group.json
+       - cp ${RLF_JSON_FILE} ${ENM_JSON_FOLDER}/RLF_group.json
+       - cp ${SCP_JSON_FILE} ${ENM_JSON_FOLDER}/SCP_group.json
+       - cp ${SEPP_JSON_FILE} ${ENM_JSON_FOLDER}/SEPP_group.json
+   - task: create-package
+     cmd:
+       - cd ${ENM_OUTPUT_DIR}; zip -q -r SC_${ENM_SC_VERSION}.zip SC_${ENM_SC_VERSION}/
+       - mkdir -p ${ENM_OUTPUT_DIR}/upload
+       - mv ${ENM_OUTPUT_DIR}/SC_${ENM_SC_VERSION}.zip ${ENM_OUTPUT_DIR}/enm_yang_validator_log_${ENM_SC_VERSION}.log ${ENM_OUTPUT_DIR}/upload
+
+
+ clean:
+   - task: cleanPreprocessing
+     cmd: /bin/bash -c "rm ${var.yangfile}/*.yang "
+   - task: cleanSchemata
+     cmd: /bin/bash -c "rm ${FOLDER}/schema/*.json"
+   - task: cleanJavaClasses
+     cmd: /bin/bash -c "rm -rf ${FOLDER}/java-gen/*"
+   - task: cleanArchive
+     cmd: /bin/bash -c "rm ${FOLDER}/ericsson-bsf.tar.gz"
+   - task: cleanOutput
+     cmd: /bin/bash -c "rm ${IMF_OUTPUT}/validate/* ${IMF_OUTPUT}/bwc/* ${IMF_OUTPUT}/publish/*"
+   - task: cleanEnm
+     cmd: rm -rf ${ENM_OUTPUT_DIR}
+   - task: ericsson-yang-utilities-standalone
+     cmd:
+       - rm -rf ${OUTPUT_DIR}/ericsson-yang-utilities-standalone.jar
+       - rm -rf ${OUTPUT_DIR}/var.ericsson-yang-utilities-standalone

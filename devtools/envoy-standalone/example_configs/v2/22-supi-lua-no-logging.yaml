@@ -1,0 +1,131 @@
+# Scenario 22:
+# same as 21, but all logging (access log and lua-logging) removed for
+# benchmarking
+
+admin:
+  access_log_path: /tmp/admin_access.log
+  address:
+    socket_address:
+      protocol: TCP
+      address: localhost
+      port_value: 9901
+static_resources:
+  listeners:
+  - name: listener_0
+    address:
+      socket_address:
+        protocol: TCP
+        address: 0.0.0.0
+        port_value: 80
+    filter_chains:
+    - filters:
+      - name: envoy.http_connection_manager
+        config:
+          stat_prefix: chf_ingress_http
+          route_config:
+            name: local_route
+            virtual_hosts:
+            - name: local_service
+              domains: ["*"]
+              routes:
+              - match:
+                  prefix: "/"
+                route:
+                  cluster_header: "x-province"
+          http_filters:
+          - name: envoy.lua
+            config:
+              inline_code: |
+                function envoy_on_request(request_handle)
+                  local json = require "/json" -- this is /json.lua in the container
+                  local raw_body_buffer = request_handle:body()
+                  local raw_body = raw_body_buffer:getBytes(0, raw_body_buffer:length())
+                  local body = json.decode(raw_body) 
+                  if (body)
+                  then
+                    local supi = body["subscriberIdentifier"]["supi"]
+                    if (supi)
+                    then
+                      local ni_headers = {
+                        [":method"] = "GET",
+                        [":path"] = "/supi4province/",
+                        [":authority"] = "nrfinterrogator",
+                        ["supi"] = supi,
+                        ["target-nrf-type"] = "CHF",
+                        ["service-name"] = "converged_charging"
+                      }
+                      local headers, body = request_handle:httpCall("nrf-interrogator", ni_headers, "", 10000)
+                      local province = headers["province-name"]
+                      if (province)
+                      then
+                        request_handle:headers():add("x-province", province)
+                      end
+                    end
+                  end
+                end
+          - name: envoy.router
+  clusters:
+  - name: nrf-interrogator
+    connect_timeout: 0.25s
+    type: STRICT_DNS
+    # Comment out the following line to test on v6 networks
+    dns_lookup_family: V4_ONLY
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: nrf-interrogator
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: nrf-interrogator.5g-bsf-eedala.svc.cluster.local
+                port_value: 80
+
+  - name: provinceA
+    connect_timeout: 0.25s
+    type: STRICT_DNS
+    # Comment out the following line to test on v6 networks
+    dns_lookup_family: V4_ONLY
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: chf-provinceA
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: eric-chfsim-1.5g-bsf-eedala.svc.cluster.local
+                port_value: 80
+
+  - name: provinceB
+    connect_timeout: 0.25s
+    type: STRICT_DNS
+    # Comment out the following line to test on v6 networks
+    dns_lookup_family: V4_ONLY
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: chf-provinceB
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: eric-chfsim-2.5g-bsf-eedala.svc.cluster.local
+                port_value: 80
+
+  - name: provinceC
+    connect_timeout: 0.25s
+    type: STRICT_DNS
+    # Comment out the following line to test on v6 networks
+    dns_lookup_family: V4_ONLY
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: chf-provinceC
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: eric-chfsim-3.5g-bsf-eedala.svc.cluster.local
+                port_value: 80
+

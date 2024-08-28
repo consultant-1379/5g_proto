@@ -1,0 +1,101 @@
+<?xml version="1.0" ?>
+<!-- ericsson-stm-diameter-instances 0.1.8 -->
+<!-- modified: 2021-05-25 -->
+<!-- Copyright (c) 2020 Ericsson AB. All rights reserved.     -->
+<config xmlns="http://tail-f.com/ns/config/1.0">
+    <fm xmlns="urn:rdns:com:ericsson:oammodel:ericsson-fm">
+		<alarm-model>
+            <id>eric-stm-diameter</id>
+            <alarm-type>
+                <id>DiaadpManagedObjectDisabled</id>
+				<major-type>193</major-type>
+                <minor-type>‭10354689</minor-type>
+				<specific-problem>DIA Diameter Managed Object Disabled</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause>14</probable-cause>
+				<additional-text></additional-text>
+				<default-severity>minor</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>DiaadpConfigurationFailure</id>
+				<major-type>193</major-type>
+                <minor-type>‭10354690</minor-type>
+				<specific-problem>DIA Diameter Configuration Failure</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause>14</probable-cause>
+				<additional-text>config is not valid |\n config schema does not match |\n (diameter-parsing-result)</additional-text>
+				<default-severity>major</default-severity>
+            </alarm-type>
+			<alarm-type>
+                <id>DiaadpConfigurationIncomplete</id>
+				<major-type>193</major-type>
+                <minor-type>‭10354691</minor-type>
+				<specific-problem>DIA Diameter Configuration Incomplete</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause>14</probable-cause>
+				<additional-text>(node) not found (id) |\n Faulty referenced service object (id) is unavailable for (id) |\n TSL profile has invalid truststore-reference |\n TSL profile is not valid: load certificate file failed</additional-text>
+				<default-severity>minor</default-severity>
+            </alarm-type>
+			<alarm-type>
+                <id>DiaadpConfigurationAmbiguous</id>
+				<major-type>193</major-type>
+                <minor-type>‭10354692</minor-type>
+				<specific-problem>DIA Diameter Configuration Ambiguous</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause>14</probable-cause>
+				<additional-text>Peer (originHost) ambiguous, matching hosts dynamic-peer-acceptor (id), static-peer (id) |\n Only auth_application_id or only acct_application_id can have value |\n Object duplicated</additional-text>
+				<default-severity>warning</default-severity>
+            </alarm-type>
+			<alarm-type>
+                <id>DiaadpPeerUnavailable</id>
+				<major-type>193</major-type>
+                <minor-type>‭10354693</minor-type>
+				<specific-problem>DIA Diameter Peer Unavailable</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause>14</probable-cause>
+				<additional-text>Peer (origin-host) unavailable for (service-id)</additional-text>
+				<default-severity>major</default-severity>
+            </alarm-type>
+			<alarm-type>
+                <id>DiaadpPeerConnNrBelowLevel</id>
+				<major-type>193</major-type>
+                <minor-type>‭10354694</minor-type>
+				<specific-problem>DIA Diameter Peer Connection Number Below Required Level</specific-problem>
+                <event-type>quality-of-service-alarm</event-type>
+                <probable-cause>351</probable-cause>
+				<additional-text>The number of connections (act-nr) is below the required (req-nr), service: (service-id)</additional-text>
+				<default-severity>warning</default-severity>
+            </alarm-type>
+			<alarm-type>
+                <id>DiaadpCommFailure</id>
+				<major-type>193</major-type>
+                <minor-type>‭10354695</minor-type>
+				<specific-problem>DIA Diameter Communication Failure</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause>14</probable-cause>
+				<additional-text>CURL request failed (rc)</additional-text>
+				<default-severity>major</default-severity>
+            </alarm-type>
+			<alarm-type>
+                <id>DiaadpConfigurationSchemaError</id>
+				<major-type>193</major-type>
+                <minor-type>‭10354696</minor-type>
+				<specific-problem>DIA Diameter Configuration Schema Error</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause>14</probable-cause>
+				<additional-text>Schema error: [(cmm-error) |\n deployed diameter schema (version) is [older than |\n not compatible with] the actual version stored in CMM (version)]</additional-text>
+				<default-severity>major</default-severity>
+            </alarm-type>
+			<alarm-type>
+                <id>DiaadpTranspVulnerability</id>
+				<major-type>193</major-type>
+                <minor-type>‭10354697</minor-type>
+				<specific-problem>DIA Diameter Transport Vulnerability</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause>402</probable-cause>
+				<additional-text>Unsecured local-endpoint: (id)[,(id)] |\n Weak tls-profile: (id)[,(id)] |\n Not validated peers on local-endpoint: (id)[,(id)]</additional-text>
+				<default-severity>warning</default-severity>
+            </alarm-type>
+        </alarm-model>	
+    </fm>
+</config>

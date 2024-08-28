@@ -1,0 +1,230 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "file:///schemas/ApplicationReport#",
+  "description": "Application Information Reporting schema. V 1.2.0",
+  "type": "object",
+  "required": [
+    "applicationInstanceIdentity",
+    "reportProducer",
+    "reportContent"
+  ],
+  "properties": {
+    "applicationInstanceIdentity": {
+      "description": "The unique identity of the Application Instance being reported",
+      "type": "string"
+    },
+    "reportProducer": {
+      "description": "The unique identity of the entity that has produced the report",
+      "type": "string"
+    },
+    "reportContent": {
+      "description": "The payload of the report.",
+      "type": "object",
+      "properties": {
+        "productName": {
+          "description": "The top level name of the Application as defined in the Ericsson product register. Corresponds to productName in ECIM SWiM 1.2.1 and product-name in Ericsson SwIM Yang Model 1.1.0",
+          "type": "string"
+        },
+        "productNumber": {
+          "description": "The top level official Ericsson number of the Application as defined in the Ericsson product register. Corresponds to productNumber in ECIM SWiM 1.2.1 and product-number in Ericsson SwIM Yang Model 1.1.0",
+          "type": "string"
+        },
+        "productRevision": {
+          "description": "The top level official Ericsson revision of the Application as defined in the Ericsson product register. Corresponds to productRevision in ECIM SWiM 1.2.1 and product-revision in Ericsson SwIM Yang Model 1.1.0",
+          "type": "string"
+        },
+        "productDescription": {
+          "description": "A descriptive name for the product. Corresponds to description in ECIM SWiM 1.2.1 and description in Ericsson SwIM Yang Model 1.1.0",
+          "type": "string"
+        },
+        "productType": {
+          "description": "Further information on the product. Corresponds to type in ECIM SWiM 1.2.1 and type in Ericsson SwIM Yang Model 1.1.0 ",
+          "type": "string"
+        },
+        "semanticVersion": {
+          "description": "The product semantic version",
+          "type": "string"
+        },
+        "commercialVersion": {
+          "description": "The product commercial version",
+          "type": "string"
+        },
+        "productionDate": {
+          "description": "The date when the product has been released, formatted as YYYY-MM-DDTHH:mm:ss+hh:mm according to the ECMAScript 5th Edition Specification. Corresponds to productionDate in ECIM SWiM 1.2.1 and production-date in Ericsson SwIM Yang Model 1.1.0",
+          "type": "string"
+        },
+        "timeOfInstallation": {
+          "description": "The date when the product has been installed, formatted as YYYY-MM-DDTHH:mm:ss+hh:mm according to the ECMAScript 5th Edition Specification. Corresponds to timeOfInstallation in ECIM SWiM 1.2.1 and time-of-installation in Ericsson SwIM Yang Model 1.1.0. This parameter is only present as top level parameter for the application, and may not be present for reportContent used for CBA components, Kubernetes Pods or Containers.",
+          "type": "string"
+        },
+        "timeOfActivation": {
+          "description": "The date when the product has been activated, formatted as YYYY-MM-DDTHH:mm:ss+hh:mm according to the ECMAScript 5th Edition Specification. Corresponds to timeOfActivation in ECIM SWiM 1.2.1 and time-of-activation in Ericsson SwIM Yang Model 1.1.0. This parameter is only present as top level parameter for the application, and may not be present for reportContent used for CBA components, Kubernetes Pods or Containers.",
+          "type": "string"
+        },
+        "componentType": {
+          "description": "The type of component retrieved from Kubernetes. This parameter is used only when the component, an item of the included-components array, is a Kubernetes POD or a Container.",
+          "type": "string",
+          "enum": [
+            "POD",
+            "CONTAINER"
+          ]
+       },
+        "name": {
+          "description": "The name of the pod taken from the metadata.name field in the Pod information retrieved from Kubernetes, or the name of the container taken from the spec.containers[name] field in the Pod information retrieved from Kubernetes. This parameter is used when the componentType is POD or CONTAINER",
+          "type": "string"
+        },
+        "podReplicas": {
+          "description": "The number of Pod replicas. This parameter is used only when the reportContent is about a Pod type, as an item of the included-components array of the top level application report",
+          "type": "integer"
+        },
+        "podPending": {
+          "description": "The number of POD replicas of the given POD in Pending state. This parameter is derived by counting the number of POD replicas with the status.phase field equal to Pending in the Pod information retrieved from Kubernetes. This parameter is used when the componentType is POD",
+          "type": "integer"
+        },
+        "podRunning": {
+          "description": "The number of POD replicas of the given POD in Running state. This parameter is derived by counting the number of POD replicas with the status.phase field equal to Pending in the Pod information retrieved from Kubernetes. This parameter is used when the componentType is POD",
+          "type": "integer"
+        },
+        "podSucceeded": {
+          "description": "The number of POD replicas of the given POD in Pending state. This parameter is derived by counting the number of POD replicas with the status.phase field equal to Succeeded in the Pod information retrieved from Kubernetes. This parameter is used when the componentType is POD",
+          "type": "integer"
+        },
+        "podFailed": {
+          "description": "The number of POD replicas of the given POD in Pending state. This parameter is derived by counting the number of POD replicas with the status.phase field equal to Failed in the Pod information retrieved from Kubernetes. This parameter is used when the componentType is POD",
+          "type": "integer"
+        },
+        "podUnknown": {
+          "description": "The number of POD replicas of the given POD in Pending state. This parameter is derived by counting the number of POD replicas with the status.phase field equal to Unknown in the Pod information retrieved from Kubernetes. This parameter is used when the componentType is POD",
+          "type": "integer"
+        },
+        "nodeNames": {
+          "description": "The list of Kubernetes nodes where the pod replicas have been deployed. This parameter is used only when the reportContent is about a Pod type, as an item of the included-components array of the top level application report",
+          "type": "array",
+          "items": {
+            "description": "the name of the node as taken from spec.nodeName",
+            "type": "string"
+          }
+        },
+        "containerImage": {
+          "description": "The Docker image of the container taken from the spec.containers[image] field in the Pod information retrieved from Kubernetes. This parameter is used only when the reportContent is about a K8S Container, as an item of the included-components array of a Pod reportContent",
+          "type": "string"
+        },
+        "containerCPURequest": {
+          "description": "The CPU request of the container taken from the spec.containers[resources.requests.cpu] field in the Pod information retrieved from Kubernetes. This parameter is used only when the reportContent is about a K8S Container, as an item of the included-components array of a Pod reportContent",
+          "type": "string"
+        },
+        "containerMemoryRequest": {
+          "description": "The Memory request of the container taken from the spec.containers[resources.requests.memory] field in the Pod information retrieved from Kubernetes. This parameter is used only when the reportContent is about a K8S Container, as an item of the included-components array of a Pod reportContent",
+          "type": "string"
+        },
+        "containerStorageRequest": {
+          "description": "The Ephemeral Storage request of the container taken from the spec.containers[resources.requests.ephemeral-storage] field in the Pod information retrieved from Kubernetes.",
+          "type": "string"
+        },
+        "containerCPULimit": {
+          "description": "The CPU limit of the container taken from the spec.containers[resources.limits.cpu] field in the Pod information retrieved from Kubernetes. This parameter is used only when the reportContent is about a K8S Container, as an item of the included-components array of a Pod reportContent",
+          "type": "string"
+        },
+        "containerMemoryLimit": {
+          "description": "The Memory limit of the container taken from the spec.containers[resources.limits.memory] field in the Pod information retrieved from Kubernetes. This parameter is used only when the reportContent is about a K8S Container, as an item of the included-components array of a Pod reportContent",
+          "type": "string"
+        },
+        "containerStorageLimit": {
+          "description": "The Ephemeral Storage limit of the container taken from the spec.containers[resources.limits.ephemeral-storage] field in the Pod information retrieved from Kubernetes.",
+          "type": "string"
+        },
+        "included-components": {
+          "description": "A list of detailed information reports for each sw component included in the top level product",
+          "type": "array",
+          "items": {
+            "description": "A JSON object for each component, to be filled in as a reportContent itself. in other words the same information that can be reported for a top level item can also be reported for a component, which in turn can also contain other components or dedicated infrastructure. The object can be about CBA components included by a CBA applications, about PODs for Cloud Native Applications deployed on Kubernetes, about Containers included in PODs.",
+            "type": "object"
+          }
+        },
+        "infrastructure": {
+          "description": "Information about the infrastructure, virtual or physical, available to the application instance. If specific information is available for each server, then one item corresponds to a single server. The server-name marks the fact that the item is about one single (virtual) server and number-of-servers is not available. If the item represents a number of servers all sharing the same characteristics, then number-of-servers is available and indicates for how many servers the reported information is valid, and server-name will not be available. A use case for this example is the PL's available in a CBA deployment.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "number-of-servers": {
+                "description": "The number of (virtual) servers that share the reported characteristics. This field is not present if the information refers to a single server.",
+                "type": "integer"
+              },
+              "server-name": {
+                "description": "The host name of the server. Available only if the information refers to a single server.",
+                "type": "string"
+              },
+              "node-names": {
+                "description": "The list of Kubernetes nodes where the pod replicas have been deployed. Available only for Kubernetes nodes",
+                "type": "array",
+                "items": {
+                  "description": "the name of the node as taken from spec.nodeName",
+                  "type": "string"
+                }
+              },
+              "server-type": {
+                "description": "The type of server. It describes the type of server known to the report producer. For CBA deployment it can be SC or PL. For Kubernetes deployments it can be Node.",
+                "type": "string",
+                "enum": [
+                  "CBA-SC",
+                  "CBA-PL",
+                  "K8S-NODE",
+                  "OTHER"
+                ]
+              },
+              "number-of-cpu": {
+                "description": "Number of CPU of the server. For a K8S-NODE it is taken from the status.capacity.cpu field in the Node information retrieved from Kubernetes",
+                "type": "integer"
+              },
+              "number-of-sockets": {
+                "description": "Number of sockets of the server.",
+                "type": "integer"
+              },
+              "number-of-core": {
+                "description": "Number of cores of the server.",
+                "type": "integer"
+              },
+              "RAM": {
+                "description": "Amount of RAM in Mb per server. For a K8S-NODE it is taken from the status.capacity.memory field in the Node information retrieved from Kubernetes",
+                "type": "integer"
+              },
+              "server-storage": {
+                "description": "Amount of Storage in Gb dedicated to the server. For a K8S-NODE it is taken from the status.capacity.ephemeral-storage field in the Node information retrieved from Kubernetes",
+                "type": "integer"
+              },
+              "shared-storage": {
+                "description": "Amount of Storage in Gb shared with other servers.",
+                "type": "integer"
+              },
+              "virtualization": {
+                "description": "The type of virtualization as KVM or VMware.",
+                "type": "string"
+              },
+              "OS": {
+                "description": "OS running on the server. For a K8S-NODE it is taken from the status.nodeInfo.operatingSystem, status.nodeInfo.kernelVersion and the status.nodeInfo.osImage field in the Node information retrieved from Kubernetes. The three fields are concatenated as <operating System>@<kernelVersion>@<osImage>",
+                "type": "string"
+              },
+              "number-of-pods": {
+                "description": "Only available for K8S-NODE. Number of pods that can be deployed on the Node taken from the status.capacity.pods field in the Node information retrieved from Kubernetes.",
+                "type": "integer"
+              },
+              "containerRuntimeVersion": {
+                "description": "Only available for K8S-NODE. Taken from the status.nodeInfo.containerRuntimeVersion field in the Node information retrieved from Kubernetes.",
+                "type": "string"
+              },
+              "kubeProxyVersion": {
+                "description": "Only available for K8S-NODE. Taken from the status.nodeInfo.kubeProxyVersion field in the Node information retrieved from Kubernetes.",
+                "type": "string"
+              },
+              "kubeletVersion": {
+                "description": "Only available for K8S-NODE. Taken from the status.nodeInfo.kubeletVersion field in the Node information retrieved from Kubernetes.",
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

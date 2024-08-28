@@ -1,0 +1,15 @@
+[submodule "bob"]
+	path = bob
+	url = ../../adp-cicd/bob
+[submodule "devtools/envoy-builder/sc_envoy"]
+	path = devtools/envoy-builder/sc_envoy
+	url = ../../MC_5G/sc_envoy
+[submodule "esc/tap_agent"]
+	path = esc/tap_agent
+	url = ../../MC_5G/tap_agent
+[submodule "lm-lib/adp-gs-lm"]
+	path = lm-lib/adp-gs-lm
+	url = ../../adp-gs/adp-gs-lm
+[submodule "pm-lib/adp-gs-pm-bulk-reporter"]
+	path = pm-lib/adp-gs-pm-bulk-reporter
+	url = ../../adp-gs/adp-gs-pm-bulk-reporter

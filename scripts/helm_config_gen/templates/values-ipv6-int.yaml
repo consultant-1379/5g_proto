@@ -1,0 +1,37 @@
+#global:
+#  internalIPFamily: "IPv6"
+
+#Last update: 18.2.0+92
+eric-cm-yang-provider:
+  ldap:
+    ipv6Enabled: true
+
+#Last update: 12.4.0+22
+eric-data-search-engine:
+  service:
+    network:
+      protocol:
+        IPv6: true
+
+#Last update: 1.29.0+39
+eric-data-sftp-server:
+  userManagement:
+    ldap:
+      lookupFamilyOrder: ipv6_only ## <empty>/ipv4_first/ipv6_first/ipv4_only/ipv6_only
+
+#Last update: 9.19.0+16
+eric-pm-bulk-reporter:
+  userConfig:
+    ldap:
+      useIPv6DNSFirst: true
+
+#Last update: 1.38.0+39
+eric-stm-diameter:               
+  initialConfig:
+    dsl:
+      enableIPv6: true
+      
+#Last update: 8.1.0+14
+eric-fh-snmp-alarm-provider:
+  sourceIdentifierType: 2
+  sourceIdentifier: "::1"

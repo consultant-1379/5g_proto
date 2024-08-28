@@ -1,0 +1,75 @@
+modelVersion: 2.0
+
+import:
+  base: ruleset2.0-eric-base.yaml
+
+description: "NELS Server"
+
+properties:
+  - EXPORT_DIR: ${base.OUTPUT_DIR}/eric-nels
+  - NELS_NAME: eric-test-nels-simulator
+  - NELS_VER: 0.5.0-19
+  - NELS_PACKAGE: ${NELS_NAME}-${NELS_VER}
+  - NELS_PACKAGE_TGZ: ${NELS_PACKAGE}.tgz
+  - NELS_ARTIFACTORY_SRV: armdocker.rnd.ericsson.se
+  - NELS_ARTIFACTORY_BASE: artifactory
+  - NELS_PROJ_BASE: proj-5g-bsf-helm 
+  - DOWNLOAD_BASE_URL: https://${NELS_ARTIFACTORY_SRV}/${NELS_ARTIFACTORY_BASE}/${NELS_PROJ_BASE}
+
+env:
+ - RELEASE (default=false)
+
+
+rules:
+  init:
+    - task: base.init:create-output-dir
+    - task: base.init:set-namespace
+    - task: base.init:set-kube-config
+    - task: base.init:api-tokens
+
+  create-nels-dir:
+    - rule: clean
+    - task: nels-dir
+      cmd: mkdir -p ${EXPORT_DIR}/${NELS_NAME}
+
+  get-nels:
+    - task: get-nels
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume $PWD:/workspace"
+        - "--workdir /workspace"
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\" ${DOWNLOAD_BASE_URL}/${NELS_PACKAGE_TGZ} --output ${EXPORT_DIR}/${NELS_NAME}/${NELS_PACKAGE_TGZ}"
+
+  deploy:
+    - task: deploy-nels
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume $PWD:/workspace"
+        - "--workdir /workspace"
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+      cmd: /bin/bash -c 'helm install ${NELS_NAME}-${env.base.USER} --namespace ${var.base.namespace} ${EXPORT_DIR}/${NELS_NAME}/${NELS_NAME}-${NELS_VER}.tgz --set service.type=NodePort'
+
+  images:
+    - task: pull-image
+      cmd: docker pull armdocker.rnd.ericsson.se/proj-5g-bsf/eiffelesc/eric-test-nels-simulator:${NELS_VER}
+    - task: push-image
+      cmd: docker push $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/eric-test-nels-simulator:${NELS_VER} | sed 's/+/-/') ${env.base.DEBUG_FLAG}
+            
+  undeploy:
+    - task: undeploy-nels
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume $PWD:/workspace"
+        - "--workdir /workspace"
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm" 
+      cmd: helm uninstall ${NELS_NAME}-${env.base.USER} --namespace ${var.base.namespace}
+
+  clean:
+    - task: clean
+      cmd: rm -rf ${EXPORT_DIR}

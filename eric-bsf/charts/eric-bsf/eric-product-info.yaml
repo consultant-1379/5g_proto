@@ -1,0 +1,59 @@
+productName: "eric-bsf"
+productNumber: "CXC 174 3384"
+images:
+  setupmanager:
+    productName: "BSF Manager"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: bsf_manager_repo_path
+    name: bsf_manager_image_name
+    tag: bsf_manager_image_tag
+  manager:
+    productName: "BSF Manager"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: bsf_manager_repo_path
+    name: bsf_manager_image_name
+    tag: bsf_manager_image_tag
+  worker:
+    productName: "BSF Worker"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: bsf_worker_repo_path
+    name: bsf_worker_image_name
+    tag: bsf_worker_image_tag
+  cddjmxexporter:
+    productName: "cdd jmx exporter BSF"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: cddjmxexporter_repo_path
+    name: cddjmxexporter_image_name
+    tag: cddjmxexporter_image_tag
+  certnotifier:
+    productName: "BSF Certificate Notifier"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: certnotifier_repo_path
+    name: certnotifier_image_name
+    tag: certnotifier_image_tag
+  tapagent:
+    productName: "BSF TAP agent"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: tapagent_repo_path
+    name: tapagent_image_name
+    tag: tapagent_image_tag
+  tlskeylogagent:
+    productName: "BSF TLS Keylog Agent"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: tlskeylogagent_repo_path
+    name: tlskeylogagent_image_name
+    tag: tlskeylogagent_image_tag
+  tapcollector:
+    productName: "BSF Tap Collector"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: tapcollector_repo_path
+    name: tapcollector_image_name
+    tag: tapcollector_image_tag

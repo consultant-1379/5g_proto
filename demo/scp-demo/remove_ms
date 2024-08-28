@@ -1,0 +1,7 @@
+
+config	
+no scp-function nf-instance scp_instance_1 request-screening-case 
+no scp-function nf-instance scp_instance_1 own-network internalNetwork in-request-screening-case-ref
+commit
+exit
+exit

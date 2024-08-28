@@ -1,0 +1,88 @@
+modelVersion: 2.0
+
+description: "Envoyworker"
+
+import:
+  base: ../rulesets/ruleset2.0-eric-base.yaml
+  envoy_base: ../ruleset2.0-eric-envoy.yaml
+
+properties:
+  - DOCKER_REPO_INTERNAL: "proj-sc-all-internal"
+  - DOCKER_REPO_DROP: "proj-sc-all-drop"
+  - ENVOY_WORKER_BASE_IMAGE_URL: armdocker.rnd.ericsson.se/proj-5g-bsf/envoy/${envoy_base.ENVOY_WORKER_BASE_IMAGE_NAME}:${base.ENVOY_VERSION}
+  - IMAGE_NAME: "eric-sc-envoyworker"
+  - DOCKERFILE_PATH: "./envoyproxy/envoywrk"
+
+env:
+  # the GERRIT username
+  - GERRIT_USERNAME
+  # the GERRIT password (Gerrit HTTP password)
+  - GERRIT_PASSWORD
+  # Run git related actions in dry-run
+  - DRY_RUN (default=true)
+
+var:
+  - envoywrk-image-repo
+  - envoywrk-image-version
+  - commithash
+  - branch
+
+rules:
+
+  all-local:
+    - rule: init
+    - rule: image
+
+  all-ci:
+    - rule: init
+    - rule: image
+    - rule: post-publish
+
+  init:
+    - task: image-repo
+      cmd: /bin/bash -c 'if [ \"${env.base.RELEASE}\" == \"false\" ];
+                         then
+                            echo ${DOCKER_REPO_INTERNAL} > ${base.OUTPUT_DIR}/var.envoywrk-image-repo;
+                         else
+                            echo ${DOCKER_REPO_DROP} > ${base.OUTPUT_DIR}/var.envoywrk-image-repo;
+                         fi;'
+    - task: image-version
+      docker-image: base.adp-release-auto
+      cmd: version-handler generate
+            --is-release ${env.base.RELEASE}
+            --user ${env.base.USER}
+            --output envoywrk-image-version
+            --git-repo-path .
+            --version-prefix-file ${IMAGE_NAME}/VERSION_PREFIX
+
+  image:
+    - task: build
+      description: The task pulls and re-tags the image since it already exists in our repo
+      cmd: docker build ${DOCKERFILE_PATH}/
+            --file ${DOCKERFILE_PATH}/Dockerfile
+            --build-arg DOCKER_BASE_IMG=${ENVOY_WORKER_BASE_IMAGE_URL}
+            --tag ${base.DOCKER_REGISTRY_URL}/${var.envoywrk-image-repo}/${IMAGE_NAME}:${var.envoywrk-image-version}
+    - task: push
+      cmd: docker push ${base.DOCKER_REGISTRY_URL}/${var.envoywrk-image-repo}/${IMAGE_NAME}:${var.envoywrk-image-version}
+
+  post-publish:
+    - task: get-commit
+      docker-image: base.adp-release-auto
+      cmd: git rev-parse --short HEAD > .bob/var.commithash
+    - task: get-branch
+      docker-image: base.adp-release-auto
+      cmd: git rev-parse --abbrev-ref HEAD > .bob/var.branch
+    - task: git-tag
+      docker-image: base.adp-release-auto
+      description: Create and push git tag. Example "eric-sc-envoywrk/1.0.0-55"
+      docker-envs:
+        - GERRIT_USERNAME
+        - GERRIT_PASSWORD
+      cmd: version-handler create-git-tag
+           --git-repo-url ${base.GIT_REPO_URL}
+           --tag ${IMAGE_NAME}/${var.envoywrk-image-version}
+           --message "Release ${var.envoywrk-image-version}"
+           --commitid ${var.commithash}
+           --branch ${var.branch}
+           --dry-run ${env.DRY_RUN}
+           --debug

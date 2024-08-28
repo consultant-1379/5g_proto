@@ -1,0 +1,7 @@
+.gradle/
+.idea/
+Dockerfile
+SVENS_PLAYGROUND
+build.gradle.kts
+build/
+gradle/

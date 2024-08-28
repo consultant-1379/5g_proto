@@ -1,0 +1,9 @@
+[
+  {
+     "host": "eric-atmoz-sftp",
+     "sftpPort": 8922,
+     "username": "admin",
+     "password": "admin",
+     "uploadDir": "data"
+  }
+]

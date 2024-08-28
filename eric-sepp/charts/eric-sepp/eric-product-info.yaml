@@ -1,0 +1,73 @@
+productName: "eric-sepp"
+productNumber: "CXC 174 3385"
+images:
+  setupmanager:
+    productName: "SEPP Manager"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: sepp_manager_repo_path
+    name: sepp_manager_image_name
+    tag: sepp_manager_image_tag
+  manager:
+    productName: "SEPP Manager"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: sepp_manager_repo_path
+    name: sepp_manager_image_name
+    tag: sepp_manager_image_tag
+  setupworker:
+    productName: "SEPP Worker"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: sepp_worker_repo_path
+    name: sepp_worker_image_name
+    tag: sepp_worker_image_tag
+  worker:
+    productName: "SEPP Worker"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: sepp_worker_repo_path
+    name: sepp_worker_image_name
+    tag: sepp_worker_image_tag
+  sds:
+    productName: "SEPP SDS"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: sds_repo_path
+    name: sds_image_name
+    tag: sds_image_tag
+  certnotifier:
+    productName: "SEPP Certificate Notifier"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: certnotifier_repo_path
+    name: certnotifier_image_name
+    tag: certnotifier_image_tag
+  logfwdr:
+    productName: "SEPP Log Forwarder"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: logfwdr_repo_path
+    name: logfwdr_image_name
+    tag: logfwdr_image_tag
+  tapagent:
+    productName: "SEPP TAP agent"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: tapagent_repo_path
+    name: tapagent_image_name
+    tag: tapagent_image_tag
+  tlskeylogagent:
+    productName: "SEPP TLS Keylog Agent"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: tlskeylogagent_repo_path
+    name: tlskeylogagent_image_name
+    tag: tlskeylogagent_image_tag
+  tapcollector:
+    productName: "SEPP Tap Collector"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: tapcollector_repo_path
+    name: tapcollector_image_name
+    tag: tapcollector_image_tag

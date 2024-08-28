@@ -1,0 +1,346 @@
+definitions:
+  ## VIP_SIG_SCP: the virtual IP address(es) for signaling traffic of SCP provided as comma separated list of IPs
+  ## For example, "10.244.1.4,2001:db8::4"
+  VIP_SIG_SCP: &VIP_SIG_SCP ""
+  VIP_SIG2_SCP: &VIP_SIG2_SCP ""
+  ## storage class for all OAM state
+  oam_storage_class: &oam_storage_class "network-block"
+
+global:
+  timezone: UTC
+  # nodeSelector: {}
+  pullSecret: ""
+  registry:
+    url: "armdocker.rnd.ericsson.se"
+  externalIPv4:
+     enabled: false    ## empty, true or false
+  externalIPv6:
+     enabled: false    ## empty, true or false
+  ipFamilyPolicy: SingleStack  ## SingleStack or PreferDualStack or RequireDualStack
+  # annotations: {}
+  # labels: {}
+  networkPolicy:
+    enabled: true
+  log:
+    outputs: ["stdout", "k8sLevel"] # supports stream, applicationLevel or stdout (or <old> k8sLevel)
+    streamingMethod: "indirect" # supports direct, indirect or dual
+  logShipper:
+    deployment:
+      type: "" # supports sidecar or empty
+  security:
+    tls:
+      enabled: true
+
+eric-scp:
+  enabled: true
+  # rlf:
+    # enabled: true
+  # vtap:
+    # enabled: true
+  # nlf:
+    # enabled: true
+  service:
+    worker:
+      # ipFamilyPolicy: PreferDualStack  ## SingleStack or PreferDualStack or RequireDualStack
+      # loadBalancerIP: *VIP_SIG_SCP
+      annotations:
+        # cloudProviderLB: {}
+        loadBalancerIPs: *VIP_SIG_SCP
+      # externalTrafficPolicy: Local
+      # port: 80
+      # tlsport: 443
+      # externalIPv4:
+        # enabled: false
+      # externalIPv6:
+        # enabled: false
+      multiVpn:
+        # ipFamilyPolicy: PreferDualStack ## SingleStack or PreferDualStack or RequireDualStack
+        # enabled: false
+        # loadBalancerIP: *VIP_SIG2_SCP
+        annotations:
+           # cloudProviderLB: {}
+           loadBalancerIPs: *VIP_SIG2_SCP
+        # externalTrafficPolicy: Local
+        # port: 80
+        # tlsport: 443
+        # externalIPv4:
+          # enabled: false
+        # externalIPv6:
+          # enabled: false
+  # egress:
+    # nrf:
+      # # default 0, the value range 0..63, 0 is the lowest priority, 63 is the highest priority.
+      # # Any other value is invalid.
+      # dscp: 0
+  # spec:
+    # worker:
+      # replicaCount: 2
+      # max_active_tcp_connections: "500"
+      # concurrency: "2"
+      # send_goaway_for_premature_rst_streams: "true"
+      # premature_reset_total_stream_count: "500"
+      # premature_reset_min_stream_lifetime_seconds: "1"
+      # max_requests_per_io_cycle: "0"
+      # affinity:
+        # podAntiAffinity: "soft"
+      # tolerations:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # podDisruptionBudget:
+        # minAvailable: 1
+      # resources:
+        # requests:
+          # memory: 512Mi
+          # cpu: 1
+          # ephemeral-storage:
+        # limits:
+          # memory: 1024Mi
+          # cpu: 1.5
+          # ephemeral-storage:
+    # manager:
+      # replicaCount: 2
+      # affinity:
+        # podAntiAffinity: "soft"
+      # resources:
+        # requests:
+          # memory: 512Mi
+          # cpu: 0.5
+          # ephemeral-storage:
+        # limits:
+          # memory: 1024Mi
+          # cpu: 1
+          # ephemeral-storage:
+      # tolerations:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # podDisruptionBudget:
+        # minAvailable: 0
+    # logfwdr:
+      # resources:
+        # requests:
+          # memory: 32Mi
+          # cpu: 50m
+          # ephemeral-storage:
+        # limits:
+          # memory: 64Mi
+          # cpu: 100m
+          # ephemeral-storage:
+    # sds:
+      # resources:
+        # requests:
+          # memory: 64Mi
+          # cpu: 100m
+          # ephemeral-storage:
+        # limits:
+          # memory: 128Mi
+          # cpu: 200m
+          # ephemeral-storage:
+    # certnotifier:
+      # resources:
+        # requests:
+          # memory: 128Mi
+          # cpu: 80m
+          # ephemeral-storage:
+        # limits:
+          # memory: 256Mi
+          # cpu: 160m
+          # ephemeral-storage:
+    # tapagent:
+      # resources:
+        # requests:
+          # memory: 100Mi
+          # cpu: 100m
+          # ephemeral-storage:
+        # limits:
+          # memory: 500Mi
+          # cpu: 500m
+          # ephemeral-storage:
+    # tlskeylogagent:
+      # resources:
+        # requests:
+          # memory: 100Mi
+          # cpu: 100m
+          # ephemeral-storage:
+        # limits:
+          # memory: 500Mi
+          # cpu: 500m
+          # ephemeral-storage:
+    # tapcollector:
+      # resources:
+        # requests:
+          # memory: 256Mi
+          # cpu: 100m
+          # ephemeral-storage:
+        # limits:
+          # memory: 2560Mi
+          # cpu: 1
+          # ephemeral-storage:
+  # probes:
+    # manager:
+      # livenessProbe:
+        # initialDelaySeconds: 180
+        # periodSeconds: 10
+        # timeoutSeconds: 1
+        # successThreshold: 1
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 10
+        # periodSeconds: 10
+        # timeoutSeconds: 1
+        # successThreshold: 1
+        # failureThreshold: 3
+    # worker:
+      # livenessProbe:
+        # initialDelaySeconds: 30
+        # periodSeconds: 3
+        # timeoutSeconds: 2
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # timeoutSeconds: 4
+        # successThreshold: 1
+        # failureThreshold: 3
+      # startupProbe:
+        # initialDelaySeconds: 0
+        # periodSeconds: 5
+        # timeoutSeconds: 1
+        # failureThreshold: 30
+  # maxRequestBytes: "65535"
+  # applicationId: "sc-testnode"
+  # certificates:
+    # traf:
+      # key: sc-traf-default-key
+      # certificate: sc-traf-default-cert
+    # nrf:
+      # key: sc-nrf-default-key
+      # certificate: sc-nrf-default-cert
+  manager:
+    leaderElection:
+      enabled: true
+  # tapagent:
+    # manager:
+      # enabled: false
+    # worker:
+      # enabled: false
+  # tapcollector:
+    # worker:
+      # enabled: false
+      # replaceLocalSocketAddress: true
+    # tappedData:
+      # divisionMethod: truncate
+      # chunkSizeLimit: "61440"
+  # nodeSelector:
+    # worker: {}
+    # manager: {}
+  # annotations: {}
+  # labels: {}
+  # resources:
+    # logshipper:
+      # requests:
+        # memory: "20Mi"
+        # cpu: "33m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "30Mi"
+        # cpu: "40m"
+        # ephemeral-storage:
+
+eric-sc-slf:
+  enabled: true
+  spec:
+    slf:
+      replicaCount: 2
+      # resources:
+        # requests:
+          # memory: 256Mi
+          # cpu: 100m
+          # ephemeral-storage:
+        # limits:
+          # memory: 1024Mi
+          # cpu: 1000m
+          # ephemeral-storage:
+      # affinity:
+        # podAntiAffinity: "soft"
+      # tolerations:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # podDisruptionBudget:
+        # minAvailable: 1
+    # tapagent:
+      # resources:
+        # requests:
+          # memory: 100Mi
+          # cpu: 100m
+          # ephemeral-storage:
+        # limits:
+          # memory: 500Mi
+          # cpu: 500m
+          # ephemeral-storage:
+    # tlskeylogagent:
+      # resources:
+        # requests:
+          # memory: 100Mi
+          # cpu: 100m
+          # ephemeral-storage:
+        # limits:
+          # memory: 500Mi
+          # cpu: 500m
+          # ephemeral-storage:
+  # probes:
+    # slf:
+      # livenessProbe:
+        # initialDelaySeconds: 30
+        # periodSeconds: 10
+        # timeoutSeconds: 10
+        # successThreshold: 1
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 10
+        # periodSeconds: 10
+        # timeoutSeconds: 1
+        # successThreshold: 1
+        # failureThreshold: 3
+  # certificates:
+    # nrf:
+      # key: sc-nrf-default-key
+      # certificate: sc-nrf-default-cert
+  # tapagent:
+    # enabled: false
+  # nodeSelector: {}
+  # annotations: {}
+  # labels: {}
+  # resources:
+    # logshipper:
+      # requests:
+        # memory: "20Mi"
+        # cpu: "33m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "30Mi"
+        # cpu: "40m"
+        # ephemeral-storage:
+
+eric-sc-scp-license-consumer:
+  enabled: true
+
+eric-sc-scp-log-shipper:
+  enabled: false

@@ -1,0 +1,658 @@
+global:
+  timezone: UTC
+  pullSecret: ""
+  registry:
+    url: "armdocker.rnd.ericsson.se"
+  externalIPv4:
+     enabled: false
+  externalIPv6:
+     enabled: false
+  ipFamilyPolicy: SingleStack
+  ericsson:
+    licensing:
+      licenseDomains:
+        - productType: "SIGNALING_CONTROLLER"
+          customerId: ""
+          swltId: ""
+  networkPolicy:
+    enabled: true
+  log:
+    streamingMethod: "indirect"
+  logShipper:
+    deployment:
+      type: ""
+  security:
+    tls:
+      enabled: true
+  featureGates:
+    caBootstrap_v2: true
+  ## Configuration options for Document Database PG (DDB-PG) service.
+  ## For enabling the Operator-based deployment or the non-Operator deployment, the global parameter 
+  ## global.documentDatabasePG.operator.enabled is to be set to true or false, respectively.
+  documentDatabasePG:
+    operator:
+      ## When enabled=true the Operator-based deployment is used, otherwise the non-Operator deployment is used
+      enabled: false
+  ## Configuration options for Smart Helm Hooks (SHH) service.
+  hooklauncher:
+    ## The global parameter global.hooklauncher.executor is meant to configure at which level the upgrades and rollbacks hooks
+    ## are to be executed.
+    ## If it is set to "service" the hooks are executed at each service sub-chart level.
+    ## If it is set to "integration" the hooks are executed by the Hooklauncher job(s) defined by the IHC(s) listed as an array in the
+    ## global parameter global.hooklauncher.executorCharts. In this case one Hooklauncher job is defined for rendering the
+    ## sub-chart tree of the Cloud Native Base IHC taking care of all service sub-chart hooks.
+    executor: integration
+    executorCharts:
+    - eric-cloud-native-base
+  ## Configuration options for Key Value Database RD (KVDB RD) Service Provider (SP),
+  ## and for the AH, CMM, BRO, LT, SNMP AP Service Consumer (SCs).
+  keyValueDatabaseRD:
+    newOperator:
+      ## For enabling the new Operator-based deployment or the old Operator-based deployment, for both SP and SCs,
+      ## the global parameter global.messageBusKF.operator.enabled is to be set to true or false, respectively.
+      ## When enabled=true the Operator-based deployment is enabled, otherwise the non-Operator deployment is enabled
+      enabled: true
+
+cncsKeyValueDatabaseRD:
+  ## This parameter section allows to deploy and customize the CNCS Key Value Database (KVDB) Redis-Cluster instance.
+  ## Such instance is created as Kubernetes Custom Object (CO) by deploying the CNCS-onwed Custom Resource (CR) manifest
+  ## of "KVDBRDCluster" kind.
+  ## The Redis-Cluster instance is not deployed by default because all Service Consumers (SCs) in Cloud Native Base IHC
+  ## are configured by default to use Kafka as message bus.
+  ## The cncsKeyValueDatabaseRD.enabled Helm parameter is to be set to true for creating the
+  ## CNCS KVDB Redis-Cluster instance as Kubernetes CO.
+  enabled: true
+  
+sharedDocumentDatabasePG:
+  ## This parameter section allows to deploy and customize the shared DDB-PG instance applicable only for Operator-based deployment type.
+  ## Such instance is created as Kubernetes Custom Object (CO) once the CNCS-onwed Custom Resource (CR) manifest
+  ## of "DocumentDB" kind is deployed, by setting the below Helm parameter `enabled` to `true`.
+  ## It is not deployed by default because all Service Consumers (SCs) are configured in CNCS
+  ## by default to use dedicated DDB-PG instances.
+  ## If it is deployed, all SCs should use "eric-data-document-database-pg" as instance name of it.
+  ## The enabled parameter is to be set to true for creating the shared DDB-PG instance as Kubernetes Custom Object (CO).
+  enabled: false
+  
+## Backup and Restore Orchestrator
+eric-ctrl-bro:
+  enabled: true
+  bro:
+    enableConfigurationManagement: true
+    enableNotifications: false
+    enableAgentDiscovery: true
+
+## Ingress Controller CR
+eric-tm-ingress-controller-cr:
+  enabled: true
+  ingressClass: "sc"
+  rbac:
+    create: true
+  metrics:
+    enabled: false
+  envoyWorkloadMode:
+    daemonset:
+      enabled: false
+    deployment:
+      enabled: true
+  resources:
+    contour:
+      limits:
+        cpu: "100m"
+  service:
+    externalTrafficPolicy: Cluster
+
+## Certificate Management
+eric-sec-certm:
+  enabled: true
+  features:
+    alarmHandling:
+      enabled: true
+      useRestApi: true
+    yang:
+      enabled: true
+
+## Key Management
+eric-sec-key-management:
+  enabled: true
+  replicaCount:
+    kms: 2
+  shelter:
+    enabled: true
+  metrics:
+    enabled: true
+
+## Service Identity Provider for TLS
+eric-sec-sip-tls:
+  enabled: true
+  keyManagement:
+    port: 8210
+  kafka:
+    port: 9093
+    tls:
+      enabled: true
+      verifyHostname: true
+  alarmHandler:
+    useAPIDefinition: true
+
+## Distributed Coordinator ED
+eric-data-distributed-coordinator-ed:
+  enabled: true
+  brAgent:
+    enabled: true
+    brLabelValue: "eric-data-distributed-coordinator-ed"
+    backupTypeList:
+      - "DEFAULT"
+    properties:
+      applicationProperties: |-
+         dced.agent.restore.type=overwrite
+         dced.excluded.paths=/shelter,/kms/core/lock
+  metricsexporter:
+    enabled: true
+  env:
+    dced:
+      DISARM_ALARM_PEER_INTERVAL: 6
+  resources:
+    metricsexporter:
+      limits:
+        memory: "64Mi"
+
+## Configuration Management Mediator
+eric-cm-mediator:
+  enabled: true
+  dbbr:
+    enabled: true
+    backupType: "DEFAULT"
+  cmkey:
+    enable: true
+    ## jobname: "eric-cm-key" not in chart, only in cncs
+  backend:
+    ## Use single DBPG
+    # dbuser: scusr ## modify only if ugrading from release less than SC1.4.x
+    # dbname: sc_database
+    # hostname: "eric-data-document-database-pg"
+    ## Use for dedicated DBPG and enable eric-cm-mediator-db-pg
+    hostname: eric-cm-mediator-db-pg
+    dbname: adp_gs_cm
+    dbuser: cm
+  service:
+    endpoints:
+      restapi:
+        tls:
+          enforced: optional
+          verifyClientCertificate: optional
+  documentDatabasePG:
+    customObject:
+      ## Parameter enabled allows the creation of the CMM-dedicated DDB-PG instance by deploying the CMM-owned CR.
+      ## If it is set to true and the global.documentDatabasePG.operator.enabled parameter is set to true as well,
+      ## the CR is deployed.
+      enabled: false
+    
+eric-cm-mediator-db-pg:
+  enabled: true
+  log:
+    schema: "adp"
+  brAgent:
+    enabled: true
+    logicalDBBackupEnable: true
+    backupDataModelConfig: eric-cm-mediator-br-agent
+    backupTypeList:
+     - "DEFAULT"
+  
+## Data Coordinator ZK
+eric-data-coordinator-zk:
+  enabled: false
+
+## Document Database PG
+eric-data-document-database-pg:
+  enabled: false
+  log:
+    schema: "adp"
+  highAvailability:
+    replicaCount: 3
+  postgresDatabase: sc_database
+  postgresConfig:
+    max_connections: 350 ## TODO: reduce connections??
+  brAgent:
+    enabled: true
+    logicalDBBackupEnable: true
+    backupDataModelConfig: eric-cm-mediator-br-agent
+    backupTypeList:
+     - "DEFAULT"
+     
+## Message Bus KF
+eric-data-message-bus-kf:
+  enabled: false
+
+## Alarm Handler
+eric-fh-alarm-handler:
+  enabled: true
+  ## Configuration parameters for the NEW operator-based Redis deployment
+  service:
+    endpoints:
+      fiapi:
+        tls:
+          enforced: "optional"
+          verifyClientCertificate: "optional"
+  alarmhandler:
+    asi:
+      writer: "redis"
+  keyValueDatabaseRD:
+    enabled: true
+
+eric-fh-alarm-handler-db-pg:
+  enabled: true
+  log:
+    schema: "adp"
+  podDisruptionBudget:
+    minAvailable: "50%"
+
+## SNMP Alarm Provider
+eric-fh-snmp-alarm-provider:
+  enabled: true
+  yang:
+    enabled: false
+  messageBusRd:
+    enabled: true
+  keyValueDatabaseRD:
+    enabled: true
+  probes:
+    snmpAP:
+      livenessProbe:
+        initialDelaySeconds: 120
+      readinessProbe:
+        initialDelaySeconds: 120
+    
+## PM Server
+eric-pm-server:
+  enabled: true
+  service:
+    endpoints:
+      scrapeTargets:
+        tls:
+          enforced: "optional"
+      reverseproxy:
+        tls:
+          enforced: "optional"
+          verifyClientCertificate: "optional"
+          certificateAuthorityBackwardCompatibility: false
+  resources:
+    eric-pm-server:
+      limits:
+        memory: 8Gi
+      requests:
+        memory: 4Gi
+  server:
+    configMapOverrideName: eric-sc-cs-prometheus-config
+    serviceAccountName: eric-sc-cs-cluster-monitoring
+    tsdb:
+      retention:
+        time: "2d"
+        size: "75GB"
+    extraArgs:
+      enable-feature: promql-at-modifier
+    persistentVolume:
+      enabled: true
+      size: 80Gi
+  rbac:
+    appMonitoring:
+      enabled: false
+
+## Log Transformer
+eric-log-transformer:
+  enabled: true
+  replicaCount: 2
+  ensureOnceDelivery:
+    enabled: true
+  config:
+    adpJson:
+      validation:
+        enabled: true
+      transformation:
+        enabled: true
+  searchengine:
+    logplaneConfig:
+    - field: "[extra_data][asi][log_plane]"
+      value: "alarm"
+      newLogplane: "adp-app-asi-logs"
+    - field: "[facility]"
+      value: "log audit"
+      newLogplane: "adp-app-audit-logs"
+    - field: "[metadata][category]" ##the example in the CNCS allignment page is a bit different
+      contains: "-privacy-"
+      newLogplane: "adp-app-audit-logs"
+    - field: "[severity]"
+      value: "debug"
+      newLogplane: "adp-app-debug-logs"
+    - field: "[extra_data][sc_event][log_type]"
+      value: "sc-event"
+      newLogplane: "sc-events"
+    - field: "[service_id]"
+      contains: "-dsc-"
+      newLogplane: "sc-diameter-logs"
+    - field: "[service_id]"
+      contains: "eric-bsf"
+      newLogplane: "sc-bsf-logs"
+    - field: "[kubernetes][container][name]"
+      value: "eric-bsf-worker-tapagent"
+      newLogplane: "sc-bsf-logs"
+    - field: "[kubernetes][container][name]"
+      value: "eric-bsf-manager-tapagent"
+      newLogplane: "sc-bsf-logs"
+    - field: "[kubernetes][pod][name]"
+      contains: "eric-bsf-diameter"
+      newLogplane: "sc-bsf-logs"
+    - field: "[service_id]"
+      contains: "eric-scp"
+      newLogplane: "sc-scp-logs"
+    - field: "[kubernetes][container][name]"
+      value: "eric-scp-manager-tapagent"
+      newLogplane: "sc-scp-logs"
+    - field: "[kubernetes][container][name]"
+      value: "eric-scp-worker-tapagent"
+      newLogplane: "sc-scp-logs"
+    - field: "[service_id]"
+      value: "eric-sc-slf"
+      newLogplane: "sc-scp-logs"
+    - field: "[service_id]"
+      contains: "eric-sepp"
+      newLogplane: "sc-sepp-logs"
+    - field: "[kubernetes][container][name]"
+      value: "eric-sepp-manager-tapagent"
+      newLogplane: "sc-sepp-logs"
+    - field: "[kubernetes][container][name]"
+      value: "eric-sepp-worker-tapagent"
+      newLogplane: "sc-sepp-logs"
+    - field: "[service_id]"
+      value: "eric-sc-hcagent"
+      newLogplane: "sc-logs"
+    - field: "[service_id]"
+      value: "eric-sc-monitor"
+      newLogplane: "sc-logs"
+    - field: "[service_id]"
+      value: "eric-sc-manager"
+      newLogplane: "sc-logs"
+    - field: "[service_id]"
+      value: "eric-sc-nlf"
+      newLogplane: "sc-logs"
+    - field: "[service_id]"
+      value: "eric-sc-rlf"
+      newLogplane: "sc-logs"
+    - field: "[service_id]"
+      value: "eric-probe-virtual-tap-broker"
+      newLogplane: "sc-logs"
+    - field: "[service_id]"
+      value: "eric-tm-senp-nvip"
+      newLogplane: "sc-logs"
+    ## Based on CPI instructions use the following part
+    ## when default cassandra name is used
+    ## align the newLogplane to sc-bsf-logs or sc-diameter-logs
+    ## - field: "[service_id]"
+      ## value: "eric-data-wide-column-database-cd"
+      ## newLogplane: "sc-bsf-logs"
+  egress:
+    lumberjack:
+      certificates:
+        trustedCertificateListName: "sc-trusted-default-cas"
+    syslog:
+      certificates:
+        asymmetricKeyCertificateName: "syslog-default-key-cert"
+        trustedCertificateListName: "sc-trusted-default-cas"
+  resources:
+    logtransformer:
+      requests:
+        memory: 8Gi
+      limits:
+        cpu: 2000m
+        memory: 8Gi
+
+## Log Shipper
+eric-log-shipper:
+  enabled: true
+  metrics:
+    enabled: false
+  logshipper:
+    serviceAccountName: default
+    autodiscover:
+      enabled: true
+      namespace: ".RELEASE.NAMESPACE"
+    cfgData: ""
+    harvester:
+      ignoreOlder: "24h"
+  additionalVolumes: |
+    - name: docker-containers
+      hostPath:
+        path: /var/lib/docker/containers
+    - name: kubernetes-pods
+      hostPath:
+        path: /var/log/pods
+    - name: kubernetes-containers
+      hostPath:
+        path: /var/log/containers
+  additionalVolumeMounts: |
+    - name: docker-containers
+      mountPath: /var/lib/docker/containers
+      readOnly: true
+    - name: kubernetes-pods
+      mountPath: /var/log/pods
+      readOnly: true
+    - name: kubernetes-containers
+      mountPath: /var/log/containers
+      readOnly: true
+  rbac:
+    automountServiceAccountToken: true
+    createClusterRole: true
+    createClusterRoleBinding: true
+
+## Search Engine
+eric-data-search-engine:
+  enabled: true
+  fastButUnsafeUpgrade:
+    enabled: true
+  jvmHeap:
+    ingest: "1024m"
+    master: "512m"
+    data: "2048m"
+  index_management:
+    enabled: true
+    policies:
+      - description: "Delete adp-app-logs after 15 days"
+        indices:
+        - adp-app-logs*
+        priority: 1
+        states:
+        - name: init
+          transitions:
+          - condition: min_index_age=15d
+            destination_state: delete
+        - name: delete
+          actions:
+          - delete
+      - description: "Delete adp-app-audit-logs and adp-app-asi-logs after 30 days"
+        indices:
+        - adp-app-audit-logs*
+        - adp-app-asi-logs*
+        priority: 1
+        states:
+        - name: init
+          transitions:
+          - condition: min_index_age=30d
+            destination_state: delete
+        - name: delete
+          actions:
+          - delete
+      - description: "Delete adp-app-debug-logs after 3 days"
+        indices:
+        - adp-app-debug-logs*
+        priority: 1
+        states:
+        - name: init
+          transitions:
+          - condition: min_index_age=3d
+            destination_state: delete
+        - name: delete
+          actions:
+          - delete
+      - description: "Delete SC logs after 7 days"
+        indices:
+        - sc-bsf-logs*
+        - sc-scp-logs*
+        - sc-sepp-logs*
+        - sc-diameter-logs*
+        - sc-logs*
+        - sc-events*
+        priority: 1
+        states:
+        - name: init
+          transitions:
+          - condition: min_index_age=7d
+            destination_state: delete
+        - name: delete
+          actions:
+          - delete
+    delete_indices_by_diskspace:
+      - index: adp-app-logs*
+        size: 15gb
+      - index: adp-app-audit-logs*
+        size: 1gb
+      - index: adp-app-asi-logs*
+        size: 1gb
+      - index: adp-app-debug-logs*
+        size: 8gb
+      - index: sc-bsf-logs*
+        size: 12gb
+      - index: sc-scp-logs*
+        size: 12gb
+      - index: sc-sepp-logs*
+        size: 12gb
+      - index: sc-diameter-logs-*
+        size: 12gb
+      - index: sc-logs-*
+        size: 12gb
+      - index: sc-events*
+        size: 1gb
+  resources:
+    ingest:
+      limits:
+        memory: "2Gi"
+      requests:
+        memory: "2Gi"
+    master:
+      limits:
+        memory: "1.5Gi"
+      requests:
+        memory: "1.5Gi"
+    data:
+      limits:
+        cpu: "1000m"
+        memory: "4Gi"
+      requests:
+        cpu: "1000m"
+        memory: "4Gi"
+    logshipper:
+      limits:
+        cpu: "80m"
+  persistence:
+    data:
+      persistentVolumeClaim:
+        size: "100Gi"
+    master:
+      persistentVolumeClaim:
+        size: "64Mi"
+
+## Search Engine Curator
+## Note: aggregated disk_space size in following size based curator actions should
+##       not be grater than 85% of eric-data-search-engine persistentVolumeClaim.size
+eric-data-search-engine-curator:
+  enabled: false
+
+## License Manager
+eric-lm-combined-server:
+  enabled: true
+  features:
+    yang:
+      # feature.yang.enabled - Enable yang model
+      enabled: true
+  database:
+    ## Use single DBPG
+    # name: sc_database
+    # userName: scusr
+    # host: eric-data-document-database-pg
+    ## Use for dedicated DBPG and enable eric-lm-combined-server-db-pg
+    host: eric-lm-combined-server-db-pg
+    name: licensemanager_db
+    userName: lmuser
+  documentDatabasePG:
+    customObject:
+      enabled: false
+      instanceName: eric-data-document-database-pg
+
+eric-lm-combined-server-db-pg:
+  enabled: true
+  log:
+    schema: "adp"
+
+## Diagnostic Data Collector
+eric-odca-diagnostic-data-collector:
+  enabled: true
+  env:
+    adminState: "locked" ## lock interval-based collection
+    enableCmConfig: true ## Enable to use CM Mediator service for configuration
+    enableCmypConfig: true ## Enable to use CM Yang Provider service for configuration
+    enablePromReceiver: false ## Disable pm-remote-write metrics collection, enable via CLI
+    enableKubernetesInfoCollector: true ## Enable to collect kubernetes information
+    enableSwICollector: true ## Enable to collect software information
+  kms:
+    enabled: true
+  appSysInfoHandler: ## Setup an ASIH client used by the Software Information Collector
+    enabled: true
+  kubernetesInfo: ## Setup a Kubernetes REST API client used by the Kubernetes information Collector
+    enabled: true
+  resources:
+    diagnostic-data-collector:
+      limits:
+        memory: 1.5G
+        cpu: 1.5
+
+## Object Staorage MN
+eric-data-object-storage-mn:
+  enabled: false
+  credentials:
+    kubernetesSecretName: eric-data-object-storage-mn-secret
+  affinity:
+    podAntiAffinity: "soft"
+  networkPolicy:
+    enabled: true
+  persistence:
+    persistentVolumeClaim:
+      size: 10Gi
+  objectStorage:
+    ## Enable this to enable the collection of files from Object Storage
+    enabled: false
+
+## Application Sys Info Handler
+eric-si-application-sys-info-handler:
+  enabled: true
+  applicationInfoService:
+    port: 9095
+  asih:
+    applicationId: "sc-testnode"
+    fetchInfrastructureInfo: false
+
+eric-lcm-smart-helm-hooks:
+  enabled: false
+
+eric-sec-access-mgmt:
+  enabled: false
+
+eric-sec-access-mgmt-db-pg:
+  enabled: false
+
+eric-dst-collector:
+  enabled: false
+
+eric-data-key-value-database-rd:
+  enabled: true
+  resources:
+    kvdbOperator:
+      limits:
+        memory: 100Mi

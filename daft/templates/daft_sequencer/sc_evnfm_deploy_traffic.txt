@@ -1,0 +1,116 @@
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.9
+#  Date     : 2024-04-12 17:31:03
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2023-2024
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+################################################################################
+# This file is used by the daft_sequencer.pl script and it contains commands to
+# be executed one-after-another.
+#
+# The file will first download the specific SC software from artifactory, then
+# remove any currently deployed software for the specific namespace and then
+# deploy the specified SC software using EVNFM and add users, certificates and
+# configuration data.
+# It will also install the tools taken from the software package and then
+# configure the traffic but not start the traffic.
+#
+# NOTE:
+# This should be executed on the node.
+################################################################################
+
+# Playlist variables
+# ------------------
+PLAYLIST_VARIABLE: CREATE_PACKED_WORKSPACE_FILE_AT_FAILURE=yes
+PLAYLIST_VARIABLE: CREATE_PACKED_WORKSPACE_FILE_AT_SUCCESS=yes
+PLAYLIST_VARIABLE: INPUT_AVAILABLE=no
+PLAYLIST_VARIABLE: PACK_TROUBLESHOOTING_LOGS_SEPARATELY=yes
+
+# Environment variables
+# ---------------------
+# Change this parameter on the command line if you want to use a different "network-config-option" enabled, e.g. add -e DAFT_NETWORK_CONFIG_OPTION="-o SigDsOamDsDiamDs"
+ENVIRONMENT_VARIABLE: DAFT_NETWORK_CONFIG_OPTION=""
+# Change these on the command line if you want a different value, using -e DAFT_XXXX=yyyy
+ENVIRONMENT_VARIABLE: DAFT_ARTIFACTORY_TOKEN="cmVmdGtuOjAxOjE3NDM3NTYxMjQ6TkhWdmFvMjVmY2xWZkY3QzJORDRTNVFOWGV1"
+ENVIRONMENT_VARIABLE: DAFT_ARTIFACTORY_URL="https://arm.seli.gic.ericsson.se/artifactory/proj-5g-bsf-generic-local/eiffelesc/"
+ENVIRONMENT_VARIABLE: DAFT_CLEAN_REGISTRY=no
+ENVIRONMENT_VARIABLE: DAFT_ENABLED_CNF=bsf-scp-slf-sepp
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_ADD_CERTIFICATES=yes
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_ADD_USERS=yes
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_CLEAN_REGISTRY=no
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_CONFIGURE=yes
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_DEPLOY_SC=yes
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_DEPLOY_TOOLS=yes
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_DOWNLOAD_CSAR=yes
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_REMOVE_LABEL=yes
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_RESERVE_WORKERS=no
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_START_TRAFFIC=yes
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_UNDEPLOY_SC=yes
+ENVIRONMENT_VARIABLE: DAFT_EXECUTE_UNDEPLOY_TOOLS=yes
+ENVIRONMENT_VARIABLE: DAFT_DOWNLOAD_DIR="/home/eccd/download"
+ENVIRONMENT_VARIABLE: DAFT_NODES_TO_RESERVE=2
+ENVIRONMENT_VARIABLE: DAFT_TRAFFIC_DURATION=indefinite
+# Remove the comment (#) from the following lines if you don't want to specify the values on the command line.
+#ENVIRONMENT_VARIABLE: DAFT_NETWORK_CONFIG_FILE=/home/eccd/daft/Snorlax.xml
+#ENVIRONMENT_VARIABLE: DAFT_SC_SOFTWARE_VERSION=1.12.0+43
+
+# Script variables
+# ----------------
+# Always stop on error when executing these commands
+SCRIPT_VARIABLE: stop-on-error=yes
+
+# Execute commands
+# ----------------
+
+# Download the software package
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_DOWNLOAD_CSAR="yes"     download_csar.pl --artifact-token $DAFT_ARTIFACTORY_TOKEN --noprogress --color=no -p $DAFT_SC_SOFTWARE_VERSION -l $DAFT_ARTIFACTORY_URL -t $DAFT_DOWNLOAD_DIR
+
+# Clean the local registry
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_CLEAN_REGISTRY="yes"    execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE -p 108_Miscellaneous_Tasks                -j Clean_Registry                                   -v CLEAN_REGISTRY=yes
+
+# Remove any node labels and taints from the workers
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_REMOVE_LABEL="yes"      execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE -p 103_Tools_Management                   -j Remove_Node_Label                                -v DO_REMOVE_TAINT=yes -v DO_REMOVE_LABEL=yes -v NODE_TAINTS=NoSchedule -v NODE_LABEL=usage=tools
+
+# Undeploy any tools
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_UNDEPLOY_TOOLS="yes"    execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE -p 106_Traffic_Tools_Remove               -j Undeploy_Tools                                   -v TOOLS_TO_REMOVE=dscload,k6,nrfsim,sc-monitor,seppsim,sftp -v REMOVE_NAMESPACE=yes
+
+# Terminate any SC software using EVNFM
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_UNDEPLOY_SC="yes"       execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE -p 206_EVNFM_Terminate_SC                 -j EVNFM_Terminate_SC                               -o EVNFM
+
+# Undeploy any SC software
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_UNDEPLOY_SC="yes"       execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE -p 003_Undeploy_SC                        -j Undeploy_SC                                      -v SKIP_UNDEPLOY_CRD=no -v CLEAN_REGISTRY=no
+
+# Reserve workers for the tools deployment
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_RESERVE_WORKERS="yes"   execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE -p 103_Tools_Management                   -j Reserve_Workers_For_Tools                        -v DO_ASSIGN_TAINT=yes -v DO_ASSIGN_LABEL=yes -v NODE_TAINTS=NoSchedule -v NODE_LABEL=usage=tools -v NODES_TO_SELECT=$DAFT_NODES_TO_RESERVE
+
+# Deploy the SC software using EVNFM
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_DEPLOY_SC="yes"         execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE -p 201_EVNFM_Deploy_SC                    -j EVNFM_Deploy_SC_$DAFT_SC_SOFTWARE_VERSION        $DAFT_NETWORK_CONFIG_OPTION -v SOFTWARE_DIR=$DAFT_DOWNLOAD_DIR/$DAFT_SC_SOFTWARE_VERSION -v ENABLED_CNF=$DAFT_ENABLED_CNF -v COLLECT_LOGS_AT_SUCCESS=yes -v SKIP_DEPLOY_UPGRADE_CRD=no -o EVNFM
+
+# Add users
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_ADD_USERS="yes"         execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE -p 005_User_Management                    -j Add_Users_SC_$DAFT_SC_SOFTWARE_VERSION           $DAFT_NETWORK_CONFIG_OPTION
+
+# Generate and Install Certificates
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_ADD_CERTIFICATES="yes"  execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE -p 102_Supreme_Certificate_Management     -j Add_Certificates_SC_$DAFT_SC_SOFTWARE_VERSION    $DAFT_NETWORK_CONFIG_OPTION -v SOFTWARE_DIR=$DAFT_DOWNLOAD_DIR/$DAFT_SC_SOFTWARE_VERSION -v GENERATE_CERTIFICATES=yes -v CERTIFICATES_TO_GENERATE=rootca,scpmgr,scpwrk,seppmgr,seppwrk,nbi,diameter,transformer -v INSTALL_CERTIFICATES=yes -v CERTIFICATE_DIRECTORY=$DAFT_DOWNLOAD_DIR/$DAFT_SC_SOFTWARE_VERSION/certificates -v CERTIFICATE_VALIDITY_DAYS=7300
+
+# Deploy Tools
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_DEPLOY_TOOLS="yes"      execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE -p 109_Traffic_Tools_Install              -j Deploy_Tools_SC_$DAFT_SC_SOFTWARE_VERSION        $DAFT_NETWORK_CONFIG_OPTION -v SOFTWARE_DIR=$DAFT_DOWNLOAD_DIR/$DAFT_SC_SOFTWARE_VERSION -v TOOLS_TO_INSTALL=dscload,k6,nrfsim,sc-monitor,seppsim,sftp -v CERTIFICATE_DIRECTORY=$DAFT_DOWNLOAD_DIR/$DAFT_SC_SOFTWARE_VERSION/certificates -v CERTIFICATE_VALIDITY_DAYS=7300
+
+# Configure traffic
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_CONFIGURE="yes"         execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE -p 107_Traffic_Tools_Configure_And_Start  -j Configure_Traffic_SC_$DAFT_SC_SOFTWARE_VERSION   $DAFT_NETWORK_CONFIG_OPTION -v PASSWORD_EXPIRE=no -v SKIP_POST_HEALTHCHECK=no -v SKIP_PRE_HEALTHCHECK=yes -v TRAFFIC_TO_CONFIGURE=automatic -v FORCE_LOAD_CONFIGURATION=yes
+
+# Start the traffic
+IF_ENVIRONMENT_VAR DAFT_EXECUTE_START_TRAFFIC="yes"     execute_playlist.pl -n $DAFT_NETWORK_CONFIG_FILE -p 107_Traffic_Tools_Configure_And_Start  -j Start_Traffic_SC_$DAFT_SC_SOFTWARE_VERSION       $DAFT_NETWORK_CONFIG_OPTION -v PASSWORD_EXPIRE=no -v TRAFFIC_TO_START=automatic -v TRAFFIC_DURATION=$DAFT_TRAFFIC_DURATION

@@ -1,0 +1,18 @@
+eric-bsf:
+  manager:
+    leaderElection:
+      enabled: false
+  spec:
+    manager:
+      replicaCount: 1
+    worker:
+      replicaCount: 1
+
+eric-bsf-diameter:
+  replicaCount: 1
+
+eric-bsf-wcdb-cd:
+  replicaCount: 2
+
+eric-stm-diameter:
+  replicaCount: 1

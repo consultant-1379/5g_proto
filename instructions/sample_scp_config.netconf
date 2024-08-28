@@ -1,0 +1,122 @@
+<hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <capabilities>
+        <capability>urn:ietf:params:netconf:base:1.0</capability>
+    </capabilities>
+</hello>]]>]]>
+
+
+
+<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:ns2="urn:com:ericsson:ecim:1.0" xmlns:ns3="http://tail-f.com/ns/netconf/actions/1.0" xmlns:ns4="urn:ietf:params:xml:ns:yang:ietf-netconf-monitoring" xmlns:ns5="urn:ietf:params:xml:ns:netconf:notification:1.0" message-id="0">
+  <edit-config>
+    <target>
+      <running/>
+    </target>
+      <config>
+            <scp-function operation="replace" xmlns="urn:rdns:com:ericsson:oammodel:ericsson-scp">
+                <nf-instance xmlns="urn:rdns:com:ericsson:oammodel:ericsson-scp">
+                    <name>instance_1</name>
+                    
+                    <service-address>
+                        <name>internalAddress</name>
+                        <port>32365</port>
+                        <tls-port>32370</tls-port>
+                        <fqdn>scp.ericsson.se</fqdn>
+                        <ipv4-address>10.63.138.10</ipv4-address>
+                    </service-address>
+
+                    <own-network>
+                        <name>internalNetwork</name>
+                        <service-address-ref>internalAddress</service-address-ref>
+                        <routing-case-ref>default_routing</routing-case-ref>
+                    </own-network>
+                    
+                    
+                    <ingress-connection-profile>
+                        <name>default_profile</name>
+                    </ingress-connection-profile>
+                    <ingress-connection-profile-ref>default_profile</ingress-connection-profile-ref>
+
+                    <egress-connection-profile>
+                        <name>default_profile</name>
+                    </egress-connection-profile>
+                    <egress-connection-profile-ref>default_profile</egress-connection-profile-ref>
+
+                    <message-data>
+                        <name>apiRoot_data</name>
+                        <header>3gpp-Sbi-target-apiRoot</header>
+                        <extractor-regex>eric-chfsim-\d+-mnc-(?P&lt;mnc&gt;\d+)-mcc-(?P&lt;mcc&gt;\d+)</extractor-regex>
+                    </message-data>
+                    <message-data>
+                        <name>chfsim_data</name>
+                        <header>3gpp-Sbi-target-apiRoot</header>
+                        <extractor-regex>eric-(?P&lt;chfsim&gt;chfsim-\d+?)-.+</extractor-regex>
+                    </message-data>
+                    <routing-case>
+                        <name>default_routing</name>
+                        <message-data-ref>apiRoot_data</message-data-ref>                      
+                        <message-data-ref>chfsim_data</message-data-ref>  
+                        <routing-rule>
+                            <name>csepp_to_rp_A</name>
+                            <condition>true</condition>
+                            <routing-action>
+                                <name>csepp_to_rp_A_ra</name>
+                                <action-route-round-robin>
+                                    <target-nf-pool>
+                                        <nf-pool-ref>sepp</nf-pool-ref>
+                                    </target-nf-pool>
+                                    <failover-profile-ref>fob1</failover-profile-ref>
+                                </action-route-round-robin>
+                            </routing-action>
+                        </routing-rule> 
+                 
+                    </routing-case>
+                    <static-nf-instance-data>
+                        <name>static_sepp</name>
+                        <static-nf-instance>
+                            <name>seppA-chfsim1</name>
+                            <static-nf-service>
+                                <name>nchf-convergedcharging</name>
+                                <address>
+                                    <scheme>http</scheme>
+                                    <multiple-ip-endpoint>
+                                    <name>chfsim-1</name>
+                                    <ipv4-address>10.120.218.172</ipv4-address>
+                                    <port>31713</port>
+                                    </multiple-ip-endpoint>
+                                </address> 
+                            </static-nf-service>
+                        </static-nf-instance>
+                        
+                    </static-nf-instance-data>
+                    
+                    <nf-pool>
+                        <name>sepp</name>
+                        <nf-pool-discovery>
+                            <name>sepp_pool</name>
+                            <static-nf-instance-data-ref>static_sepp</static-nf-instance-data-ref>
+                        </nf-pool-discovery>
+                    </nf-pool>
+                   
+                    <failover-profile>
+                        <name>fob1</name>
+                        <request-time-budget>3456</request-time-budget>
+                        <retry-condition>
+                            <http-status>500</http-status>
+                            <http-status>501</http-status>
+                            <http-status>502</http-status>
+                            <http-status>503</http-status>
+                            <http-status>504</http-status>
+                            <reset>false</reset>
+                            <connect-failure>false</connect-failure>
+                            <refused-stream>false</refused-stream>
+                        </retry-condition>
+                        <preferred-host-retries-max>1</preferred-host-retries-max>
+                        <target-nf-pool-reselects-max>3</target-nf-pool-reselects-max>
+                        <target-timeout>2345</target-timeout>
+                    </failover-profile>
+                </nf-instance>
+            </scp-function>
+        </config>
+    </edit-config>
+</rpc>
+]]>]]>

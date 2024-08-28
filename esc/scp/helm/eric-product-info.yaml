@@ -1,0 +1,75 @@
+productName: "Service Communication Proxy (SCP)"
+productNumber: product_number
+productRevision: product_revision
+images:
+  setupmanager:
+    productName: "SCP Manager"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+    name: scp_manager_image_name
+    tag: scp_manager_image_tag
+  manager:
+    productName: "SCP Manager"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+    name: scp_manager_image_name
+    tag: scp_manager_image_tag
+  setupworker:
+    productName: "SCP Worker"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+    name: scp_worker_image_name
+    tag: scp_worker_image_tag
+  worker:
+    productName: "SCP Worker"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+    name: scp_worker_image_name
+    tag: scp_worker_image_tag
+  sds:
+    productName: "SCP SDS"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+    name: sds_image_name
+    tag: sds_image_tag
+  certnotifier:
+    productName: "SCP Certificate Notifier"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+    name: certnotifier_image_name
+    tag: certnotifier_image_tag
+  logfwdr:
+    productName: "SCP Log Forwarder"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+    name: logfwdr_image_name
+    tag: logfwdr_image_tag
+  tapagent:
+    productName: "SCP TAP agent"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+    name: tap_agent_image_name
+    tag: tap_agent_image_tag
+  tlskeylogagent:
+    productName: "SCP TLS Keylog Agent"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+    name: tlskeylogagent_image_name
+    tag: tlskeylogagent_image_tag
+  tapcollector:
+    productName: "SCP Tap Collector"
+    productNumber: "-"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-5g-bsf/eiffelesc"
+    name: tapcollector_image_name
+    tag: tapcollector_image_tag
+

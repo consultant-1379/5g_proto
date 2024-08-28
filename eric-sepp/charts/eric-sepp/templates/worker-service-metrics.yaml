@@ -1,0 +1,63 @@
+{{- if .Values.metrics.worker.enabled }}
+{{- if eq (include "eric-sepp.tls" .) "true" }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ template "eric-sepp.name" . }}-worker-metrics-tls
+  labels:
+{{- include "eric-sepp.labels" . | indent 4 }}
+    app: {{ template "eric-sepp.name" . }}-worker
+  annotations:
+{{- include "eric-sepp.helm-annotations" . | indent 4 }}
+{{- include "eric-sepp.config-annotations" . | indent 4 }}
+    prometheus.io/scrape: {{ .Values.metrics.worker.enabled | quote }}
+    prometheus.io/path: "/stats/prometheus"
+    prometheus.io/scheme: https
+spec:
+  ipFamilyPolicy: PreferDualStack
+  type: ClusterIP
+{{- include "eric-sepp.ipfamilies" . | indent 2 }}
+  ports:
+  - name: https-metrics
+    protocol: TCP
+    port: {{ .Values.spec.worker.metricsPort }}
+    targetPort: {{ .Values.spec.worker.metricsPort }}
+  selector:
+    app: {{ template "eric-sepp.name" . }}-worker
+{{- end }}
+---
+{{ if or ( eq (include "eric-sepp.tapcollector.worker.enabled" .) "true" ) (eq (include "eric-sepp.tls" .) "false" ) }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ template "eric-sepp.name" . }}-worker-metrics-non-tls
+  labels:
+{{- include "eric-sepp.labels" . | indent 4 }}
+    app: {{ template "eric-sepp.name" . }}-worker
+  annotations:
+{{- include "eric-sepp.helm-annotations" . | indent 4 }}
+{{- include "eric-sepp.config-annotations" . | indent 4 }}
+    prometheus.io/scrape: {{ .Values.metrics.worker.enabled | quote }}
+    prometheus.io/path: "/stats/prometheus"
+    prometheus.io/scheme: http
+spec:
+  ipFamilyPolicy: PreferDualStack
+  type: ClusterIP
+{{- include "eric-sepp.ipfamilies" . | indent 2 }}
+  ports:
+{{- if eq (include "eric-sepp.tapcollector.worker.enabled" .) "true" }}
+  - name: http-metrics1
+    protocol: TCP
+    port: {{ .Values.tapcollector.worker.pmClientPort }}
+    targetPort: {{ .Values.tapcollector.worker.pmClientPort }}
+{{- end }}
+{{- if eq (include "eric-sepp.tls" .) "false" }}
+  - name: http-metrics2
+    protocol: TCP
+    port: {{ .Values.spec.worker.metricsPort }}
+    targetPort: {{ .Values.spec.worker.metricsPort }}
+{{- end }}
+  selector:
+    app: {{ template "eric-sepp.name" . }}-worker
+{{- end }}
+{{- end }}

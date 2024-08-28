@@ -1,0 +1,184 @@
+[
+  {
+    "faultName": "Test",
+    "vendor": 193,
+    "code": 9306112,
+    "defaultSeverity": "Warning",
+    "defaultDescription": "This is a test alarm, please ignore.",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "Test Alarm"
+  },
+  {
+    "faultName": "ScpNrfGroupUnavailable",
+    "vendor": 193,
+    "code": 9306113,
+    "defaultSeverity": "Major",
+    "defaultDescription": "The NRF-group is unavailable",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SCP, NRF Group Unavailable"
+  },
+  {
+    "faultName": "ScpBadConfiguration",
+    "vendor": 193,
+    "code": 9306114,
+    "defaultSeverity": "Major",
+    "defaultDescription": "The configuration provided is faulty",
+    "category": "ProcessingErrorAlarm",
+    "specificProblem": "SCP, Bad Configuration"
+  },
+  {
+    "faultName": "ScpUnresolvableHosts",
+    "vendor": 193,
+    "code": 9306118,
+    "defaultSeverity": "Major",
+    "defaultDescription": "One or more hostnames cannot be resolved",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SCP, Unresolvable Hosts"
+  },
+  {
+    "faultName": "MissingCertificate",
+    "vendor": 193,
+    "code": 9306119,
+    "defaultSeverity": "Critical",
+    "defaultDescription": "An asymmetric key or/and a certificate authority are unavailable which can result in the failure of the secure connection that uses them.",
+    "category": "Other",
+    "specificProblem": "SCP, Certificate Missing"
+  },
+  {
+    "faultName": "ScpNfServiceInstanceNotReachable",
+    "vendor": 193,
+    "code": 9306120,
+    "defaultSeverity": "Major",
+    "defaultDescription": "The NF Service Instance is not reachable for service requests",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SCP, NF Service Instance Not Reachable"
+  },
+  {
+    "faultName": "ScpHighLoad",
+    "createAlarm" : true,
+    "vendor": 193,
+    "code": 9306121,
+    "defaultExpiration" : 0,
+    "defaultSeverity": "Major",
+    "defaultDescription": "SCP load has passed a defined threshold",
+    "probableCause": 207,
+    "category": "Other",
+    "specificProblem": "SCP, High Load"
+  },
+  {
+    "faultName": "ScpHighNumberOfIngressTcpConnections",
+    "createAlarm" : true,
+    "vendor": 193,
+    "code": 9306122,
+    "defaultExpiration" : 0,
+    "defaultSeverity": "Minor",
+    "defaultDescription": "The open incoming TCP connections have passed a defined threshold",
+    "probableCause": 207,
+    "category": "Other",
+    "specificProblem": "SCP, High number of open incoming TCP connections"
+  },
+  {
+    "faultName": "ScpSlfHighLoad",
+    "createAlarm" : true,
+    "vendor": 193,
+    "code": 9306123,
+    "defaultExpiration" : 0,
+    "defaultSeverity": "Major",
+    "defaultDescription": "SLF load has passed a defined threshold",
+    "probableCause": 207,
+    "category": "Other",
+    "specificProblem": "SCP, SLF High Load"
+  },
+  {
+    "faultName": "ScpMessagesDroppedByGlobalRateLimiting",
+    "createAlarm" : true,
+    "vendor": 193,
+    "code": 9306124,
+    "defaultExpiration":0,
+    "defaultSeverity": "Warning",
+    "defaultDescription": "The percentage of dropped messages forwarded from SCP to RLF has exceeded the predefined limit",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SCP, Messages Dropped by Global Rate Limiting"
+  },
+  {
+    "faultName": "ScpMessagesRejectedByGlobalRateLimiting",
+    "createAlarm" : true,
+    "vendor": 193,
+    "code": 9306125,
+    "defaultExpiration" : 0,
+    "defaultSeverity": "Warning",
+    "defaultDescription": "The percentage of rejected messages forwarded from SCP to RLF has exceeded the predefined limit",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SCP, Messages Rejected by Global Rate Limiting"
+  },
+  {
+    "faultName": "ScpEnvoySegmentsDroppedRatio",
+    "createAlarm" : true,
+    "vendor": 193,
+    "code": 9306126,
+    "defaultExpiration" : 0,
+    "defaultSeverity": "Major",
+    "defaultDescription": "Envoy segments dropped ratio",
+    "probableCause": 207,
+    "category": "Other",
+    "specificProblem": "SCP, Envoy segments dropped ratio"
+  },
+  {
+    "faultName": "ScpInvalidDiscoveredNfInstance",
+    "createAlarm" : true,
+    "vendor": 193,
+    "code": 9306127,
+    "defaultExpiration" : 0,
+    "defaultSeverity": "Major",
+    "defaultDescription": "Invalid discovered NF instance not updated in database",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SCP, Invalid discovered NF instance"
+  },
+  {
+    "faultName": "ScpNfDiscoveryDataUpdateError",
+    "createAlarm" : true,
+    "vendor": 193,
+    "code": 9306128,
+    "defaultExpiration" :0,
+    "defaultSeverity": "Major",
+    "defaultDescription": "Unable to update discovered data in database",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SCP, NF discovery data update error"
+  },
+  {
+    "faultName": "ScpSlfUnresolvableHosts",
+    "vendor": 193,
+    "code": 9306129,
+    "defaultSeverity": "Major",
+    "defaultDescription": "One or more hostnames cannot be resolved",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SCP, SLF Unresolvable Hosts"
+  },
+  {
+    "faultName": "ScpSlfNrfGroupUnavailable",
+    "vendor": 193,
+    "code": 9306130,
+    "defaultSeverity": "Major",
+    "defaultDescription": "The NRF-group is unavailable",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SCP, SLF NRF Group Unavailable"
+  },
+  {
+    "faultName": "ScpNfInstanceUnavailable",
+    "vendor": 193,
+    "code": 9306131,
+    "defaultSeverity": "Major",
+    "defaultDescription": "The NF failures have exceeded the configured threshold",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SCP, NF Instance Unavailable"
+  },
+  {
+    "faultName": "ScpNfServiceInstanceActiveHealthCheckFailed",
+    "vendor": 193,
+    "code": 9306132,
+    "defaultSeverity": "Major",
+    "defaultDescription": "The active health check for the NF Service Instance failed",
+    "category": "CommunicationsAlarm",
+    "specificProblem": "SCP, NF Service Instance active health check failed"
+  }
+]

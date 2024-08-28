@@ -1,0 +1,136 @@
+Yang modules used:
+- ietf-netconf-acm.yang
+- ericsson-yang-extensions.yang
+- ietf-yang-types.yang
+- tailf-cli-extensions@2018-09-11.yang
+- tailf-common.yang
+- tailf-meta-extensions@2017-03-08.yang
+
+A. Generate JSON-SCHEMA with the following steps
+
+Generate Json Schema from YANG
+------------------------------
+
+1. Fetch latest "ericsson-yang-utilities-standalone.jar"
+
+$ wget http://eecs.rnd.ki.sw.ericsson.se/customer/dx/dropbox/yt-utilities/ericsson-yang-utilities-standalone.jar
+--2020-01-30 13:26:44--  http://eecs.rnd.ki.sw.ericsson.se/customer/dx/dropbox/yt-utilities/ericsson-yang-utilities-standalone.jar
+Resolving eecs.rnd.ki.sw.ericsson.se (eecs.rnd.ki.sw.ericsson.se)... 147.214.137.194
+Connecting to eecs.rnd.ki.sw.ericsson.se (eecs.rnd.ki.sw.ericsson.se)|147.214.137.194|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 31695683 (30M) [application/java-archive]
+Saving to: ‘ericsson-yang-utilities-standalone.jar’
+
+100%[====================================================================================================================================================================================================>] 31,695,683  --.-K/s   in 0.1s    
+
+
+2. Copy needed modules (ie ietf-netconf-acm.yang) from "~/5g_proto/devtools/yang/eyang_repository.tar.gz" or check link below.
+https://openalm.lmera.ericsson.se/file/showfiles.php?group_id=3104
+
+$tar -xzf ~/5g_proto/devtools/yang/eyang_repository.tar.gz
+$ ll | grep ietf-netconf-acm
+-rw-r--r-- 1 ekoteva eusers 12808 Jan 21  2019 ietf-netconf-acm.yang
+$cp ~/5g_proto/devtools/yang/eyang_repository/ietf/ietf-netconf-acm.yang-netconf-acm.yang
+
+3. Set the YANG modules
+
+$export YANG_FILES="ietf-netconf-acm.yang ericsson-yang-extensions.yang"
+
+3. Fetch other yang dependencies
+
+$java -jar ericsson-yang-utilities-standalone.jar module-info-extractor --fetch-deps --files $YANG_FILES --module-dirs .
+WARNING: An illegal reflective access operation has occurred
+WARNING: Illegal reflective access by com.google.inject.internal.cglib.core.$ReflectUtils$1 (file:/local/ekoteva/5g_proto/devtools/yang/ekoteva/ericsson-yang-utilities-standalone.jar) to method java.lang.ClassLoader.defineClass(java.lang.String,byte[],int,int,java.security.ProtectionDomain)
+WARNING: Please consider reporting this to the maintainers of com.google.inject.internal.cglib.core.$ReflectUtils$1
+WARNING: Use --illegal-access=warn to enable warnings of further illegal reflective access operations
+WARNING: All illegal access operations will be denied in a future release
+
+4. Check yang dependencies and compare with the modules included in "~/5g_proto/devtools/yang/eyang_repository.tar.gz".
+
+$ ll
+total 31008
+drwxr-xr-x 2 ekoteva eusers     4096 Jan 30 13:27 ./
+drwxr-xr-x 7 ekoteva eusers     4096 Jan 30 13:26 ../
+-rw-r--r-- 1 ekoteva eusers 31695683 Jan 28 11:17 ericsson-yang-utilities-standalone.jar
+-rw-r--r-- 1 ekoteva eusers    12808 Jan 30 13:27 ietf-netconf-acm.yang
+-rw-r--r-- 1 ekoteva eusers    26614 Jan 30 13:27 ietf-yang-types.yang
+$ cd ~/5g_proto/devtools/yang/eyang_repository/ietf
+$ ll | grep yang-types
+-rw-r--r-- 1 ekoteva eusers 17939 Jan 21  2019 ietf-yang-types@2013-07-15.yang
+
+If there are no differences or licenses fetched from link in step 2, we can skip the step 5.
+
+5. Align YANG dependencies according to the "~/5g_proto/devtools/yang/eyang_repository.tar.gz"
+
+$ cp ~/5g_proto/devtools/yang/eyang_repository/ietf/ietf-yang-types@2013-07-15.yang ~/5g_proto/devtools/yang/ietf-yang-types.yang
+
+6. Set the YANG modules
+
+export YANG_FILES="ietf-netconf-acm.yang ietf-yang-types.yang ericsson-yang-extensions.yang tailf-cli-extensions@2018-09-11.yang tailf-common.yang tailf-meta-extensions@2017-03-08.yang"
+
+7. Preprocess yang files
+
+$ java -jar ericsson-yang-utilities-standalone.jar eyang-preprocessor --generate-extension-for adp --files $YANG_FILES --module-dirs . --output-dir ./output
+WARNING: An illegal reflective access operation has occurred
+WARNING: Illegal reflective access by com.google.inject.internal.cglib.core.$ReflectUtils$1 (file:/local/ekoteva/5g_proto/devtools/yang/ekoteva/ericsson-yang-utilities-standalone.jar) to method java.lang.ClassLoader.defineClass(java.lang.String,byte[],int,int,java.security.ProtectionDomain)
+WARNING: Please consider reporting this to the maintainers of com.google.inject.internal.cglib.core.$ReflectUtils$1
+WARNING: Use --illegal-access=warn to enable warnings of further illegal reflective access operations
+WARNING: All illegal access operations will be denied in a future release
+File generated: /local/ekoteva/5g_proto/devtools/yang/ekoteva/./output/ietf-netconf-acm.yang
+File generated: /local/ekoteva/5g_proto/devtools/yang/ekoteva/./output/ietf-yang-types.yang
+File generated: /local/ekoteva/5g_proto/devtools/yang/ekoteva/./output/ericsson-netconf-acm-types.yang
+
+8. Check that YANG preprocessed files generated
+
+$ ls ./output/*
+./output/ietf-netconf-acm.yang  ./output/ietf-yang-types.yang ./output/ericsson-netconf-acm-types.yang
+
+9. Generate "models.json"
+
+$java -jar ericsson-yang-utilities-standalone.jar adp-models-generator --files ./output/* --module-dirs . --output-dir ./output
+WARNING: An illegal reflective access operation has occurred
+WARNING: Illegal reflective access by com.google.inject.internal.cglib.core.$ReflectUtils$1 (file:/local/ekoteva/5g_proto/devtools/yang/ekoteva/ericsson-yang-utilities-standalone.jar) to method java.lang.ClassLoader.defineClass(java.lang.String,byte[],int,int,java.security.ProtectionDomain)
+WARNING: Please consider reporting this to the maintainers of com.google.inject.internal.cglib.core.$ReflectUtils$1
+WARNING: Use --illegal-access=warn to enable warnings of further illegal reflective access operations
+WARNING: All illegal access operations will be denied in a future release
+File generated: /local/ekoteva/5g_proto/devtools/yang/ekoteva/./output/models.json
+
+10. Check that "models.json" includes all YANG files
+
+$ cat output/models.json 
+[
+  {
+    "name": "ericsson-netconf-acm-ext.yang"
+  },
+  {
+    "name": "ietf-netconf-acm.yang",
+    "deviations": [
+      "ericsson-netconf-acm-ext.yang"
+    ]
+  },
+  {
+    "name": "ietf-yang-types.yang"
+  }
+]
+
+11. Generate Json Schema "ietf-netconf-acm.json"
+
+$ java -jar ericsson-yang-utilities-standalone.jar jsonschema-generator --configuration ./output/models.json --files ./output/*.yang --module-dirs . --output-dir ./json-schema-output
+WARNING: An illegal reflective access operation has occurred
+WARNING: Illegal reflective access by com.google.inject.internal.cglib.core.$ReflectUtils$1 (file:/local/ekoteva/5g_proto/devtools/yang/ekoteva/ericsson-yang-utilities-standalone.jar) to method java.lang.ClassLoader.defineClass(java.lang.String,byte[],int,int,java.security.ProtectionDomain)
+WARNING: Please consider reporting this to the maintainers of com.google.inject.internal.cglib.core.$ReflectUtils$1
+WARNING: Use --illegal-access=warn to enable warnings of further illegal reflective access operations
+WARNING: All illegal access operations will be denied in a future release
+File generated: /local/ekoteva/5g_proto/devtools/yang/ekoteva/./json-schema-output/ietf-netconf-acm.json
+
+12. Check that Json Schema generated and use it
+
+$ ll json-schema-output/
+total 20
+drwxr-xr-x 2 ekoteva eusers 4096 Jan 30 14:08 ./
+drwxr-xr-x 4 ekoteva eusers 4096 Jan 30 14:08 ../
+-rw-r--r-- 1 ekoteva eusers 8282 Jan 30 14:08 ietf-netconf-acm.json
+
+
+B. Create the classes with the following step
+./../../../../../devtools/yang/jsonschema2pojo-1.0.0/bin/jsonschema2pojo -o -D -b -c -a JACKSON2 -p com.ericsson.adpal.cm.model -s ietf_netconf_acm_schema.json -t ../../java/com/ericsson/adpal/cm/model/

@@ -1,0 +1,19 @@
+global:
+  externalIPv4:
+    enabled: false
+  externalIPv6:
+    enabled: true
+
+eric-bsf-wcdb-cd:
+  service:
+    externalIPv6:
+      enabled: false
+
+eric-stm-diameter:
+    externalIPv6:
+      enabled: false
+
+eric-bsf:
+  service:
+    worker:
+      ipFamilyPolicy: SingleStack

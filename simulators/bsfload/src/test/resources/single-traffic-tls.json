@@ -1,0 +1,25 @@
+{
+	"duration": 20,
+	"target-port": 80,
+	"tls": {
+		"enabled": true,
+		"verify-host": false,
+		"cert-path": "./certificates/cert.pem",
+		"key-path": "./certificates/key.pem"
+	},
+	"traffic-mix": [
+		{
+			"id": "b5659381-336f-45cd-b985-50720490154d",
+			"name": "set1",
+			"order": 1,
+			"tps": 500,
+			"target-host": "192.168.1.1",
+			"type": "discovery",
+			"num-requests": 3000,
+			"ip-range": {
+				"start-ip": "10.0.0.1",
+				"range": 100
+			}
+		}
+	]
+}

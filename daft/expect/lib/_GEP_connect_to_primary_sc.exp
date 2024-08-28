@@ -1,0 +1,106 @@
+################################################################################
+# $Revision: 1.2 $                                                             #
+#   $Author: eustone $                                                         #
+#     $Date: 2017-03-06 14:01:14 $                                             #
+################################################################################
+#                                                                              #
+# (C) COPYRIGHT ERICSSON GMBH 2014                                             #
+#                                                                              #
+# The copyright to the computer program(s) herein is the property of           #
+# Ericsson GmbH, Germany.                                                      #
+#                                                                              #
+# The program(s) may be used and/or copied only with the written permission    #
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in   #
+# the agreement/contract under which the program(s) have been supplied.        #
+#                                                                              #
+################################################################################
+
+source [file join [file dirname [info script]] ../lib/_GEP_get_hostname.exp]
+source [file join [file dirname [info script]] ../lib/_GEP_get_primary_sc.exp]
+
+# -----------------------------------------------------------------------------
+# Connect to the primary SC.
+#
+# This subroutine expects that it is already connected to the GEP Linux prompt.
+#
+# Input:
+#  - root password
+#
+# Output:
+#  -  0: Success, Connected to primary SC
+#     1: Failure, Not able to connect to primary SC
+#    -1: Timeout
+#
+proc GEP_connect_to_primary_sc {root_password} {
+    global spawn_id
+
+    set connected 0
+
+    # Get current hostname
+    set hostname [GEP_get_hostname]
+    if {$hostname == "-"} {
+        # Unable to determine current hostname
+        return 1
+    }
+
+    # Find out who is the primary SC
+    set primary_sc [GEP_get_primary_sc]
+    if {$primary_sc == "-"} {
+        # Unable to determine primary SC
+        return 1
+    }
+
+    if { $hostname == $primary_sc } {
+
+        # The current SC is primary
+        set connected 1
+
+    } else {
+
+        # Current node is not primary, try the primary SC
+
+        set connected_peer 0
+
+        # Connect to the peer node
+        send -- "ssh $primary_sc\r"
+
+        # Wait for password request from GEP
+        expect {
+            "Connection closed by foreign host" {
+                # Login failed for some reason
+                return 1
+            }
+            "assword:" {
+                send "$root_password\r"
+                exp_continue
+            }
+            -re "SC-\[12\]\[^\n\]*$" {
+                # We successfully logged in to the peer controller node
+                set connected_peer 1
+            }
+            "(yes/no)?" {
+                send "yes\r"
+                exp_continue
+            }
+            timeout {
+                return -1
+            }
+        }
+
+        # Read any pending output
+        expect -re ".*"
+
+        if { $connected_peer == 1 } {
+
+            # Connected successfully to peer node
+            set connected 1
+        }
+
+    }
+
+    if { $connected == 1 } {
+        return 0
+    } else {
+        return 1
+    }
+}

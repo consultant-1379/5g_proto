@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: "{{ .Release.Name }}-swim-configmap"    
+    labels:
+        ericsson.com/swim: "enabled"
+        app.kubernetes.io/instance: {{ .Release.Name | quote }}        
+    annotations:
+        ericsson.com/product-name: {{ (fromYaml (.Files.Get "eric-product-info.yaml")).productName | quote }}
+        ericsson.com/product-number: {{ (fromYaml (.Files.Get "eric-product-info.yaml")).productNumber | quote }}
+        ericsson.com/product-revision: {{ (fromYaml (.Files.Get "eric-product-info.yaml")).productRevision | quote }}
+        ericsson.com/production-date: {{ (fromYaml (.Files.Get "eric-product-info.yaml")).productReleaseDate | quote }}
+        ericsson.com/description: {{ (fromYaml (.Files.Get "eric-product-info.yaml")).productDescription | quote }}
+        ericsson.com/type: {{ (fromYaml (.Files.Get "eric-product-info.yaml")).productType | quote }}
+        ericsson.com/semantic-version: {{ (fromYaml (.Files.Get "eric-product-info.yaml")).semanticVersion | quote }}
+        ericsson.com/commercial-version: {{ (fromYaml (.Files.Get "eric-product-info.yaml")).commercialVersion | quote }}    
+data:

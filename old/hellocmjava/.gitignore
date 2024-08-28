@@ -1,0 +1,6 @@
+.gradle/
+.idea/
+Dockerfile
+build/
+cm-mediator_raml_1.1_D.tgz
+src/main/java/com/ericsson/esc/bsf/cm/adp/raml/

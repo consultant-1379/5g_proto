@@ -1,0 +1,9 @@
+global:
+  ipFamilyPolicy: PreferDualStack
+
+eric-stm-diameter:
+  service:
+    externalIPv4:
+      enabled: true
+    externalIPv6:
+      enabled: true

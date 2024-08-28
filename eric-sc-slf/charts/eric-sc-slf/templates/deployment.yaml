@@ -1,0 +1,466 @@
+# Copyright 2019 Ericsson GmbH
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "eric-sc-slf.name" . }}
+  labels:
+{{- include "eric-sc-slf.labels" . | indent 4 }}
+    app: {{ template "eric-sc-slf.name" . }}
+  annotations:
+{{- include "eric-sc-slf.helm-annotations" . | indent 4 }}
+{{- include "eric-sc-slf.config-annotations" . | indent 4 }}
+spec:
+  replicas: {{ .Values.spec.slf.replicaCount }}
+  selector:
+    matchLabels:
+      app: eric-sc-slf
+  strategy:
+    type: {{ .Values.updateStrategy.type | quote }}
+    {{- if eq .Values.updateStrategy.type "RollingUpdate" }}
+    {{- if or .Values.updateStrategy.rollingUpdate.maxUnavailable .Values.updateStrategy.rollingUpdate.maxSurge }}
+    rollingUpdate:
+    {{- end }}
+      {{- if .Values.updateStrategy.rollingUpdate.maxUnavailable }}
+      maxUnavailable: {{ .Values.updateStrategy.rollingUpdate.maxUnavailable }}
+      {{- end }}
+      {{- if .Values.updateStrategy.rollingUpdate.maxSurge }}
+      maxSurge: {{ .Values.updateStrategy.rollingUpdate.maxSurge }}
+      {{- end }}
+    {{- end }}
+  template:
+    metadata:
+      labels:
+        {{- include "eric-sc-slf.pod.labels" . | nindent 8 }}
+        app: {{ template "eric-sc-slf.name" . }}
+      annotations:
+{{- include "eric-sc-slf.helm-annotations" . | indent 8 }}
+{{- include "eric-sc-slf.config-annotations" . | indent 8 }}
+        evnfm.eo.ericsson.com/post-instantiate-status: "[]"
+    spec:
+      {{- if eq .Values.spec.slf.affinity.podAntiAffinity "hard" }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - {{ template "eric-sc-slf.name" . }}
+              topologyKey: "kubernetes.io/hostname"
+      {{- else if eq .Values.spec.slf.affinity.podAntiAffinity  "soft" }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - {{ template "eric-sc-slf.name" . }}
+              topologyKey: "kubernetes.io/hostname"
+      {{- end }}
+      {{- if include "eric-sc-slf.nodeSelector" . }}
+      nodeSelector:
+        {{ template "eric-sc-slf.nodeSelector" . }}
+      {{- end }}
+      {{- if .Values.spec.slf.tolerations }}
+      tolerations:
+{{ toYaml .Values.spec.slf.tolerations | indent 8 }}
+      {{- end }}
+      {{- if include "eric-sc-slf.pullSecrets" . }}
+      imagePullSecrets:
+      - name: {{ template "eric-sc-slf.pullSecrets" . }}
+      {{- end }}
+      serviceAccountName: {{ template "eric-sc-slf.name" . }}
+      containers:
+{{- if eq (include "eric-sc-slf.tapagent.enabled" .) "true" }}
+      - name: tapagent
+        image: {{ template "eric-sc-slf.tapagent.registryUrl" . }}/{{ template "eric-sc-slf.tapagent.repoPath" . }}/{{ template "eric-sc-slf.tapagent.image" . }}:{{ template "eric-sc-slf.tapagent.tag" . }}
+        imagePullPolicy: {{ template "eric-sc-slf.tapagent.imagePullPolicy" . }}
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 188503
+          allowPrivilegeEscalation: true
+          readOnlyRootFilesystem: true
+          privileged: false
+          capabilities:
+            drop:
+              - ALL
+            add:
+              - NET_ADMIN
+              - NET_RAW
+        resources:
+          requests:
+            cpu: {{ .Values.spec.tapagent.resources.requests.cpu | quote }}
+            memory: {{ .Values.spec.tapagent.resources.requests.memory | quote }}
+            {{- if index .Values.spec.tapagent.resources.requests "ephemeral-storage" }}
+            ephemeral-storage: {{ index .Values.spec.tapagent.resources.requests "ephemeral-storage" | quote }}
+            {{- end }}
+          limits:
+            cpu: {{ .Values.spec.tapagent.resources.limits.cpu | quote }}
+            memory: {{ .Values.spec.tapagent.resources.limits.memory | quote }}
+            {{- if index .Values.spec.tapagent.resources.limits "ephemeral-storage" }}
+            ephemeral-storage: {{ index .Values.spec.tapagent.resources.limits "ephemeral-storage" | quote }}
+            {{- end }}
+        volumeMounts:
+          - name: eric-sc-{{ .Values.spec.tapagent.configmap.name }}-volume
+            mountPath: {{ .Values.spec.tapagent.configmap.mountpath }}
+          - name: {{ template "eric-sc-slf.name" . }}-{{ .Values.spec.tapagent.secret.name }}-volume
+            mountPath: {{ .Values.spec.tapagent.secret.mountpath }}
+        env:
+          - name: CM_CONFIG_FILE_PATH
+            value: {{ .Values.spec.tapagent.configmap.mountpath }}
+          - name: CM_CONFIG_FILE_NAME
+            value: {{ .Values.spec.tapagent.configmap.fileName }}
+          - name: SERVICE_NAME
+            value: {{ template "eric-sc-slf.name" . }}
+          - name: TZ
+            value: {{ include "eric-sc-slf.timezone" . }}
+          - name: SERVICE_ID
+            value: {{ template "eric-sc-slf.name" . }}
+      - name: tlskeylogagent
+        image: {{ template "eric-sc-slf.tlskeylogagent.registryUrl" . }}/{{ template "eric-sc-slf.tlskeylogagent.repoPath" . }}/{{ template "eric-sc-slf.tlskeylogagent.image" . }}:{{ template "eric-sc-slf.tlskeylogagent.tag" . }}
+        imagePullPolicy: {{ template "eric-sc-slf.tlskeylogagent.imagePullPolicy" . }}
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          privileged: false
+          capabilities:
+            drop:
+              - ALL
+          runAsGroup: {{ .Values.spec.tlskeylogagent.mgid }}
+          runAsUser: {{ .Values.spec.tlskeylogagent.uid }}
+        resources:
+          requests:
+            cpu: {{ .Values.spec.tlskeylogagent.resources.requests.cpu | quote }}
+            memory: {{ .Values.spec.tlskeylogagent.resources.requests.memory | quote }}
+          limits:
+            cpu: {{ .Values.spec.tlskeylogagent.resources.limits.cpu | quote }}
+            memory: {{ .Values.spec.tlskeylogagent.resources.limits.memory | quote }}
+        volumeMounts:
+          - name: eric-sc-{{ .Values.spec.tapagent.configmap.name }}-volume
+            mountPath: {{ .Values.spec.tlskeylogagent.configmap.mountpath }}
+          - name: {{ template "eric-sc-slf.name" . }}-{{ .Values.spec.tlskeylogagent.secret.name }}-volume
+            mountPath: {{ .Values.spec.tlskeylogagent.secret.mountpath }}
+          - name: custom
+            mountPath: /mnt
+          - name: {{ .Values.log.volumeName | quote }}
+            mountPath: /logcontrol/config
+{{- if eq (include "eric-sc-slf.logshipper-enabled" . ) "true" }}
+      {{- include "eric-log-shipper-sidecar.log-shipper-sidecar-mounts" . | indent 10 }}
+{{- end }}
+        env:
+          - name: VTAP_CONFIG_DIR
+            value: /etc/cm-config/
+          - name: VTAP_SFTP_CONFIG_DIR
+            value: /etc/ftpserver/
+          - name: TLS_KEYLOGGER_FIFO_PATH
+            value: /mnt/tlskeylogger.fifo
+          - name: JVM_PARAMS
+            value: {{ .Values.jvm.parameters.tlskeylogagent | quote }}
+          - name: SERVICE_NAME
+            value: {{ template "eric-sc-slf.name" . }}
+          - name: TZ
+            value: {{ include "eric-sc-slf.timezone" . }}
+          - name: FILE_SIZE_LIMIT
+            value: {{ .Values.tlskeylogagent.fileSizeLimit | quote }}
+          - name: SERVICE_ID
+            value: {{ template "eric-sc-slf.name" . }}
+          - name: CONTAINER_NAME
+            value: "tlskeylogagent"
+          - name: LOG_PATH
+            value: {{ .Values.logShipper.storage.path | quote }}
+          - name: LOGBACK_FILENAME
+            value: {{ include "eric-sc-slf.logbackFileName" . | quote }}
+{{- end }}
+      - name: eric-sc-slf
+        image: {{ template "eric-sc-slf.slf.registryUrl" . }}/{{ template "eric-sc-slf.slf.repoPath" . }}/{{ template "eric-sc-slf.slf.image" . }}:{{ template "eric-sc-slf.slf.tag" . }}
+        imagePullPolicy: {{ template "eric-sc-slf.slf.imagePullPolicy" . }}
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          privileged: false
+          capabilities:
+            drop:
+              - ALL
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: CONTAINER_NAME
+          value: "eric-sc-slf"
+{{- if eq (include "eric-sc-slf.tapagent.enabled" .) "true" }}
+        - name: TLS_KEYLOGGER_FIFO_PATH
+          value: /mnt/tlskeylogger.fifo
+        - name: TLS_KEYLOGGER_FIFO_UID
+          value: {{ .Values.spec.tlskeylogagent.mgid | quote }}
+{{- end }}
+        - name: CM_MEDIATOR
+          value: {{ .Values.adp.cm.mediator.hostname | quote }}
+        - name: EGRESS_NRF_DSCP
+{{- if lt (int .Values.egress.nrf.dscp) 0}}
+          value: 0
+{{- else if gt (int .Values.egress.nrf.dscp) 63}}
+          value: 63
+{{- else }}
+          value: {{ int .Values.egress.nrf.dscp | quote }}
+{{- end }}
+        - name: SUBSCRIBE_VALIDITY
+          value: {{ .Values.adp.cm.mediator.subscription.validity | quote }}
+        - name: SUBSCRIBE_RENEWAL
+          value: {{ .Values.adp.cm.mediator.subscription.renewal | quote }}
+        - name: SUBSCRIBE_HEARTBEAT
+          value: {{ .Values.adp.cm.mediator.subscription.heartbeat | quote }}
+        - name: GLOBAL_TLS_ENABLED
+          value: {{ include "eric-sc-slf.tls" . | quote }}
+        - name: CM_MEDIATOR_PORT
+          value: {{ .Values.adp.cm.mediator.port | quote }}
+        - name: SERVICE_HOST
+          value: {{ template "eric-sc-slf.name" . }}
+        - name: SERVICE_OAM_TARGET_PORT
+          value: {{ .Values.service.slf.server.oam.targetPort | quote }}
+{{- if eq (include "eric-sc-slf.tls" .) "true" }}
+        - name: SLF_SERVER_CERT_PATH
+          value: "/run/secrets/oam/certificates"
+        - name: MEDIATOR_SERVER_CA_PATH
+          value: "/run/secrets/mediator/ca"
+        - name: PM_SERVER_CA_PATH
+          value: "/run/secrets/pm/ca"
+        - name: WORKER_CLIENT_CA_PATH
+          value: "/run/secrets/worker/ca"
+        - name: SLF_MEDIATOR_CLIENT_CERT_PATH
+          value: "/run/secrets/mediator/certificates"
+        - name: SIP_TLS_TRUSTED_ROOT_CA_PATH
+          value: "/run/secrets/siptls/ca"
+        - name: ALARM_HANDLER_CLIENT_CERT_PATH
+          value: "/run/secrets/fhah/certificates"
+{{- end }}
+{{- if .Values.global }}
+{{- if .Values.global.internalIPFamily }}
+        - name: IP_FAMILY
+          value: {{ .Values.global.internalIPFamily | quote }}
+{{- end }}
+{{- end }}
+        - name: JVM_PARAMS
+          value: {{ .Values.jvm.parameters.slf | quote }}
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: SERVICE_PORT_TLS
+          value: {{ .Values.spec.slf.portTls | quote }}
+        - name: INTERNAL_PORT
+          value: {{ .Values.spec.slf.portInternal | quote }}
+        - name: CONCURRENT_STREAMS_MAX
+          value: {{ .Values.spec.slf.concurrent_streams_max | quote }}
+        - name: NRF_WAIT_QUEUE_SIZE_MAX
+          value: {{ .Values.spec.slf.nrf_wait_queue_size_max | quote }}
+        - name: CACHE_SIZE_MAX
+          value: {{ .Values.spec.slf.cache_size_max | quote }}
+        - name: CACHE_SWEEP_ITEMS_MAX
+          value: {{ .Values.spec.slf.cache_sweep_items_max | quote }}
+        - name: CACHE_SWEEP_PERIOD_MS
+          value: {{ .Values.spec.slf.cache_sweep_period_ms | quote }}
+        - name: DO_NOT_REGISTER_AT_NRF
+          value: "true"
+        - name: TZ
+          value: {{ include "eric-sc-slf.timezone" . }}
+        - name: SERVICE_ID
+          value: {{ template "eric-sc-slf.name" . }}
+        - name: ALARM_HANDLER_HOSTNAME
+          value: {{ .Values.adp.fh.alarmHandler.hostname | quote }}
+        - name: ALARM_HANDLER_PORT
+          value: {{ .Values.adp.fh.alarmHandler.port | quote }}
+        - name: LOG_PATH
+          value: {{ .Values.logShipper.storage.path | quote }}
+        - name: LOGBACK_FILENAME
+          value: {{ include "eric-sc-slf.logbackFileName" . | quote }}
+{{- if eq (include "eric-sc-slf.tls" .) "true" }}
+        - name: DCED_TLS_ENABLED
+          value: {{ include "eric-sc-slf.dcedsc.tls" .  | quote }}
+{{- if eq (include "eric-sc-slf.dcedsc.tls" .) "true" }}
+        - name: DCEDSC_CLIENT_CERT_PATH
+          value: "/run/secrets/dcedsc/certificates"
+{{- end }}
+{{- end }}
+        - name: ETCD_ENDPOINT
+          value: {{ .Values.etcd.endpoint | quote }}
+{{- if eq (include "eric-sc-slf.dcedsc.tls" .) "false" }}
+        - name: ETCD_USERNAME
+          value: {{ .Values.etcd.username | quote }}
+        - name: ETCD_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.etcd.secretName | quote }}
+              key: {{ .Values.etcd.passwordKey | quote }}
+{{- end }}
+        - name: LEADER_ELECTION_ENABLED
+          value: {{ .Values.leaderElection.enabled | quote }}
+        ports:
+{{- if eq (include "eric-sc-slf.tls" .) "true" }}
+        - name: "metrics-tls"
+{{- else }}
+        - name: "metrics"
+{{- end }}
+          protocol: TCP
+          containerPort: {{ .Values.service.slf.server.oam.targetPort }}
+        - name: {{ .Values.spec.slf.portTlsName }}
+          containerPort: {{ .Values.spec.slf.portTls }}
+          protocol: TCP
+        volumeMounts:
+        - name: nrf-client-certificate
+          mountPath: "/run/secrets/slf/certificates"
+          readOnly: true
+        - name: nrf-ca-certificate
+          mountPath: "/run/secrets/slf/certificates/trustCA"
+          readOnly: true
+        - name: custom
+          mountPath: /mnt
+{{- if eq (include "eric-sc-slf.tls" .) "true" }}
+        - name: oam-server-certificate
+          mountPath: "/run/secrets/oam/certificates"
+          readOnly: true
+        - name: mediator-ca-certificate
+          mountPath: "/run/secrets/mediator/ca"
+          readOnly: true
+        - name: pm-ca-certificate
+          mountPath: "/run/secrets/pm/ca"
+          readOnly: true
+        - name: slf-ca-certificate
+          mountPath: "/run/secrets/worker/ca"
+          readOnly: true
+        - name: mediator-client-certificate
+          mountPath: "/run/secrets/mediator/certificates"
+          readOnly: true
+        - name: siptls-trusted-root-cacert
+          mountPath: "/run/secrets/siptls/ca"
+        - name: alarmhandler-client-certificate
+          mountPath: "/run/secrets/fhah/certificates"
+{{- end }}
+        - name: {{ .Values.log.volumeName | quote }}
+          mountPath: /slf/config/logcontrol
+        - name: vertx
+          mountPath: "/vertx"
+{{- if eq (include "eric-sc-slf.logshipper-enabled" . ) "true" }}
+      {{- include "eric-log-shipper-sidecar.log-shipper-sidecar-mounts" . | indent 8 }}
+{{- end }}
+        - name: dcedsc-client-certificate
+          mountPath: /run/secrets/dcedsc/certificates
+          readOnly: true
+        livenessProbe:
+          httpGet:
+            path: /probes/liveness
+            port: {{ .Values.probes.slf.livenessProbe.port }} # No quotes should be used!
+          initialDelaySeconds: {{ .Values.probes.slf.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.slf.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.probes.slf.livenessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.probes.slf.livenessProbe.successThreshold }}
+          failureThreshold: {{ .Values.probes.slf.livenessProbe.failureThreshold }}
+        readinessProbe:
+          httpGet:
+            path: /probes/readiness
+            port: {{ .Values.probes.slf.readinessProbe.port }} # No quotes should be used!
+          initialDelaySeconds: {{ .Values.probes.slf.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.slf.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.probes.slf.readinessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.probes.slf.readinessProbe.successThreshold }}
+          failureThreshold: {{ .Values.probes.slf.readinessProbe.failureThreshold }}
+        {{- if .Values.spec.slf.resources }}
+        resources:
+          requests:
+            memory: {{ .Values.spec.slf.resources.requests.memory | quote }}
+            cpu: {{ .Values.spec.slf.resources.requests.cpu | quote }}
+            {{- if index .Values.spec.slf.resources.requests "ephemeral-storage" }}
+            ephemeral-storage: {{ index .Values.spec.slf.resources.requests "ephemeral-storage" | quote }}
+            {{- end }}
+          limits:
+            memory: {{ .Values.spec.slf.resources.limits.memory | quote }}
+            cpu: {{ .Values.spec.slf.resources.limits.cpu | quote }}
+            {{- if index .Values.spec.slf.resources.limits "ephemeral-storage" }}
+            ephemeral-storage: {{ index .Values.spec.slf.resources.limits "ephemeral-storage" | quote }}
+            {{- end }}
+        {{ end }}
+{{- if eq (include "eric-sc-slf.logshipper-enabled" . ) "true" }}
+      {{- $logshipperImageDict := dict "logshipperSidecarImage" ((((.Values).global).logShipper).config).image -}}
+      {{- include "eric-log-shipper-sidecar.log-shipper-sidecar-container" (mergeOverwrite . $logshipperImageDict ) | indent 6 }}
+{{- end }}
+      volumes:
+      - name: {{ .Values.log.volumeName | quote }}
+        configMap:
+          name: {{ template "eric-sc-slf.name" . }}-loglevel-config
+{{- if eq (include "eric-sc-slf.tapagent.enabled" .) "true" }}
+      - name: {{ template "eric-sc-slf.name" . }}-{{ .Values.spec.tapagent.secret.name }}-volume
+        secret:
+          secretName: {{ .Values.spec.tapagent.secret.name }}
+      - name: eric-sc-{{ .Values.spec.tapagent.configmap.name }}-volume
+        configMap:
+          name: eric-sc-{{ .Values.spec.tapagent.configmap.name }}
+{{- end }}
+      - name: nrf-client-certificate
+        secret:
+          secretName: {{ template "eric-sc-slf.name" . }}-nrf-client-certificate
+          items:
+            - key: tls.crt
+              path: certificate.pem
+            - key: tls.key
+              path: key.pem
+      - name: nrf-ca-certificate
+        secret:
+          secretName: {{ template "eric-sc-slf.name" . }}-nrf-ca-certificate
+      - name: custom
+        emptyDir: {}
+      - name: vertx
+        emptyDir:
+          medium: Memory
+{{- if eq (include "eric-sc-slf.tls" .) "true" }}
+      - name: oam-server-certificate
+        secret:
+          secretName: {{ template "eric-sc-slf.name" . }}-oam-server-certificate
+          items:
+          - key: tls.crt
+            path: cert.pem
+          - key: tls.key
+            path: key.pem
+      - name: mediator-ca-certificate
+        secret:
+          secretName: {{ .Values.adp.cm.mediator.hostname }}-tls-client-ca-secret
+          items:
+          - key: client-cacertbundle.pem
+            path: cacertbundle.pem
+      - name: pm-ca-certificate
+        secret:
+          secretName: {{ .Values.adp.pm.server.hostname }}-ca
+          items:
+          - key: client-cacertbundle.pem
+            path: cacertbundle.pem
+      - name: mediator-client-certificate
+        secret:
+          secretName: {{ template "eric-sc-slf.name" . }}-mediator-client-certificate
+          items:
+          - key: tls.crt
+            path: cert.pem
+          - key: tls.key
+            path: key.pem
+      - name: siptls-trusted-root-cacert
+        secret:
+          secretName: eric-sec-sip-tls-trusted-root-cert
+      - name: slf-ca-certificate
+        secret:
+          secretName: {{ template "eric-sc-slf.name" . }}-ca-certificate
+          items:
+          - key: cacertbundle.pem
+            path: cacertbundle.pem
+      - name: alarmhandler-client-certificate
+        secret:
+          secretName: {{ template "eric-sc-slf.name" . }}-alarmhandler-client-certificate
+      - name: dcedsc-client-certificate
+        secret:
+          secretName: {{ template "eric-sc-slf.name" . }}-client-certificate
+{{- end }}
+{{- if eq (include "eric-sc-slf.logshipper-enabled" . ) "true" }}
+     {{- include "eric-log-shipper-sidecar.log-shipper-sidecar-volumes" . | indent 6 }}
+{{- end }}

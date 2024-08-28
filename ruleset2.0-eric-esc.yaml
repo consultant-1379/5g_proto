@@ -1,0 +1,2434 @@
+modelVersion: 2.0
+
+import:
+  base: rulesets/ruleset2.0-eric-base.yaml
+  sc: ruleset2.0-eric-sc.yaml
+
+description: "Signaling Controller"
+
+properties:
+  - ESC_SERVICE_NAME: eric-sc
+
+  - CERTM-CRD: eric-sc-sec-certm-crd
+  - ICCR-CRD: eric-sc-tm-ingress-controller-cr-crd
+  - SIPTLS-CRD: eric-sc-sec-sip-tls-crd
+  - WCDBCD-CRD: eric-data-wide-column-database-cd-crd
+
+  - RELEASE_REPO: https://armdocker.rnd.ericsson.se/artifactory/proj-5g-bsf-generic-local
+  # The TEST_ARM is needed to upload artifacts (adpal, cnal, utilities, esc)
+  # to a specific test repo as we do not have the maven site in place
+  - TEST_ARM: https://arm.rnd.ki.sw.ericsson.se/artifactory/proj-bsf-test-generic-local/eiffelesc/com/ericsson/
+
+  - HELM_DR_CHECK_OUTPUT_DIR: ${base.OUTPUT_DIR}/helm-dr-check
+  - CERTS_OUT_DIR: .certificates
+  - DEF_DIR: definitions
+
+  - ENVOY_VERSION: 1.29.4-7
+  - ENVOY_WORKER_BASE_IMAGE_NAME: ${SCP_SERVICE_NAME}-envoy-base
+  - ENVOY_WORKER_BASE_IMAGE_URL: armdocker.rnd.ericsson.se/proj-5g-bsf/envoy/eric-scp-envoy-base:${ENVOY_VERSION}
+
+  - BSF_SERVICE_NAME: eric-bsf
+  - BSF_MANAGER_IMAGE_NAME: ${BSF_SERVICE_NAME}-manager
+  - BSF_WORKER_IMAGE_NAME: ${BSF_SERVICE_NAME}-worker
+  - BSF_WORKER_JMX_EXPORTER_IMAGE_NAME: ${BSF_SERVICE_NAME}-jmx-exporter
+
+  - BSF_DIAMETER_JMX_EXPORTER_IMAGE_NAME: eric-bsf-jmx-exporter
+
+  - BSF_DIAMETER_SERVICE_NAME: eric-bsf-diameter
+  - BSF_DIAMETER_IMAGE_NAME: eric-bsf-diameter
+
+  - CERTNOTIFIER_IMAGE_NAME: eric-sc-cert-notifier
+
+  - LMCONSUMER_SERVICE_NAME: eric-sc-lmconsumer
+  - LMCONSUMER_IMAGE_NAME: ${LMCONSUMER_SERVICE_NAME}
+
+  - LOGFWDR_IMAGE_NAME: eric-sc-logfwdr
+
+  - MONITOR_SERVICE_NAME: eric-sc-monitor
+  - MONITOR_IMAGE_NAME: ${MONITOR_SERVICE_NAME}
+
+  - NLF_SERVICE_NAME: eric-sc-nlf
+  - NLF_IMAGE_NAME: ${NLF_SERVICE_NAME}
+
+  - RLF_SERVICE_NAME: eric-sc-rlf
+  - RLF_IMAGE_NAME: ${RLF_SERVICE_NAME}
+
+  - SCP_SERVICE_NAME: eric-scp
+  - SCP_MANAGER_IMAGE_NAME: ${SCP_SERVICE_NAME}-manager
+  - SCP_ENVOY_WORKER_IMAGE_NAME: ${SCP_SERVICE_NAME}-worker
+
+  - SDS_IMAGE_NAME: eric-sc-sds
+
+  - SFTP_NAME: eric-atmoz-sftp
+
+  - SEPP_SERVICE_NAME: eric-sepp
+  - SEPP_MANAGER_IMAGE_NAME: ${SEPP_SERVICE_NAME}-manager
+  - SEPP_ENVOY_WORKER_IMAGE_NAME: ${SEPP_SERVICE_NAME}-worker
+
+  - SLF_SERVICE_NAME: eric-sc-slf
+  - SLF_IMAGE_NAME: ${SLF_SERVICE_NAME}
+
+  - TAPAGENT_BASE_IMAGE_NAME: eric-tap-agent-base
+  - TAPAGENT_IMAGE_NAME: eric-tap-agent
+  - TAPAGENT_BASE_VERSION: 1.2.4-1-57cdc65-4
+
+  - TLSKEYLOGAGENT_IMAGE_NAME: tlskeylogagent
+  - TAPCOLLECTOR_IMAGE_NAME: tapcollector
+
+  - dir: $PWD
+  - NAMESPACE: $NAMESPACE
+
+env:
+#Enable/Disable nodes from Makefile.user
+ - BSF (default=false)
+ - NLF (default=false)
+ - RLF (default=false)
+ - SCP (default=false)
+ - SEPP (default=false)
+ - SLF (default=false)
+ - WCDB (default=false)
+ - BSF_DIAMETER (default=false)
+#Enable/Disable from Makefile.user
+ - CONTOUR (default=true)
+ - CONTOUR_MTLS (default=true)
+ - DDC (default=true)
+ - LOGGING (default=false)
+ - METRICS (default=true)
+ - OBJECT_STORAGE (default=false)
+ - PM_REMOTE_WRITE (default=false)
+ - PMBR_OBJECT_STORAGE (default=false)
+ - PRODUCTION (default=false)
+ - REFERRAL_LDAP (default=true)
+ - RESOURCES (default=normal)
+ - SCP_MULTIVPN (default=false)
+ - SEPP_MULTIVPN (default=true)
+ - SFTP (default=false)
+ - SYSLOG (default=false)
+ - LUMBERJACK (default=false)
+ - NETCONF_TLS (default=true)
+ - PVTB_DTLS (default=false)
+ - TAPAGENT (default=false)
+ - TAPCOLLECTOR (default=false)
+ - PVTB (default=false)
+ - SCP_LEADER_ELECTION (default=false)
+ - BSF_LEADER_ELECTION (default=false)
+ - NLF_LEADER_ELECTION (default=true)
+ - SEPP_LEADER_ELECTION (default=false)
+ - RLF_LEADER_ELECTION (default=true)
+ - RELEASE_LIBS (default=false)
+
+#Misc
+ - BOB_FORCE_IMAGE_PULL (default=false)
+ - BSF_TLS (default=false)
+ - SCP_TLS (default=false)
+ - USER (default=anonymous)
+ - RELEASE (default=false)
+ - ARTIFACTORY_TOKEN
+ - ARMSERO_TOKEN
+ - APPLICATION_IDENTIFIERS (default=bsf scp sepp rlf slf init k6 syslog chfsim dscload transformer )
+ - CHART_NAME
+ - CHART_REPO
+ - CHART_VERSION
+ - PASSWORD
+ - PWD
+ - SC_INGRESS_HOST (default="")
+ - CSAR_DETAIL (default=false)
+ - CSAR_CHARTS (default=false)
+ - BRANCH (default=false)
+ - PM_RETENTION (default="2d")
+ - EPIC
+ - JIRAURL
+ - SUFFIX
+ - JIRAPROJECT
+ - LABEL
+ - COMPONENT
+ - DC1_NAMESPACE (default=false)
+ - DC2_NAMESPACE (default=false)
+ - GEORED (default=false)
+ - LEGACY (default=false)
+ - CRDS_NAMESPACE (default=eric-crds)
+ - FORCE_SERVICE_TYPE_NODE_PORT (default=false)
+ - GERRIT_USERNAME
+ - GERRIT_PASSWORD
+ - IP_VERSION_INT (default=DS)
+ - IP_VERSION_EXT (default=DS)
+ - DIVISION_METHOD (default=split)
+
+var:
+ - bsf-cxc-number
+ - bsf-cxc-rev-number
+ - bsf-version
+ - bsf-diameter-cxc-number
+ - bsf-diameter-cxc-rev-number
+ - bsf-diameter-version
+ - certm-crd-pkg
+ - certnotifier-version
+ - crd-version
+ - cxp-number
+ - cxp-rev-number
+ - esc-version
+ - dirty-service
+ - dirty-tgz
+ - iccr-crd-pkg
+ - get-branch
+ - ingress-host
+ - is-crd
+ - logfwdr-version
+ - monitor-cxc-number
+ - monitor-cxc-rev-number
+ - monitor-version
+ - nlf-cxc-number
+ - nlf-cxc-rev-number
+ - nlf-version
+ - no-crds
+ - password
+ - product-description
+ - product-name
+ - product-rel-date
+ - product-type
+ - product-version
+ - rlf-cxc-number
+ - rlf-cxc-rev-number
+ - rlf-version
+ - scp-cxc-number
+ - scp-cxc-rev-number
+ - scp-version
+ - sds-version
+ - sepp-cxc-number
+ - sepp-cxc-rev-number
+ - sepp-version
+ - siptls-crd-pkg
+ - slf-cxc-number
+ - slf-cxc-rev-number
+ - slf-version
+ - tapagent-version
+ - tlskeylogagent-version
+ - tapcollector-version
+ - username
+ - vnfd-uuid
+ - wcdbcd-crd-pkg
+ - helm-values-additional-settings
+
+
+
+rules:
+  init:
+    - rule: base.init
+    - task: set-ingressHost
+      cmd: /bin/bash -c 'RES="minikube";
+                         [[ -z "${env.SC_INGRESS_HOST}" ]]
+                         && [[ "${env.base.KUBE_HOST}" != "minikube" ]]
+                         && BASE_HOST="${env.base.KUBE_HOST}.rnd.gic.ericsson.se"
+                         && [[ ! -z "$BASE_HOST" ]]
+                         && RES="${var.base.namespace}.$BASE_HOST";
+                         [[ ! -z "${env.SC_INGRESS_HOST}" ]] && RES="$SC_INGRESS_HOST";
+                         [[ "$RES" == "*" ]] && RES="";
+                         echo "$RES" > ${base.OUTPUT_DIR}/var.ingress-host;'
+    - task: generate-versions
+      docker-image: base.adp-release-auto
+      cmd: /bin/bash -c 'generate-version --is-release ${env.RELEASE} --output bsf-version;
+                         generate-version --is-release ${env.RELEASE} --output bsf-diameter-version;
+                         generate-version --is-release ${env.RELEASE} --output certnotifier-version;
+                         generate-version --is-release ${env.RELEASE} --output esc-version;
+                         generate-version --is-release ${env.RELEASE} --output logfwdr-version;
+                         generate-version --is-release ${env.RELEASE} --output monitor-version;
+                         generate-version --is-release ${env.RELEASE} --output nlf-version;
+                         generate-version --is-release ${env.RELEASE} --output rlf-version;
+                         generate-version --is-release ${env.RELEASE} --output scp-version;
+                         generate-version --is-release ${env.RELEASE} --output sds-version;
+                         generate-version --is-release ${env.RELEASE} --output sepp-version;
+                         generate-version --is-release ${env.RELEASE} --output slf-version;
+                         generate-version --is-release ${env.RELEASE} --output tapagent-version;
+                         generate-version --is-release ${env.RELEASE} --output tlskeylogagent-version;
+                         generate-version --is-release ${env.RELEASE} --output tapcollector-version;'
+
+    - task: product-info
+      cmd: /bin/bash -c 'echo -n "Signaling Controller" > ${base.OUTPUT_DIR}/var.product-name;
+           date +%Y-%m-%dT%H:%M:%S%:z > ${base.OUTPUT_DIR}/var.product-rel-date;
+           type=();
+           if [ \"${env.SCP}\" == \"true\" ];
+           then
+               type+=("SCP");
+           fi;
+           if [ \"${env.BSF}\" == \"true\" ];
+           then
+               type+=("BSF");
+           fi;
+           if [ \"${env.SEPP}\" == \"true\" ];
+           then
+               type+=("SEPP");
+           fi;
+           if [ ${#type[@]} -eq 0 ];
+           then
+              type+=("Development");
+           fi;
+           printf -v types "%s + " "${type[@]}";
+           echo "SC ${var.esc-version}" | head -c 6 > ${base.OUTPUT_DIR}/var.product-version;
+           echo "${types% + }" > ${base.OUTPUT_DIR}/var.product-type;
+           echo -n "Signaling Controller is a cloud native VNF including distinctive 5G SC NFs and the 4G DSC NF." > ${base.OUTPUT_DIR}/var.product-description'
+    # Assuming version number follows the format X.Y.Z, X_VERSION, Y_VERSION and Z_VERSION are exported.
+    # The spaces in the CXP number are replaced by underscores, because update_values.rb script does not work properly with spaces.
+    - task: cxp-number
+      cmd: /bin/bash -c 'VP=$(cat VERSION_PREFIX) && arr=(${VP//./ }) && X_VERSION=${arr[0]} &&
+           cat CXP_PREFIX | sed -e "s/ /_/g" -e "s/$/$X_VERSION/" > ${base.OUTPUT_DIR}/var.cxp-number'
+    - task: cxp-rev-number
+      cmd: /bin/bash -c 'scripts/prim_number_revision.sh ${base.OUTPUT_DIR}/var.esc-version > ${base.OUTPUT_DIR}/var.cxp-rev-number'
+    - task: scp-cxc-number
+      cmd: /bin/bash -c 'VP=$(cat VERSION_PREFIX) && arr=(${VP//./ }) && X_VERSION=${arr[0]} &&
+           cat SCP_CXC_PREFIX | sed -e "s/ /_/g" -e "s/$/$X_VERSION/" > ${base.OUTPUT_DIR}/var.scp-cxc-number'
+    - task: scp-cxc-rev-number
+      cmd: /bin/bash -c 'scripts/prim_number_revision.sh ${base.OUTPUT_DIR}/var.scp-version > ${base.OUTPUT_DIR}/var.scp-cxc-rev-number'
+    - task: sepp-cxc-number
+      cmd: /bin/bash -c 'VP=$(cat VERSION_PREFIX) && arr=(${VP//./ }) && X_VERSION=${arr[0]} &&
+           cat SEPP_CXC_PREFIX | sed -e "s/ /_/g" -e "s/$/$X_VERSION/" > ${base.OUTPUT_DIR}/var.sepp-cxc-number'
+    - task: sepp-cxc-rev-number
+      cmd: /bin/bash -c 'scripts/prim_number_revision.sh ${base.OUTPUT_DIR}/var.sepp-version > ${base.OUTPUT_DIR}/var.sepp-cxc-rev-number'
+    - task: bsf-cxc-number
+      cmd: /bin/bash -c 'VP=$(cat VERSION_PREFIX) && arr=(${VP//./ }) && X_VERSION=${arr[0]} &&
+           cat BSF_CXC_PREFIX | sed -e "s/ /_/g" -e "s/$/$X_VERSION/" > ${base.OUTPUT_DIR}/var.bsf-cxc-number'
+    - task: bsf-cxc-rev-number
+      cmd: /bin/bash -c 'scripts/prim_number_revision.sh ${base.OUTPUT_DIR}/var.bsf-version > ${base.OUTPUT_DIR}/var.bsf-cxc-rev-number'
+    - task: nlf-cxc-number
+      cmd: /bin/bash -c 'VP=$(cat VERSION_PREFIX) && arr=(${VP//./ }) && X_VERSION=${arr[0]} &&
+           cat NLF_CXC_PREFIX | sed -e "s/ /_/g" -e "s/$/$X_VERSION/" > ${base.OUTPUT_DIR}/var.nlf-cxc-number'
+    - task: nlf-cxc-rev-number
+      cmd: /bin/bash -c 'scripts/prim_number_revision.sh ${base.OUTPUT_DIR}/var.nlf-version > ${base.OUTPUT_DIR}/var.nlf-cxc-rev-number'
+    - task: rlf-cxc-number
+      cmd: /bin/bash -c 'VP=$(cat VERSION_PREFIX) && arr=(${VP//./ }) && X_VERSION=${arr[0]} &&
+           cat RLF_CXC_PREFIX | sed -e "s/ /_/g" -e "s/$/$X_VERSION/" > ${base.OUTPUT_DIR}/var.rlf-cxc-number'
+    - task: rlf-cxc-rev-number
+      cmd: /bin/bash -c 'scripts/prim_number_revision.sh ${base.OUTPUT_DIR}/var.rlf-version > ${base.OUTPUT_DIR}/var.rlf-cxc-rev-number'
+    - task: slf-cxc-number
+      cmd: /bin/bash -c 'VP=$(cat VERSION_PREFIX) && arr=(${VP//./ }) && X_VERSION=${arr[0]} &&
+           cat SLF_CXC_PREFIX | sed -e "s/ /_/g" -e "s/$/$X_VERSION/" > ${base.OUTPUT_DIR}/var.slf-cxc-number'
+    - task: slf-cxc-rev-number
+      cmd: /bin/bash -c 'scripts/prim_number_revision.sh ${base.OUTPUT_DIR}/var.slf-version > ${base.OUTPUT_DIR}/var.slf-cxc-rev-number'
+    - task: monitor-cxc-number
+      cmd: /bin/bash -c 'VP=$(cat VERSION_PREFIX) && arr=(${VP//./ }) && X_VERSION=${arr[0]} &&
+           cat MONITOR_CXC_PREFIX | sed -e "s/ /_/g" -e "s/$/$X_VERSION/" > ${base.OUTPUT_DIR}/var.monitor-cxc-number'
+    - task: monitor-cxc-rev-number
+      cmd: /bin/bash -c 'scripts/prim_number_revision.sh ${base.OUTPUT_DIR}/var.monitor-version > ${base.OUTPUT_DIR}/var.monitor-cxc-rev-number'
+#    - task: cleanup-devenv-values
+#      cmd:  sh -c 'echo "" > ${base.OUTPUT_DIR}/values-devenv.yaml && echo "" > ${base.OUTPUT_DIR}/values-tls.yaml && echo "" > ${base.OUTPUT_DIR}/values-logging.yaml'
+    - task: bsf-diameter-cxc-number
+      cmd: /bin/bash -c 'VP=$(cat VERSION_PREFIX) && arr=(${VP//./ }) && X_VERSION=${arr[0]} &&
+           cat BSF_DIAMETER_CXC_PREFIX | sed -e "s/ /_/g" -e "s/$/$X_VERSION/" > ${base.OUTPUT_DIR}/var.bsf-diameter-cxc-number'
+    - task: bsf-diameter-cxc-rev-number
+      cmd: /bin/bash -c 'scripts/prim_number_revision.sh ${base.OUTPUT_DIR}/var.bsf-diameter-version > ${base.OUTPUT_DIR}/var.bsf-diameter-cxc-rev-number'
+    - task: set-dirty-package
+      cmd: /bin/bash -c "echo \"$(cat dirty_charts/packages.yaml | grep 'name:' | awk '{print $3}')\" > ${base.OUTPUT_DIR}/var.dirty-service ;
+                         echo \"$(cat dirty_charts/packages.yaml | grep 'tgz:' | awk '{print $2}')\" > ${base.OUTPUT_DIR}/var.dirty-tgz;
+                         "
+
+
+  conditions:
+    - task: bsf-true
+      cmd: test "${env.BSF}" = true
+    - task: bsf-false
+      cmd: test "${env.BSF}" = false
+    - task: nlf-true
+      cmd: test "${env.NLF}" = true
+    - task: nlf-false
+      cmd: test "${env.NLF}" = false
+    - task: rlf-true
+      cmd: test "${env.RLF}" = true
+    - task: rlf-false
+      cmd: test "${env.RLF}" = false
+    - task: scp-true
+      cmd: test "${env.SCP}" = true
+    - task: scp-false
+      cmd: test "${env.SCP}" = false
+    - task: sepp-true
+      cmd: test "${env.SEPP}" = true
+    - task: sepp-false
+      cmd: test "${env.SEPP}" = false
+    - task: slf-true
+      cmd: test "${env.SLF}" = true
+    - task: slf-false
+      cmd: test "${env.SLF}" = false
+    - task: release-libs-true
+      cmd: test "${env.RELEASE_LIBS}" = true
+
+  release:
+    - task: generate-released-version
+      cmd: /bin/bash -c "echo ${var.bsf-version} | sed s/-/+/ > ${base.OUTPUT_DIR}/var.bsf-version &&
+           echo ${var.bsf-diameter-version} | sed s/-/+/ > ${base.OUTPUT_DIR}/var.bsf-diameter-version &&
+           echo ${var.certnotifier-version} | sed s/-/+/ > ${base.OUTPUT_DIR}/var.certnotifier-version &&
+           echo ${var.esc-version} | sed s/-/+/ > ${base.OUTPUT_DIR}/var.esc-version &&
+           echo ${var.monitor-version} | sed s/-/+/ > ${base.OUTPUT_DIR}/var.monitor-version &&
+           echo ${var.nlf-version} | sed s/-/+/ > ${base.OUTPUT_DIR}/var.nlf-version &&
+           echo ${var.rlf-version} | sed s/-/+/ > ${base.OUTPUT_DIR}/var.rlf-version &&
+           echo ${var.scp-version} | sed s/-/+/ > ${base.OUTPUT_DIR}/var.scp-version &&
+           echo ${var.sepp-version} | sed s/-/+/ > ${base.OUTPUT_DIR}/var.sepp-version &&
+           echo ${var.slf-version} | sed s/-/+/ > ${base.OUTPUT_DIR}/var.slf-version &&
+           echo ${var.tapagent-version} | sed s/-/+/ > ${base.OUTPUT_DIR}/var.tapagent-version &&
+           echo ${var.tlskeylogagent-version} | sed s/-/+/ > ${base.OUTPUT_DIR}/var.tlskeylogagent-version &&
+           echo ${var.tapcollector-version} | sed s/-/+/ > ${base.OUTPUT_DIR}/var.tapcollector-version"
+
+  sonar:
+    - task: maven-sonar
+      docker-image: base.java-maven-builder
+      cmd: /bin/bash -c "mvn --no-transfer-progress -s ${var.base.build-proxy} -Duser.home=. -Djacoco.skip=false install sonar:sonar"
+
+  build-libs-ci:
+     # Build libraries used by CI code and install to .m2
+      # Unit tests are skipped
+    - task: maven-install
+      docker-image: base.java-maven-builder
+      cmd: /bin/bash -c "mvn --no-transfer-progress -s ${var.base.build-proxy} -Duser.home=. -pl :utilities,:adpal,:cnal,:common,:eric-chfsim,:eric-nrfsim,:eric-seppsim,:supreme,:eric-bsf-common -am -DskipTests ${base.MVN_ARGS} install"
+
+  build-boringssl:
+    - rule: base.init
+    - task: build
+      docker-image: base.boringssl-builder
+      docker-flags:
+      - "--env NETTY_TCNATIVE_REPO=https://github.com/netty/netty-tcnative.git"
+      - "--env NETTY_TCNATIVE_VERSION=2.0.62.Final"
+      - "--env NETTY_TCNATIVE_TARGET_VERSION=2.0.62.Trace"
+      - "--env TOP=/home/${env.base.USER}/5g_proto"
+      - "--env GOCACHE=/home/${env.base.USER}/5g_proto/${base.OUTPUT_DIR}/netty-tcnative-trace/go-cache"
+      cmd: /bin/bash -c "rm -rf \$TOP/${base.OUTPUT_DIR}/netty-tcnative-trace;
+                         mkdir -p \$TOP/${base.OUTPUT_DIR}/netty-tcnative-trace/tmp;
+                         git clone --depth 1 --branch netty-tcnative-parent-\$NETTY_TCNATIVE_VERSION \$NETTY_TCNATIVE_REPO \$TOP/${base.OUTPUT_DIR}/netty-tcnative-trace/netty-tcnative;
+                         cd \$TOP/${base.OUTPUT_DIR}/netty-tcnative-trace/netty-tcnative;
+                         git apply -3 \$TOP/netty-tcnative-trace/0001-Enable-keylog-callback.patch;
+                         mvn --no-transfer-progress -s \$TOP/${var.base.build-proxy} versions:set -DnewVersion=\$NETTY_TCNATIVE_TARGET_VERSION;
+                         mvn --no-transfer-progress -s \$TOP/${var.base.build-proxy} -pl boringssl-static,openssl-dynamic -am -DcreateChecksum=true -Dmaven.repo.local=\$TOP/${base.OUTPUT_DIR}/netty-tcnative-trace/tmp clean install;
+                         cd \$TOP/netty-tcnative-trace;
+                         ./push_artifacts.sh ${env.ARTIFACTORY_TOKEN} \$TOP/${base.OUTPUT_DIR}/netty-tcnative-trace/tmp \$NETTY_TCNATIVE_TARGET_VERSION"
+
+  build-vertx:
+    - rule: base.init
+    - task: build
+      docker-image: base.java-maven-builder
+      docker-flags:
+      - "--env VERTX_REPO=https://github.com/eclipse-vertx/vert.x.git"
+      - "--env VERTX_VERSION=4.5.5"
+      - "--env VERTX_TARGET_VERSION=4.5.5.Trace"
+      - "--env TOP=/local/${env.base.USER}/git/5g_proto"
+      cmd: /bin/bash -c "rm -rf \$TOP/${base.OUTPUT_DIR}/vertx-trace;
+                         mkdir -p \$TOP/${base.OUTPUT_DIR}/vertx-trace/tmp;
+                         git clone \$VERTX_REPO \$TOP/${base.OUTPUT_DIR}/vertx-trace/vert.x;
+                         cd \$TOP/${base.OUTPUT_DIR}/vertx-trace/vert.x;
+                         git checkout  tags/\$VERTX_VERSION -b \$VERTX_VERSION;
+                         git apply -3 \$TOP//vertx-trace/0001-Add-PcapHandler.patch;
+                         mvn --no-transfer-progress -s \$TOP/${var.base.build-proxy} versions:set -DnewVersion=\$VERTX_TARGET_VERSION;
+                         mvn --no-transfer-progress -s \$TOP/${var.base.build-proxy} -DskipTests -DcreateChecksum=true -Dmaven.repo.local=\$TOP/${base.OUTPUT_DIR}/vertx-trace/tmp clean install;
+                         cd \$TOP/vertx-trace;
+                         ./push_artifacts.sh ${env.ARTIFACTORY_TOKEN} \$TOP/${base.OUTPUT_DIR}/vertx-trace/tmp \$VERTX_TARGET_VERSION;
+                         cp -r \$TOP/${base.OUTPUT_DIR}/vertx-trace/vert.x/src/* \$TOP/vertx-trace/edited_vertx_files/vertx-trace/src"
+
+  libs:
+    - task: build
+      docker-image: base.java-maven-builder
+      cmd:
+        - mvn --no-snapshot-updates --no-transfer-progress -s ${var.base.build-proxy} -Duser.home=. -am -pl :utilities,:adpal,:cnal,:common,:eric-chfsim,:eric-nrfsim,:eric-seppsim,:supreme,:eric-bsf-common $(echo ${var.base.mvn-args}) ${base.MVN_ARGS} install
+
+  build:
+    - task: esc-parent
+      docker-image: base.java-maven-builder
+      cmd:
+        - mvn --no-transfer-progress
+              -settings ${var.base.build-proxy}
+              -Duser.home=.
+              ${var.base.mvn-args}
+              ${base.MVN_ARGS}
+              -Dmaven.deploy.skip=true
+              -am -pl !:lm-lib,!:eric-chfsim,!:eric-nrfsim,!:eric-seppsim,!:eric-loadgen,!:vtaprecorder,!:eric-bsf-load package
+    - task: logfwdr
+      cmd:
+        - rm -rf ./envoyproxy/logfwdr/rxgrpc-envoy-control-api/
+        - mkdir -p ./envoyproxy/logfwdr/rxgrpc-envoy-control-api/src/main/proto
+        - cp -r -u ./rxgrpc-envoy-control-api/src/main/proto/* ./envoyproxy/logfwdr/rxgrpc-envoy-control-api/src/main/proto
+        - docker build ./envoyproxy/logfwdr
+          --file ./envoyproxy/logfwdr/Dockerfile
+          --build-arg GO_BUILDER=${base.GO_BUILDER}
+          --build-arg CBOS_IMG=${base.CBOS_IMG}
+          --tag ${base.ARM_DOCKER_REGISTRY}/${env.base.USER}/${LOGFWDR_IMAGE_NAME}:$(echo ${var.logfwdr-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG}
+    - task: copy-ericsson-libs-to-user-mvn-repo
+      cmd: /bin/bash -c "mkdir -p $HOME/.m2/repository/com/ericsson && cp -rvf .m2/repository/com/ericsson $HOME/.m2/repository/com ; /bin/true"
+
+# DO NOT USE
+  release-libs:
+    - task: deploy
+      condition: conditions:release-libs-true
+      docker-image: base.java-maven-builder
+      cmd:
+        - mvn --no-transfer-progress
+               -s ${var.base.build-proxy}
+               -Duser.home=. ${base.MVN_ARGS}
+               -Dmaven.deploy.skip=false
+               -DcreateChecksum=true
+               -DdeployAtEnd=true
+               -am -pl
+               :utilities,:adpal,:cnal,:rxgrpc-envoy-control-api,:eric-sc-tapcollector,:common,:fm-lib,:lm-lib,:pm-lib,:certm-cr-handler,:supreme
+               clean deploy
+
+  build-images:
+    - task: bsf
+      cmd: /bin/bash -c "docker build ./esc/bsf/bsfwrk/
+           --file esc/bsf/bsfwrk/Dockerfile
+           --build-arg DOCKER_BASE_IMG=${base.SC_CBOS_IMG}
+           --tag $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${BSF_WORKER_IMAGE_NAME}:$(echo ${var.bsf-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG} &
+           docker build ./esc/bsf/bsfmgr/
+           --file esc/bsf/bsfmgr/Dockerfile
+           --build-arg DOCKER_BASE_IMG=${base.SC_CBOS_IMG}
+           --tag $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${BSF_MANAGER_IMAGE_NAME}:$(echo ${var.bsf-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG} &
+           docker build ./esc/bsf/cddjmxexporter/
+           --file esc/bsf/cddjmxexporter/Dockerfile
+           --build-arg DOCKER_BASE_IMG=${base.SC_CBOS_IMG}
+           --tag $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${BSF_WORKER_JMX_EXPORTER_IMAGE_NAME}:$(echo ${var.bsf-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG}"
+    - task: scp
+      cmd: /bin/bash -c "docker build ./envoyproxy/envoywrk/
+           --file envoyproxy/envoywrk/Dockerfile
+           --build-arg DOCKER_BASE_IMG=${ENVOY_WORKER_BASE_IMAGE_URL}
+           --tag $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${SCP_ENVOY_WORKER_IMAGE_NAME}:$(echo ${var.scp-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG} &
+           docker build ./esc/scp/scpmgr/
+           --file esc/scp/scpmgr/Dockerfile
+           --build-arg DOCKER_BASE_IMG=${base.SC_CBOS_IMG}
+           --tag $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${SCP_MANAGER_IMAGE_NAME}:$(echo ${var.scp-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG}"
+    - task: sepp
+      cmd: /bin/bash -c "docker build ./envoyproxy/envoywrk/
+           --file envoyproxy/envoywrk/Dockerfile
+           --build-arg DOCKER_BASE_IMG=${ENVOY_WORKER_BASE_IMAGE_URL}
+           --build-arg CBOS_REPO=${base.CBOS_REPO}
+           --tag $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${SEPP_ENVOY_WORKER_IMAGE_NAME}:$(echo ${var.sepp-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG} &
+           docker build ./esc/sepp/seppmgr/
+           --file esc/sepp/seppmgr/Dockerfile
+           --build-arg DOCKER_BASE_IMG=${base.SC_CBOS_IMG}
+           --tag $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${SEPP_MANAGER_IMAGE_NAME}:$(echo ${var.sepp-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG}"
+    - task: sds
+      cmd: docker build ./envoyproxy/sds/
+           --file envoyproxy/sds/Dockerfile
+           --build-arg DOCKER_BASE_IMG=${base.SC_CBOS_IMG}
+           --tag $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${SDS_IMAGE_NAME}:$(echo ${var.sds-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG} &
+    - task: certnotifier
+      cmd: /bin/bash -c "docker build ./esc/certnotifier/
+           --file esc/certnotifier/Dockerfile
+           --build-arg DOCKER_BASE_IMG=${base.SC_CBOS_IMG}
+           --tag $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${CERTNOTIFIER_IMAGE_NAME}:$(echo ${var.certnotifier-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG}"
+    - task: tlskeylogagent
+      cmd: /bin/bash -c "docker build ./esc/eric-sc-tlskeylogagent/
+           --file esc/eric-sc-tlskeylogagent/Dockerfile
+           --build-arg DOCKER_BASE_IMG=${base.SC_CBOS_IMG}
+           --tag $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${TLSKEYLOGAGENT_IMAGE_NAME}:$(echo ${var.tlskeylogagent-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG}"
+    - task: tapcollector
+      cmd: /bin/bash -c "docker build ./esc/eric-sc-tapcollector/
+           --file esc/eric-sc-tapcollector/Dockerfile
+           --build-arg DOCKER_BASE_IMG=${base.SC_CBOS_TAPCOLLECTOR_IMG}
+           --tag $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${TAPCOLLECTOR_IMAGE_NAME}:$(echo ${var.tapcollector-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG}"
+    - task: nlf
+      cmd: /bin/bash -c "docker build ./esc/nlf/
+           --file esc/nlf/Dockerfile
+           --build-arg DOCKER_BASE_IMG=${base.SC_CBOS_IMG}
+           --tag $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${NLF_IMAGE_NAME}:$(echo ${var.nlf-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG}"
+    - task: rlf
+      cmd: /bin/bash -c "docker build ./esc/rlf/
+           --file esc/rlf/Dockerfile
+           --build-arg DOCKER_BASE_IMG=${base.SC_CBOS_IMG}
+           --tag $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${RLF_IMAGE_NAME}:$(echo ${var.rlf-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG}"
+    - task: slf
+      cmd: /bin/bash -c "docker build ./esc/slf/
+           --file esc/slf/Dockerfile
+           --build-arg DOCKER_BASE_IMG=${base.SC_CBOS_IMG}
+           --tag $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${SLF_IMAGE_NAME}:$(echo ${var.slf-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG}"
+    - task: bsf-diameter
+      cmd: /bin/bash -c "docker build ./esc/bsf/bsfdiameter/
+           --file esc/bsf/bsfdiameter/Dockerfile
+           --build-arg DOCKER_BASE_IMG=${base.SC_CBOS_IMG}
+           --tag $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${BSF_DIAMETER_IMAGE_NAME}:$(echo ${var.bsf-diameter-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG}"
+    - task: monitor
+      cmd: /bin/bash -c "docker build ./esc/monitor/
+           --file esc/monitor/Dockerfile
+           --build-arg DOCKER_BASE_IMG=${base.SC_CBOS_IMG}
+           --tag $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${MONITOR_IMAGE_NAME}:$(echo ${var.monitor-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG}"
+
+  push-images:
+    - task: bsf
+      cmd: docker push $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${BSF_MANAGER_IMAGE_NAME}:$(echo ${var.bsf-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG} &
+           docker push $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${BSF_WORKER_IMAGE_NAME}:$(echo ${var.bsf-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG} &
+           docker push $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${BSF_WORKER_JMX_EXPORTER_IMAGE_NAME}:$(echo ${var.bsf-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG}
+    - task: sds
+      cmd: docker push $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${SDS_IMAGE_NAME}:$(echo ${var.sds-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG}
+    - task: scp
+      cmd: docker push $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${SCP_MANAGER_IMAGE_NAME}:$(echo ${var.scp-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG} &
+           docker push $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${SCP_ENVOY_WORKER_IMAGE_NAME}:$(echo ${var.scp-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG} &
+    - task: sepp
+      cmd:  docker push $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${SEPP_MANAGER_IMAGE_NAME}:$(echo ${var.sepp-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG} &
+            docker push $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${SEPP_ENVOY_WORKER_IMAGE_NAME}:$(echo ${var.sepp-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG}
+    - task: logfwdr
+      cmd: docker push $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${LOGFWDR_IMAGE_NAME}:$(echo ${var.logfwdr-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG} &
+    - task: certnotifier
+      cmd: docker push $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${CERTNOTIFIER_IMAGE_NAME}:$(echo ${var.certnotifier-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG}
+    - task: tlskeylogagent
+      cmd: docker push $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${TLSKEYLOGAGENT_IMAGE_NAME}:$(echo ${var.tlskeylogagent-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG}
+    - task: tapcollector
+      cmd: docker push $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${TAPCOLLECTOR_IMAGE_NAME}:$(echo ${var.tapcollector-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG}
+    - task: nlf
+      cmd: docker push $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${NLF_IMAGE_NAME}:$(echo ${var.nlf-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG}
+    - task: rlf
+      cmd: docker push $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${RLF_IMAGE_NAME}:$(echo ${var.rlf-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG}
+    - task: slf
+      cmd: docker push $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${SLF_IMAGE_NAME}:$(echo ${var.slf-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG}
+    - task: bsf-diameter
+      cmd: docker push $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${BSF_DIAMETER_IMAGE_NAME}:$(echo ${var.bsf-diameter-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG}
+    - task: monitor
+      cmd: docker push $(echo ${base.ARM_DOCKER_REGISTRY}/${env.base.USER})/${MONITOR_IMAGE_NAME}:$(echo ${var.monitor-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG}
+
+    - task: tapagent # The image already exists in our repo, the rule just re-tags
+      cmd: export TAPAGENT_REGISTRY=$(echo ${base.ARM_DOCKER_REGISTRY}/${env.USER});
+           docker pull ${base.ARM_DOCKER_REGISTRY}/${TAPAGENT_BASE_IMAGE_NAME}:${TAPAGENT_BASE_VERSION};
+           docker tag ${base.ARM_DOCKER_REGISTRY}/${TAPAGENT_BASE_IMAGE_NAME}:${TAPAGENT_BASE_VERSION} $TAPAGENT_REGISTRY/${TAPAGENT_IMAGE_NAME}:$(echo ${var.tapagent-version} | sed 's/+/-/');
+           docker push $TAPAGENT_REGISTRY/${TAPAGENT_IMAGE_NAME}:$(echo ${var.tapagent-version} | sed 's/+/-/') ${env.base.DEBUG_FLAG}
+
+  update-helm:
+    - task: bsf
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "rm -rf ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}; rm -rf ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}*.tgz;
+           mkdir -p ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}; cp -r esc/bsf/helm/* ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME};
+           sed -i 's|product_number|'${var.bsf-cxc-number}'|g' ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/product_revision/'${var.bsf-cxc-rev-number}'/g' ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/bsf_manager_image_name/'${BSF_MANAGER_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/bsf_manager_image_tag/'$(echo ${var.bsf-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/bsf_worker_image_name/'${BSF_WORKER_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/bsf_worker_image_tag/'$(echo ${var.bsf-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/cddjmxexporter_image_name/'${BSF_WORKER_JMX_EXPORTER_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/cddjmxexporter_image_tag/'$(echo ${var.bsf-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/certnotifier_image_name/'${CERTNOTIFIER_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/certnotifier_image_tag/'$(echo ${var.certnotifier-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tlskeylogagent_image_name/'${TLSKEYLOGAGENT_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tlskeylogagent_image_tag/'$(echo ${var.tlskeylogagent-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tap_agent_image_name/'${TAPAGENT_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tap_agent_image_tag/'$(echo ${var.tapagent-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tapcollector_image_name/'${TAPCOLLECTOR_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tapcollector_image_tag/'$(echo ${var.tapcollector-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}/eric-product-info.yaml;
+           update_values.rb ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}/values.yaml
+           imageCredentials:setupmanager:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:manager:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:worker:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:cddjmxexporter:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:certnotifier:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:tlskeylogagent:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:tapagent:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:tapcollector:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           > ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}/values.tmp.yaml;
+           mv ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}/values.tmp.yaml ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}/values.yaml";
+
+    - task: scp
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "rm -rf ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}; rm -rf ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}*.tgz;
+           mkdir -p ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}; cp -r esc/scp/helm/* ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME};
+           sed -i 's|product_number|'${var.scp-cxc-number}'|g' ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/product_revision/'${var.scp-cxc-rev-number}'/g' ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/scp_manager_image_name/'${SCP_MANAGER_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/logfwdr_image_name/'${LOGFWDR_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/scp_worker_image_name/'${SCP_ENVOY_WORKER_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/sds_image_name/'${SDS_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/certnotifier_image_name/'${CERTNOTIFIER_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/scp_manager_image_tag/'$(echo ${var.scp-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/logfwdr_image_tag/'$(echo ${var.logfwdr-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/scp_worker_image_tag/'$(echo ${var.scp-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/sds_image_tag/'$(echo ${var.sds-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/certnotifier_image_tag/'$(echo ${var.certnotifier-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tlskeylogagent_image_name/'${TLSKEYLOGAGENT_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tlskeylogagent_image_tag/'$(echo ${var.tlskeylogagent-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tapcollector_image_name/'${TAPCOLLECTOR_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tapcollector_image_tag/'$(echo ${var.tapcollector-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tap_agent_image_name/'${TAPAGENT_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tap_agent_image_tag/'$(echo ${var.tapagent-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}/eric-product-info.yaml;
+           update_values.rb ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}/values.yaml
+           imageCredentials:setupmanager:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:manager:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:setupworker:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:worker:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:sds:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:certnotifier:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:tlskeylogagent:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:logfwdr:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:tapagent:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:tapcollector:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           > ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}/values.tmp.yaml;
+           mv ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}/values.tmp.yaml ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}/values.yaml";
+
+    - task: sepp
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "rm -rf ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}; rm -rf ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}*.tgz;
+           mkdir -p ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}; cp -r esc/sepp/helm/* ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME};
+           sed -i 's|product_number|'${var.sepp-cxc-number}'|g' ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/product_revision/'${var.sepp-cxc-rev-number}'/g' ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/sepp_manager_image_name/'${SEPP_MANAGER_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/logfwdr_image_name/'${LOGFWDR_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/sepp_worker_image_name/'${SEPP_ENVOY_WORKER_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/sds_image_name/'${SDS_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/certnotifier_image_name/'${CERTNOTIFIER_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/sepp_manager_image_tag/'$(echo ${var.sepp-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/logfwdr_image_tag/'$(echo ${var.logfwdr-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/sepp_worker_image_tag/'$(echo ${var.sepp-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/sds_image_tag/'$(echo ${var.sds-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/certnotifier_image_tag/'$(echo ${var.certnotifier-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tlskeylogagent_image_name/'${TLSKEYLOGAGENT_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tlskeylogagent_image_tag/'$(echo ${var.tlskeylogagent-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tapcollector_image_name/'${TAPCOLLECTOR_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tapcollector_image_tag/'$(echo ${var.tapcollector-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tap_agent_image_name/'${TAPAGENT_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tap_agent_image_tag/'$(echo ${var.tapagent-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}/eric-product-info.yaml;
+           update_values.rb ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}/values.yaml
+           imageCredentials:setupmanager:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:manager:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:setupworker:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:worker:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:sds:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:certnotifier:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:tlskeylogagent:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:logfwdr:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:tapagent:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:tapcollector:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           > ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}/values.tmp.yaml;
+           mv ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}/values.tmp.yaml ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}/values.yaml";
+
+    - task: nlf
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "rm -rf ${base.OUTPUT_DIR}/${NLF_SERVICE_NAME}; rm -rf ${base.OUTPUT_DIR}/${NLF_SERVICE_NAME}*.tgz;
+           mkdir -p ${base.OUTPUT_DIR}/${NLF_SERVICE_NAME}; cp -r esc/nlf/helm/* ${base.OUTPUT_DIR}/${NLF_SERVICE_NAME};
+           sed -i 's|product_number|'${var.nlf-cxc-number}'|g' ${base.OUTPUT_DIR}/${NLF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/product_revision/'${var.nlf-cxc-rev-number}'/g' ${base.OUTPUT_DIR}/${NLF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/nlf_image_name/'${NLF_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${NLF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/nlf_image_tag/'$(echo ${var.nlf-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${NLF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tap_agent_image_name/'${TAPAGENT_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${NLF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tap_agent_image_tag/'$(echo ${var.tapagent-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${NLF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tlskeylogagent_image_name/'${TLSKEYLOGAGENT_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${NLF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tlskeylogagent_image_tag/'$(echo ${var.tlskeylogagent-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${NLF_SERVICE_NAME}/eric-product-info.yaml;
+           update_values.rb ${base.OUTPUT_DIR}/${NLF_SERVICE_NAME}/values.yaml
+           imageCredentials:nlf:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:tapagent:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:tlskeylogagent:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           > ${base.OUTPUT_DIR}/${NLF_SERVICE_NAME}/values.tmp.yaml;
+           mv ${base.OUTPUT_DIR}/${NLF_SERVICE_NAME}/values.tmp.yaml ${base.OUTPUT_DIR}/${NLF_SERVICE_NAME}/values.yaml";
+
+    - task: rlf
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "rm -rf ${base.OUTPUT_DIR}/${RLF_SERVICE_NAME}; rm -rf ${base.OUTPUT_DIR}/${RLF_SERVICE_NAME}*.tgz;
+           mkdir -p ${base.OUTPUT_DIR}/${RLF_SERVICE_NAME}; cp -r esc/rlf/helm/* ${base.OUTPUT_DIR}/${RLF_SERVICE_NAME};
+           sed -i 's|product_number|'${var.rlf-cxc-number}'|g' ${base.OUTPUT_DIR}/${RLF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/product_revision/'${var.rlf-cxc-rev-number}'/g' ${base.OUTPUT_DIR}/${RLF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/rlf_image_name/'${RLF_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${RLF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/rlf_image_tag/'$(echo ${var.rlf-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${RLF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tap_agent_image_name/'${TAPAGENT_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${RLF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tap_agent_image_tag/'$(echo ${var.tapagent-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${RLF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tlskeylogagent_image_name/'${TLSKEYLOGAGENT_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${RLF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tlskeylogagent_image_tag/'$(echo ${var.tlskeylogagent-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${RLF_SERVICE_NAME}/eric-product-info.yaml;
+           update_values.rb ${base.OUTPUT_DIR}/${RLF_SERVICE_NAME}/values.yaml
+           imageCredentials:rlf:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:tapagent:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:tlskeylogagent:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           > ${base.OUTPUT_DIR}/${RLF_SERVICE_NAME}/values.tmp.yaml;
+           mv ${base.OUTPUT_DIR}/${RLF_SERVICE_NAME}/values.tmp.yaml ${base.OUTPUT_DIR}/${RLF_SERVICE_NAME}/values.yaml";
+
+    - task: slf
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "rm -rf ${base.OUTPUT_DIR}/${SLF_SERVICE_NAME}; rm -rf ${base.OUTPUT_DIR}/${SLF_SERVICE_NAME}*.tgz;
+           mkdir -p ${base.OUTPUT_DIR}/${SLF_SERVICE_NAME}; cp -r esc/slf/helm/* ${base.OUTPUT_DIR}/${SLF_SERVICE_NAME};
+           sed -i 's|product_number|'${var.slf-cxc-number}'|g' ${base.OUTPUT_DIR}/${SLF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/product_revision/'${var.slf-cxc-rev-number}'/g' ${base.OUTPUT_DIR}/${SLF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/slf_image_name/'${SLF_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${SLF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/slf_image_tag/'$(echo ${var.slf-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${SLF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tap_agent_image_name/'${TAPAGENT_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${SLF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tap_agent_image_tag/'$(echo ${var.tapagent-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${SLF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tlskeylogagent_image_name/'${TLSKEYLOGAGENT_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${SLF_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/tlskeylogagent_image_tag/'$(echo ${var.tlskeylogagent-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${SLF_SERVICE_NAME}/eric-product-info.yaml;
+           update_values.rb ${base.OUTPUT_DIR}/${SLF_SERVICE_NAME}/values.yaml
+           imageCredentials:slf:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:tapagent:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:tlskeylogagent:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           > ${base.OUTPUT_DIR}/${SLF_SERVICE_NAME}/values.tmp.yaml;
+           mv ${base.OUTPUT_DIR}/${SLF_SERVICE_NAME}/values.tmp.yaml ${base.OUTPUT_DIR}/${SLF_SERVICE_NAME}/values.yaml";
+
+    - task: monitor
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "rm -rf ${base.OUTPUT_DIR}/${MONITOR_SERVICE_NAME}; rm -rf ${base.OUTPUT_DIR}/${MONITOR_SERVICE_NAME}*.tgz;
+           mkdir -p ${base.OUTPUT_DIR}/${MONITOR_SERVICE_NAME}; cp -r esc/monitor/helm/* ${base.OUTPUT_DIR}/${MONITOR_SERVICE_NAME};
+           sed -i 's|product_number|'${var.monitor-cxc-number}'|g' ${base.OUTPUT_DIR}/${MONITOR_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/product_revision/'${var.monitor-cxc-rev-number}'/g' ${base.OUTPUT_DIR}/${MONITOR_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/monitor_image_name/'${MONITOR_SERVICE_NAME}'/g' ${base.OUTPUT_DIR}/${MONITOR_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/monitor_image_tag/'$(echo ${var.monitor-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${MONITOR_SERVICE_NAME}/eric-product-info.yaml;
+           update_values.rb ${base.OUTPUT_DIR}/${MONITOR_SERVICE_NAME}/values.yaml
+           imageCredentials:monitor:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           > ${base.OUTPUT_DIR}/${MONITOR_SERVICE_NAME}/values.tmp.yaml;
+           mv ${base.OUTPUT_DIR}/${MONITOR_SERVICE_NAME}/values.tmp.yaml ${base.OUTPUT_DIR}/${MONITOR_SERVICE_NAME}/values.yaml";
+
+    - task: bsf-diameter
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "rm -rf ${base.OUTPUT_DIR}/${BSF_DIAMETER_SERVICE_NAME}; rm -rf ${base.OUTPUT_DIR}/${BSF_DIAMETER_SERVICE_NAME}*.tgz;
+           mkdir -p ${base.OUTPUT_DIR}/${BSF_DIAMETER_SERVICE_NAME}; cp -r esc/bsf/bsfdiameter/helm/* ${base.OUTPUT_DIR}/${BSF_DIAMETER_SERVICE_NAME};
+           sed -i 's/bsfdiameter_image_name/'${BSF_DIAMETER_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${BSF_DIAMETER_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/bsfdiameter_image_tag/'$(echo ${var.bsf-diameter-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${BSF_DIAMETER_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/cddjmxexporter_image_name/'${BSF_DIAMETER_JMX_EXPORTER_IMAGE_NAME}'/g' ${base.OUTPUT_DIR}/${BSF_DIAMETER_SERVICE_NAME}/eric-product-info.yaml;
+           sed -i 's/cddjmxexporter_image_tag/'$(echo ${var.bsf-diameter-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${BSF_DIAMETER_SERVICE_NAME}/eric-product-info.yaml;
+           update_values.rb ${base.OUTPUT_DIR}/${BSF_DIAMETER_SERVICE_NAME}/values.yaml
+           product:number=${var.bsf-diameter-cxc-number} product:revision=${var.bsf-diameter-cxc-rev-number}
+           imageCredentials:bsfdiameter:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           imageCredentials:cddjmxexporter:repoPath=$(echo ${base.DOCKER_REPO_PATH}/${env.USER})
+           > ${base.OUTPUT_DIR}/${BSF_DIAMETER_SERVICE_NAME}/values.tmp.yaml;
+           mv ${base.OUTPUT_DIR}/${BSF_DIAMETER_SERVICE_NAME}/values.tmp.yaml ${base.OUTPUT_DIR}/${BSF_DIAMETER_SERVICE_NAME}/values.yaml";
+
+  deprecations:
+    - task: help
+      docker-image: base.adp-cicd-deprecations-tool
+      docker-flags:
+         - "--workdir /app"
+      cmd: '-h'
+    - task: sync
+      docker-image: base.adp-cicd-deprecations-tool
+      docker-flags:
+         - "--volume $PWD:/5g_proto"
+         - "--workdir /app"
+      cmd: '-s "${env.SUFFIX}" -pr "${env.JIRAPROJECT}" -aj "${env.JIRAURL}" -c "${env.COMPONENT}" -l "${env.LABEL}" -u "${env.USER}" -p "${env.PASSWORD}" -d "${env.EPIC}" -o "../5g_proto/${base.OUTPUT_DIR}/" -v '
+    - task: json2csv
+      cmd: cat ${base.OUTPUT_DIR}/*.json | jq -r "[\"project\",\"component\",\"issue-key\",\"issue-link\",\"deprecation-key\",\"status\"], (.[] | [.project, .component, .issue_key, .issue_link, .deprecation_key, .status]) | @csv" > ${base.OUTPUT_DIR}/report.csv
+    - task: create-html-report
+      cmd: /bin/bash ./scripts/deprecations/generate_report.sh ${base.OUTPUT_DIR}
+
+  helm-dr-check:
+    - task: bsf
+      docker-image: base.adp-helm-dr-check
+      cmd: /bin/bash -c "mkdir -p ${HELM_DR_CHECK_OUTPUT_DIR}/${BSF_SERVICE_NAME} &&
+                         helm-dr-check --helm-chart ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}-${var.esc-version}.tgz -output ${HELM_DR_CHECK_OUTPUT_DIR}/${BSF_SERVICE_NAME} --helm-v3 || true"
+    - task: bsf-diameter
+      docker-image: base.adp-helm-dr-check
+      cmd: /bin/bash -c "mkdir -p ${HELM_DR_CHECK_OUTPUT_DIR}/${BSF_DIAMETER_SERVICE_NAME} &&
+                         helm-dr-check --helm-chart ${base.OUTPUT_DIR}/${BSF_DIAMETER_SERVICE_NAME}-${var.esc-version}.tgz -output ${HELM_DR_CHECK_OUTPUT_DIR}/${BSF_DIAMETER_SERVICE_NAME} --helm-v3 || true"
+    - task: monitor
+      docker-image: base.adp-helm-dr-check
+      cmd: /bin/bash -c "mkdir -p ${HELM_DR_CHECK_OUTPUT_DIR}/${MONITOR_SERVICE_NAME} &&
+                         helm-dr-check --helm-chart ${base.OUTPUT_DIR}/${MONITOR_SERVICE_NAME}-${var.esc-version}.tgz -output ${HELM_DR_CHECK_OUTPUT_DIR}/${MONITOR_SERVICE_NAME} --helm-v3 || true"
+    - task: nlf
+      docker-image: base.adp-helm-dr-check
+      cmd: /bin/bash -c "mkdir -p ${HELM_DR_CHECK_OUTPUT_DIR}/${NLF_SERVICE_NAME} &&
+                         helm-dr-check --helm-chart ${base.OUTPUT_DIR}/${NLF_SERVICE_NAME}-${var.esc-version}.tgz -output ${HELM_DR_CHECK_OUTPUT_DIR}/${NLF_SERVICE_NAME} --helm-v3 || true"
+    - task: rlf
+      docker-image: base.adp-helm-dr-check
+      cmd: /bin/bash -c "mkdir -p ${HELM_DR_CHECK_OUTPUT_DIR}/${RLF_SERVICE_NAME} &&
+                         helm-dr-check --helm-chart ${base.OUTPUT_DIR}/${RLF_SERVICE_NAME}-${var.esc-version}.tgz -output ${HELM_DR_CHECK_OUTPUT_DIR}/${RLF_SERVICE_NAME} --helm-v3 || true"
+    - task: sc
+      docker-image: base.adp-helm-dr-check
+      cmd: /bin/bash -c "mkdir -p ${HELM_DR_CHECK_OUTPUT_DIR}/${ESC_SERVICE_NAME} &&
+                         helm-dr-check --helm-chart ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella-${var.esc-version}.tgz -output ${HELM_DR_CHECK_OUTPUT_DIR}/${ESC_SERVICE_NAME} --helm-v3 || true"
+    - task: scp
+      docker-image: base.adp-helm-dr-check
+      cmd: /bin/bash -c "mkdir -p ${HELM_DR_CHECK_OUTPUT_DIR}/${SCP_SERVICE_NAME} &&
+                         helm-dr-check --helm-chart ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}-${var.esc-version}.tgz -output ${HELM_DR_CHECK_OUTPUT_DIR}/${SCP_SERVICE_NAME} --helm-v3 || true"
+    - task: sepp
+      docker-image: base.adp-helm-dr-check
+      cmd: /bin/bash -c "mkdir -p ${HELM_DR_CHECK_OUTPUT_DIR}/${SEPP_SERVICE_NAME} &&
+                         helm-dr-check --helm-chart ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}-${var.esc-version}.tgz -output ${HELM_DR_CHECK_OUTPUT_DIR}/${SEPP_SERVICE_NAME} --helm-v3 || true"
+    - task: slf
+      docker-image: base.adp-helm-dr-check
+      cmd: /bin/bash -c "mkdir -p ${HELM_DR_CHECK_OUTPUT_DIR}/${SLF_SERVICE_NAME} &&
+                         helm-dr-check --helm-chart ${base.OUTPUT_DIR}/${SLF_SERVICE_NAME}-${var.esc-version}.tgz -output ${HELM_DR_CHECK_OUTPUT_DIR}/${SLF_SERVICE_NAME} --helm-v3 || true"
+
+  lint:
+    - task: bsf
+      condition: conditions:bsf-true
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: helm lint ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME} &
+           helm template -a ${var.base.policy-api-version} ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME} | kubectl --kubeconfig $PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf apply --dry-run=client -f -
+    - task: bsf-diameter
+      condition: conditions:bsf-true
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: helm lint ${base.OUTPUT_DIR}/${BSF_DIAMETER_SERVICE_NAME} &
+           helm template -a ${var.base.policy-api-version} ${base.OUTPUT_DIR}/${BSF_DIAMETER_SERVICE_NAME} | kubectl --kubeconfig $PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf apply --dry-run=client -f -
+    - task: monitor
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: helm lint ${base.OUTPUT_DIR}/${MONITOR_SERVICE_NAME} &
+           helm template -a ${var.base.policy-api-version} ${base.OUTPUT_DIR}/${MONITOR_SERVICE_NAME} | kubectl --kubeconfig $PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf apply --dry-run=client -f -
+    - task: nlf
+      condition: conditions:nlf-true
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: helm lint ${base.OUTPUT_DIR}/${NLF_SERVICE_NAME} &
+           helm template -a ${var.base.policy-api-version} ${base.OUTPUT_DIR}/${NLF_SERVICE_NAME} | kubectl --kubeconfig $PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf apply --dry-run=client -f -
+    - task: rlf
+      condition: conditions:rlf-true
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: helm lint ${base.OUTPUT_DIR}/${RLF_SERVICE_NAME} &
+           helm template -a ${var.base.policy-api-version} ${base.OUTPUT_DIR}/${RLF_SERVICE_NAME} | kubectl --kubeconfig $PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf apply --dry-run=client -f -
+    - task: scp
+      condition: conditions:scp-true
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: helm lint ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME} &
+           helm template -a ${var.base.policy-api-version} ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME} | kubectl --kubeconfig $PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf apply --dry-run=client -f -
+    - task: sepp
+      condition: conditions:sepp-true
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: helm lint ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME} &
+           helm template -a ${var.base.policy-api-version} ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME} | kubectl --kubeconfig $PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf apply --dry-run=client -f -
+    - task: slf
+      condition: conditions:slf-true
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: helm lint ${base.OUTPUT_DIR}/${SLF_SERVICE_NAME} &
+           helm template -a ${var.base.policy-api-version} ${base.OUTPUT_DIR}/${SLF_SERVICE_NAME} | kubectl --kubeconfig $PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf apply --dry-run=client -f -
+
+  package-helm:
+    - task: bsf
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: helm package --version ${var.bsf-version} ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}/ -d ${base.OUTPUT_DIR}/
+    - task: bsf-diameter
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: helm package --version ${var.bsf-diameter-version} ${base.OUTPUT_DIR}/${BSF_DIAMETER_SERVICE_NAME}/ -d ${base.OUTPUT_DIR}/
+    - task: monitor
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: helm package --version ${var.monitor-version} ${base.OUTPUT_DIR}/${MONITOR_SERVICE_NAME}/ -d ${base.OUTPUT_DIR}/
+    - task: nlf
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: helm package --version ${var.nlf-version} ${base.OUTPUT_DIR}/${NLF_SERVICE_NAME}/ -d ${base.OUTPUT_DIR}/
+    - task: rlf
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: helm package --version ${var.rlf-version} ${base.OUTPUT_DIR}/${RLF_SERVICE_NAME}/ -d ${base.OUTPUT_DIR}/
+    - task: scp
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: helm package --version ${var.scp-version} ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}/ -d ${base.OUTPUT_DIR}/
+    - task: sepp
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: helm package --version ${var.sepp-version} ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}/ -d ${base.OUTPUT_DIR}/
+    - task: slf
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: helm package --version ${var.slf-version} ${base.OUTPUT_DIR}/${SLF_SERVICE_NAME}/ -d ${base.OUTPUT_DIR}/
+
+  push-helm:
+    - task: remove-chart-plus-folder
+      cmd: ./scripts/bash/rem_plus_charts_versions.bash ${base.OUTPUT_DIR}/var.esc-version $(echo ${base.HELM_CHART_REPO}) ${var.base.armdocker-api-token}
+
+    - task: bsf
+      cmd:
+        - "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\"
+                    --upload-file ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}-${var.bsf-version}.tgz
+                    \"$(if [ \"${env.CSAR_CHARTS}\" = \"true\" ];
+                    then
+                       echo ${base.HELM_CHART_REPO}/${env.USER};
+                    else
+                       echo ${base.HELM_CHART_REPO};
+                    fi; )/${BSF_SERVICE_NAME}-${var.bsf-version}.tgz\" ${base.DEBUG_CURL_FLAGS} ${env.base.DEBUG_FLAG}"
+    - task: bsf-diameter
+      cmd:
+        - "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\"
+                    --upload-file ${base.OUTPUT_DIR}/${BSF_DIAMETER_SERVICE_NAME}-${var.bsf-diameter-version}.tgz
+                    \"$(if [ \"${env.CSAR_CHARTS}\" = \"true\" ];
+                    then
+                       echo ${base.HELM_CHART_REPO}/${env.USER};
+                    else
+                       echo ${base.HELM_CHART_REPO};
+                    fi; )/${BSF_DIAMETER_SERVICE_NAME}-${var.bsf-diameter-version}.tgz\" ${base.DEBUG_CURL_FLAGS} ${env.base.DEBUG_FLAG}"
+    - task: monitor
+      cmd:
+        - "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\"
+                    --upload-file ${base.OUTPUT_DIR}/${MONITOR_SERVICE_NAME}-${var.monitor-version}.tgz
+                    \"$(if [ \"${env.CSAR_CHARTS}\" = \"true\" ];
+                    then
+                       echo ${base.HELM_CHART_REPO}/${env.USER};
+                    else
+                       echo ${base.HELM_CHART_REPO};
+                    fi; )/${MONITOR_SERVICE_NAME}-${var.monitor-version}.tgz\" ${base.DEBUG_CURL_FLAGS} ${env.base.DEBUG_FLAG}"
+
+    - task: nlf
+      cmd:
+        - "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\"
+                    --upload-file ${base.OUTPUT_DIR}/${NLF_SERVICE_NAME}-${var.nlf-version}.tgz
+                    \"$(if [ \"${env.CSAR_CHARTS}\" = \"true\" ];
+                    then
+                       echo ${base.HELM_CHART_REPO}/${env.USER};
+                    else
+                       echo ${base.HELM_CHART_REPO};
+                    fi; )/${NLF_SERVICE_NAME}-${var.nlf-version}.tgz\" ${base.DEBUG_CURL_FLAGS} ${env.base.DEBUG_FLAG}"
+
+    - task: rlf
+      cmd:
+        - "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\"
+                    --upload-file ${base.OUTPUT_DIR}/${RLF_SERVICE_NAME}-${var.rlf-version}.tgz
+                    \"$(if [ \"${env.CSAR_CHARTS}\" = \"true\" ];
+                    then
+                       echo ${base.HELM_CHART_REPO}/${env.USER};
+                    else
+                       echo ${base.HELM_CHART_REPO};
+                    fi; )/${RLF_SERVICE_NAME}-${var.rlf-version}.tgz\" ${base.DEBUG_CURL_FLAGS} ${env.base.DEBUG_FLAG}"
+    - task: scp
+      cmd:
+        - "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\"
+                    --upload-file ${base.OUTPUT_DIR}/${SCP_SERVICE_NAME}-${var.scp-version}.tgz
+                    \"$(if [ \"${env.CSAR_CHARTS}\" = \"true\" ];
+                    then
+                       echo ${base.HELM_CHART_REPO}/${env.USER};
+                    else
+                       echo ${base.HELM_CHART_REPO};
+                    fi; )/${SCP_SERVICE_NAME}-${var.scp-version}.tgz\" ${base.DEBUG_CURL_FLAGS} ${env.base.DEBUG_FLAG}"
+    - task: sepp
+      cmd:
+        - "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\"
+                    --upload-file ${base.OUTPUT_DIR}/${SEPP_SERVICE_NAME}-${var.sepp-version}.tgz
+                    \"$(if [ \"${env.CSAR_CHARTS}\" = \"true\" ];
+                    then
+                       echo ${base.HELM_CHART_REPO}/${env.USER};
+                    else
+                       echo ${base.HELM_CHART_REPO};
+                    fi; )/${SEPP_SERVICE_NAME}-${var.sepp-version}.tgz\" ${base.DEBUG_CURL_FLAGS} ${env.base.DEBUG_FLAG}"
+    - task: slf
+      cmd:
+        - "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\"
+                    --upload-file ${base.OUTPUT_DIR}/${SLF_SERVICE_NAME}-${var.slf-version}.tgz
+                    \"$(if [ \"${env.CSAR_CHARTS}\" = \"true\" ];
+                    then
+                       echo ${base.HELM_CHART_REPO}/${env.USER};
+                    else
+                       echo ${base.HELM_CHART_REPO};
+                    fi; )/${SLF_SERVICE_NAME}-${var.slf-version}.tgz\" ${base.DEBUG_CURL_FLAGS} ${env.base.DEBUG_FLAG}"
+
+  update-umbrella:
+    - task: clean
+      cmd: /bin/bash -c "rm -rf ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella; rm -rf ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella*.tgz"
+    - task: copy
+      cmd: /bin/bash -c "cp -r esc/helm/${ESC_SERVICE_NAME}-umbrella ${base.OUTPUT_DIR}/"
+    - task: update-product-numbers
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "sed -i 's|product_name|${var.product-name}|g' ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella/eric-product-info.yaml;
+           sed -i 's|product_number|${var.cxp-number}|g' ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella/eric-product-info.yaml;
+           sed -i 's|product_revision|'${var.cxp-rev-number}'|g' ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella/eric-product-info.yaml;
+           sed -i 's|production_date|'${var.product-rel-date}'|g' ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella/eric-product-info.yaml;
+           sed -i 's|product_desc|${var.product-description}|g' ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella/eric-product-info.yaml;
+           sed -i 's|product_type|${var.product-type}|g' ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella/eric-product-info.yaml;
+           sed -i 's|semantic_version|'${var.esc-version}'|g' ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella/eric-product-info.yaml;
+           sed -i 's|commercial_version|${var.product-version}|g' ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella/eric-product-info.yaml";
+    - task: bsf
+      docker-image: base.helm-builder-py3
+      cmd: /bin/bash -c 'baseline_scripts/scripts/update_chart_requirements.py --appChartDir ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella
+                                                                               --chartName ${BSF_SERVICE_NAME}
+                                                                               --chartRepo $(if [ \"${env.CSAR_CHARTS}\" = \"true\" ];
+                                                                                             then
+                                                                                                 echo ${base.HELM_CHART_REPO}/${env.USER};
+                                                                                             else
+                                                                                                 echo ${base.HELM_CHART_REPO};
+                                                                                             fi; )/
+                                                                               --chartVersion ${var.bsf-version} ${env.base.DEBUG_FLAG}'
+    - task: bsf-diameter
+      docker-image: base.helm-builder-py3
+      cmd: /bin/bash -c 'baseline_scripts/scripts/update_chart_requirements.py --appChartDir ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella
+                                                                               --chartName ${BSF_DIAMETER_SERVICE_NAME}
+                                                                               --chartRepo $(if [ \"${env.CSAR_CHARTS}\" = \"true\" ];
+                                                                                             then
+                                                                                                 echo ${base.HELM_CHART_REPO}/${env.USER};
+                                                                                             else
+                                                                                                 echo ${base.HELM_CHART_REPO};
+                                                                                             fi; )/
+                                                                               --chartVersion ${var.bsf-diameter-version} ${env.base.DEBUG_FLAG}'
+    - task: monitor
+      docker-image: base.helm-builder-py3
+      cmd: /bin/bash -c 'baseline_scripts/scripts/update_chart_requirements.py --appChartDir ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella
+                                                                               --chartName ${MONITOR_SERVICE_NAME}
+                                                                               --chartRepo $(if [ \"${env.CSAR_CHARTS}\" = \"true\" ];
+                                                                                             then
+                                                                                                 echo ${base.HELM_CHART_REPO}/${env.USER};
+                                                                                             else
+                                                                                                 echo ${base.HELM_CHART_REPO};
+                                                                                             fi; )/
+                                                                               --chartVersion ${var.monitor-version} ${env.base.DEBUG_FLAG}'
+    - task: nlf
+      docker-image: base.helm-builder-py3
+      cmd: /bin/bash -c 'baseline_scripts/scripts/update_chart_requirements.py --appChartDir ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella
+                                                                               --chartName ${NLF_SERVICE_NAME}
+                                                                               --chartRepo $(if [ \"${env.CSAR_CHARTS}\" = \"true\" ];
+                                                                                             then
+                                                                                                 echo ${base.HELM_CHART_REPO}/${env.USER};
+                                                                                             else
+                                                                                                 echo ${base.HELM_CHART_REPO};
+                                                                                             fi; )/
+                                                                               --chartVersion ${var.nlf-version} ${env.base.DEBUG_FLAG}'
+
+    - task: rlf
+      docker-image: base.helm-builder-py3
+      cmd: /bin/bash -c 'baseline_scripts/scripts/update_chart_requirements.py --appChartDir ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella
+                                                                               --chartName ${RLF_SERVICE_NAME}
+                                                                               --chartRepo $(if [ \"${env.CSAR_CHARTS}\" = \"true\" ];
+                                                                                             then
+                                                                                                 echo ${base.HELM_CHART_REPO}/${env.USER};
+                                                                                             else
+                                                                                                 echo ${base.HELM_CHART_REPO};
+                                                                                             fi; )/
+                                                                               --chartVersion ${var.rlf-version} ${env.base.DEBUG_FLAG}'
+    - task: scp
+      docker-image: base.helm-builder-py3
+      cmd: /bin/bash -c 'baseline_scripts/scripts/update_chart_requirements.py --appChartDir ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella
+                                                                               --chartName ${SCP_SERVICE_NAME}
+                                                                               --chartRepo $(if [ \"${env.CSAR_CHARTS}\" = \"true\" ];
+                                                                                             then
+                                                                                                 echo ${base.HELM_CHART_REPO}/${env.USER};
+                                                                                             else
+                                                                                                 echo ${base.HELM_CHART_REPO};
+                                                                                             fi; )/
+                                                                               --chartVersion ${var.scp-version} ${env.base.DEBUG_FLAG}'
+    - task: sepp
+      docker-image: base.helm-builder-py3
+      cmd: /bin/bash -c 'baseline_scripts/scripts/update_chart_requirements.py --appChartDir ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella
+                                                                               --chartName ${SEPP_SERVICE_NAME}
+                                                                               --chartRepo $(if [ \"${env.CSAR_CHARTS}\" = \"true\" ];
+                                                                                             then
+                                                                                                 echo ${base.HELM_CHART_REPO}/${env.USER};
+                                                                                              else
+                                                                                                 echo ${base.HELM_CHART_REPO};
+                                                                                             fi; )/
+                                                                               --chartVersion ${var.sepp-version} ${env.base.DEBUG_FLAG}'
+    - task: slf
+      docker-image: base.helm-builder-py3
+      cmd: /bin/bash -c 'baseline_scripts/scripts/update_chart_requirements.py --appChartDir ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella
+                                                                               --chartName ${SLF_SERVICE_NAME}
+                                                                               --chartRepo $(if [ \"${env.CSAR_CHARTS}\" = \"true\" ];
+                                                                                             then
+                                                                                                 echo ${base.HELM_CHART_REPO}/${env.USER};
+                                                                                             else
+                                                                                                 echo ${base.HELM_CHART_REPO};
+                                                                                             fi; )/
+                                                                               --chartVersion ${var.slf-version} ${env.base.DEBUG_FLAG}'
+
+  repository-index:
+    - task: create-index-user-helm-repo
+      cmd: /bin/bash -c "helm repo index ./${base.OUTPUT_DIR} --url ${base.HELM_CHART_REPO}/${env.USER}"
+
+    - task: push-index
+      cmd:
+        - "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\" --upload-file ./${base.OUTPUT_DIR}/index.yaml ${base.HELM_CHART_REPO}/${env.USER}/index.yaml"
+
+  update-umbrella-generic:
+    - task: service
+      cmd: /bin/bash -c "baseline_scripts/scripts/update_chart_requirements.py --appChartDir ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella
+                                                                               --chartName ${env.CHART_NAME}
+                                                                               --chartRepo ${env.CHART_REPO}/
+                                                                               --chartVersion ${env.CHART_VERSION} ${env.base.DEBUG_FLAG}"
+  
+  check-crds:
+    - task: existense
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: /bin/bash -c "./scripts/existCrds.sh --cluster ${env.base.KUBE_HOST} -n ${env.CRDS_NAMESPACE} >   ${base.OUTPUT_DIR}/var.no-crds"
+    - task: is-crd
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--volume $PWD:/scripts"
+        - "--workdir /scripts"
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+      cmd: /bin/bash -c "./scripts/checkIfCrds.sh -s ${env.CHART_NAME} -v ${env.CHART_VERSION} --repo ${env.CHART_REPO} > ${base.OUTPUT_DIR}/var.is-crd"
+    # Deprecated
+    #- task: extract-crds
+      #docker-image: helm-builder-py3
+      #docker-flags:
+        #- "--volume ~/:/files"
+        #- "--volume $PWD:/scripts"
+        #- "--workdir /scripts"
+        #- "--env XDG_DATA_HOME=/home/helmuser/.helm"
+      #cmd: /bin/bash -c "./scripts/extractCrds.sh -s ${env.CHART_NAME} -v ${env.CHART_VERSION}"
+    - task: create-namespace
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: sh -c 'kubectl get namespace ${var.base.namespace};
+                  if [ $? -eq 0 ]; then
+                     echo "Namespace ${var.base.namespace} already exists";
+                  else
+                     echo "Creating namespace ${var.base.namespace}";
+                     kubectl create namespace ${var.base.namespace};
+                     if [ $? -ne 0 ]; then
+                        echo "Failed to create namespace ${var.base.namespace}";
+                     fi
+                  fi'
+
+  deploy-crds-generic:
+    - task: package-deploy-crd-generic
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--volume $PWD:/scripts"
+        - "--workdir /scripts"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+      cmd: /bin/bash -c "./scripts/package_and_deploy_generic_crd.sh -s ${env.CHART_NAME} -v ${env.CHART_VERSION} --cluster ${env.base.KUBE_HOST}  --namespace ${env.CRDS_NAMESPACE} --deploy --debug"
+    - task: package-deploy-crd-generic-old
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--volume $PWD:/scripts"
+        - "--workdir /scripts"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+      cmd: /bin/bash -c "./scripts/package_and_deploy_generic_crd.sh -s ${env.CHART_NAME} --cluster ${env.base.KUBE_HOST}  --namespace ${env.CRDS_NAMESPACE} --deploy  --debug"
+
+  package-umbrella-fast:
+    - task: fetch-dep-charts
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--volume $PWD:/scripts"
+        - "--workdir /scripts"
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+      cmd: /bin/bash -c "mkdir -p charts/ ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella/charts/ && cp -r charts/ ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella/ &&
+           ./scripts/fetch_dep.sh ${ESC_SERVICE_NAME}-umbrella && ./scripts/fetch_dep_dirty.sh"
+    - task: package
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--volume $PWD:/scripts"
+        - "--workdir /scripts"
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+      cmd: /bin/bash -c "helm package --version ${var.esc-version} ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella/ -d ${base.OUTPUT_DIR}/"
+    - task: update-cached-charts
+      docker-image: base.helm-builder-py3
+      cmd: /bin/bash -c "rm -fr charts/* && cp -r ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella/charts/*.tgz charts/"
+#    - task: patch-defaultmode
+#      cmd: /bin/bash -c 'baseline_scripts/scripts/patch_defaultMode.sh ${base.OUTPUT_DIR} ${ESC_SERVICE_NAME}-umbrella-${var.esc-version}.tgz'
+
+  package-umbrella:
+    - task: esc
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--volume $PWD:/scripts"
+        - "--workdir /scripts"
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+        - "--env XDG_CONFIG_HOME=/home/helmuser/.config"
+        - "--env XDG_CACHE_HOME=/home/helmuser/.cache"
+      cmd: /bin/bash -c "scripts/add_repos.sh -r ;
+           helm package --dependency-update --version ${var.esc-version} ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella/ -d ${base.OUTPUT_DIR}/"
+#    - task: patch-defaultmode
+#      cmd: /bin/bash -c 'baseline_scripts/scripts/patch_defaultMode.sh ${base.OUTPUT_DIR} ${ESC_SERVICE_NAME}-umbrella-${var.esc-version}.tgz'
+
+  check-charts-versions:
+    - task: charts
+      cmd: ./scripts/bash/check_charts_versions.bash ${var.esc-version}
+
+
+  push-umbrella:
+    - task: esc
+      docker-image: base.helm-builder
+      cmd:
+        - "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\" --upload-file ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella-${var.esc-version}.tgz \"$(echo ${base.HELM_CHART_REPO})/${ESC_SERVICE_NAME}-umbrella-${var.esc-version}.tgz\" ${base.DEBUG_CURL_FLAGS} ${env.base.DEBUG_FLAG}"
+  fetch-crds:
+    - task: clean
+      cmd: /bin/bash -c "rm -rf ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-*crd*.tgz"
+    - task: copy
+      cmd: /bin/bash -c "cp -r esc/helm/${ESC_SERVICE_NAME}-umbrella ${base.OUTPUT_DIR}/"
+    - task: sip-tls
+      docker-image: base.helm-builder-py3
+      docker-flags:
+#        - "--volume ~/:/files"
+#        - "--volume $PWD:/scripts"
+#        - "--workdir /scripts"
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+        - "--env XDG_CONFIG_HOME=/home/helmuser/.config"
+        - "--env XDG_CACHE_HOME=/home/helmuser/.cache"
+      cmd: /bin/bash -c "./scripts/package_and_deploy_generic_crd.sh -s eric-sec-sip-tls > ${base.OUTPUT_DIR}/var.siptls-crd-pkg"
+    - task: certm
+      docker-image: base.helm-builder-py3
+      docker-flags:
+#        - "--volume ~/:/files"
+#        - "--volume $PWD:/scripts"
+#        - "--workdir /scripts"
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+        - "--env XDG_CONFIG_HOME=/home/helmuser/.config"
+        - "--env XDG_CACHE_HOME=/home/helmuser/.cache"
+      cmd: /bin/bash -c "./scripts/package_and_deploy_generic_crd.sh -s eric-sec-certm > ${base.OUTPUT_DIR}/var.certm-crd-pkg"
+    - task: iccr
+      docker-image: base.helm-builder-py3
+      docker-flags:
+#        - "--volume ~/:/files"
+#        - "--volume $PWD:/scripts"
+#        - "--workdir /scripts"
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+        - "--env XDG_CONFIG_HOME=/home/helmuser/.config"
+        - "--env XDG_CACHE_HOME=/home/helmuser/.cache"
+      cmd: /bin/bash -c "./scripts/package_and_deploy_generic_crd.sh -s eric-tm-ingress-controller-cr > ${base.OUTPUT_DIR}/var.iccr-crd-pkg"
+    - task: wcdbcd
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--volume $PWD:/scripts"
+        - "--workdir /scripts"
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+        - "--env XDG_CONFIG_HOME=/home/helmuser/.config"
+        - "--env XDG_CACHE_HOME=/home/helmuser/.cache"
+      cmd: /bin/bash -c "./scripts/package_and_deploy_generic_crd.sh -s eric-data-wide-column-database-cd > ${base.OUTPUT_DIR}/var.wcdbcd-crd-pkg"
+
+
+  deploy-crds:
+    - task: sip-tls
+      docker-image: base.helm-builder-py3
+      docker-flags:
+       - "--volume $PWD:/scripts"
+       - "--workdir /scripts"
+       - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+      cmd: /bin/bash -c "./scripts/package_and_deploy_generic_crd.sh -s eric-sec-sip-tls --deploy  --debug --cluster ${env.base.KUBE_HOST} -n ${env.CRDS_NAMESPACE}"
+    - task: certm
+      docker-image: base.helm-builder-py3
+      docker-flags:
+       - "--volume $PWD:/scripts"
+       - "--workdir /scripts"
+       - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+      cmd: /bin/bash -c "./scripts/package_and_deploy_generic_crd.sh -s eric-sec-certm --deploy --debug --cluster ${env.base.KUBE_HOST} -n ${env.CRDS_NAMESPACE}"
+    - task: iccr
+      docker-image: base.helm-builder-py3
+      docker-flags:
+       - "--volume $PWD:/scripts"
+       - "--workdir /scripts"
+       - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+      cmd: /bin/bash -c "./scripts/package_and_deploy_generic_crd.sh -s eric-tm-ingress-controller-cr --deploy --debug --cluster ${env.base.KUBE_HOST} -n ${env.CRDS_NAMESPACE}"
+    - task: wcdbcd
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume $PWD:/scripts"
+        - "--workdir /scripts"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+      cmd: /bin/bash -c "./scripts/package_and_deploy_generic_crd.sh -s eric-data-wide-column-database-cd --deploy --debug --cluster ${env.base.KUBE_HOST} -n ${env.CRDS_NAMESPACE}"
+
+  undeploy-crds:
+    - task: clean-crds
+      cmd: /bin/bash -c 'scripts/cleanup_crds.sh --cluster ${env.base.KUBE_HOST} --namespace ${env.CRDS_NAMESPACE} --debug'
+
+  undeploy-crds-generic:
+    - task: clean-crds
+      cmd: /bin/bash -c 'scripts/cleanup_crds.sh -s ${env.CHART_NAME} -v ${env.CHART_VERSION} --cluster ${env.base.KUBE_HOST} --namespace ${env.CRDS_NAMESPACE} --debug'
+
+  generate-values:
+    #Temporary workaround for CI runs to force the use of node ports instead of loadbalancer
+    - task: force-node-ports
+      cmd:
+        - if [ \"${env.FORCE_SERVICE_TYPE_NODE_PORT}\" == \"true\" ];
+           then
+               echo "--set \"eric-bsf.service.worker.annotations.cloudProviderLB.ccm\.ews\.io/enable\"=\\\"false\\\"" \
+                    "--set \"eric-scp.service.worker.annotations.cloudProviderLB.ccm\.ews\.io/enable\"=\\\"false\\\"" \
+                    "--set \"eric-sepp.service.worker.annotations.cloudProviderLB.ccm\.ews\.io/enable\"=\\\"false\\\"" 
+                     > ${base.OUTPUT_DIR}/var.helm-values-additional-settings;
+           else
+               echo "" > ${base.OUTPUT_DIR}/var.helm-values-additional-settings;
+           fi;
+    - task: values-generation
+      docker-image: base.helm-builder-py3
+      docker-flags:
+      #- "--volume ~/:/files"
+      #- "--volume $PWD:/scripts"
+      #- "--workdir /scripts"
+      - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: /bin/bash -c 'python3.10 scripts/helm_config_gen/config_gen.py
+           -n ${var.base.namespace}
+           -i "esc/release_artifacts"
+           -o ${base.OUTPUT_DIR}
+           -e ${env.base.KUBE_HOST}
+           -c ${env.PRODUCTION}
+           -r ${env.RESOURCES}
+           -dc1 ${env.DC1_NAMESPACE}
+           -dc2 ${env.DC2_NAMESPACE}
+           --ip-version-ext ${env.IP_VERSION_EXT}
+           --ip-version-int ${env.IP_VERSION_INT}
+           --pm-rw ${env.PM_REMOTE_WRITE}
+           --tap ${env.TAPAGENT}
+           --tapcol ${env.TAPCOLLECTOR}
+           --pvtb ${env.PVTB}
+           --sepp-secrets ${env.CSAR_CHARTS}
+           --metrics ${env.METRICS}
+           --set eric-scp.manager.leaderElection.enabled="${env.SCP_LEADER_ELECTION}"
+           --set eric-sepp.manager.leaderElection.enabled="${env.SEPP_LEADER_ELECTION}"
+           --set eric-bsf.manager.leaderElection.enabled="${env.BSF_LEADER_ELECTION}"
+           --set eric-sc-nlf.leaderElection.enabled="${env.NLF_LEADER_ELECTION}"
+           --set eric-sc-rlf.leaderElection.enabled="${env.RLF_LEADER_ELECTION}"
+           --set global.ericsson.bsf.enabled="${env.BSF}"
+           --set global.ericsson.bsfdiameter.enabled="${env.BSF_DIAMETER}"
+           --set global.ericsson.wcdb.enabled="${env.WCDB}"
+           --set global.ericsson.scp.enabled="${env.SCP}"
+           --set global.ericsson.sepp.enabled="${env.SEPP}"
+           --set eric-sc.logging.enabled="${env.LOGGING}"
+           --set global.ericsson.nlf.enabled="${env.NLF}"
+           --set global.ericsson.rlf.enabled="${env.RLF}"
+           --set global.ericsson.slf.enabled="${env.SLF}"
+           --set global.ericsson.pvtb.enabled="${env.PVTB}"
+           --set eric-tm-ingress-controller.enabled="${env.CONTOUR}"
+           --set eric-sc.routes.nbi.security.tls.clientValidation.enabled="${env.CONTOUR_MTLS}"
+           --set eric-tm-ingress-controller-cr.service.allocateLoadBalancerNodePorts=true
+           --set global.ericsson.objectStorage.enabled="${env.OBJECT_STORAGE}"
+           --set global.ericsson.sftp.enabled="${env.SFTP}"
+           --set global.ericsson.ddc.enabled="${env.DDC}"
+           --set eric-cm-yang-provider.cliExtensionCmds.showAlarms.enabled="${env.LOGGING}"
+           --set eric-cm-yang-provider.cliExtensionCmds.showAlarmsHistory.enabled="${env.LOGGING}"
+           --set eric-cm-yang-provider.externalTls.netconf.enabled="${env.NETCONF_TLS}"
+           --set eric-pm-server.server.retention="${env.PM_RETENTION}"
+           --set eric-log-transformer.egress.syslog.enabled="${env.SYSLOG}"
+           --set eric-log-transformer.egress.lumberjack.enabled="${env.LUMBERJACK}"
+           --set eric-sec-admin-user-management.ldap.centralAuth.enabled="${env.REFERRAL_LDAP}"
+           --set eric-pm-bulk-reporter.objectStorage.enabled="${env.PMBR_OBJECT_STORAGE}"
+           --set eric-scp.service.worker.multiVpn.enabled="${env.SCP_MULTIVPN}"
+           --set eric-sepp.service.worker.multiVpn.enabled="${env.SEPP_MULTIVPN}"
+           --set eric-sc-monitor.replicaCount=1
+           --set global.ericsson.ddc.enabled="$(if [ \"${env.LOGGING}\" == \"false\" ]; then echo ${env.LOGGING}; else echo ${env.DDC}; fi; )"
+           --set global.pullSecret=regcred
+           --set eric-cnom-server.features.serviceCommunicationProxy="${env.SCP}"
+           --set eric-cm-yang-provider.service.allocateLoadBalancerNodePorts=true
+           --set eric-data-sftp-server.service.allocateLoadBalancerNodePorts=true
+           --set eric-tm-ingress-controller-cr.service.allocateLoadBalancerNodePorts=true
+           --set eric-stm-diameter.service.allocateLoadBalancerNodePorts=true
+           --set eric-fh-snmp-alarm-provider.service.allocateLoadBalancerNodePorts=true
+           --set eric-data-search-engine.service.endpoints.rest.tls.enforced=optional
+           --set eric-data-search-engine.service.endpoints.rest.tls.verifyClientCertificate=optional
+           --set eric-data-search-engine.service.endpoints.rest.tls.verifyClientHostname=false
+           --set eric-bsf.service.worker.allocateLoadBalancerNodePorts=true
+           --set eric-scp.service.worker.allocateLoadBalancerNodePorts=true
+           --set eric-sepp.service.worker.allocateLoadBalancerNodePorts=true
+           --set eric-probe-virtual-tap-broker.dtls.enabled="${env.PVTB_DTLS}"
+           --set eric-probe-virtual-tap-broker.resources.VirtualTapBroker.requests.cpu="$(if [ \"${env.PVTB_DTLS}\" == \"true\" ]; then echo "2600m";else echo "2000m";fi; )"
+           --set eric-probe-virtual-tap-broker.resources.VirtualTapBroker.limits.cpu="$(if [ \"${env.PVTB_DTLS}\" == \"true\" ]; then echo "7800m";else echo "6000m";fi; )"
+           --set eric-sepp.tapcollector.tappedData.divisionMethod="${env.DIVISION_METHOD}"
+           --set eric-scp.tapcollector.tappedData.divisionMethod="${env.DIVISION_METHOD}"
+           --set eric-bsf.tapcollector.tappedData.divisionMethod="${env.DIVISION_METHOD}"
+           '
+
+  deploy-vtap:
+    - task: deploy-atmoz-sftp
+      cmd: /bin/bash -c 'export USER=$(cat .bob/var.username); bob/bob -r rulesets/ruleset2.0-eric-sftp.yaml init:sftp-version image package push deploy'
+    - rule: config-tapagent
+    - task: build-vtap-images
+      cmd: /bin/bash -c 'bob/bob build-images:tlskeylogagent push-images:tlskeylogagent; bob/bob push-images:tapagent'
+
+  deploy-vtap-to-dc:
+    - task: deploy-vtap-sftp-images
+      cmd: /bin/bash -c 'if [ ${env.TAPAGENT} = true ];
+                         then
+                           if [ ${env.LEGACY} = true ];
+                           then
+                             bob/bob deploy-vtap;
+                           else
+                             bob/bob deploy-vtap:deploy-atmoz-sftp;
+                             bob/bob config-tapagent;
+                           fi
+                         fi'
+
+  deploy-geored:
+    - task: switch-to-dc1
+      cmd: /bin/bash -c 'echo ${env.DC1_NAMESPACE} > .bob/var.namespace; echo $(cut -d'-' -f3 <<<"${env.DC1_NAMESPACE}") > .bob/var.username; bob/bob init:set-ingressHost;'
+    - rule: deploy-vtap-to-dc
+    - rule: deploy
+    - task: install-default-users:default-users
+    - task: install-certificates:nbi
+    - task: switch-to-dc2
+      cmd: /bin/bash -c 'echo ${env.DC2_NAMESPACE} > .bob/var.namespace; echo $(cut -d'-' -f3 <<<"${env.DC2_NAMESPACE}") > .bob/var.username; bob/bob init:set-ingressHost; sed -i 's/${env.DC1_NAMESPACE}/'${env.DC2_NAMESPACE}'/g' ${CERTS_OUT_DIR}/supreme.yaml;'
+    - rule: deploy-vtap-to-dc
+    - rule: deploy
+    - task: install-default-users:default-users
+    - task: install-certificates:nbi
+    - task: config-geored
+      docker-image: base.python3-builder
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: /bin/bash -c 'python3 scripts/setup_geored.py -dc1 ${env.DC1_NAMESPACE} -dc2 ${env.DC2_NAMESPACE} --diameter ${env.BSF_DIAMETER}'
+    - task: switch-back-to-dc1
+      cmd: /bin/bash -c 'echo $DC1_NAMESPACE > .bob/var.namespace; export USER=$(echo $(cut -d'-' -f3 <<<"$DC1_NAMESPACE")) | echo $USER > .bob/var.username ; sed -i 's/${env.DC2_NAMESPACE}/'${env.DC1_NAMESPACE}'/g' ${CERTS_OUT_DIR}/supreme.yaml;'
+    - rule: upgrade
+
+  deploy:
+    - rule: create-certificates
+    - task: create-certm-config
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env GEORED=${env.GEORED}"
+        - "--env NETCONF_TLS=${env.NETCONF_TLS}"
+        - "--env SYSLOG=${env.SYSLOG}"
+      cmd:
+        - /bin/bash -c 'scripts/create_certm_json.sh'
+    - task: adp-secrets
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env GEORED=${env.GEORED}"
+        - "--env NETCONF_TLS=${env.NETCONF_TLS}"
+      cmd:
+        - /bin/bash -c 'scripts/secrets.sh create'
+    - task: imagePullSecret
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/.docker:/home/${env.USER}/.docker"
+      cmd:
+        - /bin/bash -c 'kubectl create secret docker-registry regcred
+                                 --kubeconfig $PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+                                 --namespace ${var.base.namespace}
+                                 --from-file=".dockerconfigjson=/home/${env.USER}/.docker/config.json"'
+    - rule: generate-values
+    - task: ihc
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: /bin/bash -c 'helm install ${ESC_SERVICE_NAME}-${var.username} --timeout 1500s --namespace ${var.base.namespace} ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella-${var.esc-version}.tgz -f ${base.OUTPUT_DIR}/values-final.yaml ${var.helm-values-additional-settings}'
+    - task: pm-httpproxy
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd:  /bin/bash -c 'scripts/httpproxy/pm_httpproxy.sh create ${env.base.KUBE_HOST}'
+    - task: search-engine-httpproxy
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd:  /bin/bash -c 'scripts/httpproxy/search_engine_httpproxy.sh create ${env.base.KUBE_HOST}'
+    - task: osmn-httpproxy
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: /bin/bash -c 'scripts/httpproxy/osmn_httpproxy.sh create ${env.base.KUBE_HOST} ${env.OBJECT_STORAGE}'
+    - task: envoy-admin-httpproxy
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: /bin/bash -c 'scripts/httpproxy/worker-envoy-admin.sh create ${env.base.KUBE_HOST}'
+    - task: delete-certm-config-secret
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: /bin/bash -c 'echo "Checking if CA secret contains data...";
+                         elapsed_time=0; delay=3; total_time=180;
+                         while true; do
+                             cas_data=$(kubectl --namespace ${var.base.namespace} get secrets trusted-cas-secret -o jsonpath="{.data}");
+                             if [ $? == 0 ] && [ "${cas_data}" != "" ]; then
+                                 kubectl --namespace ${var.base.namespace} delete secret eric-sec-certm-deployment-configuration --ignore-not-found;
+                                 break;
+                             fi;
+                             sleep $delay; elapsed_time=$((elapsed_time + delay));
+                             if [ $elapsed_time -gt $total_time ]; then
+                                 echo "[WARNING] The CA secret has not been created or does not contain data";
+                                 break;
+                             fi;
+                         done'
+    - task: delete-certm-config-secret2
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: /bin/bash -c 'echo "Checking if CA secret contains data...";
+                         elapsed_time=0; delay=3; total_time=180;
+                         while true; do
+                             cas_data=$(kubectl --namespace ${var.base.namespace} get secrets eric-sc-trusted-ca -o jsonpath="{.data}");
+                             if [ $? == 0 ] && [ "${cas_data}" != "" ]; then
+                                 kubectl --namespace ${var.base.namespace} delete secret eric-sec-certm-deployment-configuration --ignore-not-found;
+                                 break;
+                             fi;
+                             sleep $delay; elapsed_time=$((elapsed_time + delay));
+                             if [ $elapsed_time -gt $total_time ]; then
+                                 echo "[WARNING] The CA secret has not been created or does not contain data";
+                                 break;
+                             fi;
+                         done'
+
+  verify:
+    - task: envoy-admin-httpproxy
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: /bin/bash -c 'scripts/httpproxy/worker-envoy-admin.sh verify ${env.base.KUBE_HOST}'
+
+  upgrade:
+    - rule: generate-values
+    - task: upgrade
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: /bin/bash -c 'helm upgrade ${ESC_SERVICE_NAME}-${var.username} --timeout 1500s --namespace ${var.base.namespace} ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella-${var.esc-version}.tgz -f ${base.OUTPUT_DIR}/values-final.yaml ${var.helm-values-additional-settings}'
+
+  wait-for-deployed-resources:
+#   check for deployed resources: check for *all* pods
+    - task: all
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: sh -c 'scripts/wait_for_deployed_resources.py --kubernetes-admin-conf=$KUBECONFIG --kubernetes-namespace=${var.base.namespace}'
+    - task: services
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: sh -c 'scripts/wait_for_deployed_resources.py --kubernetes-admin-conf $KUBECONFIG --kubernetes-namespace ${var.base.namespace} --pods ${env.APPLICATION_IDENTIFIERS} restarter'
+#   check for deployed resources: exclude pods bsf init sw-inventory (deprecated)
+    - task: bsfless
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: sh -c 'scripts/wait_for_deployed_resources.py --kubernetes-admin-conf $KUBECONFIG --kubernetes-namespace ${var.base.namespace} --pods bsf init sw-inventory'
+#   check for deployed resources: exclude pods init sw-inventory (replaced bsfless)
+    - task: allapplications
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: sh -c 'scripts/wait_for_deployed_resources.py --kubernetes-admin-conf $KUBECONFIG --kubernetes-namespace ${var.base.namespace} --pods init sw-inventory migrate'
+#   check for deployed resources: exclude pods sepp init sw-inventory (temp for deploy in IPv6 cluster as sepp is not ipv6 adapted)
+    - task: seppless
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: sh -c 'scripts/wait_for_deployed_resources.py --kubernetes-admin-conf $KUBECONFIG --kubernetes-namespace ${var.base.namespace} --pods sepp init sw-inventory'
+#   check for deployed resources: exclude pods pvtb (when the pvtb is deployed with DTLS)
+    - task: pvtbless
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: sh -c 'scripts/wait_for_deployed_resources.py --kubernetes-admin-conf $KUBECONFIG --kubernetes-namespace ${var.base.namespace} --pods ${env.APPLICATION_IDENTIFIERS} restarter probe-virtual-tap-broker'
+#   check for deployed resources: exclude pods, init, sw-inventory, and indicated applications
+    - task: selectedApps
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env BSF=$(${env.BSF} && echo \"\" || echo bsf)"
+        - "--env SCP=$(${env.SCP} && echo \"\" || echo scp)"
+        - "--env SEPP=$(${env.SEPP} && echo \"\" || echo sepp)"
+      cmd: sh -c 'scripts/wait_for_deployed_resources.py --kubernetes-admin-conf $KUBECONFIG --kubernetes-namespace ${var.base.namespace} --pods init sw-inventory $BSF $SCP $SEPP migrate restarter'
+
+  clean-resources:
+    - task: delete-namespace
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: sh -c 'kubectl get namespace ${var.base.namespace};
+                  if [ $? -eq 0 ]; then
+                     echo "Deleting namespace ${var.base.namespace}";
+                     kubectl delete namespace ${var.base.namespace};
+                     if [ $? -eq 0 ]; then
+                        echo "Successfully deleted namespace ${var.base.namespace}";
+                     else
+                        echo "Failed to delete namespace ${var.base.namespace}";
+                        exit 1;
+                     fi
+                  else
+                     echo "No need to clean namespace ${var.base.namespace} because it does not exist";
+                  fi'
+    - task: create-namespace
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: sh -c 'kubectl get namespace ${var.base.namespace};
+                  if [ $? -eq 0 ]; then
+                     echo "Namespace ${var.base.namespace} already exists";
+                  else
+                     echo "Creating namespace ${var.base.namespace}";
+                     kubectl create namespace ${var.base.namespace};
+                     if [ $? -ne 0 ]; then
+                        echo "Failed to create namespace ${var.base.namespace}";
+                     fi
+                  fi'
+    - task: remove-namespace-resources
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: sh -c 'kubectl api-resources --verbs=list --namespaced=true -o name | xargs -n 1 --verbose kubectl delete --ignore-not-found -l app.kubernetes.io/instance=${ESC_SERVICE_NAME}-${var.username} --kubeconfig ${env.PWD}/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf -A;
+                  if [ $? -eq 0 ]; then
+                      echo "Successfully clean namespace scope resources";
+                  else
+                      echo "Clean of namespace resources failed!";
+                  fi'
+    - task: remove-cluster-resources
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: sh -c 'kubectl api-resources --verbs=list --namespaced=false -o name | xargs -n 1 --verbose kubectl delete --ignore-not-found -l app.kubernetes.io/instance=${ESC_SERVICE_NAME}-${var.username} --kubeconfig ${env.PWD}/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf -A;
+                  if [ $? -eq 0 ]; then
+                      echo "Successfully clean all cluster scope resources";
+                  else
+                      echo "Clean of cluster scope resources failed!";
+                  fi'
+    - task: remove-all-resources
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: kubectl api-resources --verbs=list -o name | xargs -n 1 --verbose kubectl delete --ignore-not-found -l app.kubernetes.io/instance=${ESC_SERVICE_NAME}-${var.username} --kubeconfig ${env.PWD}/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf -A
+    - task: list-all-resources
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: kubectl api-resources --verbs=list -o name | xargs -n 1 --verbose kubectl get --ignore-not-found --kubeconfig ${env.PWD}/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+    - task: clean-gracefully
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: /bin/bash -c 'scripts/cleanNamespacedReleases.sh ${var.base.namespace}'
+
+  undeploy:
+    - task: all
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: helm uninstall ${ESC_SERVICE_NAME}-${var.username} --timeout 600s --namespace ${var.base.namespace}
+    - task: imagePullSecret
+      docker-image: base.helm-builder-py3
+      docker-envs:
+      - KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+      cmd:
+        - /bin/bash -c "kubectl --namespace ${var.base.namespace} delete secret regcred --ignore-not-found=true"
+    - task: delete-pg-backup-pvc
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: kubectl delete pvc --all -n ${var.base.namespace}
+    - task: delete-secrets
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: kubectl delete secrets --all -n ${var.base.namespace}
+    - task: delete-serviceaccounts
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: kubectl delete sa -n ${var.base.namespace} --selector=app.kubernetes.io/instance=${ESC_SERVICE_NAME}-${var.username}
+    - task: delete-jobs
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: kubectl delete jobs --all -n ${var.base.namespace}
+    - task: delete-leftover-job-pods
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: kubectl delete pod -l 'job-name=sc-backup' -n ${var.base.namespace}
+    - task: delete-leftover-configmaps
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: kubectl delete externalcertificates.com.ericsson.sec.certm --all -n ${var.base.namespace}
+    - task: delete-external-certificates-1
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: kubectl delete configmap --all -n ${var.base.namespace}
+    - task: delete-external-certificates-2
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: kubectl delete externalcertificates.certm.sec.ericsson.com --all -n ${var.base.namespace}
+    - task: pm-httpproxy
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd:  /bin/bash -c 'scripts/httpproxy/pm_httpproxy.sh delete ${env.base.KUBE_HOST}'
+    - task: search-engine-httpproxy
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd:  /bin/bash -c 'scripts/httpproxy/search_engine_httpproxy.sh delete ${env.base.KUBE_HOST}'
+    - task: osmn-httpproxy
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: /bin/bash -c 'scripts/httpproxy/osmn_httpproxy.sh delete ${env.base.KUBE_HOST} ${env.OBJECT_STORAGE}'
+    - task: envoy-admin-httpproxy
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--volume $PWD:/scripts"
+        - "--workdir /scripts"
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: /bin/bash -c 'scripts/httpproxy/worker-envoy-admin.sh delete ${env.base.KUBE_HOST}'
+
+  config-tapagent:
+    - task: sftp-secret
+      cmd:  /bin/bash -c 'cd scripts; ./config_tapagent.sh sftp-secret; cd ..'
+    - task: configmaps
+      cmd:  /bin/bash -c 'cd scripts; ./config_tapagent.sh configmaps; cd ..'
+
+  install-default-users:
+    - task: default-users
+      cmd: /bin/bash -c 'cd scripts; ./default_users.sh; cd ..'
+    - task: no-pwdReset
+      cmd: /bin/bash -c 'cd scripts; ./um_pwd_reset_disable.sh; exit $? ; cd ..'
+
+  install-default-users-ci:
+    - task: default-users
+      cmd: /bin/bash -c 'cd scripts; ./adp_install_users.sh; cd ..'
+    - task: no-pwdReset
+      cmd: /bin/bash -c 'cd scripts; ./um_pwd_reset_disable.sh;  exit $? ;cd ..'
+
+  run-check_values:
+    - task: chk_values
+      cmd: /bin/bash -c './baseline_scripts/scripts/chk_values.py -u esc/helm/eric-sc-umbrella -c esc/release_artifacts --username ${var.username} --password "${var.password}";'
+
+  create-certificates:
+    - task: rootca
+      docker-image: base.supreme
+      docker-flags:
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd:
+        - generate -d rootca -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: netconf-tls
+      docker-image: base.supreme
+      docker-flags:
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd:
+        - generate -d yang-provider -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+        - generate -d netconf-tls-client -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: geored
+      docker-image: base.supreme
+      docker-flags:
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd:
+        - generate -d cassandra-internode-external -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+        - generate -d cql-server-external -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+        - generate -d cql-client-external -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: transformer
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate -d transformer -p ${CERTS_OUT_DIR}/supreme.yaml
+
+  install-certificates:
+    - task: rootca
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d rootca -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: chfsim
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d chfsim -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: chfsim-sepp
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d chfsim-sepp -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: nrfsim
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d nrfsim -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: seppsim
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d seppsim -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: seppsim-n32c
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d seppsim-n32c -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: seppsim-scp
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d seppsim-scp -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: bsf-worker
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d bsfwrk -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: bsf-manager
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d bsfmgr -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: scp-worker
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d scpwrk -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: scp-manager
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d scpmgr -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: sepp-manager
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d seppmgr -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: sepp-worker
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d seppwrk -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: nlf
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d nlf -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: slf
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d slf -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: nbi
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d nbi -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: k6
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d k6 -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: transformer
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d transformer -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: syslog
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d syslog -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: internal-ldap
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d internal-ldap -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: referral-ldap
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d referral-ldap -p ${CERTS_OUT_DIR}/supreme.yaml
+    - task: diameter
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d diameter -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: dscload
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d dscload -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: influxdb
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d influxdb -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: telegraf
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d telegraf -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: pmrw
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d pmrw -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: ext-lumberjack
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d ext-lj -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: ext-lumberjack-x
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d ext-lj-x -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: yang-provider
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d yang-provider -p ${CERTS_OUT_DIR}/supreme.yaml -l debug
+    - task: pvtb
+      docker-image: base.supreme
+      docker-flags:
+        - "--network ${env.base.DOCKER_NETWORK}"
+        - "--volume /proj/sc-tools/bin/supreme:/supreme:ro"
+        - "--env USER=${env.USER}"
+        - "--env KUBE_HOST=${env.base.KUBE_HOST}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: generate install -d pvtb -p ${CERTS_OUT_DIR}/supreme.yaml
+
+  install-regcred-automation:
+    - task: applyDefaultPullSecret
+      docker-image: base.helm-builder-py3
+      docker-envs:
+        - KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf
+      cmd:
+        - /bin/bash -c 'kubectl get secret regcred --namespace=default -o yaml | sed "s/namespace:\ .*/namespace:\ ${var.base.namespace}/" | kubectl apply --namespace=${var.base.namespace} -f -'
+
+  csar:
+    - task: generate-uuid
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: /bin/bash -c './scripts/generate_uuid.py > ${base.OUTPUT_DIR}/var.vnfd-uuid'
+      #cmd: /bin/bash -c 'uuidgen > ${base.OUTPUT_DIR}/var.vnfd-uuid'
+           #echo ${var.cxp-number} | sed 's/\//vaggelis/g' > ${base.OUTPUT_DIR}/var.tmp-cxp-number;
+           #echo "telos ${var.tmp-cxp-number}";
+           #sed -i 's/<current-version>/'${var.tmp-cxp-number}'_'${var.cxp-rev-number}'/g' ${base.OUTPUT_DIR}/sc_vnf_descriptor.yaml;
+           #$(echo ${var.bsf-version} | sed 's/+/-/')
+           #sed -i 's/bsf_manager_image_tag/'$(echo ${var.bsf-version} | sed 's/+/-/')'/g' ${base.OUTPUT_DIR}/${BSF_SERVICE_NAME}/eric-product-info.yaml;\
+           #$(echo ${var.cxp-number} | sed 's/\//vaggelis/')
+
+    #- task: extract-vnfd-crds
+    # create string "node_types:Ericsson.SC:artifacts:crd_packageX:file=Definitions/OtherTemplates/${var.X-crd-pkg}" x Number of CRDs -> var.csar-crds
+
+    - task: prepare-vnfd-version
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: /bin/bash -c "rm -rf ${base.OUTPUT_DIR}/sc_vnf_descriptor.yaml; cp -f esc/release_artifacts/sc_vnf_descriptor.yaml ${base.OUTPUT_DIR}/.;
+           sed -i 's/<current-id>/'${var.vnfd-uuid}'/g' ${base.OUTPUT_DIR}/sc_vnf_descriptor.yaml;
+           sed -i 's/<sc1.5.0-id>/'1632935e-479d-4b69-8b44-4e9ca13d88dd'/g' ${base.OUTPUT_DIR}/sc_vnf_descriptor.yaml;
+           sed -i 's/<sc1.4.0-id>/'56fbc1f2-2d13-428c-a3f2-0cafbb203f02'/g' ${base.OUTPUT_DIR}/sc_vnf_descriptor.yaml;
+           sed -i 's/<sc1.4.1-id>/'113adf4f-8b9c-4d60-b1e6-291efc15bf00'/g' ${base.OUTPUT_DIR}/sc_vnf_descriptor.yaml;
+           sed -i 's/<current-version>/'$(echo ${var.cxp-number} | sed 's/\//\\\\\//'g)'_'${var.cxp-rev-number}'/g' ${base.OUTPUT_DIR}/sc_vnf_descriptor.yaml;
+           sed -i 's/<sc-version>/'${var.esc-version}'/g' ${base.OUTPUT_DIR}/sc_vnf_descriptor.yaml"
+
+    - task: prepare-definitions
+      cmd: /bin/bash -c "if [[ ! -d ${base.OUTPUT_DIR}/${DEF_DIR} ]];
+                         then
+                            mkdir ${base.OUTPUT_DIR}/${DEF_DIR};
+                            echo 'creating ${base.OUTPUT_DIR}/${DEF_DIR}';
+                         fi;
+                         cp esc/release_artifacts/etsi_nfv_sol001_vnfd_2_5_1_types.yaml ${base.OUTPUT_DIR}/${DEF_DIR}"
+
+    - task: prepare-manifest
+      cmd:
+        - cp esc/release_artifacts/manifest-config.yaml ${base.OUTPUT_DIR}
+
+    - task: prepare-vnfd
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "update_values.rb ${base.OUTPUT_DIR}/sc_vnf_descriptor.yaml
+           node_types:Ericsson.SC:artifacts:helm_package:file=Definitions/OtherTemplates/eric-sc-umbrella-${var.esc-version}.tgz
+           node_types:Ericsson.SC:artifacts:crd_package1:file=Definitions/OtherTemplates/${var.certm-crd-pkg}
+           node_types:Ericsson.SC:artifacts:crd_package2:file=Definitions/OtherTemplates/${var.siptls-crd-pkg}
+           node_types:Ericsson.SC:artifacts:crd_package3:file=Definitions/OtherTemplates/${var.iccr-crd-pkg}
+           node_types:Ericsson.SC:artifacts:crd_package4:file=Definitions/OtherTemplates/${var.wcdbcd-crd-pkg}
+           > ${base.OUTPUT_DIR}/sc_vnf_descriptor.tmp.yaml;
+           mv ${base.OUTPUT_DIR}/sc_vnf_descriptor.tmp.yaml ${base.OUTPUT_DIR}/sc_vnf_descriptor.yaml";
+           # replace crd_package1-2-3 with ${var.csar-crds}
+    #- task: fetch-package-crds
+    # fetch all crds -> helm fetch xxxxx;
+    # ls ./bob | grep -E crd.*tgz | awk '{ print $1 }' -> create string "${var.X-crd-pkg}" x Number of CRDs -> var.package-crds -> ${var.certm-crd-pkg} ${var.siptls-crd-pkg} ${var.iccr-crd-pkg}
+
+
+    - task: copy-scaling-mapping-file
+      cmd: /bin/bash -c "rm -rf ${base.OUTPUT_DIR}/scaling_mapping.yaml; cp -f esc/release_artifacts/scaling_mapping.yaml ${base.OUTPUT_DIR}/."
+
+    - task: package
+      docker-image: base.package-manager
+      docker-flags:
+        - "--volume $PWD/${base.OUTPUT_DIR}:/csar"
+        - "--volume /var/run/docker.sock:/var/run/docker.sock"
+        - "--workdir /csar"
+        - "--user root:root"
+      cmd: "generate --sol-version 2.5.1 --eric-product-info-charts ${ESC_SERVICE_NAME}-umbrella-${var.esc-version}.tgz --helm ${ESC_SERVICE_NAME}-umbrella-${var.esc-version}.tgz ${var.certm-crd-pkg} ${var.siptls-crd-pkg} ${var.iccr-crd-pkg} ${var.wcdbcd-crd-pkg} --name ${ESC_SERVICE_NAME}-${var.esc-version} --vnfd sc_vnf_descriptor.yaml --docker-config /csar --set eric-fh-alarm-handler.imageCredentials.registry.url=serodocker.sero.gic.ericsson.se,eric-fh-snmp-alarm-provider.imageCredentials.registry.url=selndocker.mo.sw.ericsson.se,eric-fh-alarm-handler.imageCredentials.alarmhandler.registry.url=serodocker.sero.gic.ericsson.se,eric-fh-alarm-handler.imageCredentials.topiccreator.registry.url=serodocker.sero.gic.ericsson.se,eric-cnom-server.imageCredentials.registry.url=serodocker.sero.gic.ericsson.se,eric-cnom-server.imageCredentials.hooklauncher.registry.url=serodocker.sero.gic.ericsson.se,eric-bsf.tapagent.manager.enabled=true,eric-pm-bulk-reporter.objectStorage.enabled=false,global.ericsson.objectStorage.enabled=true,global.ericsson.sftp.enabled=true,global.ericsson.pvtb.enabled=true,eric-probe-virtual-tap-broker.imageCredentials.VirtualTapBroker.registry.url=selndocker.mo.sw.ericsson.se,eric-scp.tapcollector.worker.enabled=true,eric-sepp.tapcollector.worker.enabled=true,eric-bsf.tapcollector.worker.enabled=true,eric-odca-diagnostic-data-collector.imageCredentials.registry.url=serodocker.sero.gic.ericsson.se,eric-odca-diagnostic-data-collector.imageCredentials.ddc.registry.url=serodocker.sero.gic.ericsson.se,eric-odca-diagnostic-data-collector.imageCredentials.hooklauncher.registry.url=serodocker.sero.gic.ericsson.se,eric-data-sftp-server.imageCredentials.sftp.registry.url=serodocker.sero.gic.ericsson.se,eric-data-object-storage-mn.imageCredentials.init.registry.url=serodocker.sero.gic.ericsson.se,eric-data-object-storage-mn.imageCredentials.osmn.registry.url=serodocker.sero.gic.ericsson.se,eric-data-object-storage-mn.imageCredentials.kes.registry.url=serodocker.sero.gic.ericsson.se --values-csar manifest-config.yaml --definitions ${DEF_DIR} --helm3 --helm-version 3.8.2 --agentk --scale-mapping scaling_mapping.yaml"
+
+    # Output csar file has root permissions. Helm builder image is used as helper image to chown the .csar file to the local user.
+
+    - task: fix-permissions
+      docker-image: base.helm-builder
+      docker-flags:
+        - "--volume $PWD/${base.OUTPUT_DIR}:/csar"
+        - "--user root:root"
+      cmd: /bin/bash -c "chown -R $(id -u):$(id -g) /csar/${ESC_SERVICE_NAME}-${var.esc-version}.csar; rm -rf /csar/source"
+
+    - task: create-md5sum
+      cmd: /bin/bash -c "cd ${base.OUTPUT_DIR}; md5sum ${ESC_SERVICE_NAME}-${var.esc-version}.csar > ${ESC_SERVICE_NAME}-${var.esc-version}.csar.md5; cd .."
+
+    - task: create-tools
+      cmd: /bin/bash -c "cp scripts/collect_ADP_logs.sh ${base.OUTPUT_DIR}/;cp scripts/data_collector.sh ${base.OUTPUT_DIR}/;cp scripts/data_collector_addon_sc.sh ${base.OUTPUT_DIR}/;cp scripts/retagger.sh ${base.OUTPUT_DIR}/; cp scripts/annotate_crds.sh ${base.OUTPUT_DIR}/; cd ${base.OUTPUT_DIR}/; tar -czvf ${ESC_SERVICE_NAME}-tools-${var.esc-version}.tgz  collect_ADP_logs.sh retagger.sh annotate_crds.sh data_collector.sh data_collector_addon_sc.sh"
+
+    - task: csar-folders-user-file
+      cmd:
+        - "curl -H \"Authorization: Bearer ${var.base.armdocker-api-token}\" https://armdocker.rnd.ericsson.se/artifactory/api/search/aql -d $(echo 'items.find({\"repo\":{\"$eq\":\"proj-5g-bsf-generic-local\"}},{\"type\":{\"$eq\":\"folder\"}},{\"depth\":{\"$eq\":\"3\"}},{\"path\":{\"$eq\":\"eiffelesc/master\"}}).sort({\"$asc\":[\"created\"]})') -H \"content-type:text/plain\" | grep name | sed 's/\"name\" ://' | sed 's/\"//g' | sed 's/,//' | sed 's/^ *//g' > ${base.OUTPUT_DIR}/csar_folders_user.txt"
+    - task: fetch-branch
+      cmd: /bin/bash -c "if [ \"${env.USER}\" != \"eiffelesc\" ];
+                            then
+                                 git rev-parse --abbrev-ref HEAD > ${base.OUTPUT_DIR}/var.get-branch;
+                            else
+                                 echo ${env.BRANCH} > ${base.OUTPUT_DIR}/var.get-branch;
+                        fi;"
+    - task: remove-old-csar-folders
+      cmd: ./scripts/bash/rem_csar_folders.bash ${base.OUTPUT_DIR}/var.get-branch eiffelesc ${var.base.armdocker-api-token}
+    - task: push-csar
+      cmd:
+        - "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\" --upload-file ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-${var.esc-version}.csar \"$(if [ \"${env.CSAR_DETAIL}\" = \"false\" ];
+                                                                                                 then
+                                                                                                    echo ${RELEASE_REPO}/${env.USER}/${var.get-branch}/${var.esc-version};
+                                                                                                 else
+                                                                                                    echo ${RELEASE_REPO}/${env.USER}/${var.get-branch}/${var.esc-version}_${env.CSAR_DETAIL};
+                                                                                             fi;)/csar/${ESC_SERVICE_NAME}-${var.esc-version}.unsigned.csar\""
+    - task: push-md5sum
+      cmd:
+        - "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\" --upload-file ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-${var.esc-version}.csar.md5 \"$(if [ \"${env.CSAR_DETAIL}\" = \"false\" ];
+                                                                                                 then
+                                                                                                    echo ${RELEASE_REPO}/${env.USER}/${var.get-branch}/${var.esc-version};
+                                                                                                 else
+                                                                                                    echo ${RELEASE_REPO}/${env.USER}/${var.get-branch}/${var.esc-version}_${env.CSAR_DETAIL};
+                                                                                             fi;)/csar/${ESC_SERVICE_NAME}-${var.esc-version}.unsigned.csar.md5\""
+    - task: push-values
+      cmd:
+        - "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\" --upload-file esc/release_artifacts/${ESC_SERVICE_NAME}-values.yaml \"$(if [ \"${env.CSAR_DETAIL}\" = \"false\" ];
+                                                                                                 then
+                                                                                                    echo ${RELEASE_REPO}/${env.USER}/${var.get-branch}/${var.esc-version};
+                                                                                                 else
+                                                                                                    echo ${RELEASE_REPO}/${env.USER}/${var.get-branch}/${var.esc-version}_${env.CSAR_DETAIL};
+                                                                                             fi;)/release-artifacts/${ESC_SERVICE_NAME}-values-${var.esc-version}.yaml\""
+    - task: push-tools
+      cmd:
+        - "curl -f -k -H \"Authorization: Bearer ${var.base.armdocker-api-token}\" --upload-file ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-tools-${var.esc-version}.tgz \"$(if [ \"${env.CSAR_DETAIL}\" = \"false\" ];
+                                                                                                 then
+                                                                                                    echo ${RELEASE_REPO}/${env.USER}/${var.get-branch}/${var.esc-version};
+                                                                                                 else
+                                                                                                    echo ${RELEASE_REPO}/${env.USER}/${var.get-branch}/${var.esc-version}_${env.CSAR_DETAIL};
+                                                                                             fi;)/tools/${ESC_SERVICE_NAME}-tools-${var.esc-version}.tgz\""
+
+  test-csar:
+    - task: adp-secrets
+      cmd:  sh -c 'scripts/secrets.sh create'
+    - task: unzip-csar
+      cmd: /bin/bash -c "unzip ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-${var.esc-version}.csar -d ${base.OUTPUT_DIR}; rm -f ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella-${var.esc-version}.tgz; mv ${base.OUTPUT_DIR}/Definitions/OtherTemplates/${ESC_SERVICE_NAME}-umbrella-${var.esc-version}.tgz ${base.OUTPUT_DIR}/.; mv ${base.OUTPUT_DIR}/Definitions/OtherTemplates/$*-crds-*.tgz ${base.OUTPUT_DIR}/."
+    - task: all
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=home/helmuser/.helm"
+      cmd: /bin/bash -c 'helm install --timeout 1200s -f esc/release_artifacts/eric-sc-values.yaml --set eric-sc.routes.nbi.fqdn=${var.ingress-host} -f scripts/helm_config_gen/templates/license-server-array.yaml --namespace ${var.base.namespace} ${ESC_SERVICE_NAME}-${var.username} ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-umbrella-${var.esc-version}.tgz'
+
+# Rule for creating the foss report yaml file, and checking the diff between old and newly introduced or removed dependencies. This rule will show the mvn.yaml file in your git status, since the "last updated"
+# date is new. There is no problem to commit this file, if only the last updated date is the diff. If the script produces non-zero undefined dependencies, or non-zero unused foss files, then the designer should
+# update the foss files accordingly.
+
+  foss:
+    - rule: clean
+    - rule: init
+    - rule: build
+    - task: collect-mvn-dependencies
+      docker-image: base.helm-builder-py3
+      docker-flags:
+      - "--volume ~/:/files"
+      - "--volume $PWD:/5g_proto"
+      - "--workdir /5g_proto/scripts/fossReport/scripts"
+      - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: /bin/bash -c './dependency-collector.py -dev /5g_proto'
+    - task: generate-report
+      docker-image: base.helm-builder-py3
+      docker-flags:
+      - "--volume ~/:/files"
+      - "--volume $PWD:/5g_proto"
+      - "--workdir /5g_proto/scripts/fossReport"
+      - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: /bin/bash -c 'pip3.6 install -Iv dpath==2.0.5 xlsxwriter==3.0.1; scripts/Report.py -fenv fossFiles_envoy/ -fsc fossFiles_SC/ -n nonmvn.yaml -rep repository_locations_envoy_1_29_4.bzl -csv -xlsx'
+
+  clean:
+    - task: esc-parent
+      docker-image: base.java-maven-builder
+      cmd: /bin/bash -c "mvn --no-transfer-progress -s ${var.base.build-proxy} -Duser.home=. clean"
+    - task: envoy
+      cmd: /bin/bash -c "rm -rf envoyproxy/envoywrk/envoy-static* ${base.OUTPUT_DIR}/envoy-static*"
+    - task: directories
+      cmd: /bin/bash -c "rm -rf ${base.OUTPUT_DIR}/ *.tgz .m2/repository/";
+
+  push-libs-maven:
+    - task: all
+      cmd: sh -c './scripts/bash/uploadSharedLibs -a'
+    - task: adpal
+      cmd: sh -c './scripts/bash/uploadSharedLibs -l adpal'
+    - task: cnal
+      cmd: sh -c './scripts/bash/uploadSharedLibs -l cnal'
+    - task: common
+      cmd: sh -c './scripts/bash/uploadSharedLibs -l common'
+    - task: esc-parent
+      cmd: sh -c './scripts/bash/uploadSharedLibs -l esc-parent'
+    - task: utilities
+      cmd: sh -c './scripts/bash/uploadSharedLibs -l utilities'
+    - task: eric-chfsim
+      cmd: sh -c './scripts/bash/uploadSharedLibs -l eric-chfsim'
+    - task: eric-nrfsim
+      cmd: sh -c './scripts/bash/uploadSharedLibs -l eric-nrfsim'
+    - task: eric-seppsim
+      cmd: sh -c './scripts/bash/uploadSharedLibs -l eric-seppsim'
+
+  loadConfig:
+    - task: bsf
+      cmd: /bin/bash -c "export KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf; export NAMESPACE=${var.base.namespace}; ./scripts/bash/loadBsfConfig"
+    - task: bsf-init
+      cmd: /bin/bash -c "export KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf; export NAMESPACE=${var.base.namespace}; ./scripts/bash/initBsfDb"
+    - task: scp
+      cmd: /bin/bash -c "export KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf; export NAMESPACE=${var.base.namespace}; ./scripts/bash/loadScpConfig"
+    - task: sepp
+      cmd: /bin/bash -c "export KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf; export NAMESPACE=${var.base.namespace}; ./scripts/bash/loadSeppConfig"
+    - task: sc
+      cmd: /bin/bash -c "export KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf; export NAMESPACE=${var.base.namespace}; ./scripts/bash/loadScConfig"
+
+  pipeline-syntax-check:
+    - task: check
+      docker-image: base.java-maven-builder
+      cmd: /bin/bash -c 'for i in ./Jenkins/*;
+                         do
+                           echo -e "\n________ Checking Jenkinsfile $i ________\n";
+                           curl -X POST
+                                -H $(curl "${base.JENKINS_URL}/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)")
+                                -F "jenkinsfile=<$i"
+                                   ${base.JENKINS_URL}/pipeline-model-converter/validate;
+                         done'
+
+#needs to be run once to create helm_repository.yaml file stored in ~/.artifactory/
+  create-helm-auth:
+    - task: read-password
+      cmd: /bin/bash -c 'echo "Please enter your artifactory password:"; read -s password; echo $password > ${base.OUTPUT_DIR}/var.password'
+    - task: create-artifactory-file
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--volume $PWD:/scripts"
+        - "--workdir /scripts"
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: sh -c './scripts/helm_repositories.py -c -ep ${base.OUTPUT_DIR}/var.password -eu ${env.USER}'
+    - task: remove-password
+      cmd: /bin/bash -c 'rm ${base.OUTPUT_DIR}/var.password'
+
+#need to be run every time we do adp upgrades
+  adp-versions:
+    - task: check
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--volume $PWD:/baseline_scripts"
+        - "--workdir /baseline_scripts"
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: /bin/bash -c 'baseline_scripts/scripts/adp_version_info.py -a "esc/helm/eric-sc-umbrella" -c -m "master"'
+    - task: update-to-latest
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--volume $PWD:/baseline_scripts"
+        - "--workdir /baseline_scripts"
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+      cmd: /bin/bash -c 'baseline_scripts/scripts/adp_version_info.py -a "esc/helm/eric-sc-umbrella" -c -u'
+
+#actions used in adp-staging
+  conflict-resolve:
+    - task: other-conflicts-resolve
+      cmd: /bin/bash -c 'baseline_scripts/scripts/conflictsResolve.sh'
+    - task: requirements-conflicts-resolve
+      cmd: /bin/bash -c 'baseline_scripts/scripts/reqConflicts.py --oursFile requirements.ours
+                                                                  --theirsFile requirements.theirs'
+
+  cleanAdpStaging:
+    - task: cleanClusterAdpStaging
+      cmd: /bin/bash -c './scripts/cleanClusterAdpStaging.sh ${var.base.namespace} ${env.base.KUBE_HOST}'

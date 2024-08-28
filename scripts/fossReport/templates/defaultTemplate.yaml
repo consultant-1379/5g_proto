@@ -1,0 +1,22 @@
+Version: v1
+Description: "FOSS report"
+CreationDate: 2019-04-10 12:24
+FOSS:
+    SpecificFossDocumentTitle: "{{FOSSName}} {{FOSSVersion}} in 5G Ericsson Signalling Controller 1.4"
+    EricssonProductName: Ericsson Signalling Controller
+    DocumentNumberOfGenericFOSSEvaluationDocument: 1550-{{PRIMNumber(CAX/CTX)}}.strip() Uen
+    ProductStrategyTakesOpenSourceIntoAccount: "YES"
+    DocumentNumberOfTheProductStrategyRegardingOpenSource: No strategy document exists. The way of working includes the use of FOSS.
+    PotentialAlternativesMakeOrBuy: All related product requirements are satisfied by this FOSS; hence no commercial alternative has been investigated. There is no reason to pay for a commercial license for a functionality that is delivered by means of an open source solution.
+    AnalysisOfTheFOSSLockInEffects: If we had to replace this FOSS, we would incur costs of research and development, were we would have to undertake designing and building our own solution. However, the current version of this module has shown stability and has no outstanding critical vulnerabilities, so it would be possible to fork the version in use and continue to use that.
+    DevelopmentAndTimeToMarket: The FOSS has been extensively tested and is widely used inside the open source software community. The usage of this FOSS allows for shorter time to market. The development cost for implementing this FOSS is lower in comparison to developing it on our  own. A rough cost estimate for own design is significantly higher than the FOSS integration cost, while the own design functionality will provide negligible or no additional value in comparison to the FOSS.
+    FulfillmentOfLicenseObligations:
+    ProductPLMPossessTheRightCompetenciesToHandleTheSupportAndMaintenance: "YES"
+    EricssonCodeInheritTheFOSSLicense: "NO"
+    EricssonProjectProjectWriteBugFixesOnTheFOSS: "NO"
+    BugFixesContributedBackToTheCommunity: "NO"
+    DerivativeWorkProducedBasedOnTheFOSS: "NO"
+    FOSSBasedDerivatedWorkContributedBackToTheComminity: "NO"
+    OtherModificationPlannedForThisFOSS: "NO"
+    SpecificRisksAndCosts:  No risk is identified
+Undefined:

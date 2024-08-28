@@ -1,0 +1,42 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2023-11-14 14:34
+FOSS:
+    # Available in Bazaar
+    FOSSName: Caffeine
+    # Available in Bazaar
+    FOSSVersion: 2.9.3
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/ben-manes/caffeine/archive/refs/tags/v{{FOSSVersion}}.zip
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 20/CTX1020981
+    # Not Available in Bazaar
+    Primary: N
+    # Available in Bazaar
+    STAKOCode: Not for a new Design
+    # Available in Bazaar
+    STAKOReason: Product verison is older than 18 months. Newer versions exists
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: "Caffeine is a high performance, near optimal caching library based on Java 8. It is used by Kubernetes Java Client."
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: (LGPL GNU Lesser General Public License V2.1, Apache License 2.0)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Main license is Apache 2.0. It includes a file (ConcurrentHashMapV7.java) under GPL 2.0 license with classpath exception. The GPL exception allows to use this file without the larger binary work (i.e. SC package) to inherit the GPL license and become an open source product. 
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Classpath
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'com.github.ben-manes.caffeine:caffeine:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ZARISAR Aristeidis Sarras

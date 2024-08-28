@@ -1,0 +1,48 @@
+{
+  "allowedNfTypes": [
+    "SMF",
+    "CHF"
+  ],
+  "capacity": 9,
+  "chfInfo": {
+    "supiRangeList": [
+      {
+        "end": "460110668499999",
+        "start": "460110662000000"
+      },
+      {
+        "end": "460111015719999",
+        "start": "460111000000000"
+      },
+      {
+        "end": "460111017669999",
+        "start": "460111016220000"
+      },
+      {
+        "end": "460111161199999",
+        "start": "460111100000000"
+      },
+      {
+        "end": "460111177999999",
+        "start": "460111172000000"
+      },
+      {
+        "end": "460113059999999",
+        "start": "460113000000000"
+      }
+    ]
+  },
+  "fqdn": "scpjiangsuwlw",
+  "interPlmnFqdn": "scpjiangsuwlw",
+  "load": 22,
+  "nfInstanceId": "5b8df55b-abda-4b99-99c4-04b4f832eac1",
+  "nfServicePersistence": false,
+  "nfStatus": "REGISTERED",
+  "nfType": "CHF",
+  "plmnList": [
+    {
+      "mcc": "460",
+      "mnc": "11"
+    }
+  ]
+}

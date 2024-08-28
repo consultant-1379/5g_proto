@@ -1,0 +1,414 @@
+modelVersion: 2.0
+
+description: "SC CSAR creation"
+
+import:
+  base: ../rulesets/ruleset2.0-eric-base.yaml
+## integration helm chart rulesets
+  scbsf: ../eric-sc-bsf/ruleset2.0.yaml
+  scscp: ../eric-sc-scp/ruleset2.0.yaml
+  scsepp: ../eric-sc-sepp/ruleset2.0.yaml
+  scspider: ../eric-sc-spider/ruleset2.0.yaml
+
+properties:
+  - DEF_DIR: definitions
+  - ESC_SERVICE_NAME: eric-sc
+  - RELEASE_REPO: https://armdocker.rnd.ericsson.se/artifactory/proj-5g-bsf-generic-local
+
+var:
+  - spider-chart-tgz
+  - cncs-base-chart
+  - cncs-add-chart
+  - sc-cs-chart
+  - sc-bsf-chart
+  - sc-scp-chart
+  - sc-sepp-chart
+  - dsc-chart
+  - cxp-rev-number
+  - cxp-rev-number-underscore
+  - vnfd-uuid
+  - cxp-number
+  - cxp-number-underscore
+  - esc-version
+  - certm-crd-pkg
+  - siptls-crd-pkg
+  - iccr-crd-pkg
+  - wcdbcd-crd-pkg
+  - kvdbrd-crd-pkg
+  - senpnvip-crd-pkg
+  - get-branch
+  - csar-name
+  - eric-product-info-charts-csar
+  - helm-csar
+
+env:
+  - BRANCH (default=emptyvalue)
+  - CSAR_DETAIL (default=false)
+  - RELEASE (default=true)
+  - SPIDER_CHART_VERSION
+  - HELM_REPO_URL
+
+rules:
+
+  init-csar:
+    - task: generate-csar-version
+      docker-image: base.adp-release-auto
+      cmd: generate-version --is-release ${env.RELEASE} --output esc-version
+    - task: cxp-number
+      description: SC product number. Assuming version number follows the format X.Y.Z, X_VERSION, Y_VERSION and Z_VERSION are exported. The spaces in the CXP number are replaced by underscores, because update_values.rb script does not work properly with spaces.
+      cmd: /bin/bash -c 'VP=$(cat VERSION_PREFIX) && arr=(${VP//./ }) && X_VERSION=${arr[0]} &&
+           cat CXP_PREFIX | sed -e "s/ /_/g" -e "s/$/$X_VERSION/" > ${base.OUTPUT_DIR}/var.cxp-number;
+           cat ${base.OUTPUT_DIR}/var.cxp-number | sed "s/\//_/" > ${base.OUTPUT_DIR}/var.cxp-number-underscore'
+    - task: cxp-rev-number
+      description: SC product revision number r-state
+      docker-image: base.adp-release-auto
+      cmd: /bin/bash -c "
+        if ${env.RELEASE}; then 
+          /usr/local/bin/get_rstate.py  $(cat ${base.OUTPUT_DIR}/var.esc-version) > ${base.OUTPUT_DIR}/var.cxp-rev-number; 
+          echo -n $(cat ${base.OUTPUT_DIR}/var.esc-version|awk -F'-' '{print $2}')|tee -a ${base.OUTPUT_DIR}/var.cxp-rev-number;
+          sed -i ':a;$!{N;s/\n//;ba;}' ${base.OUTPUT_DIR}/var.cxp-rev-number;
+          echo '' | tee -a ${base.OUTPUT_DIR}/var.cxp-rev-number;
+        else
+          /usr/local/bin/get_rstate.py  $(cat ${base.OUTPUT_DIR}/var.esc-version) > ${base.OUTPUT_DIR}/var.cxp-rev-number;
+        fi"
+    - task: cxp-rev-number-underscore
+      description: SC product revision number underscore
+      cmd: /bin/bash -c 'cat ${base.OUTPUT_DIR}/var.cxp-rev-number | sed "s/\(R[0-9]*[A-Z]*\)/\1_/" > ${base.OUTPUT_DIR}/var.cxp-rev-number-underscore'
+    - task: csar-name
+      cmd: echo ERIC-SC-${var.cxp-number-underscore}_${var.cxp-rev-number-underscore} > ${base.OUTPUT_DIR}/var.csar-name
+    - task: generate-released-version
+      cmd: sed -i 's/-/+/g' ${base.OUTPUT_DIR}/var.esc-version
+    - task: generate-uuid
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: /bin/bash -c './scripts/generate_uuid.py > ${base.OUTPUT_DIR}/var.vnfd-uuid'
+
+  fetch-spider:
+    - description: Fetches the spider version specified in SPIDER_CHART_VERSION variable to the ${base.OUTPUT_DIR} directory. Then, the Chart.yaml of the fetched spider is used to fetch its helm packages tgz files.
+    - task: fetch-spider
+      docker-image: base.cihelm
+      cmd:
+        --username ${env.scspider.HELM_USER}
+        --password ${env.scspider.ARM_API_TOKEN}
+        --retry-timeout '${env.scspider.CIHELM_RETRY_TIMEOUT}'
+        --retry-sleep '${env.scspider.CIHELM_RETRY_SLEEP}'
+        --http-retry '${env.scspider.CIHELM_HTTP_RETRY}'
+        --helm-credentials ${base.OUTPUT_DIR}/${base.REPO_CREDENTIALS_FILE}
+        fetch
+          '${scspider.CHART_NAME}'
+          '${env.SPIDER_CHART_VERSION}'
+          '${env.HELM_REPO_URL}'
+          --destination ${base.OUTPUT_DIR}
+    - task: untar-spider
+      cmd: tar -xzf ${base.OUTPUT_DIR}/${scspider.CHART_NAME}-${env.SPIDER_CHART_VERSION}.tgz -C ${base.OUTPUT_DIR}
+    - task: make-spider-tmp-directory
+      cmd: mkdir -p ${base.OUTPUT_DIR}/${scspider.DEPENDENCIES_FOLDER}
+    - task: copy-chart-yaml
+      cmd: cp ${base.OUTPUT_DIR}/${scspider.CHART_NAME}/Chart.yaml ${base.OUTPUT_DIR}/${scspider.CHART_NAME}_tmp/${scspider.CHART_NAME}
+    - task: fetch-dependencies
+      docker-image: base.cihelm
+      description: Downloads all spider dependencies
+      cmd:
+        --username ${env.scspider.HELM_USER}
+        --password ${env.scspider.ARM_API_TOKEN}
+        --retry-timeout '${env.scspider.CIHELM_RETRY_TIMEOUT}'
+        --retry-sleep '${env.scspider.CIHELM_RETRY_SLEEP}'
+        --http-retry '${env.scspider.CIHELM_HTTP_RETRY}'
+        --helm-credentials ${base.OUTPUT_DIR}/${base.REPO_CREDENTIALS_FILE}
+        dependency download
+          ${base.OUTPUT_DIR}/${scspider.CHART_NAME}/Chart.yaml
+          --destination ${base.OUTPUT_DIR}/${scspider.DEPENDENCIES_FOLDER}
+        
+  fetch-dependencies-ci:
+    - task: make-spider-tmp-directory
+      cmd: mkdir -p ${base.OUTPUT_DIR}/${scspider.DEPENDENCIES_FOLDER}
+    - task: copy-chart-yaml
+      cmd: cp ${scspider.CHART_PATH}/Chart.yaml ${base.OUTPUT_DIR}/${scspider.CHART_NAME}_tmp/${scspider.CHART_NAME}
+    - task: fetch-dependencies
+      docker-image: base.cihelm
+      description: Downloads all spider dependencies
+      cmd:
+        --username ${env.scspider.HELM_USER}
+        --password ${env.scspider.ARM_API_TOKEN}
+        --retry-timeout '${env.scspider.CIHELM_RETRY_TIMEOUT}'
+        --retry-sleep '${env.scspider.CIHELM_RETRY_SLEEP}'
+        --http-retry '${env.scspider.CIHELM_HTTP_RETRY}'
+        --helm-credentials ${base.OUTPUT_DIR}/${base.REPO_CREDENTIALS_FILE}
+        dependency download
+          ${scspider.CHART_PATH}/Chart.yaml
+          --destination ${base.OUTPUT_DIR}/${scspider.DEPENDENCIES_FOLDER}     
+
+  fetch-dependencies:
+    - task: make-spider-tmp-directory
+      cmd: mkdir -p ${base.OUTPUT_DIR}/${scspider.DEPENDENCIES_FOLDER}
+    - task: copy-chart-yaml
+      cmd: cp ${scspider.CHART_PATH}/Chart.yaml ${base.OUTPUT_DIR}/${scspider.CHART_NAME}_tmp/${scspider.CHART_NAME}
+    - task: fetch-dependencies
+      docker-image: base.cihelm
+      description: Downloads all spider dependencies
+      cmd:
+        --retry-timeout '${env.scspider.CIHELM_RETRY_TIMEOUT}'
+        --retry-sleep '${env.scspider.CIHELM_RETRY_SLEEP}'
+        --http-retry '${env.scspider.CIHELM_HTTP_RETRY}'
+        --helm-credentials ${base.OUTPUT_DIR}/${base.REPO_CREDENTIALS_FILE}
+        dependency download
+          ${scspider.CHART_PATH}/Chart.yaml
+          --destination ${base.OUTPUT_DIR}/${scspider.DEPENDENCIES_FOLDER}
+
+  dependencies-versions:
+    - description: Puts every fetched helm package's name into a bob variable
+    - task: cncs-b
+      cmd: ls ${base.OUTPUT_DIR}/${scspider.DEPENDENCIES_FOLDER} | grep ${scspider.CNCS_BASE_NAME}.*.tgz > ${base.OUTPUT_DIR}/var.cncs-base-chart
+    - task: cncs-a
+      cmd: ls ${base.OUTPUT_DIR}/${scspider.DEPENDENCIES_FOLDER} | grep ${scspider.CNCS_ADDITIONS_NAME}.*.tgz > ${base.OUTPUT_DIR}/var.cncs-add-chart
+    - task: sc-cs
+      cmd: ls ${base.OUTPUT_DIR}/${scspider.DEPENDENCIES_FOLDER} | grep ${scspider.SC_CS_NAME}.*.tgz > ${base.OUTPUT_DIR}/var.sc-cs-chart
+    - task: bsf
+      cmd: ls ${base.OUTPUT_DIR}/${scspider.DEPENDENCIES_FOLDER} | grep ${scbsf.CHART_NAME}.*.tgz > ${base.OUTPUT_DIR}/var.sc-bsf-chart
+    - task: scp
+      cmd: ls ${base.OUTPUT_DIR}/${scspider.DEPENDENCIES_FOLDER} | grep ${scscp.CHART_NAME}.*.tgz > ${base.OUTPUT_DIR}/var.sc-scp-chart
+    - task: sepp
+      cmd: ls ${base.OUTPUT_DIR}/${scspider.DEPENDENCIES_FOLDER} | grep ${scsepp.CHART_NAME}.*.tgz > ${base.OUTPUT_DIR}/var.sc-sepp-chart
+    - task: dsc
+      cmd: ls ${base.OUTPUT_DIR}/${scspider.DEPENDENCIES_FOLDER} | grep ${scspider.SC_DSC_NAME}.*.tgz > ${base.OUTPUT_DIR}/var.dsc-chart
+
+  create-csar:
+    - rule: prepare-csar-files
+    - rule: csar-input-charts
+    - task: package
+      description: Packages the CSAR
+      docker-image: base.package-manager
+      docker-flags:
+        - "--volume $PWD/${base.OUTPUT_DIR}:/csar"
+        - "--volume /var/run/docker.sock:/var/run/docker.sock"
+        - "--workdir /csar"
+        - "--user root:root"
+      cmd: "generate --sol-version 2.5.1 --eric-product-info-charts ${var.eric-product-info-charts-csar} --helm ${var.helm-csar} --name ${var.csar-name} --vnfd sc_vnf_descriptor.yaml --docker-config /csar --values packager_tool_input.yaml --values-csar manifest-config.yaml --definitions ${DEF_DIR} --helm3 --helm-version 3.8.2 --agentk --scale-mapping scaling_mapping.yaml --values-cnf-dir internal"
+    - task: fix-permissions
+      description: Output csar file has root permissions. Helm builder image is used as helper image to chown the .csar file to the local user.
+      docker-image: base.helm-builder
+      docker-flags:
+        - "--volume $PWD/${base.OUTPUT_DIR}:/csar"
+        - "--user root:root"
+      cmd: /bin/bash -c "chown -R $(id -u):$(id -g) /csar/${var.csar-name}.csar; rm -rf /csar/source"
+
+  prepare-csar-files:
+    - description: Copies and updates files included in the CSAR package
+    - task: prepare-vnfd-version
+      description: Copies and updates some versions of the VNF descriptor
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+      cmd: /bin/bash -c "rm -f ${base.OUTPUT_DIR}/sc_vnf_descriptor.yaml; cp -f csar/sc_vnf_descriptor.yaml ${base.OUTPUT_DIR}/.;
+           sed -i 's/<current-id>/'${var.vnfd-uuid}'/g' ${base.OUTPUT_DIR}/sc_vnf_descriptor.yaml;
+           sed -i 's/<current-version>/'$(echo ${var.cxp-number} | sed 's/\//\\\\\//'g)'_'${var.cxp-rev-number}'/g' ${base.OUTPUT_DIR}/sc_vnf_descriptor.yaml;
+           sed -i 's/<sc-version>/'${var.esc-version}'/g' ${base.OUTPUT_DIR}/sc_vnf_descriptor.yaml"
+
+    - task: prepare-definitions
+      description: Creates definitions directory needed for the CSAR
+      cmd: /bin/bash -c "if [[ ! -d ${base.OUTPUT_DIR}/${DEF_DIR} ]];
+                         then
+                            mkdir ${base.OUTPUT_DIR}/${DEF_DIR};
+                            echo 'creating ${base.OUTPUT_DIR}/${DEF_DIR}';
+                         fi;
+                         cp csar/etsi_nfv_sol001_vnfd_2_5_1_types.yaml ${base.OUTPUT_DIR}/${DEF_DIR};
+                         cp csar/etsi_nfv_sol001_vnfd_deployable_modules_support.yaml ${base.OUTPUT_DIR}/${DEF_DIR}"
+
+    - task: prepare-manifest
+      cmd: /bin/bash -c "cp csar/manifest-config.yaml ${base.OUTPUT_DIR};
+           sed -i 's/cxp9038365/'$(echo ${var.cxp-number} | sed 's/\//\\\\\//'g)'_'${var.cxp-rev-number}'/g' ${base.OUTPUT_DIR}/manifest-config.yaml"
+    - task: prepare-vnfd
+      description: Updates the helm packages and crd names in the VNF descriptor
+      docker-image: base.helm-builder
+      cmd: /bin/bash -c "update_values.rb ${base.OUTPUT_DIR}/sc_vnf_descriptor.yaml
+           node_types:Ericsson.SC:artifacts:helm_package1:file=Definitions/OtherTemplates/${var.cncs-base-chart}
+           node_types:Ericsson.SC:artifacts:helm_package2:file=Definitions/OtherTemplates/${var.cncs-add-chart}
+           node_types:Ericsson.SC:artifacts:helm_package3:file=Definitions/OtherTemplates/${var.sc-cs-chart}
+           node_types:Ericsson.SC:artifacts:helm_package4:file=Definitions/OtherTemplates/${var.sc-bsf-chart}
+           node_types:Ericsson.SC:artifacts:helm_package5:file=Definitions/OtherTemplates/${var.sc-scp-chart}
+           node_types:Ericsson.SC:artifacts:helm_package6:file=Definitions/OtherTemplates/${var.sc-sepp-chart}
+           node_types:Ericsson.SC:artifacts:helm_package7:file=Definitions/OtherTemplates/${var.dsc-chart}
+           node_types:Ericsson.SC:artifacts:crd_package1:file=Definitions/OtherTemplates/${var.certm-crd-pkg}
+           node_types:Ericsson.SC:artifacts:crd_package2:file=Definitions/OtherTemplates/${var.siptls-crd-pkg}
+           node_types:Ericsson.SC:artifacts:crd_package3:file=Definitions/OtherTemplates/${var.iccr-crd-pkg}
+           node_types:Ericsson.SC:artifacts:crd_package4:file=Definitions/OtherTemplates/${var.wcdbcd-crd-pkg}
+           node_types:Ericsson.SC:artifacts:crd_package5:file=Definitions/OtherTemplates/${var.kvdbrd-crd-pkg}
+           node_types:Ericsson.SC:artifacts:crd_package6:file=Definitions/OtherTemplates/${var.senpnvip-crd-pkg}
+           > ${base.OUTPUT_DIR}/sc_vnf_descriptor.tmp.yaml;
+           mv ${base.OUTPUT_DIR}/sc_vnf_descriptor.tmp.yaml ${base.OUTPUT_DIR}/sc_vnf_descriptor.yaml";
+           # replace crd_package1-2-3 with ${var.csar-crds}
+    - task: copy-scaling-mapping-file
+      description: Input to the CSAR package manager with --scaling-mapping
+      cmd: /bin/bash -c "rm -f ${base.OUTPUT_DIR}/scaling_mapping.yaml; cp -f csar/scaling_mapping.yaml ${base.OUTPUT_DIR}/scaling_mapping.yaml"
+    - task: copy-csar-values
+      description: Input to the CSAR package manager with --values
+      cmd:
+      - rm -f ${base.OUTPUT_DIR}/packager_tool_input.yaml
+      - cp csar/packager_tool_input.yaml ${base.OUTPUT_DIR}/.
+    - task: prepare-internal-values
+      description: Prepares the directory used as an input to the CSAR package manager with --values-cnf-dir. The directory contains the internal values files included in the CSAR package.
+      cmd: /bin/bash -c "./scripts/copy_internal_values.sh --debug"
+
+  csar-input-charts:
+    - description: Defines the input charts to the package manager
+    - task: eric-product-info-charts-csar
+      description: Input to the CSAR package manager with --eric-product-info-charts
+      cmd: echo "${scspider.DEPENDENCIES_FOLDER}/${var.cncs-base-chart} ${scspider.DEPENDENCIES_FOLDER}/${var.cncs-add-chart} ${scspider.DEPENDENCIES_FOLDER}/${var.sc-cs-chart} ${scspider.DEPENDENCIES_FOLDER}/${var.sc-bsf-chart} ${scspider.DEPENDENCIES_FOLDER}/${var.sc-scp-chart} ${scspider.DEPENDENCIES_FOLDER}/${var.sc-sepp-chart} ${scspider.DEPENDENCIES_FOLDER}/${var.dsc-chart}" > ${base.OUTPUT_DIR}/var.eric-product-info-charts-csar
+    - task: helm-csar
+      description: Input to the CSAR package manager with --helm
+      cmd: echo "${scspider.DEPENDENCIES_FOLDER}/${var.cncs-base-chart} ${scspider.DEPENDENCIES_FOLDER}/${var.cncs-add-chart} ${scspider.DEPENDENCIES_FOLDER}/${var.sc-cs-chart} ${scspider.DEPENDENCIES_FOLDER}/${var.sc-bsf-chart} ${scspider.DEPENDENCIES_FOLDER}/${var.sc-scp-chart} ${scspider.DEPENDENCIES_FOLDER}/${var.sc-sepp-chart} ${scspider.DEPENDENCIES_FOLDER}/${var.dsc-chart} ${var.certm-crd-pkg} ${var.siptls-crd-pkg} ${var.iccr-crd-pkg} ${var.wcdbcd-crd-pkg} ${var.kvdbrd-crd-pkg} ${var.senpnvip-crd-pkg}" > ${base.OUTPUT_DIR}/var.helm-csar
+
+  push-csar:
+    - task: create-tools
+      cmd: /bin/bash -c "cp scripts/collect_ADP_logs.sh ${base.OUTPUT_DIR}/;cp scripts/data_collector.sh ${base.OUTPUT_DIR}/;cp scripts/data_collector_addon_sc.sh ${base.OUTPUT_DIR}/;cp scripts/retagger.sh ${base.OUTPUT_DIR}/; cp scripts/annotate_crds.sh ${base.OUTPUT_DIR}/; cp scripts/prepare_exposed_values_json_string.py ${base.OUTPUT_DIR}/;cd ${base.OUTPUT_DIR}/; tar -czvf ${ESC_SERVICE_NAME}-tools-${var.esc-version}.tgz  collect_ADP_logs.sh retagger.sh annotate_crds.sh data_collector.sh data_collector_addon_sc.sh prepare_exposed_values_json_string.py"
+
+    - task: csar-folders-user-file
+      cmd:
+        - "curl -H \"Authorization: Bearer ${var.base.armdocker-api-token}\" https://armdocker.rnd.ericsson.se/artifactory/api/search/aql -d $(echo 'items.find({\"repo\":{\"$eq\":\"proj-5g-bsf-generic-local\"}},{\"type\":{\"$eq\":\"folder\"}},{\"depth\":{\"$eq\":\"4\"}},{\"path\":{\"$eq\":\"cncs/eiffelesc/master\"}}).sort({\"$asc\":[\"created\"]})') -H \"content-type:text/plain\" | grep name | sed 's/\"name\" ://' | sed 's/\"//g' | sed 's/,//' | sed 's/^ *//g' > ${base.OUTPUT_DIR}/csar_folders_user.txt"
+    - task: fetch-branch
+      cmd: /bin/bash -c "if [ \"${env.base.USER}\" != \"eiffelesc\" ];
+                            then
+                                 git rev-parse --abbrev-ref HEAD > ${base.OUTPUT_DIR}/var.get-branch;
+                            else
+                                 echo ${env.BRANCH} > ${base.OUTPUT_DIR}/var.get-branch;
+                        fi;"
+    - task: remove-old-csar-folders
+      cmd: ./scripts/bash/rem_csar_folders.bash ${base.OUTPUT_DIR}/var.get-branch cncs/eiffelesc ${var.base.armdocker-api-token}
+    - task: rename-csar
+      cmd: mv ${base.OUTPUT_DIR}/${var.csar-name}.csar ${base.OUTPUT_DIR}/${var.csar-name}.unsigned.csar
+    - task: push-csar
+      docker-image: base.inca
+      cmd: arm-upload
+        --file ${base.OUTPUT_DIR}/${var.csar-name}.unsigned.csar
+        --destination "$(if [ \"${env.CSAR_DETAIL}\" = \"false\" ];
+                          then
+                            echo ${RELEASE_REPO}/cncs/${env.base.USER}/${var.get-branch}/${var.esc-version};
+                          else
+                            echo ${RELEASE_REPO}/cncs/${env.base.USER}/${var.get-branch}/${var.esc-version}_${env.CSAR_DETAIL};
+                      fi;)/csar"
+        --token ${var.base.armdocker-api-token}
+    - task: copy-values
+      cmd:
+      - rm -f ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-values-*.yaml
+      - cp csar/external/${ESC_SERVICE_NAME}-values.yaml ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-values-${var.esc-version}.yaml
+      - cp csar/external/${ESC_SERVICE_NAME}-ucc-values.yaml ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-ucc-values-${var.esc-version}.yaml
+    - task: push-values-exposed
+      docker-image: base.inca
+      cmd: arm-upload
+        --file ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-values-${var.esc-version}.yaml
+        --destination "$(if [ \"${env.CSAR_DETAIL}\" = \"false\" ];
+                          then
+                            echo ${RELEASE_REPO}/cncs/${env.base.USER}/${var.get-branch}/${var.esc-version};
+                          else
+                            echo ${RELEASE_REPO}/cncs/${env.base.USER}/${var.get-branch}/${var.esc-version}_${env.CSAR_DETAIL};
+                      fi;)/release-artifacts"
+        --token ${var.base.armdocker-api-token}
+    - task: push-values-ucc
+      docker-image: base.inca
+      cmd: arm-upload
+        --file ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-ucc-values-${var.esc-version}.yaml
+        --destination "$(if [ \"${env.CSAR_DETAIL}\" = \"false\" ];
+                          then
+                            echo ${RELEASE_REPO}/cncs/${env.base.USER}/${var.get-branch}/${var.esc-version};
+                          else
+                            echo ${RELEASE_REPO}/cncs/${env.base.USER}/${var.get-branch}/${var.esc-version}_${env.CSAR_DETAIL};
+                      fi;)/release-artifacts"
+        --token ${var.base.armdocker-api-token}
+    - task: push-tools
+      docker-image: base.inca
+      cmd: arm-upload
+        --file ${base.OUTPUT_DIR}/${ESC_SERVICE_NAME}-tools-${var.esc-version}.tgz
+        --destination "$(if [ \"${env.CSAR_DETAIL}\" = \"false\" ];
+                          then
+                            echo ${RELEASE_REPO}/cncs/${env.base.USER}/${var.get-branch}/${var.esc-version};
+                          else
+                            echo ${RELEASE_REPO}/cncs/${env.base.USER}/${var.get-branch}/${var.esc-version}_${env.CSAR_DETAIL};
+                      fi;)/tools"
+        --token ${var.base.armdocker-api-token}
+
+  fetch-crds:
+    - task: clean
+      cmd: /bin/bash -c "rm -f ${base.OUTPUT_DIR}/*crd*.tgz;
+                         rm -rf ${base.OUTPUT_DIR}/${scspider.CHART_NAME}-charts;"
+    - task: untar
+      cmd: /bin/bash -c "mkdir ${base.OUTPUT_DIR}/${scspider.CHART_NAME}-charts;
+                        tar -xzf ${base.OUTPUT_DIR}/${scspider.DEPENDENCIES_FOLDER}/${var.cncs-base-chart} -C ${base.OUTPUT_DIR}/${scspider.CHART_NAME}-charts;
+                        tar -xzf ${base.OUTPUT_DIR}/${scspider.DEPENDENCIES_FOLDER}/${var.cncs-add-chart} -C ${base.OUTPUT_DIR}/${scspider.CHART_NAME}-charts;
+                        tar -xzf ${base.OUTPUT_DIR}/${scspider.DEPENDENCIES_FOLDER}/${var.sc-cs-chart} -C ${base.OUTPUT_DIR}/${scspider.CHART_NAME}-charts;
+                        tar -xzf ${base.OUTPUT_DIR}/${scspider.DEPENDENCIES_FOLDER}/${var.sc-bsf-chart} -C ${base.OUTPUT_DIR}/${scspider.CHART_NAME}-charts;
+                        tar -xzf ${base.OUTPUT_DIR}/${scspider.DEPENDENCIES_FOLDER}/${var.sc-scp-chart} -C ${base.OUTPUT_DIR}/${scspider.CHART_NAME}-charts;
+                        tar -xzf ${base.OUTPUT_DIR}/${scspider.DEPENDENCIES_FOLDER}/${var.sc-sepp-chart} -C ${base.OUTPUT_DIR}/${scspider.CHART_NAME}-charts;
+                        tar -xzf ${base.OUTPUT_DIR}/${scspider.DEPENDENCIES_FOLDER}/${var.dsc-chart} -C ${base.OUTPUT_DIR}/${scspider.CHART_NAME}-charts;"
+    - task: sip-tls
+      docker-image: base.helm-builder-py3
+      docker-flags:
+#        - "--volume ~/:/files"
+#        - "--volume $PWD:/scripts"
+#        - "--workdir /scripts"
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+        - "--env XDG_CONFIG_HOME=/home/helmuser/.config"
+        - "--env XDG_CACHE_HOME=/home/helmuser/.cache"
+      cmd: /bin/bash -c "./scripts/package_and_deploy_generic_crd.sh -s eric-sec-sip-tls --cncs > ${base.OUTPUT_DIR}/var.siptls-crd-pkg"
+    - task: certm
+      docker-image: base.helm-builder-py3
+      docker-flags:
+#        - "--volume ~/:/files"
+#        - "--volume $PWD:/scripts"
+#        - "--workdir /scripts"
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+        - "--env XDG_CONFIG_HOME=/home/helmuser/.config"
+        - "--env XDG_CACHE_HOME=/home/helmuser/.cache"
+      cmd: /bin/bash -c "./scripts/package_and_deploy_generic_crd.sh -s eric-sec-certm --cncs > ${base.OUTPUT_DIR}/var.certm-crd-pkg"
+    - task: iccr
+      docker-image: base.helm-builder-py3
+      docker-flags:
+#        - "--volume ~/:/files"
+#        - "--volume $PWD:/scripts"
+#        - "--workdir /scripts"
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+        - "--env XDG_CONFIG_HOME=/home/helmuser/.config"
+        - "--env XDG_CACHE_HOME=/home/helmuser/.cache"
+      cmd: /bin/bash -c "./scripts/package_and_deploy_generic_crd.sh -s eric-tm-ingress-controller-cr --cncs > ${base.OUTPUT_DIR}/var.iccr-crd-pkg"
+    - task: wcdbcd
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--volume $PWD:/scripts"
+        - "--workdir /scripts"
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+        - "--env XDG_CONFIG_HOME=/home/helmuser/.config"
+        - "--env XDG_CACHE_HOME=/home/helmuser/.cache"
+      cmd: /bin/bash -c "./scripts/package_and_deploy_generic_crd.sh -s eric-data-wide-column-database-cd --cncs > ${base.OUTPUT_DIR}/var.wcdbcd-crd-pkg"
+    - task: kvdbrd
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--volume $PWD:/scripts"
+        - "--workdir /scripts"
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+        - "--env XDG_CONFIG_HOME=/home/helmuser/.config"
+        - "--env XDG_CACHE_HOME=/home/helmuser/.cache"
+      cmd: /bin/bash -c "./scripts/package_and_deploy_generic_crd.sh -s eric-data-key-value-database-rd --cncs > ${base.OUTPUT_DIR}/var.kvdbrd-crd-pkg"
+    - task: senpnvip
+      docker-image: base.helm-builder-py3
+      docker-flags:
+        - "--volume ~/:/files"
+        - "--volume $PWD:/scripts"
+        - "--workdir /scripts"
+        - "--env HELM_VERSION=${base.HELM_VERSION_HELMBUILDERPY3}"
+        - "--env KUBECONFIG=$PWD/${base.OUTPUT_DIR}/${env.base.KUBE_HOST}.admin.conf"
+        - "--env XDG_DATA_HOME=/home/helmuser/.helm"
+        - "--env XDG_CONFIG_HOME=/home/helmuser/.config"
+        - "--env XDG_CACHE_HOME=/home/helmuser/.cache"
+      cmd: /bin/bash -c "./scripts/package_and_deploy_generic_crd.sh -s eric-tm-senp-nvip --cncs > ${base.OUTPUT_DIR}/var.senpnvip-crd-pkg"

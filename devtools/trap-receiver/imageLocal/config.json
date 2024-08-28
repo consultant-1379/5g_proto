@@ -1,0 +1,9 @@
+{
+  "trapTargets": [
+    {
+      "address": "10.86.187.134",
+      "community": "ericsson"
+    }
+  ],
+  "heartbeatInterval": 60
+}

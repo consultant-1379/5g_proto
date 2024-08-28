@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.service.name }}
+  labels:
+    app.kubernetes.io/name: {{ .Values.service.name  }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.service.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Values.service.name  }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/managed-by: {{ .Release.Service }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ .Values.service.name  }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+    spec:
+      {{- if  .Values.imageCredentials.registry.pullSecret }}
+      imagePullSecrets:
+        - name: {{ .Values.imageCredentials.registry.pullSecret | quote }}
+      {{- end }}
+{{- if  .Values.env.secure }}
+      volumes:
+        - name: {{ .Values.service.name  }}-ca
+          secret:
+            secretName: {{ .Values.service.name  }}-trusted-cert-secret
+        - name: {{ .Values.service.name  }}-cert
+          secret:
+            secretName: {{ template "eric-influxdb.name" . }}-asymmetric-key-cert-secret
+            items:
+              - key: tls.crt
+                path: cai-cert.pem
+              - key: tls.key
+                path: cai-key.pem
+{{ end }}
+      containers:
+      - name: {{ .Values.service.name }}
+        image: '{{ .Values.imageCredentials.registry.url }}/{{ .Values.imageCredentials.repoPath }}/{{ index .Values "images" "simulator" "name" }}:{{ index .Values "images" "simulator" "tag" }}'
+        livenessProbe:
+          exec:
+            command:
+            - ls
+        env:
+          - name: CAI_PATH_BASE
+            value: {{ .Values.env.cai_path_base | quote }}
+          - name: PYTHONUNBUFFERED
+            value: "TRUE"
+          - name: SECURE
+            value: {{ .Values.env.secure | quote }}
+        ports:
+          - name: sim-rest-port
+            containerPort: 5000
+            protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+            - ls
+        imagePullPolicy: Always
+{{- if  .Values.env.secure }}
+        volumeMounts:
+          - name: {{ template "eric-influxdb.name" . }}-ca
+            mountPath: "/app/ca"
+          - name: {{ template "eric-influxdb.name" . }}-cert
+            mountPath: "/app"
+{{ end }}
+        resources:
+            {{- toYaml .Values.resources.simulator | nindent 12 }}

@@ -1,0 +1,558 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.ericsson.gs.tm.diameter.service.grpc";
+option java_outer_classname = "Diameter";
+option objc_class_prefix = "Diameter";
+
+package diameter.client.grpc;
+
+//------------------------------------------------------------------------------
+//
+// The Diameter service API.
+//
+//------------------------------------------------------------------------------
+
+service DiameterService {
+  // Register a diameter user application.
+  rpc Register (RegisterArguments) returns (RegisterResult);
+
+  // Keepalive message
+  //
+  // This RPC serves two purposes:
+  // - to indicate to the gRPC Proxy service that the registered diameter
+  //   service is still alive,
+  // - to check if the diameter service is still registered at gRPC Proxy.
+  // The registration can be lost e.g. if all instances of gRPC Proxy is lost
+  // or restarted.
+  //
+  // The recommendation is to call this RPC after a specific idle time.
+  //
+  // Possible gRPC status codes indicating errors:
+  // - NOT_FOUND: serviceId is invalid, service needs to be registered again
+  rpc Keepalive (KeepaliveArguments) returns (KeepaliveResult);
+
+  // Send request and return answer message or error indication.
+  //
+  // As this RPC waits for diameter answer from a peer, it will not return until
+  // the answer is received or a timeout occurs.
+  //
+  // Possible gRPC status codes indicating errors:
+  // - NOT_FOUND: serviceId is invalid, service needs to be registered again
+  // - RESOURCE_EXHAUSTED: the gRPC Proxy is overloaded
+  // - ABORTED: service registration lost while waiting for the answer
+  rpc SendRequest (OutgoingRequest) returns (OutgoingRequestResult);
+
+  // Send request asynchronously, that is, answer message or error code will
+  // be delivered using the DiameterClient gRPC API
+  //
+  // Possible gRPC status codes indicating errors:
+  // - NOT_FOUND: serviceId is invalid, service needs to be registered again
+  // - RESOURCE_EXHAUSTED: the gRPC Proxy is overloaded
+  rpc AsyncSendRequest (AsyncOutgoingRequest) returns (AsyncOutgoingRequestResult);
+
+  // Send answer asynchronously, i.e. when the answer message was not provided
+  // in IncomingRequestResult returned by ProcessRequest RPC
+  //
+  // Possible gRPC status codes indicating errors:
+  // - NOT_FOUND: serviceId is invalid, service needs to be registered again
+  // - RESOURCE_EXHAUSTED: the gRPC Proxy is overloaded
+  rpc AsyncSendAnswer (AsyncOutgoingAnswer) returns (AsyncOutgoingAnswerResult);
+
+  // Allocate Session-Id batch
+  //
+  // Possible gRPC status codes indicating errors:
+  // - NOT_FOUND: serviceId is invalid, service needs to be registered again
+  // - UNAVAILABLE: configured Origin-Host is not yet available, request needs
+  //   to be retried.
+  rpc AllocateSessionIds (AllocateArguments) returns (AllocateResult);
+
+  // Start polling for events
+  //
+  // Possible gRPC status codes indicating errors:
+  // - NOT_FOUND: serviceId is invalid, service needs to be registered again
+  rpc PollEvents (PollArguments) returns (stream IncomingEvent);
+}
+
+//------------------------------------------------------------------------------
+//
+// The Diameter client API.
+//
+//------------------------------------------------------------------------------
+
+service DiameterClient {
+  // Process request and optionally provide answer
+  //
+  // This RPC is called upon reception of a diameter ingress request from a
+  // peer. The request is to be answered by returning the diameter answer
+  // message in IncomingRequestResult or asynchronously by a call to
+  // AsyncSendAnswer RPC.
+  // An unanswered request times out after the number of milliseconds indicated
+  // by the ingress-request-time-out configuration option on the service;
+  // an answer after this time-out is discarded.
+  rpc ProcessRequest (IncomingRequest) returns (IncomingRequestResult);
+
+  // Process asynchronous answer for a request sent using AsyncSendRequest
+  //
+  // This RPC is called upon reception of a diameter ingress answer from a peer
+  // when the associated egress request was sent using AsyncSendRequest.
+  rpc AsyncProcessAnswer (AsyncIncomingAnswer) returns (AsyncIncomingAnswerResult);
+
+  // Process asynchronous error for a request sent using AsyncSendRequest
+  //
+  // This RPC is called as a result of non-reception of an expected diameter
+  // answer message, or errors in the sending of an outgoing diameter request.
+  //
+  // This RPC is not called as a result of the normal processing of answer
+  // messages containing Result-Code values other than 2xxx (Success).
+  // Successfully processed answer messages are passed in AsyncProcessAnswer,
+  // regardless of Result-Code.
+  rpc AsyncProcessError (AsyncErrorEvent) returns (AsyncErrorResult);
+}
+
+//------------------------------------------------------------------------------
+//
+// DiameterService.Register
+//
+//------------------------------------------------------------------------------
+
+message RegisterArguments {
+  // The name of the diameter service.
+  //
+  // Services are to be introduced first on diameter stack level through related
+  // stack configuration then associated with related user application process
+  // instances with the help of the Register RPC invocation.
+  string serviceName = 1;
+
+  // The hostname associated with the service providing the DiameterClient
+  // interface implementation. This value will be used to lookup the possible
+  // IP addresses when gRPC Proxy is sending DiameterClient RPCs.
+  string clientHostname = 2;
+
+  // The port used by gRPC Proxy when sending DiameterClient RPCs.
+  uint32 clientPort = 3;
+
+  // The idle time allowed for the service to be spent without sending any
+  // DiameterServer RPCs, in milliseconds. Longer idle times will result in
+  // deregistration of the diameter service.
+  uint32 allowedIdleTime = 4;
+}
+
+message RegisterResult {
+  // Handle to the started service that must be passed to other RPCs operating
+  // on the registered service.
+  //
+  // The handle can be used in subsequent RPCs by any application process
+  // instance on any channels connected to the gRPC Proxy service.
+  // Registering the same service multiple times yields the same serviceId.
+  uint64 serviceId = 1;
+}
+
+//------------------------------------------------------------------------------
+//
+// DiameterService.Keepalive
+//
+//------------------------------------------------------------------------------
+
+message KeepaliveArguments {
+  // Handle to the diameter service.
+  uint64 serviceId = 1;
+}
+
+message KeepaliveResult {
+}
+
+//------------------------------------------------------------------------------
+//
+// DiameterService.SendRequest
+//
+//------------------------------------------------------------------------------
+
+message OutgoingRequest {
+  // Handle to the diameter service.
+  uint64            serviceId = 1;
+
+  // The diameter message to send.
+  DiameterMessage   message = 2;
+
+  // The number of milliseconds after which non-reception of an answer message
+  // is treated as an error.
+  uint64            timeout = 3;
+
+  // The identifier of peers the request shall be attempted to be sent to.
+  //
+  // The outgoing request is sent to the first peer with which there is an
+  // available transport connection. Remaining peers are attempted (in order)
+  // in the case of peer failover, or if the peer fails to answer within the
+  // specified timeout.
+  //
+  // If empty list is provided the routing rules of the service will be followed
+  // to collect the suitable peers.
+  repeated string   peerIds = 4;
+}
+
+message OutgoingRequestResult {
+  // The received diameter answer message, or empty if errorCode is set to a
+  // value other than "Success".
+  DiameterMessage   message = 1;
+
+  // Reason of the error or "Success" if sending of the request succeeded.
+  DeliveryResult    errorCode = 2;
+
+  // The identifier of the peer sending this message, or the identifier of
+  // the peer the egress request was tried to be sent to.
+  string            peerId = 3;
+
+  // End-To-End Identifier of the request.
+  uint32            endToEndId = 4;
+}
+
+//------------------------------------------------------------------------------
+//
+// DiameterService.AsyncSendRequest
+//
+//------------------------------------------------------------------------------
+
+message AsyncOutgoingRequest {
+  // The outgoing request the will be sent asynchronously.
+  OutgoingRequest   request = 1;
+
+  // User provided request identifier that will be handed back in the
+  // AsyncProcessAnswer or AsyncProcessError RPC associated with this
+  // egress request.
+  fixed64           requestId = 2;
+
+  // The IP address the AsyncProcessAnswer or AsyncProcessError RPC should be
+  // sent to. A random IP from the DiameterClient IP pool is used if left empty.
+  string            answerIP = 3;
+}
+
+message AsyncOutgoingRequestResult {
+  // End-To-End Identifier of the request.
+  uint32            endToEndId = 1;
+}
+
+//------------------------------------------------------------------------------
+//
+// DiameterService.AsyncSendAnswer
+//
+//------------------------------------------------------------------------------
+
+message AsyncOutgoingAnswer {
+  // Handle to the diameter service.
+  uint64            serviceId = 1;
+
+  // The identifier of the request received in the ProcessRequest RPC this
+  // answer is associated with.
+  fixed64           requestId = 2;
+
+  // The diameter message to send.
+  DiameterMessage   message = 3;
+}
+
+message AsyncOutgoingAnswerResult {
+}
+
+//------------------------------------------------------------------------------
+//
+// DiameterService.AllocateSessionIds
+//
+//------------------------------------------------------------------------------
+
+message AllocateArguments {
+  // Handle to the diameter service.
+  uint64            serviceId = 1;
+
+  // The number of Session-Ids to allocate.
+  uint32            count = 2;
+}
+
+message AllocateResult {
+  // The allocated Session-Ids.
+  repeated bytes    sessionIds = 1;
+}
+
+//------------------------------------------------------------------------------
+//
+// DiameterService.PollEvents
+//
+//------------------------------------------------------------------------------
+
+message PollArguments {
+  // Handle to the service instance.
+  //
+  // It is allowed to use the same handle in different PollEvents RPC calls.
+  // Each incoming event of the service will be sent to all active PollEvents
+  // RPC calls.
+  uint64 serviceId = 1;
+}
+
+message IncomingEvent {
+  // An incoming event of the service instance.
+  oneof event {
+    // Event generated upon peer connection establishment.
+    // When PollEvents RPC is called, a PeerUpEvent is sent also for all active
+    // peer connections.
+    PeerUpEvent     peerUpEvent = 1;
+
+    // Event generated upon peer connection loss
+    PeerDownEvent   peerDownEvent = 2;
+
+    // Signals that PeerUpEvents for all active peer connections have been sent
+    // on a newly initiated PollEvents stream.
+    InitialSyncDone initialSyncDone = 3;
+  }
+}
+
+message PeerUpEvent {
+  // The identifier of the newly established peer connection.
+  string            peerId = 1;
+
+  // The capability exchange message (CER or CEA) sent by the diameter peer.
+  DiameterMessage   capabilityExchangeMessage = 2;
+}
+
+message PeerDownEvent {
+  // The identifier of the lost peer connection.
+  string            peerId = 1;
+}
+
+message InitialSyncDone {
+}
+
+//------------------------------------------------------------------------------
+//
+// DiameterClient.ProcessRequest
+//
+//------------------------------------------------------------------------------
+
+message IncomingRequest {
+  // The received diameter message
+  DiameterMessage   message = 1;
+
+  // The identifier of the request.
+  // In case of sending the answer asynchronously, this ID is to be used in
+  // AsyncSendAnswer RPC to associate the answer provided by the user
+  // application with the request.
+  // If the answer is provided in IncomingRequestResult the value of this
+  // field can be ignored.
+  fixed64           requestId = 2;
+
+  // The identifier of the peer sending this message.
+  string            peerId = 3;
+
+  // Handle to the diameter service.
+  uint64            serviceId = 4;
+}
+
+message IncomingRequestResult {
+  // The diameter message to send as answer to the request.
+  // If not set, the answer is to be provided in an AsyncSendAnswer RPC.
+  DiameterMessage message = 1;
+}
+
+//------------------------------------------------------------------------------
+//
+// DiameterClient.AsyncProcessAnswer
+//
+//------------------------------------------------------------------------------
+
+message AsyncIncomingAnswer {
+  // The received diameter message
+  DiameterMessage   message = 1;
+
+  // The identifier of the request, it is the value the user provided in
+  // AsyncSendRequest RPC this answer is associated with.
+  fixed64           requestId = 2;
+
+  // The identifier of the peer sending this message.
+  string            peerId = 3;
+
+  // Handle to the diameter service.
+  uint64            serviceId = 4;
+}
+
+message AsyncIncomingAnswerResult {
+}
+
+//------------------------------------------------------------------------------
+//
+// DiameterClient.AsyncProcessError
+//
+//------------------------------------------------------------------------------
+
+message AsyncErrorEvent {
+  // Reason of the error.
+  DeliveryResult    errorCode = 1;
+
+  // The identifier of the request, it is the value the user provided in
+  // AsyncSendRequest RPC this answer is associated with.
+  fixed64           requestId = 2;
+
+  // The identifier of the peer the egress request was tried to be sent to.
+  string            peerId = 3;
+
+  // Handle to the diameter service.
+  uint64            serviceId = 4;
+}
+
+message AsyncErrorResult {
+}
+
+//------------------------------------------------------------------------------
+//
+// DeliveryResult
+//
+//------------------------------------------------------------------------------
+
+enum DeliveryResult {
+  // The egress request was successfully delivered.
+  Success = 0;
+
+  // Sending of the egress request failed for unspecified reason.
+  UndefinedError = 1;
+
+  // Sending of the egress request timed out.
+  Timeout = 2;
+
+  // Sending of the egress request failed because it could not be sent to a
+  // requested peer due to lack of connectivity.
+  NoConnection = 3;
+}
+
+//------------------------------------------------------------------------------
+//
+// Description of a diameter message
+//
+//------------------------------------------------------------------------------
+
+message DiameterMessage {
+  // The diameter message header.
+  DiameterMessageHeader header = 1;
+
+  // The list of AVPs composing the diameter message.
+  repeated DiameterAvp  avps = 2;
+
+  // Provides information about errors detected by diameter stack when decoding
+  // an incoming message (request or answer) based on the dictionary file for
+  // the diameter application whose identifier is indicated in message header.
+  // Not set if no errors were detected.
+  // Ignored in outgoing messages passed to SendRequest or SendAnswer RPC.
+  DiameterMessageErrors errors = 3;
+}
+
+message DiameterMessageHeader {
+  // In outgoing messages passed to SendRequest or SendAnswer RPC, the value of
+  // the fields can be always copied, optionally copied (if set) or ignored:
+  //
+  // FIELD              SendRequest         SendAnswer
+  // version            optional            optional
+  // messageLength      ignored             ignored
+  // flagR              ignored             ignored
+  // flagP              copied              copied
+  // flagE              ignored             copied
+  // flagT              copied              ignored
+  // commandCode        copied              copied
+  // applicationId      copied              copied
+  // hopByHopId         ignored             ignored
+  // endToEndId         optional            ignored
+  //
+  // All values are host endian; C-diameter converts these to network endian
+  // during encode/decode.
+
+  uint32                version = 1;
+  uint32                messageLength = 2;
+  bool                  flagR = 3;
+  bool                  flagP = 4;
+  bool                  flagE = 5;
+  bool                  flagT = 6;
+  uint32                commandCode = 7;
+  uint32                applicationId = 8;
+  uint32                hopByHopId = 9;
+  uint32                endToEndId = 10;
+}
+
+message DiameterAvp {
+  DiameterAvpHeader     header = 1;
+
+  // For incoming messages the type of the AVP is determined by the dictionary
+  // file. "unknown" is used for an incoming AVP in either of the following
+  // situations:
+  // - The AVP is unknown to the dictionary file of the Diameter application
+  //   in question.
+  // - Its data member cannot be interpreted as a value of the type the
+  //   dictionary specifies.
+  //
+  // For outgoing messages the field used determines the encoding of the AVP
+  // value, disregarding the dictionary specification.
+  //
+  // All values are host endian; C-diameter converts these to network endian
+  // during encode/decode.
+
+  oneof data {
+    bytes               unknown = 2;
+    bytes               octetString = 3;
+    int32               integer32 = 4;
+    int64               integer64 = 5;
+    uint32              unsigned32 = 6;
+    uint64              unsigned64 = 7;
+    float               float32 = 8;
+    double              float64 = 9;
+    GroupedAvp          grouped = 10;
+    bytes               address = 11;
+    bytes               time = 12;
+    bytes               utf8String = 13;
+    bytes               diameterIdentity = 14;
+    bytes               diameterURI = 15;
+    int32               enumerated = 16;
+    bytes               ipFilterRule = 17;
+    bytes               qosFilterRule = 18;
+  }
+}
+
+message GroupedAvp {
+  // The list of AVPs composing the grouped AVP.
+  repeated DiameterAvp  avps = 1;
+}
+
+message DiameterAvpHeader {
+  // In outgoing messages passed to SendRequest or SendAnswer RPC, the value of
+  // the fields can be always copied, optionally copied or ignored:
+  //
+  // FIELD              SendRequest/SendAnswer
+  // code               copied
+  // flagV              copied
+  // flagM              copied
+  // flagP              copied
+  // length             ignored
+  // vendorId           copied if flagV set
+  //
+  // All values are host endian; C-diameter converts these to network endian
+  // during encode/decode.
+
+  uint32                code = 1;
+  bool                  flagV = 2;
+  bool                  flagM = 3;
+  bool                  flagP = 4;
+  uint32                length = 5;
+  uint32                vendorId = 6;
+}
+
+message DiameterMessageErrors {
+  // The appropriate Result-Code value indicating the detected non-AVP specific
+  // error, or 2001 if only AVP specific errors were found.
+  uint32                resultCode = 1;
+
+  // The list of AVP specific errors.
+  repeated FailedAvp    avps = 2;
+}
+
+message FailedAvp {
+  // The appropriate Result-Code value indicating the detected AVP specific
+  // error.
+  uint32                resultCode = 1;
+
+  // The faulty AVP, or in case of resultCode==5005 (DIAMETER_MISSING_AVP),
+  // an empty AVP of the type in question.
+  DiameterAvp           avp = 2;
+}

@@ -1,0 +1,37 @@
+service:
+  name: "eric-syslog"
+  syslogPort: "6514"
+  tls:
+    enabled: true
+    ## secret names:
+    ## eric-syslog-trusted-cert with ca-cert in data "ca-certs-SC.pem"
+    ## eric-syslog-asymmetric-key-cert-secret with
+    ##   certificate in data "tls.crt"
+    ##   private key in data "tls.key"
+    useCr:
+      enabled: true
+      trustedCert: "sc-trusted-default-cas"
+      clientCert: "sc-syslog-default-cert"
+      clientKey: "sc-syslog-default-key"
+
+spec:
+  replicas: "1"
+  image:
+  tag: latest
+  port: "6514"
+  resources:
+    requests:
+      cpu: 100m 
+      memory: 256Mi     
+    limits:
+      cpu: 500m 
+      memory: 1024Mi
+
+imageCredentials:
+  registry:
+    url: # overrides global registry url
+    imagePullPolicy: # overrides global image pull policy
+    # pullSecret: ""
+  repoPath: # overrides global repoPath
+  
+ipv6Enabled: false

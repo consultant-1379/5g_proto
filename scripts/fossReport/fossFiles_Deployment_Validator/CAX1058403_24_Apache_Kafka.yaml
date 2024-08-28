@@ -1,0 +1,38 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2019-06-21 12:24
+FOSS:
+    # Available in Bazaar
+    FOSSName: Apache Kafka
+    # Available in Bazaar
+    FOSSVersion: 2.1.0
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/apache/kafka/archive/{{FOSSVersion}}.tar.gz 
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 24/CAX1058403
+    # Not Available in Bazaar
+    PRIMNumber(CTC): CTC1014410
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: Apache Kafka is publish-subscribe messaging rethought as a distributed commit log. Kafka is a distributed, partitioned, replicated commit log service. It runs as a cluster comprised of one or more servers each and it provides the functionality of a messaging system, but with a unique design.
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: Apache License 2.0
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'org.apache.kafka:kafka-clients:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ENTNGRG Georgios Antoniou

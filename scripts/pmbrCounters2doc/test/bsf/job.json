@@ -1,0 +1,210 @@
+[
+  {
+    "granularity-period": "fifteen-min",
+    "name": "bsf_job",
+    "current-job-state": "active",
+    "type": "measurement-job",
+    "measurement-reader": [
+      {
+        "group-ref": "nbsf_management",
+        "name": "nbsf_management_reader"
+      },
+      {
+        "group-ref": "bsf_system_metrics",
+        "name": "bsf_system_metrics_reader"
+      },
+      {
+        "group-ref": "bsf_nrf",
+        "name": "bsf_nrf_reader"
+      },
+      {
+        "group-ref": "diameter_ingress",
+        "name": "diameter_ingress_reader"
+      },
+      {
+        "group-ref": "diameter_egress",
+        "name": "diameter_egress_reader"
+      },
+      {
+        "group-ref": "diameter_kpis",
+        "name": "diameter_kpis_reader"
+       },
+       {
+        "group-ref": "unsuccessful_binding_database_operations_group",
+        "name": "unsuccessful_binding_database_operations_group_reader"
+       },
+       {
+        "group-ref": "bsf_database_client",
+        "name": "bsf_database_client_reader"
+       },
+       {
+        "group-ref": "bsf_database_server",
+        "name": "bsf_database_server_reader"
+       },
+       {
+        "group-ref": "bsf_service",
+        "name": "bsf_service_reader"
+       },
+       {
+        "group-ref": "bsf_traffic_kpis",
+        "name": "bsf_traffic_kpis_reader"
+       },
+       {
+        "group-ref": "bsf_system_kpis",
+        "name": "bsf_system_kpis_reader"
+       }
+    ],
+    "requested-job-state": "active"
+  },
+  {
+    "granularity-period": "one-min",
+    "name": "unsuccessful_binding_database_operations_job",
+    "current-job-state": "active",
+    "type": "threshold-job",
+    "measurement-reader": [
+      {
+        "name": "unsuccessful_binding_database_operations_reader",
+        "measurement-type-ref": "unsuccessful_binding_database_operations",
+        "group-ref": "unsuccessful_binding_database_operations_group",
+        "threshold-direction": "increasing",
+        "threshold-monitoring": [
+          {
+            "name": "unsuccessful_binding_database_operations_threshold_monitoring",
+            "threshold-high": "5",
+            "threshold-low": "1",
+            "threshold-severity": "major"
+          }
+        ]
+      }
+    ],
+    "requested-job-state": "active"
+  },
+  {
+    "granularity-period": "one-min",
+    "name": "database_server_storage_utilization_job",
+    "current-job-state": "active",
+    "type": "threshold-job",
+    "measurement-reader": [
+      {
+        "name": "database_server_storage_utilization_reader",
+        "measurement-type-ref": "database_server_storage_utilization",
+        "group-ref": "bsf_database_server",
+        "threshold-direction": "increasing",
+        "threshold-monitoring": [
+          {
+            "name": "database_server_storage_utilization_threshold_monitoring1",
+            "threshold-high": "30",
+            "threshold-low": "25",
+            "threshold-severity": "minor"
+          },
+          {
+            "name": "database_server_storage_utilization_threshold_monitoring2",
+            "threshold-high": "40",
+            "threshold-low": "35",
+            "threshold-severity": "major"
+          },
+          {
+            "name": "database_server_storage_utilization_threshold_monitoring3",
+            "threshold-high": "50",
+            "threshold-low": "45",
+            "threshold-severity": "critical"
+          }
+        ]
+      }
+    ],
+    "requested-job-state": "active"
+  },
+  {
+    "granularity-period": "one-min",
+    "name": "database_client_connection_total_errors",
+    "current-job-state": "active",
+    "type": "threshold-job",
+    "measurement-reader": [
+      {
+        "name": "database_client_connection_total_errors_reader",
+        "measurement-type-ref": "database_client_connection_total_errors",
+        "group-ref": "bsf_database_client",
+        "threshold-direction": "increasing",
+        "threshold-monitoring": [
+          {
+            "name": "database_client_connection_total_errors_monitoring",
+            "threshold-high": "1",
+            "threshold-low": "0",
+            "threshold-severity": "major"
+          }
+        ]
+      }
+    ],
+    "requested-job-state": "active"
+  },
+  {
+    "granularity-period": "one-min",
+    "name": "bsf_overload_job",
+    "current-job-state": "active",
+    "type": "threshold-job",
+    "measurement-reader": [
+      {
+        "name": "bsf_overload_reader",
+        "measurement-type-ref": "bsf_load",
+        "group-ref": "bsf_system_metrics",
+        "threshold-direction": "increasing",
+        "threshold-monitoring": [
+          {
+            "name": "bsf_overload_threshold_monitoring",
+            "threshold-high": "70",
+            "threshold-low": "60",
+            "threshold-severity": "major"
+          },
+          {
+            "name": "bsf_overload_threshold_escalation",
+            "threshold-high": "80",
+            "threshold-low": "75",
+            "threshold-severity": "critical"
+          }
+        ]
+      }
+    ],
+    "requested-job-state": "active"
+  },
+  {
+    "granularity-period": "one-min",
+    "name": "database_client_throttling_errors",
+    "current-job-state": "active",
+    "type": "threshold-job",
+    "measurement-reader": [
+      {
+        "name": "database_client_throttling_errors_reader",
+        "measurement-type-ref": "database_client_throttling_errors",
+        "group-ref": "bsf_database_client",
+        "threshold-direction": "increasing",
+        "threshold-monitoring": [
+          {
+            "name": "database_client_throttling_errors_warning_monitoring",
+            "threshold-high": "1",
+            "threshold-low": "0",
+            "threshold-severity": "warning"
+          },
+          {
+            "name": "database_client_throttling_errors_minor_escalation",
+            "threshold-high": "10",
+            "threshold-low": "9",
+            "threshold-severity": "minor"
+          },
+          {
+            "name": "database_client_throttling_errors_major_escalation",
+            "threshold-high": "100",
+            "threshold-low": "90",
+            "threshold-severity": "major"
+          },
+          {
+            "name": "database_client_throttling_errors_critical_escalation",
+            "threshold-high": "1000",
+            "threshold-low": "900",
+            "threshold-severity": "critical"
+          }
+        ]
+      }
+    ],
+    "requested-job-state": "stopped"
+  }
+]

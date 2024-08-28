@@ -1,0 +1,203 @@
+{
+    "namespace": "sc",
+    "dashboards": [
+        {
+            "_id": "bsf_vtap_traffic",
+            "title": "BSF vTAP View",
+            "order": 18,
+            "apps": [
+                "statusOverview"
+            ],
+            "dashboardTreeView": { "tree": [["BSF"]] },
+            "tiles": [
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "pvtb_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "pvtb_ratio_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "tapcollector_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "tapcollector_ratio_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "bsf_vtap_timeline"
+                },
+                {
+                    "xSize": 5,
+                    "ySize": 2,
+                    "widget": "bsf_vtap_ratio_timeline"
+                },
+                {
+                    "xSize": 10,
+                    "ySize": 2,
+                    "widget": "selectable_bsf_vtap_counters"
+                },
+                {
+                    "xSize": 10,
+                    "ySize": 2,
+                    "variables": {
+                      "podListFilterProp": "metadata.name",
+                      "podListFilterRegex": "^eric-bsf-|^eric-probe-virtual-tap-broker-"
+                    },
+                    "widget": "sc:pod_table"
+                }
+            ]
+        }
+    ],
+    "widgets": [
+        {
+            "_id": "pvtb_timeline",
+            "widgetType": "timeline",
+            "title": "Timeline [MPS] - Tapped Packets in Probe Virtual Tap Broker (PVTB)",
+            "sources": [
+                {
+                    "source": "bsf_pvtb_received_total"
+                },
+                {
+                    "source": "bsf_pvtb_send_total"
+                }
+            ]
+        },
+        {
+            "_id": "pvtb_ratio_timeline",
+            "widgetType": "timeline",
+            "title": "Timeline [%] - Tapping Failures in Probe Virtual Tap Broker (PVTB)",
+            "sources": [
+                {
+                    "source": "bsf_pvtb_received_failure_ratio"
+                },
+                {
+                    "source": "bsf_pvtb_send_failure_ratio"
+                }
+            ]
+        },
+        {
+            "_id": "tapcollector_timeline",
+            "widgetType": "timeline",
+            "title": "Timeline [MPS] - Tapped Packets in BSF Worker (Tapcollector)",
+            "sources": [
+                {
+                    "source": "bsf_tapcollector_in_tap_frames_total"
+                },
+                {
+                    "source": "bsf_tapcollector_sent_frames_total"
+                }
+            ]
+        },
+        {
+            "_id": "tapcollector_ratio_timeline",
+            "widgetType": "timeline",
+            "title": "Timeline [%] - Tapping Failures in BSF Worker (Tapcollector)",
+            "sources": [
+                {
+                    "source": "bsf_tapcollector_recv_frames_failure_ratio"
+                },
+                {
+                    "source": "bsf_tapcollector_sent_frames_failure_ratio"
+                }
+            ]
+        },
+        {
+            "_id": "bsf_vtap_timeline",
+            "widgetType": "timeline",
+            "title": "Timeline [MPS] - BSF Worker Segments Tapped",
+            "sources": [
+                {
+                    "source": "bsf_vtap_segments_tapped_total"
+                }
+            ]
+        },
+        {
+            "_id": "bsf_vtap_ratio_timeline",
+            "widgetType": "timeline",
+            "title": "Timeline [%] - BSF Worker Segments Dropped",
+            "sources": [
+                {
+                    "source": "bsf_vtap_segments_tapped_failure_ratio"
+                }
+            ]
+        },
+        {
+            "_id": "selectable_bsf_vtap_counters",
+            "widgetType": "timeline",
+            "title": "Select metrics to display",
+            "selectionMechanism": { "selectorConfigId": "bsf_vtap_selector_config" },
+            "sources": []
+       }
+    ],
+    "sources": [
+        {
+            "_id": "bsf_pvtb_received_total",
+            "sourceType": "prometheus",
+            "query": "bsf_pvtb_received_total_rate or vector(0)",
+            "label": "Received [MPS]"
+        },
+        {
+            "_id": "bsf_pvtb_send_total",
+            "sourceType": "prometheus",
+            "query": "bsf_pvtb_send_total_rate or vector(0)",
+            "label": "Sent [MPS]"
+        },
+        {
+            "_id": "bsf_pvtb_received_failure_ratio",
+            "sourceType": "prometheus",
+            "query": "bsf_pvtb_received_failure_ratio",
+            "label": "Received [%]"
+        },
+        {
+            "_id": "bsf_pvtb_send_failure_ratio",
+            "sourceType": "prometheus",
+            "query": "bsf_pvtb_send_failure_ratio",
+            "label": "Sent [%]"
+        },
+        {
+            "_id": "bsf_tapcollector_in_tap_frames_total",
+            "sourceType": "prometheus",
+            "query": "bsf_tapcollector_in_tap_frames_total_rate or vector(0)",
+            "label": "Received [MPS]"
+        },
+        {
+            "_id": "bsf_tapcollector_sent_frames_total",
+            "sourceType": "prometheus",
+            "query": "bsf_tapcollector_sent_frames_total_rate or vector(0)",
+            "label": "Sent [MPS] "
+        },
+        {
+            "_id": "bsf_tapcollector_recv_frames_failure_ratio",
+            "sourceType": "prometheus",
+            "query": "bsf_tapcollector_recv_frames_failure_ratio",
+            "label": "Received [%]"
+        },
+        {
+            "_id": "bsf_tapcollector_sent_frames_failure_ratio",
+            "sourceType": "prometheus",
+            "query": "bsf_tapcollector_sent_frames_failure_ratio",
+            "label": "Sent [%]"
+        },
+        {
+            "_id": "bsf_vtap_segments_tapped_total",
+            "sourceType": "prometheus",
+            "query": "bsf_vtap_segments_tapped_rate or vector(0)",
+            "label": "Segments Tapped [MPS]"
+        },
+        {
+            "_id": "bsf_vtap_segments_tapped_failure_ratio",
+            "sourceType": "prometheus",
+            "query": "bsf_vtap_segments_dropped_ratio",
+            "label": "Segments Dropped [%]"
+        }
+    ]
+}

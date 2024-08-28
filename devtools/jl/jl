@@ -1,0 +1,989 @@
+#!/usr/bin/python3
+# Pipe json-formatted logs into this script
+# eedala 2021-12-17
+
+import argparse
+import json
+import sys
+import traceback
+import pprint
+import re
+from datetime import datetime
+
+# Global regular expressions, pre-compiled for performance:
+def setGlobalVars():
+    global color_pattern_re
+    global conn_re, stream_re, conn_stream_re
+    global conn_rest_re, stream_rest_re
+    global dns_resolution_re
+    global conn_time
+    global rb
+
+    color_pattern_re = []
+    conn_time = {}
+
+    # Routing Behaviour
+    rb = {"0" : colors.BLUE + "[NOT_USED]" + colors.RESET,
+          "2" : colors.BLUE + "[ROUND_ROBIN]" + colors.RESET,
+          "3" : colors.BLUE + "[PREFERRED]" + colors.RESET,
+          "4" : colors.BLUE + "[STRICT]" + colors.RESET
+    }
+
+    # Color pattern per field:
+    pat = [
+      ('severity', r'INFO', colors.GREEN),
+      ('severity', r'DEBUG', colors.LIGHTBLUE),
+      ('severity', r'TRACE', colors.CYAN),
+      ('severity', r'ERROR', colors.RED),
+      ('severity', r'CRITICAL', colors.RED),
+      ('severity', r'WARN', colors.MAGENTA),
+
+      ('text', r'Received request', colors.X11peru),
+      ('text', r'Retry after configuration change', colors.CYAN),
+      ('text', r'New configuration received', colors.CYAN),
+      ('text', r'Current state: context.*nonce', colors.CYAN),
+      ('text', r'Sending response', colors.MAGENTA),
+      ('text', r'EricProxy filter.*', colors.MAGENTA),
+      ('text', r'^(.*)(invoked on response)(.*)', colors.MAGENTA),
+      ('text', r'^(.*)(invoked on request)(.*)', colors.YELLOW),
+
+      ('text', r'^(.*Condition match: )(true)(.*)', colors.GREEN),
+      ('text', r'^(.*Condition match: )(false)(.*)', colors.RED),
+
+      ('text', r'Deprecated', colors.RED),
+      ('text', r'Exception', colors.RED),
+      ('text', r'###', colors.BLUE),
+      ('text', r'NACK', colors.RED),
+      ('text', r'ACK:', colors.GREEN),
+
+      ('file', r'AggregatedDiscover', colors.MAGENTA),
+
+      ('text', r'severity=MAJOR', colors.RED),
+      ('text', r'severity=CLEAR', colors.GREEN),
+
+      ('text', r'^new ProxyConfig:', colors.CYAN),
+      ('text', r'^new DnsCache:', colors.CYAN),
+      ('text', r'^Configuration:', colors.BLUE),
+
+      ('text', r'DNS lookup failed for host', colors.RED),
+      ('text', r'DNS lookup succeeded for host', colors.GREEN),
+      ('text', r'TTL', colors.CYAN),
+
+      ('text', r'performing retry', colors.RED),
+    ]
+    for field, pattern, color in pat:
+        color_pattern_re.append((field, re.compile(pattern), color))
+
+    # Extract connection ID from Envoy logs (like [C115]):
+    conn_re = re.compile(r'\[C(\d+)\]')
+    conn_rest_re = re.compile(r'\[(C\d+)\] *(.*)')
+
+    # Extract stream ID from Envoy logs (like [S7978381661879924043])
+    stream_re = re.compile(r'\[S(\d+)\]')
+    stream_rest_re = re.compile(r'\[(S\d+)\] *(.*)')
+
+    # Extract connection and stream ID from Envoy logs
+    conn_stream_re = re.compile(r'\[C(\d+)\]\[S(\d+)\]')
+
+    # Regex to detect periodic DNS messages
+    dns_resolution_re = re.compile(r'dns resolution for .+? (started|completed with status|failed with)')
+
+# Convert a string into a rainbow-colored string based on the hash value of the string:
+# This is for the new log format
+def rainbowed_str(prefix, text):
+    col_idx = hash(int(text)) & 0b111
+    return rainbow[col_idx] + f"{prefix}{text}" + colors.RESET
+
+
+# Add color to various strings via the configured pattern:
+def colorize(f):
+    global color_pattern_re, conn_re, stream_re
+
+    # Colors for various pattern:
+    for field, pattern_re, color in color_pattern_re:
+        if field in f:
+            matchobj = pattern_re.match(f[field])
+            if matchobj:
+                try:
+                    f[field] = matchobj.group(1) + color + matchobj.group(2) + colors.RESET + matchobj.group(3)
+                except:
+                    f[field] = color + f[field] + colors.RESET
+    return f
+
+def dontShowLine(line, hide_periodic_messages):
+    global dns_resolution_re
+    if hide_periodic_messages:
+        if 'flushing stats' in line: return True
+        if 'starting async DNS resolution for' in line: return True
+        if 'async DNS resolution complete for' in line: return True
+        if 'DNS refresh rate reset for' in line: return True
+        if dns_resolution_re.search(line): return True
+    if 'stale dynamic producer check' in line: return True
+    #if "Updating alarm: fault=ScpBadConfiguration, resource=nf=scp-function, severity=CLEAR, description=''" in line: return True
+    #if "Updating alarm: fault=ScpBadConfiguration, resource=nf=scp-function,nf-instance=West1, severity=CLEAR, description=''" in line: return True
+    #if ("AggregatedDiscover" not in line and "ProxyCfgMapper" not in line and "ScpCfgMapper" not in line and 'manager.DnsCache' not in line): return True
+    return False
+
+
+def removeExtensions(text):
+    """In xDS messages Envoy lists all extensions, which is
+    quite lengthy. Remove them"""
+    if 'extensions' in text:
+      return re.sub(r'extensions.+?\}\n?', '', text, 0, re.MULTILINE | re.DOTALL)
+    return text
+
+
+def h2flags(frametype, flags):
+    """ Decode HTTP/2 flags
+    Parameters are the frametype (as string) and the flags (as string)"""
+    # Flags:
+    fl = {"0" : # DATA
+                {0: "", 1: "END_STREAM", 8: "PADDED"},
+          "1" : # HEADERS
+                {0: "", 1: "END_STREAM", 4: "END_HEADERS", 8: "PADDED", 32: "PRIORITY"},
+          "2" : # PRIORITY
+                {0: ""},
+          "3" : # RST_STREAM
+                {0: ""},
+          "4" : # SETTINGS
+                {0: "", 1: "ACK"},
+          "5" : # PUSH_PROMISE
+                {0: "", 4: "END_HEADERS", 8: "PADDED"},
+          "6" : # PING
+                {0: "", 1: "ACK"},
+          "7" : # GOAWAY
+                {0: ""},
+          "8" : # WINDOW_UPDATE
+                {0: ""},
+          "9" : # CONTINUATION
+                {0: "", 4: "END_HEADERS"},
+    }
+
+    flags = int(flags)
+    if flags == 0:
+      return ""
+    decoded = ""
+    for i in range(8):
+      flag =  flags & (1 << i)
+      if flag > 0:
+        decoded += ", " + fl[frametype][flag]
+    return colors.LIGHTBLUE + "[" + decoded[2:] + "]" + colors.RESET
+
+
+def h2frame(matchobj):
+    """ Helper function to translate/augment http2 frame types """
+    ft = {"0" : colors.BLUE + "[DATA]" + colors.RESET,
+          "1" : colors.BLUE + "[HEADERS]" + colors.RESET,
+          "2" : colors.BLUE + "[PRIORITY]" + colors.RESET,
+          "3" : colors.RED  + "[RST_STREAM]" + colors.RESET,
+          "4" : colors.BLUE + "[SETTINGS]" + colors.RESET,
+          "5" : colors.BLUE + "[PUSH_PROMISE]" + colors.RESET,
+          "6" : colors.BLUE + "[PING]" + colors.RESET,
+          "7" : colors.RED  + "[GOAWAY]" + colors.RESET,
+          "8" : colors.BLUE + "[WINDOW_UPDATE]" + colors.RESET,
+          "9" : colors.BLUE + "[CONTINUATION]" + colors.RESET
+    }
+
+    if matchobj:
+      if matchobj.group(4) is None:
+        return f"{matchobj.group(1)}{matchobj.group(3)} {ft[matchobj.group(3)]}{matchobj.group(6)}"
+      else:
+        return f"{matchobj.group(1)}{matchobj.group(3)} {ft[matchobj.group(3)]}{matchobj.group(4)} {h2flags(matchobj.group(3), matchobj.group(5))}{matchobj.group(6)}"
+    else:
+      return matchobj.string
+
+def routingBehaviour(matchobj):
+    """ Helper function to translate/augment Routing Behaviour """
+    if matchobj:
+      if matchobj.group(2) is None:
+        return f"{matchobj.group(1)}"
+      else:
+        return f"{matchobj.group(1)}{matchobj.group(2)} {rb[matchobj.group(2)]}"
+    else:
+      return matchobj.string
+
+def augmentText(severity, text, timestamp):
+    """Add extra info to the log message"""
+
+    # Augment HTTP/2 frame types in trace messages
+    if severity == "TRACE   ":
+      text = re.sub(r'^(.*?(inbound|recv|send|sent) frame type=)(\d+)(,? flags=(\d+))?(.*)$', h2frame, text)
+    
+    # Augment Routing Behaviour in trace messages
+    text = re.sub(r'^(.*?Routing to Pool:.*with behaviour )(\d+)$', routingBehaviour, text)
+
+    # Augment Connection Time in trace messages
+    start_matchobj = re.search(r'^(\[(.*)\])( connecting to .*)$', text)
+    if start_matchobj:
+        if start_matchobj.group(2):
+            conn_time[start_matchobj.group(2)] = timestamp
+    
+    end_matchobj = re.search(r'^(\[(.*)\])( connect timeout| connected)$', text)
+    if end_matchobj:
+        if end_matchobj.group(2):
+            if end_matchobj.group(2) in conn_time:
+                # start_time = datetime.fromisoformat(timestamp) # Python 3.7 and higher versions
+                # end_time = datetime.fromisoformat(conn_time[end_matchobj.group(2)]) # Python 3.7 and higher versions
+                # start_time = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%f%z") # Python 3.7 and higher versions
+                # end_time = datetime.strptime(conn_time[end_matchobj.group(2)], "%Y-%m-%dT%H:%M:%S.%f%z") # Python 3.7 and higher versions
+                start_time = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%f+00:00")
+                end_time = datetime.strptime(conn_time[end_matchobj.group(2)], "%Y-%m-%dT%H:%M:%S.%f+00:00")                
+                time_diff = (start_time - end_time).total_seconds() * 1000
+                td = colors.BLUE + "[AFTER " + str(time_diff) + " ms]" + colors.RESET
+                text = f"{end_matchobj.string} {td}"
+
+    return text
+
+
+def formatAccessLog(f):
+    """Pretty-format an access log line"""
+    return f"Access log: id: {f['req_id']} {f['method']} {f['path']} {f['protocol']} {f['rc']} {f['rc_details']} {f['duration']} {f['route']} {f['upstr_cluster']} {f['upstr_host']} {f['bytes_tx']} {f['bytes_rx']} {f['authority']} {f['user_agent']} {f['upstr_transp_fail_reas']}"
+
+
+def processOneLine(fields):
+    #if 'metadata' in fields:
+    #    processOneLineNewFormat(fields)
+    #else:
+        processOneLineOldFormat(fields)
+
+
+def processOneLineOldFormat(fields):
+    """ One log entry has been found -> process it"""
+    msg = str.split(fields['message'], '||')
+    if len(msg) > 1:
+        # Message is from Java code (manager)
+        fields['prefix'] = ""
+        fields['suffix'] = ""
+        fields['severity'] = f"{fields['severity'].upper():8.8s}"
+        fields['process'] = msg[0]
+        fields['thread'] = f"{msg[1]:>4.4s}"
+        fields['file'] = f"{msg[2]:>30.30s}"
+        fields['line'] = f"{msg[3]:>4.4s}"
+        fields['function'] = f"{msg[4]:>30.30s}"
+        fields['text'] = msg[5]
+        fields['text'] = removeExtensions(fields['text'])
+        cf = colorize(fields)
+        if False:
+            # Longer version: Also show "process" and "thread" fields:
+            sys.stdout.write(f"{cf['prefix']}{cf['timestamp']} | {cf['severity']} | {cf['process']} | {cf['thread']} | {cf['file']} | {cf['line']} | {cf['function']} | {cf['text']}{cf['suffix']}\n")
+        else:
+            # Shorter version without "process" and "thread" fields:
+            sys.stdout.write(f"{cf['prefix']}{cf['timestamp']} | {cf['severity']} | {cf['file']} | {cf['line']} | {cf['function']} | {cf['text']}{cf['suffix']}\n")
+    else:
+        # Message is from Envoy (or somewhere else, but not from Java, because
+        # there are no "||" characters)
+        fields['severity'] = f"{fields['severity'].upper():8.8s}"
+        fields['text'] = fields['message']
+        # Metadata is an indicator for the new format
+        if 'metadata' in fields:
+            # Move fields to the "right" position
+            if 'ul_id' in fields['metadata']:
+                fields['ul_id'] = fields['metadata']['ul_id']
+            if 'extra_data' in fields:
+                if 'location' in fields['extra_data']:
+                    if 'src_file' in fields['extra_data']['location']:
+                        fields['src_file'] = fields['extra_data']['location']['src_file']
+                    if 'src_line' in fields['extra_data']['location']:
+                        fields['src_line'] = fields['extra_data']['location']['src_line']
+                if 'thread_info' in fields['extra_data']:
+                    if 'thread_id' in fields['extra_data']['thread_info']:
+                        fields['thread_id'] = fields['extra_data']['thread_info']['thread_id']
+                if 'connection_id' in fields['extra_data']:
+                    fields['conn_id'] = fields['extra_data']['connection_id']
+                if 'stream_id' in fields['extra_data']:
+                    fields['stream_id'] = fields['extra_data']['stream_id']
+        else:# old format
+            fields['ul_id'] = '' # the old format doesn't have a ul-id
+            fields['conn_id'] = ''
+            fields['stream_id'] = ''
+            # Extract conn-id and stream-id from the message and move it into
+            # their own fields so that they can be printed in their own columns
+            conn_match = conn_rest_re.match(fields['text'])
+            if conn_match:
+                fields['conn_id'] = conn_match.group(1)
+                fields['text'] = conn_match.group(2)
+                stream_match = stream_rest_re.match(conn_match.group(2))
+                if stream_match:
+                    fields['stream_id'] = stream_match.group(1)
+                    fields['text'] = stream_match.group(2)
+
+        # Common for both old and new format:
+        # Length-align and colorize fields:
+        fields['ul_id'] = f"{fields['ul_id']:<3.3s}"
+        if len(fields['conn_id']) > 0:
+            fields['conn_id'] = f"{fields['conn_id']:<8s}"
+            fields['conn_id'] = rainbowed_str("C", fields['conn_id'][1:])
+        else:
+            fields['conn_id'] = "        "
+        if len(fields['stream_id']) > 0:
+            fields['stream_id'] = f"{fields['stream_id']:<21}"
+            fields['stream_id'] = rainbowed_str("S", fields['stream_id'][1:])
+        else:
+            fields['stream_id'] = "                     "
+        if 'thread_id' in fields:
+            fields['thread'] = f"{fields['thread_id']:>4.4s}"
+        else: fields['thread'] = '    '
+        if 'src_file' in fields:
+            fields['file'] = f"{fields['src_file'][-40:]:<40.40s}:{fields['src_line']:<4.4s}"
+        else: fields['file'] = '                                             '
+        # Undo multi-line logs:
+        fields['text'] = fields['text'].replace("NEWLINEHERE", "\n")
+        fields['text'] = re.sub("\n$", "", fields['text'])
+        fields['text'] = re.sub("\n", "\n                                                                                                                                        : ", fields['text'])
+        if fields['text'] == "access log":
+            fields['timestamp'] = re.sub(r'^(.+)(\d\d)(\d\d)$', r'\1\2:\3', fields['timestamp'])
+            fields['text'] = formatAccessLog(fields)
+        else:
+            fields['text'] = augmentText(fields['severity'], fields['text'], fields['timestamp'])
+        cf = colorize(fields)
+        sys.stdout.write(f"{cf['timestamp']} | {cf['severity']} | {cf['thread']} | {cf['file']} | {cf['ul_id']} | {cf['conn_id']} | {cf['stream_id']} | {cf['text']}\n")
+
+# Return True if a given line shall be shown.
+# A line shall be shown if it either:
+# - has the correct Connection and Stream ID
+# - does not have any Connection and Stream ID
+# If strict is true, then only show lines where the wanted connection/stream ID
+# is present, but not lines without stream/connection ID.
+# If strict is false, then also show lines without any connection/stream ID.
+def showCorS(line, wanted_conn_id, wanted_stream_id, strict):
+    #print("line: " + line)
+    global conn_re, stream_re, conn_stream_re
+    # Check Connection and Stream ID if both were given by the user:
+    if wanted_conn_id and wanted_stream_id:
+        match = conn_stream_re.match(line)
+        if match:
+            return (wanted_stream_id == match.group(2)) and (wanted_conn_id == match.group(1))
+        else: return not (conn_re.match(line) or stream_re.match(line)) and not strict
+    # Only check the Connection ID if it was given by the user:
+    elif wanted_conn_id:
+        conn_match = conn_re.match(line)
+        # There is a connection ID in the log line, but not necessarily the one we want:
+        if conn_match:
+            return (wanted_conn_id == conn_match.group(1))
+        else: return not strict
+    # Only check the Stream ID if it was given by the user:
+    elif wanted_stream_id:
+        stream_match = stream_re.search(line)
+        # There is a stream ID in the log line, but not necessarily the one we want:
+        if stream_match:
+            return (wanted_stream_id == stream_match.group(1))
+        else: return not strict
+    return not strict
+
+def mainloop():
+    # Command-line arguments
+    parser = argparse.ArgumentParser(description='Pretty-print a logfile from Envoy')
+    parser.add_argument('-C', '--connection', help='Limit to Connection')
+    parser.add_argument('-S', '--stream', help='Limit to Stream')
+    parser.add_argument('-t', '--thread', help='Limit to Thread')
+    parser.add_argument('-o', '--only-c-or-s', help='Show nothing else but for the selected Connection and/or Stream',
+            action="store_true")
+    parser.add_argument('-p', '--no-periodic', help='Hide periodic messages',
+            action="store_true")
+    args = parser.parse_args()
+
+    # Connection and stream-ID may start with 'C' or 'S' -> remove it
+    if args.connection: args.connection = args.connection.lstrip("C");
+    if args.stream: args.stream = args.stream.lstrip("S")
+
+    setGlobalVars()
+    # Read from stdin unbuffered:
+    line = ""
+    while True:
+        #print(f"Line is: {line}")
+        newLine = sys.stdin.readline()
+        if not newLine: break # EOF -> exit
+        if line != "":
+            line = line.replace("\r\n", "\\n")
+            line = line.replace("\n", "\\n")
+        line += newLine
+        if line[:1] != "{": # extracting JSON content from lines that do not start with {
+            matchobj = re.search(r'^.*({.*)', line)
+            if matchobj:
+                line = matchobj.group(1)
+            else:  # skip lines that do not have JSON content
+                print(line, end='')
+                line = ""
+                continue
+
+        # Some log messages contain \n and are multi-line log messages.
+        # In such a case, json.loads fails with an exception. If that happens, catch
+        # the exception, read one more line, and try again
+        try:
+            fields = json.loads(line)
+            #print("## message: "+ fields['message'])
+            # If we make it here, then the line was JSON format/complete
+            # Only show a specific thread?
+            if args.thread:
+                if ('extra_data' in fields) and ('thread_info' in fields['extra_data']) and ('thread_id' in fields['extra_data']['thread_info']) and (fields['extra_data']['thread_info']['thread_id'] != args.thread):
+                    line = ""
+                    continue;
+            # Check if line shall be suppressed (for useless/distracting/uninteresting lines):
+            if (dontShowLine(line, args.no_periodic)):
+                line = ""
+                continue
+            # Check if the line shall be shown based on connection and stream ID:
+            if (not showCorS(fields['message'], args.connection, args.stream, args.only_c_or_s)):
+                line = ""
+                continue
+
+            # Now we can and want to show the log line:
+            processOneLine(fields)
+            line = ""
+        except json.decoder.JSONDecodeError:
+            # Line probably not complete
+            pass
+        except Exception as e:
+            print(f"{colors.RED}EXCEPTION: {str(e)}{colors.RESET}")
+            print("-"*60)
+            traceback.print_exc(file=sys.stdout)
+            print("-"*60)
+
+    if (args.connection and args.stream):
+        print(f"Output only shows lines with connection ID {args.connection} and stream ID {args.stream}")
+    elif (args.connection):
+        print(f"Output only shows lines with connection ID {args.connection}")
+    elif (args.stream):
+        print(f"Output only shows lines with stream ID {args.stream}")
+    msg = ""
+    if (args.connection or args.stream):
+        msg += f"Output only shows lines with"
+        if args.connection: msg += f" connection ID {args.connection}"
+        if args.connection and args.stream: msg += " and"
+        if args.stream: msg += f" stream ID {args.stream}"
+        if args.only_c_or_s: msg += ", no lines without C/S are shown"
+    print(msg)
+
+##------------------------------------------------------------------------
+# Colors!
+# https://en.wikipedia.org/wiki/ANSI_escape_code
+class colors:
+    BLACK = '\033[30m'
+    RED = '\033[31m'
+    GREEN = '\x1b[32m'
+    YELLOW = '\033[33m'
+    BLUE = '\033[34m'
+    MAGENTA = '\033[35m'
+    CYAN = '\033[36m'
+    WHITE = '\033[37m'
+    RESET = '\x1b[0m'
+    # From the 256-color palette:
+    LIGHTBLUE = '\033[38;5;45m'
+    LIGHTGREEN = '\033[38;5;118m'
+    ORANGE = '\033[38;5;202m'
+    # Also 256-color palette, for the rainbow colors:
+    C1 = '\033[38;5;1m'
+    C2 = '\033[38;5;51m'
+    C3 = '\033[38;5;3m'
+    C4 = '\033[38;5;4m'
+    C5 = '\033[38;5;46m'
+    C6 = '\033[38;5;202m'
+    C7 = '\033[38;5;13m'
+    C8 = '\033[38;5;10m'
+    # The following don't work on all terminals
+    # 24 bit color definitions from X11, see here for how the colors look like:
+    # https://en.wikipedia.org/wiki/X11_color_names
+    X11snow = '\033[38;255;250;250m'
+    X11GhostWhite = '\033[38;248;248;255m'
+    X11WhiteSmoke = '\033[38;245;245;245m'
+    X11gainsboro = '\033[38;220;220;220m'
+    X11FloralWhite = '\033[38;255;250;240m'
+    X11OldLace = '\033[38;253;245;230m'
+    X11linen = '\033[38;250;240;230m'
+    X11AntiqueWhite = '\033[38;250;235;215m'
+    X11PapayaWhip = '\033[38;255;239;213m'
+    X11BlanchedAlmond = '\033[38;255;235;205m'
+    X11bisque = '\033[38;255;228;196m'
+    X11PeachPuff = '\033[38;255;218;185m'
+    X11NavajoWhite = '\033[38;255;222;173m'
+    X11moccasin = '\033[38;255;228;181m'
+    X11cornsilk = '\033[38;255;248;220m'
+    X11ivory = '\033[38;255;255;240m'
+    X11LemonChiffon = '\033[38;255;250;205m'
+    X11seashell = '\033[38;255;245;238m'
+    X11honeydew = '\033[38;240;255;240m'
+    X11MintCream = '\033[38;245;255;250m'
+    X11azure = '\033[38;240;255;255m'
+    X11AliceBlue = '\033[38;240;248;255m'
+    X11lavender = '\033[38;230;230;250m'
+    X11LavenderBlush = '\033[38;255;240;245m'
+    X11MistyRose = '\033[38;255;228;225m'
+    X11white = '\033[38;255;255;255m'
+    X11DimGray = '\033[38;105;105;105m'
+    X11DimGrey = '\033[38;105;105;105m'
+    X11SlateGray = '\033[38;112;128;144m'
+    X11SlateGrey = '\033[38;112;128;144m'
+    X11LightSlateGray = '\033[38;119;136;153m'
+    X11LightSlateGrey = '\033[38;119;136;153m'
+    X11gray = '\033[38;190;190;190m'
+    X11grey = '\033[38;190;190;190m'
+    X11LightGrey = '\033[38;211;211;211m'
+    X11LightGray = '\033[38;211;211;211m'
+    X11CornflowerBlue = '\033[38;100;149;237m'
+    X11SlateBlue = '\033[38;106;90;205m'
+    X11MediumSlateBlue = '\033[38;123;104;238m'
+    X11LightSlateBlue = '\033[38;132;112;255m'
+    X11SkyBlue = '\033[38;135;206;235m'
+    X11LightSkyBlue = '\033[38;135;206;250m'
+    X11LightSteelBlue = '\033[38;176;196;222m'
+    X11LightBlue = '\033[38;173;216;230m'
+    X11PowderBlue = '\033[38;176;224;230m'
+    X11PaleTurquoise = '\033[38;175;238;238m'
+    X11LightCyan = '\033[38;224;255;255m'
+    X11MediumAquamarine = '\033[38;102;205;170m'
+    X11aquamarine = '\033[38;127;255;212m'
+    X11DarkSeaGreen = '\033[38;143;188;143m'
+    X11PaleGreen = '\033[38;152;251;152m'
+    X11LawnGreen = '\033[38;124;252;0m'
+    X11chartreuse = '\033[38;127;255;0m'
+    X11GreenYellow = '\033[38;173;255;47m'
+    X11YellowGreen = '\033[38;154;205;50m'
+    X11OliveDrab = '\033[38;107;142;35m'
+    X11DarkKhaki = '\033[38;189;183;107m'
+    X11khaki = '\033[38;240;230;140m'
+    X11PaleGoldenrod = '\033[38;238;232;170m'
+    X11LightGoldenrodYellow = '\033[38;250;250;210m'
+    X11LightYellow = '\033[38;255;255;224m'
+    X11yellow = '\033[38;255;255;0m'
+    X11gold = '\033[38;255;215;0m'
+    X11LightGoldenrod = '\033[38;238;221;130m'
+    X11goldenrod = '\033[38;218;165;32m'
+    X11DarkGoldenrod = '\033[38;184;134;11m'
+    X11RosyBrown = '\033[38;188;143;143m'
+    X11IndianRed = '\033[38;205;92;92m'
+    X11SaddleBrown = '\033[38;139;69;19m'
+    X11sienna = '\033[38;160;82;45m'
+    X11peru = '\033[38;205;133;63m'
+    X11burlywood = '\033[38;222;184;135m'
+    X11beige = '\033[38;245;245;220m'
+    X11wheat = '\033[38;245;222;179m'
+    X11SandyBrown = '\033[38;244;164;96m'
+    X11tan = '\033[38;210;180;140m'
+    X11chocolate = '\033[38;210;105;30m'
+    X11firebrick = '\033[38;178;34;34m'
+    X11brown = '\033[38;165;42;42m'
+    X11DarkSalmon = '\033[38;233;150;122m'
+    X11salmon = '\033[38;250;128;114m'
+    X11LightSalmon = '\033[38;255;160;122m'
+    X11orange = '\033[38;255;165;0m'
+    X11DarkOrange = '\033[38;255;140;0m'
+    X11coral = '\033[38;255;127;80m'
+    X11LightCoral = '\033[38;240;128;128m'
+    X11tomato = '\033[38;255;99;71m'
+    X11OrangeRed = '\033[38;255;69;0m'
+    X11red = '\033[38;255;0;0m'
+    X11HotPink = '\033[38;255;105;180m'
+    X11DeepPink = '\033[38;255;20;147m'
+    X11pink = '\033[38;255;192;203m'
+    X11LightPink = '\033[38;255;182;193m'
+    X11PaleVioletRed = '\033[38;219;112;147m'
+    X11maroon = '\033[38;176;48;96m'
+    X11MediumVioletRed = '\033[38;199;21;133m'
+    X11VioletRed = '\033[38;208;32;144m'
+    X11magenta = '\033[38;255;0;255m'
+    X11violet = '\033[38;238;130;238m'
+    X11plum = '\033[38;221;160;221m'
+    X11orchid = '\033[38;218;112;214m'
+    X11MediumOrchid = '\033[38;186;85;211m'
+    X11DarkOrchid = '\033[38;153;50;204m'
+    X11DarkViolet = '\033[38;148;0;211m'
+    X11BlueViolet = '\033[38;138;43;226m'
+    X11purple = '\033[38;160;32;240m'
+    X11MediumPurple = '\033[38;147;112;219m'
+    X11thistle = '\033[38;216;191;216m'
+    X11snow1 = '\033[38;255;250;250m'
+    X11snow2 = '\033[38;238;233;233m'
+    X11snow3 = '\033[38;205;201;201m'
+    X11snow4 = '\033[38;139;137;137m'
+    X11seashell1 = '\033[38;255;245;238m'
+    X11seashell2 = '\033[38;238;229;222m'
+    X11seashell3 = '\033[38;205;197;191m'
+    X11seashell4 = '\033[38;139;134;130m'
+    X11AntiqueWhite1 = '\033[38;255;239;219m'
+    X11AntiqueWhite2 = '\033[38;238;223;204m'
+    X11AntiqueWhite3 = '\033[38;205;192;176m'
+    X11AntiqueWhite4 = '\033[38;139;131;120m'
+    X11bisque1 = '\033[38;255;228;196m'
+    X11bisque2 = '\033[38;238;213;183m'
+    X11bisque3 = '\033[38;205;183;158m'
+    X11bisque4 = '\033[38;139;125;107m'
+    X11PeachPuff1 = '\033[38;255;218;185m'
+    X11PeachPuff2 = '\033[38;238;203;173m'
+    X11PeachPuff3 = '\033[38;205;175;149m'
+    X11PeachPuff4 = '\033[38;139;119;101m'
+    X11NavajoWhite1 = '\033[38;255;222;173m'
+    X11NavajoWhite2 = '\033[38;238;207;161m'
+    X11NavajoWhite3 = '\033[38;205;179;139m'
+    X11NavajoWhite4 = '\033[38;139;121;94m'
+    X11LemonChiffon1 = '\033[38;255;250;205m'
+    X11LemonChiffon2 = '\033[38;238;233;191m'
+    X11LemonChiffon3 = '\033[38;205;201;165m'
+    X11LemonChiffon4 = '\033[38;139;137;112m'
+    X11cornsilk1 = '\033[38;255;248;220m'
+    X11cornsilk2 = '\033[38;238;232;205m'
+    X11cornsilk3 = '\033[38;205;200;177m'
+    X11cornsilk4 = '\033[38;139;136;120m'
+    X11ivory1 = '\033[38;255;255;240m'
+    X11ivory2 = '\033[38;238;238;224m'
+    X11ivory3 = '\033[38;205;205;193m'
+    X11ivory4 = '\033[38;139;139;131m'
+    X11honeydew1 = '\033[38;240;255;240m'
+    X11honeydew2 = '\033[38;224;238;224m'
+    X11honeydew3 = '\033[38;193;205;193m'
+    X11honeydew4 = '\033[38;131;139;131m'
+    X11LavenderBlush1 = '\033[38;255;240;245m'
+    X11LavenderBlush2 = '\033[38;238;224;229m'
+    X11LavenderBlush3 = '\033[38;205;193;197m'
+    X11LavenderBlush4 = '\033[38;139;131;134m'
+    X11MistyRose1 = '\033[38;255;228;225m'
+    X11MistyRose2 = '\033[38;238;213;210m'
+    X11MistyRose3 = '\033[38;205;183;181m'
+    X11MistyRose4 = '\033[38;139;125;123m'
+    X11azure1 = '\033[38;240;255;255m'
+    X11azure2 = '\033[38;224;238;238m'
+    X11azure3 = '\033[38;193;205;205m'
+    X11azure4 = '\033[38;131;139;139m'
+    X11SlateBlue1 = '\033[38;131;111;255m'
+    X11SlateBlue2 = '\033[38;122;103;238m'
+    X11SlateBlue3 = '\033[38;105;89;205m'
+    X11SkyBlue1 = '\033[38;135;206;255m'
+    X11SkyBlue2 = '\033[38;126;192;238m'
+    X11SkyBlue3 = '\033[38;108;166;205m'
+    X11LightSkyBlue1 = '\033[38;176;226;255m'
+    X11LightSkyBlue2 = '\033[38;164;211;238m'
+    X11LightSkyBlue3 = '\033[38;141;182;205m'
+    X11SlateGray1 = '\033[38;198;226;255m'
+    X11SlateGray2 = '\033[38;185;211;238m'
+    X11SlateGray3 = '\033[38;159;182;205m'
+    X11SlateGray4 = '\033[38;108;123;139m'
+    X11LightSteelBlue1 = '\033[38;202;225;255m'
+    X11LightSteelBlue2 = '\033[38;188;210;238m'
+    X11LightSteelBlue3 = '\033[38;162;181;205m'
+    X11LightSteelBlue4 = '\033[38;110;123;139m'
+    X11LightBlue1 = '\033[38;191;239;255m'
+    X11LightBlue2 = '\033[38;178;223;238m'
+    X11LightBlue3 = '\033[38;154;192;205m'
+    X11LightBlue4 = '\033[38;104;131;139m'
+    X11LightCyan1 = '\033[38;224;255;255m'
+    X11LightCyan2 = '\033[38;209;238;238m'
+    X11LightCyan3 = '\033[38;180;205;205m'
+    X11LightCyan4 = '\033[38;122;139;139m'
+    X11PaleTurquoise1 = '\033[38;187;255;255m'
+    X11PaleTurquoise2 = '\033[38;174;238;238m'
+    X11PaleTurquoise3 = '\033[38;150;205;205m'
+    X11PaleTurquoise4 = '\033[38;102;139;139m'
+    X11CadetBlue1 = '\033[38;152;245;255m'
+    X11CadetBlue2 = '\033[38;142;229;238m'
+    X11CadetBlue3 = '\033[38;122;197;205m'
+    X11DarkSlateGray1 = '\033[38;151;255;255m'
+    X11DarkSlateGray2 = '\033[38;141;238;238m'
+    X11DarkSlateGray3 = '\033[38;121;205;205m'
+    X11aquamarine1 = '\033[38;127;255;212m'
+    X11aquamarine2 = '\033[38;118;238;198m'
+    X11aquamarine3 = '\033[38;102;205;170m'
+    X11DarkSeaGreen1 = '\033[38;193;255;193m'
+    X11DarkSeaGreen2 = '\033[38;180;238;180m'
+    X11DarkSeaGreen3 = '\033[38;155;205;155m'
+    X11DarkSeaGreen4 = '\033[38;105;139;105m'
+    X11PaleGreen1 = '\033[38;154;255;154m'
+    X11PaleGreen2 = '\033[38;144;238;144m'
+    X11PaleGreen3 = '\033[38;124;205;124m'
+    X11chartreuse1 = '\033[38;127;255;0m'
+    X11chartreuse2 = '\033[38;118;238;0m'
+    X11chartreuse3 = '\033[38;102;205;0m'
+    X11OliveDrab1 = '\033[38;192;255;62m'
+    X11OliveDrab2 = '\033[38;179;238;58m'
+    X11OliveDrab3 = '\033[38;154;205;50m'
+    X11OliveDrab4 = '\033[38;105;139;34m'
+    X11DarkOliveGreen1 = '\033[38;202;255;112m'
+    X11DarkOliveGreen2 = '\033[38;188;238;104m'
+    X11DarkOliveGreen3 = '\033[38;162;205;90m'
+    X11DarkOliveGreen4 = '\033[38;110;139;61m'
+    X11khaki1 = '\033[38;255;246;143m'
+    X11khaki2 = '\033[38;238;230;133m'
+    X11khaki3 = '\033[38;205;198;115m'
+    X11khaki4 = '\033[38;139;134;78m'
+    X11LightGoldenrod1 = '\033[38;255;236;139m'
+    X11LightGoldenrod2 = '\033[38;238;220;130m'
+    X11LightGoldenrod3 = '\033[38;205;190;112m'
+    X11LightGoldenrod4 = '\033[38;139;129;76m'
+    X11LightYellow1 = '\033[38;255;255;224m'
+    X11LightYellow2 = '\033[38;238;238;209m'
+    X11LightYellow3 = '\033[38;205;205;180m'
+    X11LightYellow4 = '\033[38;139;139;122m'
+    X11yellow1 = '\033[38;255;255;0m'
+    X11yellow2 = '\033[38;238;238;0m'
+    X11yellow3 = '\033[38;205;205;0m'
+    X11yellow4 = '\033[38;139;139;0m'
+    X11gold1 = '\033[38;255;215;0m'
+    X11gold2 = '\033[38;238;201;0m'
+    X11gold3 = '\033[38;205;173;0m'
+    X11gold4 = '\033[38;139;117;0m'
+    X11goldenrod1 = '\033[38;255;193;37m'
+    X11goldenrod2 = '\033[38;238;180;34m'
+    X11goldenrod3 = '\033[38;205;155;29m'
+    X11goldenrod4 = '\033[38;139;105;20m'
+    X11DarkGoldenrod1 = '\033[38;255;185;15m'
+    X11DarkGoldenrod2 = '\033[38;238;173;14m'
+    X11DarkGoldenrod3 = '\033[38;205;149;12m'
+    X11DarkGoldenrod4 = '\033[38;139;101;8m'
+    X11RosyBrown1 = '\033[38;255;193;193m'
+    X11RosyBrown2 = '\033[38;238;180;180m'
+    X11RosyBrown3 = '\033[38;205;155;155m'
+    X11RosyBrown4 = '\033[38;139;105;105m'
+    X11IndianRed1 = '\033[38;255;106;106m'
+    X11IndianRed2 = '\033[38;238;99;99m'
+    X11IndianRed3 = '\033[38;205;85;85m'
+    X11IndianRed4 = '\033[38;139;58;58m'
+    X11sienna1 = '\033[38;255;130;71m'
+    X11sienna2 = '\033[38;238;121;66m'
+    X11sienna3 = '\033[38;205;104;57m'
+    X11sienna4 = '\033[38;139;71;38m'
+    X11burlywood1 = '\033[38;255;211;155m'
+    X11burlywood2 = '\033[38;238;197;145m'
+    X11burlywood3 = '\033[38;205;170;125m'
+    X11burlywood4 = '\033[38;139;115;85m'
+    X11wheat1 = '\033[38;255;231;186m'
+    X11wheat2 = '\033[38;238;216;174m'
+    X11wheat3 = '\033[38;205;186;150m'
+    X11wheat4 = '\033[38;139;126;102m'
+    X11tan1 = '\033[38;255;165;79m'
+    X11tan2 = '\033[38;238;154;73m'
+    X11tan3 = '\033[38;205;133;63m'
+    X11tan4 = '\033[38;139;90;43m'
+    X11chocolate1 = '\033[38;255;127;36m'
+    X11chocolate2 = '\033[38;238;118;33m'
+    X11chocolate3 = '\033[38;205;102;29m'
+    X11chocolate4 = '\033[38;139;69;19m'
+    X11firebrick1 = '\033[38;255;48;48m'
+    X11firebrick2 = '\033[38;238;44;44m'
+    X11firebrick3 = '\033[38;205;38;38m'
+    X11firebrick4 = '\033[38;139;26;26m'
+    X11brown1 = '\033[38;255;64;64m'
+    X11brown2 = '\033[38;238;59;59m'
+    X11brown3 = '\033[38;205;51;51m'
+    X11brown4 = '\033[38;139;35;35m'
+    X11salmon1 = '\033[38;255;140;105m'
+    X11salmon2 = '\033[38;238;130;98m'
+    X11salmon3 = '\033[38;205;112;84m'
+    X11salmon4 = '\033[38;139;76;57m'
+    X11LightSalmon1 = '\033[38;255;160;122m'
+    X11LightSalmon2 = '\033[38;238;149;114m'
+    X11LightSalmon3 = '\033[38;205;129;98m'
+    X11LightSalmon4 = '\033[38;139;87;66m'
+    X11orange1 = '\033[38;255;165;0m'
+    X11orange2 = '\033[38;238;154;0m'
+    X11orange3 = '\033[38;205;133;0m'
+    X11orange4 = '\033[38;139;90;0m'
+    X11DarkOrange1 = '\033[38;255;127;0m'
+    X11DarkOrange2 = '\033[38;238;118;0m'
+    X11DarkOrange3 = '\033[38;205;102;0m'
+    X11DarkOrange4 = '\033[38;139;69;0m'
+    X11coral1 = '\033[38;255;114;86m'
+    X11coral2 = '\033[38;238;106;80m'
+    X11coral3 = '\033[38;205;91;69m'
+    X11coral4 = '\033[38;139;62;47m'
+    X11tomato1 = '\033[38;255;99;71m'
+    X11tomato2 = '\033[38;238;92;66m'
+    X11tomato3 = '\033[38;205;79;57m'
+    X11tomato4 = '\033[38;139;54;38m'
+    X11OrangeRed1 = '\033[38;255;69;0m'
+    X11OrangeRed2 = '\033[38;238;64;0m'
+    X11OrangeRed3 = '\033[38;205;55;0m'
+    X11OrangeRed4 = '\033[38;139;37;0m'
+    X11red1 = '\033[38;255;0;0m'
+    X11red2 = '\033[38;238;0;0m'
+    X11red3 = '\033[38;205;0;0m'
+    X11red4 = '\033[38;139;0;0m'
+    X11DebianRed = '\033[38;215;7;81m'
+    X11DeepPink1 = '\033[38;255;20;147m'
+    X11DeepPink2 = '\033[38;238;18;137m'
+    X11DeepPink3 = '\033[38;205;16;118m'
+    X11DeepPink4 = '\033[38;139;10;80m'
+    X11HotPink1 = '\033[38;255;110;180m'
+    X11HotPink2 = '\033[38;238;106;167m'
+    X11HotPink3 = '\033[38;205;96;144m'
+    X11HotPink4 = '\033[38;139;58;98m'
+    X11pink1 = '\033[38;255;181;197m'
+    X11pink2 = '\033[38;238;169;184m'
+    X11pink3 = '\033[38;205;145;158m'
+    X11pink4 = '\033[38;139;99;108m'
+    X11LightPink1 = '\033[38;255;174;185m'
+    X11LightPink2 = '\033[38;238;162;173m'
+    X11LightPink3 = '\033[38;205;140;149m'
+    X11LightPink4 = '\033[38;139;95;101m'
+    X11PaleVioletRed1 = '\033[38;255;130;171m'
+    X11PaleVioletRed2 = '\033[38;238;121;159m'
+    X11PaleVioletRed3 = '\033[38;205;104;137m'
+    X11PaleVioletRed4 = '\033[38;139;71;93m'
+    X11maroon1 = '\033[38;255;52;179m'
+    X11maroon2 = '\033[38;238;48;167m'
+    X11maroon3 = '\033[38;205;41;144m'
+    X11maroon4 = '\033[38;139;28;98m'
+    X11VioletRed1 = '\033[38;255;62;150m'
+    X11VioletRed2 = '\033[38;238;58;140m'
+    X11VioletRed3 = '\033[38;205;50;120m'
+    X11VioletRed4 = '\033[38;139;34;82m'
+    X11magenta1 = '\033[38;255;0;255m'
+    X11magenta2 = '\033[38;238;0;238m'
+    X11magenta3 = '\033[38;205;0;205m'
+    X11magenta4 = '\033[38;139;0;139m'
+    X11orchid1 = '\033[38;255;131;250m'
+    X11orchid2 = '\033[38;238;122;233m'
+    X11orchid3 = '\033[38;205;105;201m'
+    X11orchid4 = '\033[38;139;71;137m'
+    X11plum1 = '\033[38;255;187;255m'
+    X11plum2 = '\033[38;238;174;238m'
+    X11plum3 = '\033[38;205;150;205m'
+    X11plum4 = '\033[38;139;102;139m'
+    X11MediumOrchid1 = '\033[38;224;102;255m'
+    X11MediumOrchid2 = '\033[38;209;95;238m'
+    X11MediumOrchid3 = '\033[38;180;82;205m'
+    X11MediumOrchid4 = '\033[38;122;55;139m'
+    X11DarkOrchid1 = '\033[38;191;62;255m'
+    X11DarkOrchid2 = '\033[38;178;58;238m'
+    X11DarkOrchid3 = '\033[38;154;50;205m'
+    X11DarkOrchid4 = '\033[38;104;34;139m'
+    X11purple1 = '\033[38;155;48;255m'
+    X11purple2 = '\033[38;145;44;238m'
+    X11purple3 = '\033[38;125;38;205m'
+    X11MediumPurple1 = '\033[38;171;130;255m'
+    X11MediumPurple2 = '\033[38;159;121;238m'
+    X11MediumPurple3 = '\033[38;137;104;205m'
+    X11thistle1 = '\033[38;255;225;255m'
+    X11thistle2 = '\033[38;238;210;238m'
+    X11thistle3 = '\033[38;205;181;205m'
+    X11thistle4 = '\033[38;139;123;139m'
+    X11gray40 = '\033[38;102;102;102m'
+    X11grey40 = '\033[38;102;102;102m'
+    X11gray41 = '\033[38;105;105;105m'
+    X11grey41 = '\033[38;105;105;105m'
+    X11gray42 = '\033[38;107;107;107m'
+    X11grey42 = '\033[38;107;107;107m'
+    X11gray43 = '\033[38;110;110;110m'
+    X11grey43 = '\033[38;110;110;110m'
+    X11gray44 = '\033[38;112;112;112m'
+    X11grey44 = '\033[38;112;112;112m'
+    X11gray45 = '\033[38;115;115;115m'
+    X11grey45 = '\033[38;115;115;115m'
+    X11gray46 = '\033[38;117;117;117m'
+    X11grey46 = '\033[38;117;117;117m'
+    X11gray47 = '\033[38;120;120;120m'
+    X11grey47 = '\033[38;120;120;120m'
+    X11gray48 = '\033[38;122;122;122m'
+    X11grey48 = '\033[38;122;122;122m'
+    X11gray49 = '\033[38;125;125;125m'
+    X11grey49 = '\033[38;125;125;125m'
+    X11gray50 = '\033[38;127;127;127m'
+    X11grey50 = '\033[38;127;127;127m'
+    X11gray51 = '\033[38;130;130;130m'
+    X11grey51 = '\033[38;130;130;130m'
+    X11gray52 = '\033[38;133;133;133m'
+    X11grey52 = '\033[38;133;133;133m'
+    X11gray53 = '\033[38;135;135;135m'
+    X11grey53 = '\033[38;135;135;135m'
+    X11gray54 = '\033[38;138;138;138m'
+    X11grey54 = '\033[38;138;138;138m'
+    X11gray55 = '\033[38;140;140;140m'
+    X11grey55 = '\033[38;140;140;140m'
+    X11gray56 = '\033[38;143;143;143m'
+    X11grey56 = '\033[38;143;143;143m'
+    X11gray57 = '\033[38;145;145;145m'
+    X11grey57 = '\033[38;145;145;145m'
+    X11gray58 = '\033[38;148;148;148m'
+    X11grey58 = '\033[38;148;148;148m'
+    X11gray59 = '\033[38;150;150;150m'
+    X11grey59 = '\033[38;150;150;150m'
+    X11gray60 = '\033[38;153;153;153m'
+    X11grey60 = '\033[38;153;153;153m'
+    X11gray61 = '\033[38;156;156;156m'
+    X11grey61 = '\033[38;156;156;156m'
+    X11gray62 = '\033[38;158;158;158m'
+    X11grey62 = '\033[38;158;158;158m'
+    X11gray63 = '\033[38;161;161;161m'
+    X11grey63 = '\033[38;161;161;161m'
+    X11gray64 = '\033[38;163;163;163m'
+    X11grey64 = '\033[38;163;163;163m'
+    X11gray65 = '\033[38;166;166;166m'
+    X11grey65 = '\033[38;166;166;166m'
+    X11gray66 = '\033[38;168;168;168m'
+    X11grey66 = '\033[38;168;168;168m'
+    X11gray67 = '\033[38;171;171;171m'
+    X11grey67 = '\033[38;171;171;171m'
+    X11gray68 = '\033[38;173;173;173m'
+    X11grey68 = '\033[38;173;173;173m'
+    X11gray69 = '\033[38;176;176;176m'
+    X11grey69 = '\033[38;176;176;176m'
+    X11gray70 = '\033[38;179;179;179m'
+    X11grey70 = '\033[38;179;179;179m'
+    X11gray71 = '\033[38;181;181;181m'
+    X11grey71 = '\033[38;181;181;181m'
+    X11gray72 = '\033[38;184;184;184m'
+    X11grey72 = '\033[38;184;184;184m'
+    X11gray73 = '\033[38;186;186;186m'
+    X11grey73 = '\033[38;186;186;186m'
+    X11gray74 = '\033[38;189;189;189m'
+    X11grey74 = '\033[38;189;189;189m'
+    X11gray75 = '\033[38;191;191;191m'
+    X11grey75 = '\033[38;191;191;191m'
+    X11gray76 = '\033[38;194;194;194m'
+    X11grey76 = '\033[38;194;194;194m'
+    X11gray77 = '\033[38;196;196;196m'
+    X11grey77 = '\033[38;196;196;196m'
+    X11gray78 = '\033[38;199;199;199m'
+    X11grey78 = '\033[38;199;199;199m'
+    X11gray79 = '\033[38;201;201;201m'
+    X11grey79 = '\033[38;201;201;201m'
+    X11gray80 = '\033[38;204;204;204m'
+    X11grey80 = '\033[38;204;204;204m'
+    X11gray81 = '\033[38;207;207;207m'
+    X11grey81 = '\033[38;207;207;207m'
+    X11gray82 = '\033[38;209;209;209m'
+    X11grey82 = '\033[38;209;209;209m'
+    X11gray83 = '\033[38;212;212;212m'
+    X11grey83 = '\033[38;212;212;212m'
+    X11gray84 = '\033[38;214;214;214m'
+    X11grey84 = '\033[38;214;214;214m'
+    X11gray85 = '\033[38;217;217;217m'
+    X11grey85 = '\033[38;217;217;217m'
+    X11gray86 = '\033[38;219;219;219m'
+    X11grey86 = '\033[38;219;219;219m'
+    X11gray87 = '\033[38;222;222;222m'
+    X11grey87 = '\033[38;222;222;222m'
+    X11gray88 = '\033[38;224;224;224m'
+    X11grey88 = '\033[38;224;224;224m'
+    X11gray89 = '\033[38;227;227;227m'
+    X11grey89 = '\033[38;227;227;227m'
+    X11gray90 = '\033[38;229;229;229m'
+    X11grey90 = '\033[38;229;229;229m'
+    X11gray91 = '\033[38;232;232;232m'
+    X11grey91 = '\033[38;232;232;232m'
+    X11gray92 = '\033[38;235;235;235m'
+    X11grey92 = '\033[38;235;235;235m'
+    X11gray93 = '\033[38;237;237;237m'
+    X11grey93 = '\033[38;237;237;237m'
+    X11gray94 = '\033[38;240;240;240m'
+    X11grey94 = '\033[38;240;240;240m'
+    X11gray95 = '\033[38;242;242;242m'
+    X11grey95 = '\033[38;242;242;242m'
+    X11gray96 = '\033[38;245;245;245m'
+    X11grey96 = '\033[38;245;245;245m'
+    X11gray97 = '\033[38;247;247;247m'
+    X11grey97 = '\033[38;247;247;247m'
+    X11gray98 = '\033[38;250;250;250m'
+    X11grey98 = '\033[38;250;250;250m'
+    X11gray99 = '\033[38;252;252;252m'
+    X11grey99 = '\033[38;252;252;252m'
+    X11gray100 = '\033[38;255;255;255m'
+    X11grey100 = '\033[38;255;255;255m'
+    X11DarkGrey = '\033[38;169;169;169m'
+    X11DarkGray = '\033[38;169;169;169m'
+    X11DarkBlue = '\033[38;0;0;139m'
+    X11DarkCyan = '\033[38;0;139;139m'
+    X11DarkMagenta = '\033[38;139;0;139m'
+    X11DarkRed = '\033[38;139;0;0m'
+    X11LightGreen = '\033[38;144;238;144m'
+
+rainbow = [colors.C1, colors.C2, colors.C3, colors.C4, colors.C5, colors.C6, colors.C7, colors.C8]
+##------------------------------------------------------------------------
+mainloop()

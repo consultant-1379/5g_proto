@@ -1,0 +1,221 @@
+openapi: 3.0.0
+info:
+   version: 0.0.1
+   title: BsfLoadService
+   description: |
+      Bsf-load management API.
+servers:
+-  url: '{apiRoot}/bsf-load'
+   variables:
+      apiRoot:
+         default: https://example.com
+         description: The root api of the bsf-load service.
+paths:
+   /run:
+      post:
+         summary: Start the execution of a workload for the provided configuration.
+         operationId: executeRun
+         requestBody:
+            required: true
+            content:
+               application/json:
+                  schema:
+                     $ref: '#/components/schemas/Configuration'
+         responses:
+            '201':
+               description: The execution of the workload was started.
+               content:
+                  application/json:
+                     schema:
+                        type: array
+                        items:
+                           $ref: '#/components/schemas/WorkLoadResponse'
+               headers:
+                  Location:
+                     description: 'Contains the URI of the newly created workload, according to the structure: {apiRoot}/bsf-load/run/{runId}'
+                     required: true
+                     schema:
+                        type: string
+            '400':
+               description: Bad Request. The provided load configuration is invalid.
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/ProblemDetails'
+            '500':
+               description: Internal Server Error. An undefined server error occurred.
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/ProblemDetails'
+            '503':
+               description: Service Unavailable. The server is currently occupied by another workload.
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/ProblemDetails'
+      get:
+         summary: Get the information of all workloads stored by the service.
+         operationId: getRunAll
+         responses:
+            '200':
+               description: OK. The stored workloads are returned.
+               content:
+                  application/json:
+                     schema:
+                        type: array
+                        items:
+                           $ref: '#/components/schemas/WorkLoadResponse'
+            '500':
+               description: Internal Server Error. An undefined server error occurred.
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/ProblemDetails'
+      delete:
+         summary: Delete all workloads that are not in running state.
+         operationId: deleteRunAll
+         responses:
+            '204':
+               description: No Content. The workloads were deleted successfully.
+            '500':
+               description: Internal Server Error. An undefined server error occurred.
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/ProblemDetails'
+   /run/{runId}:
+      get:
+         summary: Get the information of a workload identified by {runId}.
+         operationId: getRun
+         parameters:
+         -  name: runId
+            in: path
+            description: Represents the individual workload.
+            required: true
+            schema:
+               type: string
+         responses:
+            '200':
+               description: OK. The workload identified by {runId} is returned.
+               content:
+                  application/json:
+                     schema:
+                        type: array
+                        items:
+                           $ref: '#/components/schemas/WorkLoadResponse'
+            '404':
+               description: Not Found. The requested workload does not exist.
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/ProblemDetails'
+            '500':
+               description: Internal Server Error. An undefined server error occurred.
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/ProblemDetails'
+      delete:
+         summary: Delete a workload identified by {runId}.
+         operationId: deleteRun
+         parameters:
+         -  name: runId
+            in: path
+            description: Represents the individual workload.
+            required: true
+            schema:
+               type: string
+         responses:
+            '204':
+               description: No Content. The workload was deleted successfully.
+            '404':
+               description: Not Found. The requested workload does not exist.
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/ProblemDetails'
+            '409':
+               description: Conflict. The current state of the workload is not compatible with this operation.
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/ProblemDetails'
+            '500':
+               description: Internal Server Error. An undefined server error occurred.
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/ProblemDetails'
+   /terminate/{runId}:
+      post:
+         summary: Terminate the execution of a workload identified by {runId}.
+         operationId: terminateRun
+         parameters:
+         -  name: runId
+            in: path
+            description: Represents the individual workload.
+            required: true
+            schema:
+               type: string
+         responses:
+            '200':
+               description: OK. The workload was terminated successfully.
+            '404':
+               description: Not Found. The requested workload does not exist.
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/ProblemDetails'
+            '409':
+               description: Conflict. The current state of the workload is not compatible with this operation.
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/ProblemDetails'
+            '500':
+               description: Internal Server Error. An undefined server error occurred.
+               content:
+                  application/json:
+                     schema:
+                        $ref: '#/components/schemas/ProblemDetails'
+components:
+   schemas:
+      Configuration:
+         description: The Bsf-load configuration.
+         type: object
+      ProblemDetails:
+         description: The problem details.
+         type: object
+         properties:
+            title:
+               type: string
+            detail:
+               type: string
+            cause:
+               type: string
+            invalidParams:
+               type: array
+               items:
+                  type: object
+                  properties:
+                     param:
+                        type: string
+                     reason:
+                        type: string
+      WorkLoadResponse:
+         description: A workload object.
+         properties:
+            runId:
+               type: string
+            state:
+               type: string
+               enum:
+               - completed
+               - error
+               - running
+               - terminated
+            createAt:
+               type: string
+            configuration:
+               $ref: '#/components/schemas/Configuration'

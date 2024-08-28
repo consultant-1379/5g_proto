@@ -1,0 +1,14 @@
+diff --git a/source/common/upstream/outlier_detection_impl.cc b/source/common/upstream/outlier_detection_impl.cc
+index 0d0efa1..78d46d4 100644
+--- a/source/common/upstream/outlier_detection_impl.cc
++++ b/source/common/upstream/outlier_detection_impl.cc
+@@ -319,7 +319,8 @@ void DetectorImpl::checkHostForUneject(HostSharedPtr host, DetectorHostMonitorIm
+       std::chrono::milliseconds(runtime_.snapshot().getInteger(
+           "outlier_detection.base_ejection_time_ms", config_.baseEjectionTimeMs()));
+   ASSERT(monitor->numEjections() > 0);
+-  if ((base_eject_time * monitor->numEjections()) <= (now - monitor->lastEjectionTime().value())) {
++  //DND-17704: do not increase blocking time based on numEjections 
++  if (base_eject_time <= (now - monitor->lastEjectionTime().value())) { 
+     stats_.ejections_active_.dec();
+     host->healthFlagClear(Host::HealthFlag::FAILED_OUTLIER_CHECK);
+     // Reset the consecutive failure counters to avoid re-ejection on very few new errors due

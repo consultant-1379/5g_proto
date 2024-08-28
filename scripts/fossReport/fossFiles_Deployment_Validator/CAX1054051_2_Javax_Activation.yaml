@@ -1,0 +1,38 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2019-06-21 12:24
+FOSS:
+    # Available in Bazaar
+    FOSSName: Javax Activation
+    # Available in Bazaar
+    FOSSVersion: 1.1.1
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: http://repository.jboss.com/maven2/javax/activation/ac
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 2/CAX1054051
+    # Not Available in Bazaar
+    PRIMNumber(CTC): CTC 101 5290
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: There is no description of Javax Activation, therefore we refer to the description of JAF (Java Beans Activation Framework). The JavaBeans(TM) Activation Framework is used by the JavaMail(TM) API to manage MIME data.
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: CDDL Common Development and Distribution License 1.0
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: CDDL Common Development and Distribution License 1.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'javax.activation:activation:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ENTNGRG Georgios Antoniou

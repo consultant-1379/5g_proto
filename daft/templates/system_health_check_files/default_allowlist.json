@@ -1,0 +1,196 @@
+[
+  {
+    "@@ENTRY_TYPE@@": "alarm_allowlist",
+    "@@APPLICATION_TYPE@@": "sc",
+    "@@DESCRIPTION@@": "This entry was added because of DND-xxxxx",
+    "alarmName": "BsfHighLoad"
+  },
+  {
+    "@@ENTRY_TYPE@@": "alarm_allowlist",
+    "@@APPLICATION_TYPE@@": "sc",
+    "@@DESCRIPTION@@": "This entry was added because of DND-xxxxx",
+    "alarmName": "BsfNrfGroupUnavailable",
+    "severity": "Major"
+  },
+  {
+    "@@ENTRY_TYPE@@": "alarm_allowlist",
+    "@@APPLICATION_TYPE@@": "sc",
+    "@@DESCRIPTION@@": "This entry was added because of DND-xxxxx",
+    "alarmName": "DiaadpConfigurationFailure",
+    "severity": "Major"
+  },
+  {
+    "@@ENTRY_TYPE@@": "alarm_allowlist",
+    "@@APPLICATION_TYPE@@": "sc",
+    "@@DESCRIPTION@@": "This entry was added because of DND-xxxxx",
+    "alarmName": "DiaadpConfigurationIncomplete",
+    "severity": "Minor"
+  },
+  {
+    "@@ENTRY_TYPE@@": "alarm_allowlist",
+    "@@APPLICATION_TYPE@@": "sc",
+    "@@DESCRIPTION@@": "This entry was added because of DND-xxxxx",
+    "alarmName": "DiaadpTranspVulnerability",
+    "severity": "Warning"
+  },
+  {
+    "@@ENTRY_TYPE@@": "alarm_allowlist",
+    "@@APPLICATION_TYPE@@": "dsc",
+    "@@DESCRIPTION@@": "This entry was added because of DND-xxxxx",
+    "alarmName": "Diameter_Signaling_Controller_Peer_Group_unavailable",
+    "severity": "Critical"
+  },
+  {
+    "@@ENTRY_TYPE@@": "alarm_allowlist",
+    "@@APPLICATION_TYPE@@": "dsc",
+    "@@DESCRIPTION@@": "This entry was added because of DND-xxxxx",
+    "alarmName": "Diameter_Signaling_Controller_Peer_unavailable",
+    "severity": "(Major|Critical)"
+  },
+  {
+    "@@ENTRY_TYPE@@": "alarm_allowlist",
+    "@@APPLICATION_TYPE@@": "sc",
+    "@@DESCRIPTION@@": "This entry was added because of DND-xxxxx",
+    "alarmName": "LicenseInformationUnavailable",
+    "severity": "Critical|Major|Minor|Warning"
+  },
+  {
+    "@@ENTRY_TYPE@@": "alarm_allowlist",
+    "@@APPLICATION_TYPE@@": "(dsc|sc)",
+    "@@DESCRIPTION@@": "This entry was added because of DND-xxxxx",
+    "alarmName": "LicenseManagerAutonomousModeActivated",
+    "severity": "Major"
+  },
+  {
+    "@@ENTRY_TYPE@@": "alarm_allowlist",
+    "@@APPLICATION_TYPE@@": "(dsc|sc)",
+    "@@DESCRIPTION@@": "This entry was added because of DND-xxxxx",
+    "alarmName": "MissingCertificate",
+    "severity": "Critical"
+  },
+  {
+    "@@ENTRY_TYPE@@": "alarm_allowlist",
+    "@@APPLICATION_TYPE@@": "sc",
+    "@@DESCRIPTION@@": "This entry was added because of DND-xxxxx",
+    "alarmName": "PodFailure",
+    "severity": "(Major|Minor)",
+    "additionalInformation": {
+      "empty": false,
+      "map": {
+        "failedResources": "(eric-data-search-engine-curator-|eric-log-transformer-).+"
+      }
+    }
+  },
+  {
+    "@@ENTRY_TYPE@@": "alarm_allowlist",
+    "@@APPLICATION_TYPE@@": "sc",
+    "@@DESCRIPTION@@": "This entry was added because of DND-xxxxx",
+    "alarmName": "ScNlfHighLoad"
+  },
+  {
+    "@@ENTRY_TYPE@@": "alarm_allowlist",
+    "@@APPLICATION_TYPE@@": "sc",
+    "@@DESCRIPTION@@": "This entry was added because of DND-xxxxx",
+    "alarmName": "ScpHighLoad"
+  },
+  {
+    "@@ENTRY_TYPE@@": "alarm_allowlist",
+    "@@APPLICATION_TYPE@@": "sc",
+    "@@DESCRIPTION@@": "This entry was added because of DND-xxxxx",
+    "alarmName": "ScpNrfGroupUnavailable",
+    "severity": "Major"
+  },
+  {
+    "@@ENTRY_TYPE@@": "alarm_allowlist",
+    "@@APPLICATION_TYPE@@": "sc",
+    "@@DESCRIPTION@@": "This entry was added because of DND-xxxxx",
+    "alarmName": "ScpSlfHighLoad"
+  },
+  {
+    "@@ENTRY_TYPE@@": "alarm_allowlist",
+    "@@APPLICATION_TYPE@@": "sc",
+    "@@DESCRIPTION@@": "This entry was added because of DND-xxxxx",
+    "alarmName": "ScpUnresolvableHosts",
+    "severity": "Major"
+  },
+  {
+    "@@ENTRY_TYPE@@": "alarm_allowlist",
+    "@@APPLICATION_TYPE@@": "sc",
+    "@@DESCRIPTION@@": "This entry was added because of DND-xxxxx",
+    "alarmName": "SeppHighLoad"
+  },
+  {
+    "@@ENTRY_TYPE@@": "alarm_allowlist",
+    "@@APPLICATION_TYPE@@": "sc",
+    "@@DESCRIPTION@@": "This entry was added because of email from Dong 2024-04-16 09:44",
+    "alarmName": "SeppSecurityCapabilityNegotiationFailure",
+    "severity": "Critical"
+  },
+  {
+    "@@ENTRY_TYPE@@": "alarm_allowlist",
+    "@@APPLICATION_TYPE@@": "sc",
+    "@@DESCRIPTION@@": "This entry was added because of DND-xxxxx",
+    "alarmName": "SeppUnresolvableHosts",
+    "severity": "Major"
+  },
+
+  {
+    "@@ENTRY_TYPE@@": "coredump_allowlist",
+    "@@APPLICATION_TYPE@@": "sc",
+    "@@DESCRIPTION@@": "This entry was added because of DND-xxxxx",
+    "filename_regexp": "core\\.dsc_.+"
+  },
+  {
+    "@@ENTRY_TYPE@@": "coredump_allowlist",
+    "@@APPLICATION_TYPE@@": "sc",
+    "@@DESCRIPTION@@": "This entry was added because of DND-xxxxx",
+    "filename_regexp": "core\\.vpp.+"
+  },
+  {
+    "@@ENTRY_TYPE@@": "coredump_allowlist",
+    "@@APPLICATION_TYPE@@": "sc",
+    "@@DESCRIPTION@@": "This entry was added because of DND-xxxxx",
+    "@@SOFTWARE_VERSION@@": "1\\.11",
+    "filename_regexp": "core\\.cm_core_yang_li.+"
+  },
+  {
+    "@@ENTRY_TYPE@@": "coredump_allowlist",
+    "@@APPLICATION_TYPE@@": "sc",
+    "@@DESCRIPTION@@": "This entry was added because of DND-xxxxx",
+    "filename_regexp": "core\\.fluent-bit.+"
+  },
+  {
+    "@@ENTRY_TYPE@@": "coredump_allowlist",
+    "@@APPLICATION_TYPE@@": "(dsc|sc)",
+    "@@DESCRIPTION@@": "This entry was added because of DND-xxxxx",
+    "@@NODE_NAME@@": "(n103-dsc12709|n106-cnis|n106-cnis_1|n106-cnis_2|n106-cnis_3|n106-cnis_4|n200-dsc8989|n200-dsc8991|n293-cnis_1|n293-cnis_2|n293-cnis_3|n293-cnis_4)",
+    "filename_regexp": "core\\.postgres\\..+"
+  },
+  {
+    "@@ENTRY_TYPE@@": "coredump_allowlist",
+    "@@APPLICATION_TYPE@@": "sc",
+    "@@DESCRIPTION@@": "This entry was added because of DND-xxxxx",
+    "filename_regexp": "core\\.python3.+"
+  },
+  {
+    "@@ENTRY_TYPE@@": "coredump_allowlist",
+    "@@APPLICATION_TYPE@@": "dsc|sc",
+    "@@DESCRIPTION@@": "This entry was added because of DND-xxxxx",
+    "filename_regexp": "core.sh.+"
+  },
+  {
+    "@@ENTRY_TYPE@@": "coredump_allowlist",
+    "@@APPLICATION_TYPE@@": "sc",
+    "@@DESCRIPTION@@": "This entry was added because of DND-xxxxx",
+    "filename_regexp": "core\\.sctp.+"
+  },
+
+
+
+  {
+    "@@ENTRY_TYPE@@": "pod_restart_allowlist",
+    "@@APPLICATION_TYPE@@": "sc",
+    "@@DESCRIPTION@@": "Ignore this pod since it gets reinstantiated all the time",
+    "pod_name_regexp": "^eric-data-search-engine-curator-.+"
+  }
+]

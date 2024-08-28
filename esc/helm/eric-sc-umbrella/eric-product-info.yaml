@@ -1,0 +1,8 @@
+productName: product_name
+productNumber: product_number
+productRevision: product_revision
+productReleaseDate: production_date
+productDescription: product_desc
+productType: product_type
+semanticVersion: semantic_version
+commercialVersion: commercial_version

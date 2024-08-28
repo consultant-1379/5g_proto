@@ -1,0 +1,12 @@
+apiVersion: v1
+data:
+  crcm.json: |-
+    [
+        {
+          "generated-secret-name": "testsecretname",
+          "generated-secret-type": "tls"
+        }
+    ]
+kind: ConfigMap
+metadata:
+  name: test-config-map

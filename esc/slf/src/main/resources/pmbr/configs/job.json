@@ -1,0 +1,48 @@
+[
+  {
+    "granularity-period": "five-min",
+    "reporting-period": "five-min",
+    "name": "slf_system_job",
+    "type": "measurement-job",
+    "measurement-reader": [
+      {
+        "group-ref": "slf_system_metrics",
+        "name": "slf_system_metrics_reader"
+      },
+      {
+        "group-ref": "slf_nrf",
+        "name": "slf_nrf_reader"
+      }
+    ],
+    "requested-job-state": "active"
+  },
+  {
+    "granularity-period": "one-min",
+    "reporting-period": "one-min",
+    "name": "slf_overload_job",
+    "type": "threshold-job",
+    "measurement-reader": [
+      {
+        "name": "slf_overload_reader",
+        "measurement-type-ref": "slf_load_avg",
+        "group-ref": "slf_system_metrics",
+        "threshold-direction": "increasing",
+        "threshold-monitoring": [
+          {
+            "name": "slf_overload_threshold_monitoring",
+            "threshold-high": "70",
+            "threshold-low": "60",
+            "threshold-severity": "major"
+          },
+          {
+            "name": "slf_overload_threshold_escalation",
+            "threshold-high": "80",
+            "threshold-low": "75",
+            "threshold-severity": "critical"
+          }
+        ]
+      }
+    ],
+    "requested-job-state": "active"
+  }
+]

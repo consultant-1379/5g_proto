@@ -1,0 +1,405 @@
+#eric-cloud-native-base 152.2.0
+eric-cm-mediator:
+  resources:
+    eric-cm-mediator:
+      requests:
+#        memory: "256Mi"
+        cpu: "250m" #"500m"
+      limits:
+        memory: 384Mi #"512Mi"
+        cpu: "500m" #"2000m"
+#    eric-cm-mediator-notifier:
+#      requests:
+#        memory: "256Mi"
+#        cpu: "250m"
+#      limits:
+#      memory: "512Mi"
+#        cpu: "2000m"
+#    eric-cm-key-init:
+#      requests:
+#        memory: "24Mi"
+#        cpu: "100m"
+#      limits:
+#        memory: "64Mi"
+#        cpu: "200m"
+#    eric-cm-mediator-init-container:
+#      requests:
+#        memory: "24Mi"
+#        cpu: "50m"
+#      limits:
+#        memory: "48Mi"
+#        cpu: "200m"
+#    hooklauncher:
+#      requests:
+#        memory: "50Mi"
+#        cpu: "50m"
+#      limits:
+#        memory: "100Mi"
+#        cpu: "100m"
+
+eric-ctrl-bro:
+  resources:
+    backupAndRestore:
+      limits:
+        cpu: "1" #"2"
+        memory: "2Gi" #"4Gi"
+      requests:
+        cpu: "500m" #"1"
+        memory: "1Gi" #"2Gi"
+#    hooklauncher:
+#      requests:
+#        memory: "50Mi"
+#        cpu: "50m"
+#      limits:
+#        memory: "100Mi"
+#        cpu: "100m"
+
+eric-data-coordinator-zk:
+  resources:
+    datacoordinatorzk:
+      requests:
+        cpu: "500m" #"1"
+        memory: "1Gi" #"2Gi"
+      limits:
+        cpu: "1" #"2"
+        memory: "1536Mi" #"4Gi"
+    brAgent:
+     requests:
+       cpu: "500m" #"1"
+       memory: "256Mi" #"1Gi"
+     limits:
+       cpu: "800m" #"1"
+       memory: "768Mi" #"2Gi"
+#    logshipper:
+#      requests:
+#        memory: "20Mi"
+#        cpu: "46m"
+#      limits:
+#        memory: "60Mi"
+#        cpu: "60m"
+#    metricsexporter:
+#      requests:
+#        cpu: "100m"
+#        memory: "8Mi"
+#      limits:
+#        cpu: "200m"
+#        memory: "32Mi"
+#    hooklauncher:
+#      requests:
+#        memory: "50Mi"
+#        cpu: "50m"
+#      limits:
+#        memory: "100Mi"
+#        cpu: "100m"
+
+eric-data-distributed-coordinator-ed:
+  resources:
+#    init:
+#      requests:
+#        cpu: "200m"
+#        memory: "200Mi"
+#      limits:
+#        cpu: "500m"
+#        memory: "500Mi"
+    dced:
+      requests:
+        cpu: "200m" #"400m"
+        memory: "256Mi" #"400Mi"
+      limits:
+        cpu: "500m" #"1"
+        memory: "512Mi" #"1Gi"
+    brAgent:
+      requests:
+        cpu: "200m" #"400m"
+#        memory: "400Mi"
+      limits:
+        cpu: "700m" #"1"
+        memory: "1Gi" #"2Gi"
+#    logshipper:
+#      requests:
+#        memory: "50Mi"
+#        cpu: "50m"
+#      limits:
+#        memory: "100Mi"
+#        cpu: "100m"
+#    metricsexporter:
+#      requests:
+#        cpu: "100m"
+#        memory: "8Mi"
+#      limits:
+#        cpu: "200m"
+#        memory: "32Mi"
+#    hooklauncher:
+#      requests:
+#        memory: "50Mi"
+#        cpu: "50m"
+#      limits:
+#        memory: "100Mi"
+#        cpu: "100m"
+
+eric-data-document-database-pg:
+  resources:
+    postgres:
+      requests:
+        # cpu: 100m #100m (max)
+        # memory: 256Mi #256Mi (max)
+      limits:
+        cpu: 0.5 #1 (max)
+        memory: 768Mi #2560Mi (max)
+    metrics:
+      requests:
+        memory: "32Mi" #"128Mi" (max)
+        cpu: "30m" #"100m" (max)
+      limits:
+        cpu: "100m" #"200m" (max)
+        memory: "96Mi" #"256Mi" (max)
+    # kube_client:
+      # limits:
+        # cpu: 200m #200m (max)
+        # memory: 512Mi #521Mi (max)
+      # requests:
+        # cpu: 100m #100m (max)
+        # memory: 256Mi #256Mi (max)
+    brm:
+      requests:
+        memory: "128Mi" #"256Mi" (max)
+        cpu: "100m" #"300m" (max)
+      limits:
+        cpu: "300m" #"1" (max)
+        memory: "256Mi" #"512Mi" (max)
+    bra:
+      requests:
+        memory: "256Mi" #"1Gi" (max)
+        cpu: "100m" #"500m" (max)
+        # ephemeral-storage: "10Gi"
+      limits:
+        cpu: "300m" #"1" (max)
+        memory: "768Mi" #"2Gi" (max)
+
+eric-data-message-bus-kf:
+  resources:
+    messagebuskf:
+      requests:
+        cpu: "500m" #"1" (max) "300m" (min)
+        # memory: "1024Mi" #"1Gi" (max) "400Mi" (min)
+      limits:
+        cpu: "1" #"2" (max) "1" (min)
+        memory: "2048Mi" #"6Gi" (max) "1Gi" (min)
+
+eric-data-search-engine:
+  resources:
+    master:
+      requests:
+        cpu: 100m #500m
+#        memory: 1Gi
+#      limits:
+#        cpu: 500m
+#        memory: 1Gi
+    ingest:
+      requests:
+        cpu: 100m #500m
+#        memory: 1Gi
+#      limits:
+#        cpu: 500m
+#        memory: 1Gi
+    data:
+      requests:
+        cpu: 250m #500m
+#        memory: 2Gi
+#      limits:
+#        cpu: 500m
+#        memory: 2Gi
+#    bragent:
+#      requests:
+#        cpu: "500m"
+#        memory: "1Gi"
+#      limits:
+#        cpu: "500m"
+#        memory: "1Gi"
+
+# eric-fh-alarm-handler:
+  # resources:
+    # alarmhandler:
+      # requests:
+        # cpu: 100m #500m (max) 100m (min)
+        # memory: 128Mi #384Mi (max) 384Mi (min)
+      # limits:
+        # cpu: 300m #1000m (max) 100m (min)
+        # memory: 512Mi #512Mi (max) 384Mi (min)
+  # replicaCount: 2
+
+eric-fh-snmp-alarm-provider:
+  alarmprovider:
+    requests:
+      cpu: 50m #0.1 (max) 100m (min)
+      memory: 256Mi #348Mi (max) 384Mi (min)
+    limits:
+      cpu: 150m #0.2 (max)
+      memory: 1024Mi #1.5Gi (max)
+
+eric-log-shipper:
+  resources:
+    logshipper:
+      requests:
+        memory: "64Mi" #"100Mi"
+        cpu: "40m" #"100m"
+      limits:
+        memory: "256Mi" #500Mi
+        cpu: "100m" #"250m"
+
+#eric-log-transformer:
+#  resources:
+#    logtransformer:
+#      requests:
+#        cpu: 150m #250m
+#        memory: 1Gi #2Gi
+#      limits:
+#        cpu: 300m #1000m
+#        memory: 2Gi
+#      metrics:
+#        limits:
+#          cpu: "100m"
+#          memory: "256Mi"
+#        requests:
+#          cpu: "25m"
+#          memory: "64Mi"
+
+#eric-odca-diagnostic-data-collector:
+#  resources:
+#    diagnostic-data-collector:
+#      requests:
+#        memory: 32Mi
+#        cpu: 50m
+#      limits:
+#        memory: 128Mi
+#        cpu: 200m
+#    diagnostic-data-collector-manual:
+#      requests:
+#        memory: 32Mi
+#        cpu: 50m
+#      limits:
+#        memory: 128Mi
+#        cpu: 200m
+
+eric-pm-server:
+  resources:
+    server:
+      # requests:
+        # cpu: 250m #250m (max/min)
+        # memory: 512Mi #512Mi (max/min)
+        # ephemeral-storage: 512Mi #512Mi (max)
+      limits:
+        cpu: 1 #2 (max/min)
+        # memory: 2048Mi #2048Mi (max/min)
+        # ephemeral-storage: 8Gi #8Gi (max/min)
+    configmapReload:
+      requests:
+        cpu: 50m #100m (max/min)
+        # memory: 8Mi #8Mi (max/min)
+        # ephemeral-storage: 8Mi #8Mi (max)
+      limits:
+        cpu: 150m #200m (max/min)
+        # memory: 32Mi #32Mi (max/min)
+        # ephemeral-storage: 1Gi #1Gi (max)
+
+eric-sec-certm:
+  resources:
+    certm:
+      requests:
+        memory: "512Mi" #"1Gi" (max/min)
+        cpu: "150m" #"0.5" (max/min)
+      limits:
+        memory: "1024Mi" #"2Gi" (max/min)
+        cpu: "0.5" #"1" (max/min)
+
+# eric-sec-key-management:
+  # resources:
+    # vault:
+      # requests:
+        # memory: "400Mi"
+        # cpu: "100m"
+      # limits:
+        # memory: "1200Mi"
+        # cpu: "300m"
+
+eric-sec-sip-tls:
+  resources:
+    sip:
+      requests:
+        memory: "128Mi" #"200Mi"
+        cpu: "50m" #"100m"
+      limits:
+        memory: "256Mi" #"400Mi"
+        cpu: "200m" #"3000m"
+
+#eric-si-application-sys-info-handler:
+#  resources:
+#    eric-si-application-sys-info-handler:
+#      requests:
+#        cpu: 10m
+#        memory: 16Mi
+#      limits:
+#        cpu: 100m
+#        memory: 100Mi
+
+eric-lm-combined-server:
+  resources:
+    eric-lm-license-consumer-handler:
+      limits:
+        cpu: 1500m ## 2000m
+
+eric-data-object-storage-mn:
+  resources:
+    server:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 1
+        memory: 1Gi
+#    mgt:
+#      requests:
+#        cpu: 50m #100m #250m
+#        memory: 32Mi #64Mi #128Mi #256Mi
+#      limits:
+#        cpu: 200m #500m
+#        memory: 256Mi #512Mi
+#    kes:
+#      requests:
+#        cpu: 25m
+#        memory: 32Mi
+#      limits:
+#        memory: 100Mi
+#        cpu: 100m
+#    logshipper:
+#      requests:
+#        memory: 24Mi
+#        cpu: 15m
+#      limits:
+#        memory: 128Mi
+#        cpu: 100m
+
+eric-tm-ingress-controller-cr:
+  resources:
+    contour:
+      requests:
+        cpu: "10m" #"50m"
+        memory: "128Mi" #"250Mi"
+#      limits:
+#         cpu: "75m"
+#        memory: "256Mi" #"300Mi"
+#    envoy:
+#      resources:
+#        requests:
+#          cpu: "25m" #"100m"
+#          memory: "64Mi" #"250Mi"
+#        limits:
+#          cpu: "500m" #"1"
+#          memory: "128Mi" #"300Mi"
+#    initconfig:
+#      requests:
+#        cpu: "150m" #"300m"
+#        memory: "250Mi"
+#      limits:
+#        cpu: "300m" #"500m"
+#        memory: "350Mi"

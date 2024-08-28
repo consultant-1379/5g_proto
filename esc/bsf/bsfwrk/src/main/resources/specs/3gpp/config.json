@@ -1,0 +1,15 @@
+{
+	"artifactVersion": "1.0",
+	"artifactId:": "3gppmodel",
+	"groupId": "com.ericsson.esc",
+	"sourceFolder": "src/main/java",
+	"java8": "true",
+	"datelibrary": "java8",
+	"useRxJava2": "true",
+	"userBeanValidation": "true",
+	"performBeanValidation": "true",
+	"libraryTemplate": "vertx",
+	"rxInterface": "true",
+	"modelPackage": "com.ericsson.esc.openapi.model",
+	"apiPackage": "com.ericsson.esc.openapi.api"
+}

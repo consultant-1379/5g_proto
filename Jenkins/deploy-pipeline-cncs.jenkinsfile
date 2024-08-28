@@ -1,0 +1,537 @@
+node('SERO_GIC') {
+	stage('Check pre-conditions'){
+		// parameter-value is 'null' if no Jenkins-parameter exists:
+		// printing parameters in order to see which have value 'null'
+		echo "env.BSF:  ${env.BSF}\nenv.NRF_LOOKUP:  ${env.NRF_LOOKUP}\nenv.SCP:  ${env.SCP}\nenv.SEPP: ${env.SEPP}\nenv.SLF:  ${env.SLF}\nenv.RATE_LIMIT:  ${env.RATE_LIMIT}"
+		echo "env.CHFSIM:  ${env.CHFSIM}\nenv.NRFSIM:  ${env.NRFSIM}\nenv.SEPPSIM: ${env.SEPPSIM}"
+		
+		// Applications checks:
+		// if no Jenkins-parameters exists or all set to false the default will be to deploy all
+		if (env.BSF != 'true' && env.SCP != 'true' && env.SEPP != 'true') {
+			echo('no application selected; BSF, SCP, SEPP, SLF and RATE_LIMIT (RLF) will be deployed!')
+			// TODO: select NF or NF common or ADP services to be deployed. Nothing is wrong
+			BSF = true;
+			NRF_LOOKUP = true;
+			SCP = true;
+			SEPP = true;
+			SLF = true;
+			RATE_LIMIT = true;
+		} // if
+		if (( env.SLF == 'true' || env.RATE_LIMIT == 'true' ) && env.SCP != 'true') {
+			//error('SLF and RATE_LIMIT (RLF) require SCP to be deployed as well, build aborted!')
+			echo('SLF and RATE_LIMIT (RLF) enabled without SCP')
+		} // if
+		if (env.IP_VERSION == '6' && env.SEPP == 'true') {
+			error('SEPP is not working on IPv6, build aborted!')
+		}
+		// use specific parameters to enable those parameters
+		//if ( "${env.SCP}" == 'true' || "${SCP}" == 'true' || "${env.SEPP}" == 'true' || "${SEPP}" == 'true' || "${env.BSF}" == 'true' || "${BSF}" == 'true'){
+			//PVTB = true;
+			//TAPCOLLECTOR = true;
+			//VTAPRECORDER = true;
+		//}
+		if ( "${env.VTAP}" == 'true' ) {
+			TAPCOLLECTOR = true;
+			PVTB = true;
+			VTAPRECORDER = true;
+		}
+		if ( "${env.VTAP_LITE}" == 'true' ) {
+			TAPAGENT = true;
+		}
+		// If not defined, set IP_VERSION_INT and IP_VERSION_EXT according IP_VERSION 4 or 6 or DS
+		if (env.IP_VERSION_INT == null && env.IP_VERSION_EXT == null && env.IP_VERSION != null) {
+			if (env.IP_VERSION == '4' || env.IP_VERSION == '6' || env.IP_VERSION == 'DS') {
+				env.IP_VERSION_INT = "${env.IP_VERSION}"
+				env.IP_VERSION_EXT = "${env.IP_VERSION}"
+			}
+			else {
+				error('No such IP_VERSION(4, 6, DS): ${env.IP_VERSION}, build aborted!')
+			}
+		}
+	}// stage
+	stage('Set agent'){
+		if (env.IP_VERSION == '6') {
+			// move to IPv6 buildslave(s)
+			AGENT_LABEL = '5G-SC-IPv6'
+		} // if
+		else {
+			// move to IPv4 buildslave(s)
+			AGENT_LABEL = '5G-SC'
+		} // else
+	} // stage
+} // node
+
+def HELM_CMD
+def GIT_CMD
+def PYTHON_CMD
+def values
+
+pipeline {
+
+	agent { label "${AGENT_LABEL}"   } // set label according to IP_VERSION parameter
+
+	options{
+		//timeout(time: 30, unit: 'MINUTES')
+		timestamps()
+	} // options
+
+	environment {
+		// Variables needed for the ruleset
+
+		// If no Jenkins job-parameter and no environment variable is defined an access to ${env.<param>} is still possible within the pipe without an exception
+		// because its value is 'null'. But accessing ${<param>} would throw an exception.
+		// The below definitions are therefore not needed, but left in for an easy assignemt of value for test-purposes.
+
+		// SC NF services
+		BSF = "${env.BSF}"
+		SCP = "${env.SCP}"
+		SEPP = "${env.SEPP}"
+
+		// SC NF common services
+		NRF_LOOKUP = "${env.NRF_LOOKUP}"
+		SLF = "${env.SLF}"
+		RATE_LIMIT = "${env.RATE_LIMIT}"
+		BSF_DIAMETER = "${env.BSF_DIAMETER}"
+		
+		// Generic/Reusable services
+		ICCR = "${env.ICCR}"
+		DDC = "${env.DDC}"
+		PVTB = "${env.PVTB}"
+		VTAPRECORDER = "${env.VTAPRECORDER}"
+
+		VTAP = "${env.VTAP}"
+		VTAP_LITE = "${env.VTAP_LITE}"
+		VTAP_DTLS = "${env.VTAP_DTLS}"
+		CONTOUR_MTLS = "${env.CONTOUR_MTLS}"
+		
+		// Special deployment configuration
+		LOADBALANCER_NODEPORTS = "${env.LOADBALANCER_NODEPORTS}"
+		PM_REMOTE_WRITE = "${env.PM_REMOTE_WRITE}"
+		LUMBERJACK = "${env.LUMBERJACK}"
+		SYSLOG = "${env.SYSLOG}"
+		LOGGING = "${env.LOGGING}"
+		HIGH_AVAILABILITY = "${env.HIGH_AVAILABILITY}"
+		MULTIVPN = "${env.MULTIVPN}"
+		TAPCOLLECTOR = "${env.TAPCOLLECTOR}"
+		NETCONF_TLS = "${env.NETCONF_TLS}"
+		GEORED = "${env.GEORED}"
+		
+		PRODUCTION = true
+
+		// Pipe Variables Used in Jenkins
+		DOCKER_RUN="docker run --rm  --user \$(id -u):\$(id -g) "
+		BUILDER_WORK_DIR = " -w ${env.WORKSPACE} "
+		BUILDER_DOCKER_IMAGE = "armdocker.rnd.ericsson.se/sandbox/adp-staging/adp-cicd/bob-py3kubehelmbuilder:fd49f94"
+		BUILDER_DOCKER_VOLUMES ="-v ${env.WORKSPACE}/helm-home:/home/jenkins/.helm -v ${env.WORKSPACE}:${env.WORKSPACE}"
+		BUILDER_DOCKER_ENV = "--env KUBECONFIG=${env.WORKSPACE}/.bob/${env.KUBE_HOST}.admin.conf"
+		HELM_ARGS="--home /home/jenkins/.helm"
+		HELM_RELEASE_NAME="bsf-app-staging-trial"
+		OUTPUT_DIR=".bob"
+
+		CHART_NAME = "${CHART_NAME}"
+		CHART_REPO = "${CHART_REPO}"
+		CHART_VERSION = "${CHART_VERSION}"
+		
+		KUBE_HOST = "${KUBE_HOST}"
+		//NIGHTLY = "${NIGHTLY}"
+		NAMESPACE = "${NAMESPACE}"
+		RELEASE = "${RELEASE}"
+		PACKAGING = "${PACKAGING}"
+		//COMMITTER = "${COMMITTER}"
+		PROJECT = "${PROJECT}"
+		PATH_REQYAML = "esc/helm/eric-sc-umbrella" // TODO: Add description where this is used
+	} // environment
+	stages {
+		stage('Init Env') {
+			steps {
+				sh 'printenv | sort'
+				script {
+					// set displayed build name
+					currentBuild.displayName = "#${BUILD_NUMBER} - ${env.COMMIT}"
+					// set displayed description
+					currentBuild.description = "node: ${env.NODE_NAME}, k8s cluster: ${env.KUBE_HOST}, \n"
+					if (env.CHART_VERSION == "null" || env.CHART_VERSION == "") {
+						currentBuild.description += "ihc: ${env.CHART_REPO}/${env.CHART_NAME}/${env.CHART_NAME}-latest.tgz";
+					} else {
+						currentBuild.description += "ihc: ${env.CHART_REPO}/${env.CHART_NAME}/${env.CHART_NAME}-${env.CHART_VERSION}.tgz";
+					}
+					if ( fileExists("/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh") ) {
+						// Log current job
+						sh "/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh -start"
+					} // if
+				} //script
+			} //steps
+		} //stage
+		stage('Cleaning WS on Buildcomputes'){
+			// only if no other instance of the same job is running in parallel
+			// if another instance is running this procedure would delete its WS and make it failing
+			when {
+				expression { currentBuild.getPreviousBuildInProgress() == null && !(env.NODE_NAME =~ /5G-LMVL/) }
+			}
+			steps {
+				catchError(message: "Timeout while cleaning WS on Buildcomputes", buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+				// remove all (!) content (including the git repo)
+					script {
+						env.AGENT_LABEL="${AGENT_LABEL}"
+						env.LOCAL_PATH = sh(returnStdout: true, script: 'pwd').trim()
+						println "LOCAL PATH: ${LOCAL_PATH}"
+						println "WORKSPACE: ${WORKSPACE}"
+						println "JOB_NAME: ${JOB_NAME}"
+						withCredentials([usernamePassword(credentialsId: 'eiffelesc-user-password', usernameVariable: 'USER', passwordVariable: 'PASSWORD')]) {
+							def NODE_NAMES_LABEL = sh(returnStdout: true, script: 'curl -s -u $USER:$PASSWORD ${JENKINS_URL}/label/${AGENT_LABEL}/api/json?pretty=true | jq -r ".nodes[].nodeName"').trim().split("\n");
+							println "LABEL: ${AGENT_LABEL}, ${NODE_NAMES_LABEL}"
+							for (NODE_NAME_LABEL in NODE_NAMES_LABEL) {
+								env.NODE_NAME_LABEL = "${NODE_NAME_LABEL}"
+								def NODE_OFFLINE = sh(returnStdout: true, script: 'curl -s -u $USER:$PASSWORD ${JENKINS_URL}/computer/${NODE_NAME_LABEL}/api/json?pretty=true | jq -r ".offline"').trim();
+								if ("${NODE_OFFLINE}" == "false" && env.NODE_NAME != "${NODE_NAME_LABEL}" && env.NODE_NAME != "") {
+									def NODE_ADDRESS_LABEL = sh(returnStdout: true, script: 'curl -s -u $USER:$PASSWORD ${JENKINS_URL}/computer/${NODE_NAME_LABEL}/config.xml | awk -F\'[<>]\' \'/<host>/{print $3;exit}\'').trim();
+									env.NODE_ADDRESS_LABEL = "${NODE_ADDRESS_LABEL}"
+									if (env.LOCAL_PATH == env.WORKSPACE && env.WORKSPACE != "" && (env.WORKSPACE.endsWith("${JOB_NAME}"))) {
+										sh '''#!/bin/bash -x
+										echo "PATH: ${WORKSPACE}"
+										echo "REMOTE NODE: ${NODE_NAME_LABEL}"
+										timeout 60 ssh eiffelesc@${NODE_ADDRESS_LABEL} "if [ -d ${WORKSPACE} ]; then rm -rf ${WORKSPACE}/; else echo \"Nothing to clean\"; fi;"
+										'''
+									} //if
+								} //if
+							} //for
+						} //withCredentials
+					} //script
+				} //catchError
+			} //steps
+		} //stage
+		stage('Initialize') {
+			steps {
+				echo ("BRANCH: $BRANCH \n"+
+					"COMMIT: $COMMIT \n"+
+					"CHART NAME: $CHART_NAME \n"+
+					"CHART REPO: $CHART_REPO \n"+
+					"CHART VERSION: $CHART_VERSION \n"+
+					"KUBE HOST: $KUBE_HOST \n"+
+					"NAMESPACE: $NAMESPACE\n"+
+					"RELEASE: $RELEASE\n"+
+					"\n"+
+					"The following will be deployed:\n"+
+					"BSF : $BSF \n"+
+					"NRF_LOOKUP(NLF) : $NRF_LOOKUP \n"+
+					"SCP : $SCP \n"+
+					"SEPP: $SEPP \n"+
+					"SLF : $SLF \n"+
+					"RATE_LIMIT(RLF) : $RATE_LIMIT")
+					
+				sh 'pwd; ls -ltrh;' // print current directory path and list files
+				sh 'git submodule update --init --recursive' // prepare git submodules
+				sh './bob/bob sc.config.clean:directories'
+				sh './bob/bob base.init:create-output-dir' // create .bob directory
+				sh './bob/bob sc.init:copy-helm-credentials' // copy helm_repositories.yaml to .bob, to be used by inCA
+				sh './bob/bob base.init:set-namespace' // set namespace
+				sh './bob/bob base.init:set-kube-config' // set kube config for k8s access
+				sh './bob/bob base.init:set-supreme-properties' // set supreme properties for certificate creation/installation
+				sh './bob/bob init:set-ingressHost' // set ingress host fqdn
+				
+				script {
+					PYTHON_CMD = "${DOCKER_RUN} ${BUILDER_DOCKER_VOLUMES} -w ${env.WORKSPACE} ${BUILDER_DOCKER_ENV} ${BUILDER_DOCKER_IMAGE} python "
+					HELM_CMD = "${DOCKER_RUN} ${BUILDER_DOCKER_VOLUMES} ${BUILDER_DOCKER_ENV} ${BUILDER_DOCKER_IMAGE} helm"
+				} // script
+			} // steps
+		} // stage
+		stage('Check if node deployed'){
+			steps {
+				script{
+					NODE_SCP_DEPLOYED = (sh(returnStatus: true, script: '(helm list -a --namespace \$(cat .bob/var.namespace) --kubeconfig ~/.kube/$KUBE_HOST.config | grep eric-sc-scp)'))
+					NODE_SEPP_DEPLOYED = (sh(returnStatus: true, script: '(helm list -a --namespace \$(cat .bob/var.namespace) --kubeconfig ~/.kube/$KUBE_HOST.config | grep eric-sc-sepp)'))
+					NODE_BSF_DEPLOYED = (sh(returnStatus: true, script: '(helm list -a --namespace \$(cat .bob/var.namespace) --kubeconfig ~/.kube/$KUBE_HOST.config | grep eric-sc-bsf)'))
+					NODE_CNCSB_DEPLOYED = (sh(returnStatus: true, script: '(helm list -a --namespace \$(cat .bob/var.namespace) --kubeconfig ~/.kube/$KUBE_HOST.config | grep eric-cloud-native-base)'))
+					NODE_CNCSA_DEPLOYED = (sh(returnStatus: true, script: '(helm list -a --namespace \$(cat .bob/var.namespace) --kubeconfig ~/.kube/$KUBE_HOST.config | grep eric-cloud-native-nf-additions)'))
+					NODE_SCCS_DEPLOYED = (sh(returnStatus: true, script: '(helm list -a --namespace \$(cat .bob/var.namespace) --kubeconfig ~/.kube/$KUBE_HOST.config | grep eric-sc-cs)'))
+				} // script
+				echo ("SCP Deployed: $NODE_SCP_DEPLOYED \n"+
+					"SEPP Deployed: $NODE_SEPP_DEPLOYED \n"+
+					"BSF Deployed: $NODE_BSF_DEPLOYED \n"+
+					"CNCS Base Deployed: $NODE_CNCSB_DEPLOYED \n"+
+					"CNCS NF Additions Deployed: $NODE_CNCSA_DEPLOYED \n"+
+					"SC CS Deployed: $NODE_SCCS_DEPLOYED")
+			 } // steps
+		} // stage
+		// stage('Prepare Spider') {
+		// 	steps {
+		// 		script {
+		// 			if (env.CHART_VERSION != null && env.CHART_VERSION != "null" && env.CHART_VERSION != "") {
+		// 				sh './bob/bob sc.scspider.update-dependencies:any' // update dependency version if there is a new version input
+		// 			}
+		// 			withCredentials([usernamePassword(credentialsId: 'eiffelesc-credentials', usernameVariable: 'GERRIT_USERNAME', passwordVariable: 'GERRIT_PASSWORD'),
+		// 							usernamePassword(credentialsId: 'eiffelesc-armsero-token-credentials', usernameVariable: 'HELM_USER', passwordVariable: 'ARM_API_TOKEN')]) {
+		// 				sh './bob/bob sc.scspider.package:manual-dummy-package' // create dummy package with dummy version 0.0.1
+		// 			} // withCredentials
+		// 			sh './bob/bob sc.scspider.dependencies-versions:get-chart' // extract incoming dependency version from spider charts
+		// 			archiveArtifacts allowEmptyArchive: true, artifacts: '${env.OUTPUT_DIR}/eric-sc-spider_tmp/eric-sc-spider/charts/${env.CHART_NAME}*.tgz', onlyIfSuccessful: false
+		// 		}
+		// 	} // steps
+		// } // stage
+		stage('Fetch Chart') {
+			steps {
+				script {
+					sh './bob/bob sc.scspider.post-package:create-dependencies-folder'
+					withCredentials([usernamePassword(credentialsId: 'eiffelesc-armsero-token-credentials', usernameVariable: 'HELM_USER', passwordVariable: 'ARM_API_TOKEN')]) {
+						sh './bob/bob sc.scspider.post-package:fetch-dependency'
+					}
+					switch (env.CHART_NAME) {
+						case [ 'eric-cloud-native-base' ]:
+							sh './bob/bob sc.scspider.post-package:unpack-cncs-b-chart'
+							break
+						case [ 'eric-cloud-native-nf-additions' ]:
+							sh './bob/bob sc.scspider.post-package:unpack-cncs-a-chart'
+							break
+						case [ 'eric-sc-cs' ]:
+							sh './bob/bob sc.scspider.post-package:unpack-sc-cs-chart'
+							break
+						case [ 'eric-sc-scp' ]:
+							sh './bob/bob sc.scspider.post-package:unpack-scp-chart'
+							break
+						case [ 'eric-sc-sepp' ]:
+							sh './bob/bob sc.scspider.post-package:unpack-sepp-chart'
+							break
+						case [ 'eric-sc-bsf' ]:
+							sh './bob/bob sc.scspider.post-package:unpack-bsf-chart'
+							break
+						default:
+							sh './bob/bob sc.scspider.post-package:unpack-cncs-b-chart'
+							sh './bob/bob sc.scspider.post-package:unpack-cncs-a-chart'
+							sh './bob/bob sc.scspider.post-package:unpack-sc-cs-chart'
+							sh './bob/bob sc.scspider.post-package:unpack-scp-chart'
+							sh './bob/bob sc.scspider.post-package:unpack-sepp-chart'
+							sh './bob/bob sc.scspider.post-package:unpack-bsf-chart'
+							break
+					} //switch
+					// sh './bob/bob sc.scspider.dependencies-versions:get-chart' // extract incoming dependency version from spider charts
+					// archiveArtifacts allowEmptyArchive: true, artifacts: '${env.OUTPUT_DIR}/eric-sc-spider_tmp/eric-sc-spider/charts/${env.CHART_NAME}*.tgz', onlyIfSuccessful: false
+				}
+			} // steps
+		} // stage
+		stage('Profiles') {
+			steps {
+				script {
+					switch (env.CHART_NAME) {
+						case [ 'eric-cloud-native-base' ]:
+							sh './bob/bob sc.config.prepare:cncs-b-profile' // cncs base profiles
+							break
+						case [ 'eric-cloud-native-nf-additions' ]:
+							sh './bob/bob sc.config.prepare:cncs-a-profile' // cncs nf additions profiles
+							break
+						case [ 'eric-sc-cs' ]:
+							sh './bob/bob sc.config.prepare:sc-cs-profile' // sc-cs profiles
+							break
+						case [ 'eric-sc-scp' ]:
+							sh './bob/bob sc.config.prepare:scp-profile' // scp profiles
+							break
+						case [ 'eric-sc-sepp' ]:
+							sh './bob/bob sc.config.prepare:sepp-profile' // sepp profiles
+							break
+						case [ 'eric-sc-bsf' ]:
+							sh './bob/bob sc.config.prepare:bsf-profile' // bsf profiles
+							break
+						default:
+							sh './bob/bob sc.config.prepare:cncs-b-profile' // cncs base profiles
+							sh './bob/bob sc.config.prepare:cncs-a-profile' // cncs nf additions profiles
+							sh './bob/bob sc.config.prepare:sc-cs-profile' // sc-cs profiles
+							sh './bob/bob sc.config.prepare:scp-profile' // scp profiles
+							sh './bob/bob sc.config.prepare:sepp-profile' // sepp profiles
+							sh './bob/bob sc.config.prepare:bsf-profile' // bsf profiles
+							break
+					} //switch
+				} // script
+			} // steps
+		} // stage
+		stage('Values') {
+			steps {
+				script {
+					switch (env.CHART_NAME) {
+						case [ 'eric-cloud-native-base' ]:
+							sh './bob/bob sc.config.prepare:cncs-b-values' // cncs base values final
+							break
+						case [ 'eric-cloud-native-nf-additions' ]:
+							sh './bob/bob sc.config.prepare:cncs-a-values' // cncs nf additions values final
+							break
+						case [ 'eric-sc-cs' ]:
+							sh './bob/bob sc.config.prepare:sc-cs-values' // sc-cs values final
+							break
+						case [ 'eric-sc-scp' ]:
+							sh './bob/bob sc.config.prepare:scp-values' // scp values final
+							break
+						case [ 'eric-sc-sepp' ]:
+							sh './bob/bob sc.config.prepare:sepp-values' // sepp values final
+							break
+						case [ 'eric-sc-bsf' ]:
+							sh './bob/bob sc.config.prepare:bsf-values' // bsf values final
+							break
+						default:
+							sh './bob/bob sc.config.prepare:cncs-b-values' // cncs base values final
+							sh './bob/bob sc.config.prepare:cncs-a-values' // cncs nf additions values final
+							sh './bob/bob sc.config.prepare:sc-cs-values' // sc-cs values final
+							sh './bob/bob sc.config.prepare:scp-values' // scp values final
+							sh './bob/bob sc.config.prepare:sepp-values' // sepp values final
+							sh './bob/bob sc.config.prepare:bsf-values' // bsf values final
+							break
+					} //switch
+				} // script
+			} // steps
+		} // stage
+		stage('Deploy-Upgrade') {
+			parallel {
+				stage('CNCS Base') {
+					when {
+						environment name: 'CHART_NAME', value: 'eric-cloud-native-base'
+					} // when
+					steps {
+						script {
+							if (env.NODE_CNCSB_DEPLOYED != "0") {
+								sh './bob/bob sc.deploy:cncs-b'
+							} else {
+								sh './bob/bob sc.upgrade:cncs-b'
+							}
+						}
+					} // steps
+				} // stage
+				stage('CNCS NF Additions') {
+					when {
+						environment name: 'CHART_NAME', value: 'eric-cloud-native-nf-additions'
+					} // when
+					steps {
+						script {
+							if (env.NODE_CNCSA_DEPLOYED != "0") {
+								sh './bob/bob sc.deploy:cncs-a'
+							} else {
+								sh './bob/bob sc.upgrade:cncs-a'
+							}
+						}
+					} // steps
+				} // stage
+				stage('SC-CS') {
+					when {
+						environment name: 'CHART_NAME', value: 'eric-sc-cs'
+					} // when
+					steps {
+						script {
+							if (env.NODE_SCCS_DEPLOYED != "0") {
+								sh './bob/bob sc.deploy:sc-cs'
+							} else {
+								sh './bob/bob sc.upgrade:sc-cs'
+							}
+						}
+					} // steps
+				} // stage
+				stage('SC-SCP') {
+					environment {
+						DIVISION_METHOD = "${env.DIVISION_METHOD}"
+					}
+					when {
+						environment name: 'CHART_NAME', value: 'eric-sc-scp'
+					} // when
+					steps {
+						script {
+							if (env.NODE_SCP_DEPLOYED != "0") {
+								sh './bob/bob sc.deploy:scp'
+							} else {
+								sh './bob/bob sc.upgrade:scp'
+							}
+						}
+					} // steps
+				} // stage
+				stage('SC-SEPP') {
+					environment {
+						DIVISION_METHOD = "${env.DIVISION_METHOD}"
+					}
+					when {
+						environment name: 'CHART_NAME', value: 'eric-sc-sepp'
+					} // when
+					steps {
+						script {
+							if (env.NODE_SEPP_DEPLOYED != "0") {
+								sh './bob/bob sc.deploy:sepp'
+							} else {
+								sh './bob/bob sc.upgrade:sepp'
+							}
+						}
+					} // steps
+				} // stage
+				stage('SC-BSF') {
+					environment {
+						DIVISION_METHOD = "${env.DIVISION_METHOD}"
+					}
+					when {
+						environment name: 'CHART_NAME', value: 'eric-sc-bsf'
+					} // when
+					steps {
+						script {
+							if (env.NODE_BSF_DEPLOYED != "0") {
+								sh './bob/bob sc.deploy:bsf'
+							} else {
+								sh './bob/bob sc.upgrade:bsf'
+							}
+						}
+					} // steps
+				} // stage
+			} // parallel
+		} // stage
+		stage("Archiving parameters for downstream Test pipeline") {
+			steps {
+				sh '''
+					echo "BRANCH=$(echo ${BRANCH})" >> artifact.properties;
+					echo "KUBE_HOST=$(echo ${KUBE_HOST})" >> artifact.properties;
+					echo "NAMESPACE=`cat ${OUTPUT_DIR}/var.namespace`" >> artifact.properties;
+					echo "COMMIT=`echo ${COMMIT}`" >> artifact.properties;
+					echo "PROJECT=$(echo ${PROJECT})" >> artifact.properties;
+				'''
+				archiveArtifacts artifacts: 'artifact.properties', onlyIfSuccessful: true
+			} // steps
+		} // stage
+	} // stages
+	post {
+		always {
+			script{
+				// Log current job
+				if ( fileExists("/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh") ) {
+					sh "/proj/DSC_CI/jenkins/tools/help_scripts/concurrentBuilds.sh -stop"
+				} // if
+			} // script
+		} // always
+		success {
+			cleanWs()
+		} // success
+		aborted {
+			script {
+				//cleanCluster(env.KUBE_HOST, env.NAMESPACE);
+				sh "./scripts/collect_ADP_logs.sh -c ~/.kube/${env.KUBE_HOST}.config -n `cat .bob/var.namespace`"
+			} // script
+		} // aborted
+		failure{
+			script {
+				sh "./scripts/collect_ADP_logs.sh -c ~/.kube/${env.KUBE_HOST}.config -n `cat .bob/var.namespace`"
+				archiveArtifacts allowEmptyArchive: true, artifacts: 'logs_*.tgz', onlyIfSuccessful: false
+				// do not undeploy for troubleshooting purposes
+				if ((env.CLEANCLUSTER != 'FALSE') || ("$TEST_TYPE".contains("SmokeTest"))) {
+					sh "./scripts/force-clean.sh --cluster ${env.KUBE_HOST} --namespace `cat .bob/var.namespace` --delete-namespace --debug"
+					//try {
+						//timeout(time: 600000, unit: 'MILLISECONDS') {
+							// clean cluster due to failure in pipeline
+							//sh "/home/eiffelesc/scripts/cleanCluster `cat .bob/var.namespace` ${env.KUBE_HOST}"
+						//} // timeout
+					//} catch (exc) {
+						//sh """kubectl delete ns \$(cat .bob/var.namespace) --kubeconfig ${env.OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf;
+							//kubectl create ns \$(cat .bob/var.namespace) --kubeconfig ${env.OUTPUT_DIR}/${env.KUBE_HOST}.admin.conf;"""
+					//} // catch
+				} // if
+				// only send mail for smoketest
+				if ("$TEST_TYPE".contains("SmokeTest")) {
+					COLOR = "<body style=\"background-color: LightYellow;\">"
+					emailext body: "$COLOR" + "Hi ${env.COMMITTER},<p> the deploy failed, maybe due to your commit? <p> Please check:<br>${env.BUILD_URL}<br><br>Thank you for pushing.<br><br>BR,<br>A-Team",
+					mimeType: 'text/html',
+					subject: "5G Smoke-test deploy failed for ${env.PROJECT} : ${COMMIT}",
+					to: "${env.EMAIL_COMMITTER}, ${env.EMAIL_OTHER}"  // mail to committers and respective Teams channel
+					//to: "${env.EMAIL_COMMITTER}, DSCAteam@ericsson.onmicrosoft.com, f37b6763.ericsson.onmicrosoft.com@emea.teams.ms"  //Teams: Master Channel
+					//to: "${env.EMAIL_COMMITTER}, DSCAteam@ericsson.onmicrosoft.com, 7352f6e6.ericsson.onmicrosoft.com@emea.teams.ms"  //Teams: Release Channel
+				} // if
+			} // script
+		} // failure
+	} // post
+} // pipeline

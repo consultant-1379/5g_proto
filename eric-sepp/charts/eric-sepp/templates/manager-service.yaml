@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "eric-sepp.name" . }}-manager
+  labels:
+{{- include "eric-sepp.labels" . | indent 4 }}
+    app: {{ template "eric-sepp.name" . }}-manager
+  annotations:
+{{- include "eric-sepp.helm-annotations" . | indent 4 }}
+{{- include "eric-sepp.config-annotations" . | indent 4 }}
+{{- if .Values.metrics.manager.enabled }}
+    prometheus.io/scrape: {{ .Values.metrics.manager.enabled | quote }}
+    prometheus.io/port: {{ .Values.service.manager.server.oam.port | quote }}
+{{- if eq (include "eric-sepp.tls" .) "true" }}
+    prometheus.io/scheme: https
+{{- else }}
+    prometheus.io/scheme: http
+{{- end }}
+{{- end }}
+spec:
+  ipFamilyPolicy: PreferDualStack
+  type: ClusterIP
+{{- include "eric-sepp.ipfamilies" . | indent 2 }}
+  ports:
+  - protocol: TCP
+    port: {{ .Values.service.manager.server.nrf.port }}
+    targetPort: {{ .Values.service.manager.server.nrf.targetPort }}
+    name: metrics
+  - protocol: TCP
+    port: {{ .Values.service.manager.server.oam.port }}
+    targetPort: {{ .Values.service.manager.server.oam.targetPort }}
+    name: oam-server
+  - protocol: TCP
+    port: {{ .Values.service.manager.server.n32c.port }}
+    targetPort: {{ .Values.service.manager.server.n32c.targetPort }}
+    name: n32c-server
+  selector:
+  {{- if .Values.manager.leaderElection.enabled }}
+    leader: {{ template "eric-sepp.name" . }}-manager-leader
+  {{- else }}
+    app: {{ template "eric-sepp.name" . }}-manager
+  {{- end }}

@@ -1,0 +1,17 @@
+{{- if  .Values.env.secure }}
+{{- if  .Values.env.certCustomResources.enabled }}
+apiVersion: certm.sec.ericsson.com/v1
+kind: ExternalCertificate
+metadata:
+  name: {{ .Values.service.name }}-trusted-cert
+  labels:
+    app.kubernetes.io/name: {{ .Values.service.name  }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  generated-secret-name: {{ .Values.service.name }}-trusted-cert-secret
+  generated-secret-type: opaque
+  trusted-certificates-file-name: "ca-cert.pem"
+  trusted-certificate-list-name: {{ .Values.env.certCustomResources.trustedCert }}
+{{- end -}}
+{{- end -}}

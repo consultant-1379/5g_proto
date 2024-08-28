@@ -1,0 +1,4 @@
+eric-sc-hcagent:
+  severities:
+    configmaps:
+      - "eric-sc-bsf-hcagent-severities"

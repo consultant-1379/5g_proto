@@ -1,0 +1,31 @@
+{{- if .Values.global -}}
+{{- if and .Values.global.networkPolicy .Values.networkPolicy -}}
+{{- if and .Values.global.networkPolicy.enabled .Values.networkPolicy.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Values.service.slf.name }}-default-access
+  labels:
+{{- include "eric-sc-slf.labels" . | indent 4 }}
+    app: {{ .Values.service.slf.name | quote }}
+  annotations:
+{{- include "eric-sc-slf.helm-annotations" . | indent 4 }}
+{{- include "eric-sc-slf.config-annotations" . | indent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Values.service.slf.name }}
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          {{ .Values.service.slf.name }}-access: "true"
+    ports:
+    - port: {{ .Values.spec.slf.portTlsName }}
+      protocol: TCP
+{{- end }}
+{{- end }}
+{{- end }}
+

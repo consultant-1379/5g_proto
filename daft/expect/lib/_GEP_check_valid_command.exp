@@ -1,0 +1,100 @@
+################################################################################
+# $Revision: 1.1 $                                                             #
+#   $Author: EUSTONE $                                                         #
+#     $Date: 2015/10/28 17:34:01 $                                             #
+################################################################################
+#                                                                              #
+# (C) COPYRIGHT ERICSSON GMBH 2015                                             #
+#                                                                              #
+# The copyright to the computer program(s) herein is the property of           #
+# Ericsson GmbH, Germany.                                                      #
+#                                                                              #
+# The program(s) may be used and/or copied only with the written permission    #
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in   #
+# the agreement/contract under which the program(s) have been supplied.        #
+#                                                                              #
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Check if a specified command exists.
+#
+# This subroutine expects that it is already connected to the GEP Linux prompt.
+#
+# Input:
+#  - Command to check
+#
+# Output:
+#  -  0: Success
+#    >0: Command not found or other error
+#    -1: Timeout
+#
+proc GEP_check_valid_command {command} {
+    global spawn_id
+
+    set errorcnt 0
+    set command_path ""
+
+    # Find real path to the command if not given by searching the $PATH
+    send -- "which $command\r"
+
+    expect {
+        -re "^(\[^\r\n\]+)\r*\n" {
+            # Store received line
+            set command_path $expect_out(1,string);
+            exp_continue
+        }
+        "\n" {
+            # New line received, continue waiting
+            exp_continue
+        }
+        -re "SC-\[12\]\[^\n\]*$" {
+            # Ready for next command
+        }
+        -re "PL-\[0-9\]+\[^\n\]*$" {
+            # Ready for next command
+        }
+        timeout {
+            return -1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    set exitcode 0
+
+    # Check exitcode from previous command
+    send -- "echo \$?\r"
+
+    expect {
+        -re "^(\[0-9\]+)\r*\n" {
+            # Exit status returned
+            set exitcode $expect_out(1,string);
+            exp_continue
+        }
+        "\n" {
+            # New line received, continue waiting
+            exp_continue
+        }
+        -re "SC-\[12\]\[^\n\]*$" {
+            # Ready for next command
+        }
+        -re "PL-\[0-9\]+\[^\n\]*$" {
+            # Ready for next command
+        }
+        timeout {
+            return -1
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    if { $exitcode != 0 } {
+        # We could not find the command, return failure
+        incr errorcnt
+    }
+
+
+    return $errorcnt
+}

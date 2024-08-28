@@ -1,0 +1,8 @@
+eric-pm-server:
+  server:
+    extraConfigmapMounts:
+      - name: eric-sc-nlf-rr-volume
+        configMap: eric-sc-nlf-rr
+        mountPath: /etc/config/scnlf
+        subPath: ""
+        readOnly: true

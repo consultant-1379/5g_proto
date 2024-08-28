@@ -1,0 +1,46 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2022-09-21 10:14
+FOSS:
+    # Available in Bazaar
+    FOSSName: ASM, ow2 
+    # Available in Bazaar
+    FOSSVersion: 9.2
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://gitlab.ow2.org/asm/asm/-/archive/ASM_9_2/asm-ASM_9_2.zip
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 22/CAX1057234
+    # Not Available in Bazaar
+    Primary: N
+    # Available in Bazaar
+    STAKOCode: General use
+    # Available in Bazaar
+    STAKOReason: ()
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: 'ASM is an all purpose Java bytecode manipulation and analysis framework.'
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: BSD 3-Clause "New" or "Revised" License (BSD-3-Clause)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: BSD 3-Clause "New" or "Revised" License (BSD-3-Clause)
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'org.ow2.asm:asm-analysis:jar:{{FOSSVersion}}'
+    - 'org.ow2.asm:asm-commons:jar:{{FOSSVersion}}'
+    - 'org.ow2.asm:asm-tree:jar:{{FOSSVersion}}'
+    - 'org.ow2.asm:asm-util:jar:{{FOSSVersion}}'
+    - 'org.ow2.asm:asm:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ENTNGRG Georgios Antoniou

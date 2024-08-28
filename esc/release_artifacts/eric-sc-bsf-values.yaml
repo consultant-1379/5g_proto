@@ -1,0 +1,609 @@
+definitions:
+  ## VIP_SIG_BSF: the virtual IP address(es) for signaling traffic of BSF provided as comma separated list of IPs
+  ## For example, "10.244.1.4,2001:db8::4"
+  VIP_SIG_BSF: &VIP_SIG_BSF ""
+  ## VIP_SIG_BSF_Diameter: the virtual IP address for signaling traffic of BSF over the diameter interface
+  VIP_SIG_BSF_Diameter: &VIP_SIG_BSF_Diameter ""
+  ## storage class for all OAM state
+  oam_storage_class: &oam_storage_class "network-block"
+
+global:
+  timezone: UTC
+  # nodeSelector: {}
+  pullSecret: ""
+  registry:
+    url: "armdocker.rnd.ericsson.se"
+  externalIPv4:
+     enabled: false    ## empty, true or false
+  externalIPv6:
+     enabled: false    ## empty, true or false
+  ipFamilyPolicy: SingleStack  ## SingleStack or PreferDualStack or RequireDualStack
+  # annotations: {}
+  # labels: {}
+  networkPolicy:
+    enabled: true
+  log:
+    outputs: ["stdout", "k8sLevel"] # supports stream, applicationLevel or stdout (or <old> k8sLevel)
+    streamingMethod: "indirect" # supports direct, indirect or dual
+  logShipper:
+    deployment:
+      type: "" # supports sidecar or empty
+  security:
+    tls:
+      enabled: true
+
+eric-bsf:
+  enabled: true
+  # vtap:
+    # enabled: false
+  service:
+    worker:
+      # ipFamilyPolicy: PreferDualStack ## SingleStack or PreferDualStack or RequireDualStack
+      # loadBalancerIP: *VIP_SIG_BSF
+      annotations:
+        # cloudProviderLB: {}
+        loadBalancerIPs: *VIP_SIG_BSF
+      # externalTrafficPolicy: "Local"
+      # port: 80
+      # tlsport: 443
+      # externalIPv4:
+        # enabled: false    # <empty>/true/false
+      # externalIPv6:
+        # enabled: false   # <empty>/true/false
+  # egress:
+    # nrf:
+      # # default 0, the value range 0..63, 0 is the lowest priority, 63 is the highest priority.
+      # # Any other value is invalid.
+      # dscp: 0
+  spec:
+    # cddjmxexporter:
+      # resources:
+        # requests:
+          # memory: 128Mi
+          # cpu: 50m
+          # ephemeral-storage:
+        # limits:
+          # memory: 256Mi
+          # cpu: 200m
+          # ephemeral-storage:
+    # certnotifier:
+      # resources:
+        # requests:
+          # memory: 128Mi
+          # cpu: 80m
+          # ephemeral-storage:
+        # limits:
+          # memory: 256Mi
+          # cpu: 160m
+          # ephemeral-storage:
+    # tapagent:
+      # resources:
+        # requests:
+          # memory: 100Mi
+          # cpu: 100m
+          # ephemeral-storage:
+        # limits:
+          # memory: 500Mi
+          # cpu: 500m
+          # ephemeral-storage:
+    # tapcollector:
+      # resources:
+        # requests:
+          # memory: 256Mi
+          # cpu: 100m
+          # ephemeral-storage:
+        # limits:
+          # memory: 2560Mi
+          # cpu: 1
+          # ephemeral-storage:
+    # tlskeylogagent:
+      # resources:
+        # requests:
+          # memory: 100Mi
+          # cpu: 100m
+          # ephemeral-storage:
+        # limits:
+          # memory: 500Mi
+          # cpu: 500m
+          # ephemeral-storage:
+    # manager:
+      # replicaCount: 2
+      # resources:
+        # requests:
+          # memory: 512Mi
+          # cpu: 0.5
+          # ephemeral-storage:
+        # limits:
+          # memory: 1024Mi
+          # cpu: 1
+          # ephemeral-storage:
+      # tolerations:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+    worker:
+      replicaCount: 2
+      # resources:
+        # requests:
+          # memory: 512Mi
+          # cpu: 1
+          # ephemeral-storage:
+        # limits:
+          # memory: 1024Mi
+          # cpu: 1.5
+          # ephemeral-storage:
+      # affinity:
+        # podAntiAffinity: "soft"
+      # tolerations:
+      # - key: node.kubernetes.io/not-ready
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # - key: node.kubernetes.io/unreachable
+        # operator: Exists
+        # effect: NoExecute
+        # tolerationSeconds: 0
+      # podDisruptionBudget:
+        # minAvailable: 1
+  # probes:
+    # manager:
+      # livenessProbe:
+        # initialDelaySeconds: 10
+        # periodSeconds: 10
+        # timeoutSeconds: 1
+        # successThreshold: 1
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 10
+        # periodSeconds: 10
+        # timeoutSeconds: 1
+        # successThreshold: 1
+        # failureThreshold: 3
+    # worker:
+      # livenessProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 3
+        # timeoutSeconds: 3
+        # successThreshold: 1
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 3
+        # timeoutSeconds: 1
+        # successThreshold: 1
+        # failureThreshold: 3
+  # cassandra:
+    # contact_point: "eric-data-wide-column-database-cd-datacenter1-rack1:9042"
+    # datacenter: "datacenter1"
+    # throttler:
+      # class: "ConcurrencyLimitingRequestThrottler"
+      # max_queue_size: "1000"
+      # max_concurrent_requests: "50"
+    # consistency: "ONE"
+  # certificates:
+    # traf:
+      # key: sc-traf-default-key
+      # certificate: sc-traf-default-cert
+    # nrf:
+      # key: sc-nrf-default-key
+      # certificate: sc-nrf-default-cert
+  manager:
+    leaderElection:
+      enabled: true
+    # pcfRecoveryTimeTTL: "2592000"
+  # worker:
+    # pcfRecoveryTimeTTL: "2592000"
+    # dscp: "0"
+  # tapcollector:
+    # worker:
+      # enabled: false
+      # replaceLocalSocketAddress: true
+    # tappedData:
+      # divisionMethod: truncate
+      # chunkSizeLimit: "61440"
+  # tapagent:
+    # manager:
+      # enabled: false
+    # worker:
+      # enabled: false
+  # nodeSelector:
+    # worker: {}
+    # manager: {}
+  # annotations: {}
+  # labels: {}
+  # resources:
+    # logshipper:
+      # requests:
+        # memory: "20Mi"
+        # cpu: "33m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "30Mi"
+        # cpu: "40m"
+        # ephemeral-storage:
+
+eric-bsf-diameter:
+  enabled: true
+  # resources:
+    # diameterproxygrpc:
+      # limits:
+        # cpu: "4"
+        # ephemeral-storage:
+        # memory: "4Gi"
+      # requests:
+        # cpu: '0.3'
+        # ephemeral-storage:
+        # memory: 384Mi
+    # dsl:
+      # limits:
+        # cpu: "2"
+        # ephemeral-storage:
+        # memory: "4Gi"
+      # requests:
+        # cpu: '0.25'
+        # ephemeral-storage: ""
+        # memory: 100Mi
+    # bsfdiameter:
+      # requests:
+        # cpu: '0.35'
+        # memory: 320Mi
+      # limits:
+        # cpu: '0.7'
+        # memory: 3Gi
+    # logshipper:
+      # requests:
+        # memory: "20Mi"
+        # cpu: "33m"
+        # ephemeral-storage:
+      # limits:
+        # memory: "30Mi"
+        # cpu: "40m"
+        # ephemeral-storage:
+  # probes:
+    # diameterproxygrpc:
+      # livenessProbe:
+        # failureThreshold: 3
+        # initialDelaySeconds: 1
+        # periodSeconds: 5
+        # timeoutSeconds: 4
+      # startupProbe:
+        # failureThreshold: 60
+        # initialDelaySeconds: 2
+        # periodSeconds: 5
+        # timeoutSeconds: 4
+    # dsl:
+      # livenessProbe:
+        # failureThreshold: 3
+        # initialDelaySeconds: 1
+        # periodSeconds: 5
+        # timeoutSeconds: 4
+      # startupProbe:
+        # failureThreshold: 60
+        # initialDelaySeconds: 2
+        # periodSeconds: 5
+        # timeoutSeconds: 4
+    # bsfdiameter:
+      # livenessProbe:
+        # initialDelaySeconds: 2
+        # periodSeconds: 10
+        # timeoutSeconds: 10
+        # successThreshold: 1
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 2
+        # periodSeconds: 10
+        # timeoutSeconds: 1
+        # successThreshold: 1
+        # failureThreshold: 3
+  #initialConfig:
+    #dsl:
+      #enableIPv6: false
+  replicaCount: 2
+  # cassandra:
+    # contact_point: "eric-data-wide-column-database-cd-datacenter1-rack1:9042"
+    # datacenter: "datacenter1"
+    # throttler:
+      # class: "ConcurrencyLimitingRequestThrottler"
+      # max_queue_size: "1000"
+      # max_concurrent_requests: "50"
+    # consistency: "ONE"
+  # affinity:
+    # podAntiAffinity: "soft"
+  # nodeSelector: {}
+  # tolerations:
+  # - key: "node.kubernetes.io/unreachable"
+    # operator: "Exists"
+    # effect: "NoExecute"
+    # tolerationSeconds: 30
+  # podDisruptionBudget:
+    # minAvailable: 1
+  # annotations: {}
+  # labels: {}
+  # spec:
+    # pcfRecoveryTimeTTL: "2592000"
+
+eric-stm-diameter:
+  enabled: true
+  replicaCount: 2
+  ah:
+    fiapi:
+      enable: true
+  kafka:
+    hostname: ""
+  service:
+    loadBalancerIP: *VIP_SIG_BSF_Diameter
+    # externalIPv4:
+      # enabled: true
+      # loadBalancerIPDiameterOverTCP: *VIP_SIG_BSF_Diameter
+    # externalIPv6:
+      # enabled: true
+      # loadBalancerIPDiameterOverTCP: *VIP_SIG_BSF_Diameter
+    # externalTrafficPolicy:
+      # tcp: Cluster
+    certificates:
+      asymmetricKeyCertificateName: "diameter-key-cert"
+      trustedCertificateListName: "sc-trusted-default-cas"
+    # diameter:
+      # ports:
+        # tcp:
+          # - port: 3868
+            # targetPort: 3868 ## DO NOT CHANGE THIS VALUE
+  # nodeSelector: {}
+  # affinity:
+    # podAntiAffinity: "soft"
+  # tolerations: []
+  initialConfig:
+    dsl:
+      enableControlPlane: true
+      serviceName: "eric-stm-diameter-dsl" ## it should be eric-stm-diameter-dsl if enableControlPlane is true
+      # enableIPv6: false
+      # pvtbClient:
+        # enabled: true
+    # dsl-pvtb-client:
+      # filePath: "/tmp/diameter.pcap"
+  # resources:
+    # diameter:
+      # requests:
+        # memory: "100Mi"
+        # cpu: "0.25"
+      # limits:
+        # memory: "4Gi"
+        # cpu: "2"
+    # dsl:
+      # requests:
+        # memory: "100Mi"
+        # cpu: "0.25"
+      # limits:
+        # memory: "4Gi"
+        # cpu: "2"
+    # dsl-pvtb-client:
+      # limits:
+        # cpu: "4"
+        # memory: "4Gi"
+      # requests:
+        # cpu: "0.25"
+        # memory: "100Mi"
+  # probes:
+    # diameter:
+      # livenessProbe:
+        # failureThreshold: 3
+        # initialDelaySeconds: 1
+        # periodSeconds: 5
+        # timeoutSeconds: 4
+      # startupProbe:
+        # failureThreshold: 60
+        # initialDelaySeconds: 2
+        # periodSeconds: 5
+        # timeoutSeconds: 4
+    # dsl:
+      # livenessProbe:
+        # failureThreshold: 3
+        # initialDelaySeconds: 1
+        # periodSeconds: 5
+        # timeoutSeconds: 4
+      # startupProbe:
+        # failureThreshold: 60
+        # initialDelaySeconds: 2
+        # periodSeconds: 5
+        # timeoutSeconds: 4
+  annotations:
+    ericsson.com/nf-name: "BSF"
+  # labels: {}
+
+eric-bsf-wcdb-cd:
+#  security:
+#    auth:
+#      cql:
+#        enableAuthentication: "true"
+#        enableAuthorization: "true"
+ #       wcdbcdAdminSecret: eric-data-wide-column-database-cd-admin-creds
+#        adminSecret: eric-data-wide-column-database-cd-day0-creds
+#  metrics:
+#    cassandra:
+#      enabled: true
+      # excluded:
+#  persistence:
+#    dataVolume:
+#      persistentVolumeClaim:
+#        storageClassName: *oam_storage_class
+#        size: 100Gi
+#  replicaCount: 2
+#  resources:
+#    cassandra:
+#      limits:
+#        cpu: 1
+#        memory: 16Gi
+      # network:
+        # useIPv6: false
+#      requests:
+#        cpu: 1
+#        memory: 16Gi
+#      jvm:
+#        initialMemoryAllocationPercentage: 50
+#        smallMemoryAllocationMaxPercentage: 50
+#        largeMemoryAllocationMaxPercentage: 50
+#    brsc:
+#      requests:
+#        memory: "512Mi"
+#        cpu: "0.2"
+#      limits:
+#        memory: "512Mi"
+#        cpu: "0.5"
+#    ecchronos:
+#      requests:
+#        memory: "512Mi"
+#        cpu: "200m"
+#      limits:
+#        memory: "512Mi"
+#        cpu: "1"
+  # probes:
+    # brsc:
+      # livenessProbe:
+        # initialDelaySeconds: 60
+        # periodSeconds: 20
+        # timeoutSeconds: 10
+        # failureThreshold: 3
+      # readinessProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 10
+        # timeoutSeconds: 10
+        # successThreshold:
+        # failureThreshold: 6
+    # cassandra:
+      # livenessProbe:
+        # initialDelaySeconds: 120
+        # periodSeconds: 20
+        # timeoutSeconds: 10
+        # failureThreshold: 6
+      # readinessProbe:
+        # initialDelaySeconds: 5
+        # periodSeconds: 10
+        # timeoutSeconds: 10
+        # successThreshold:
+        # failureThreshold: 6
+    # ecchronos:
+      # livenessProbe:
+        # initialDelaySeconds: 7200
+        # periodSeconds: 20
+        # timeoutSeconds: 10
+        # failureThreshold: 3
+  # affinity:
+    # podAntiAffinity: "hard"
+  # nodeSelector:
+    # cassandra: {}
+    # configureKeyspacesJob: {}
+    # tlsRestarter: {}
+    # annotator: {}
+    # operator: {}
+  # tolerations:
+    # cassandra: {}
+    # configureKeyspacesJob: {}
+    # tlsRestarter: {}
+    # annotator: {}
+    # operator: {}
+#  cassandra:
+#    yaml:
+#      num_tokens: 32
+#      allocate_tokens_for_local_replication_factor: 2
+#      enable_materialized_views: true
+#     remoteSeedNodes:
+#    jvmOptions:
+#      set:
+#        - "Dmv_enable_coordinator_batchlog=true"
+#         - "Xms8G"
+#         - "Xmx8G"
+#         - "Xmn800M"
+#        - "XX:+UseG1GC"
+#        - "XX:InitialRAMPercentage=50.0"
+#        - "XX:MaxRAMPercentage=50.0"
+#        - "XX:MaxGCPauseMillis=200"
+#        - "XX:InitiatingHeapOccupancyPercent=70"
+#      unset:
+#         - "Xms1G"
+#         - "Xmx1G"
+#        - "Xmn100M"
+#         - "Xms4G"
+#         - "Xmx4G"
+#        - "Xmn400M"
+#        - "Xmn800M"
+#        - "XX:+HeapDumpOnOutOfMemoryError"
+#        - "XX:+UseParNewGC"
+#        - "XX:+UseConcMarkSweepGC"
+#        - "XX:+CMSParallelRemarkEnabled"
+#        - "XX:SurvivorRatio=8"
+#        - "XX:MaxTenuringThreshold=1"
+#        - "XX:CMSInitiatingOccupancyFraction=75"
+#        - "XX:+UseCMSInitiatingOccupancyOnly"
+#        - "XX:CMSWaitDuration=10000"
+#        - "XX:+CMSParallelInitialMarkEnabled"
+#        - "XX:+CMSEdenChunksRecordAlways"
+#        - "XX:+CMSClassUnloadingEnabled"
+  # dataCenters:
+    # - name: "datacenter1"
+    #   statefulSetNameOverride: "eric-data-wide-column-database-cd"
+      # service:
+        # externalIP:
+          # annotations:
+            # addressPoolName:
+#  georeplication:
+#    certificates:
+#      asymmetricKeyCertificateName: "bsf-internode-external-key/bsf-internode-external-cert"
+#      trustedCertificateListName: "sc-trusted-default-cas"
+#  egress:
+#    certificates:
+#      asymmetricKeyCertificateName: "bsf-cql-client-external-key/bsf-cql-client-external-cert"
+#      trustedCertificateListName: "sc-trusted-default-cas"
+#  service:
+#    certificates:
+#      asymmetricKeyCertificateName: "bsf-cql-server-external-key/bsf-cql-server-external-cert"
+#      trustedCertificateListName: "sc-trusted-default-cas"
+#      internal:
+ #       timeToLive: "15778800"
+ #       renewalLeadTime: "15692400"
+    # externalTrafficPolicy: Local
+    # externalIP:
+      # enabled: false
+#    endpoints:
+#      cql:
+#        tls:
+#          enforced: "optional"
+#    external:
+#      tls:
+#        enabled: true
+#  annotations:
+#    ericsson.com/nf-name: "BSF"
+  # labels: {}
+#  repairAgent:
+#    enabled: true
+    # ecchronos:
+      # yaml:
+        # statistics:
+          # enabled: false
+        # repair:
+          # unwind_ratio: 0.5
+          # interval:
+            # time: 7
+            # unit: days
+          # alarm:
+            # warn:
+              # time: 8
+              # unit: days
+            # error:
+              # time: 10
+              # unit: days
+      # jvmOptions:
+        # set:
+          # - "Xms16M"
+          # - "Xmx32M"
+          # - "Xmn10M"
+
+eric-sc-bsf-license-consumer:
+  enabled: true
+
+eric-sc-bsf-log-shipper:
+  enabled: false

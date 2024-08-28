@@ -1,0 +1,38 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2019-06-10 12:24
+FOSS:
+    # Available in Bazaar
+    FOSSName: jackson-annotations
+    # Available in Bazaar
+    FOSSVersion: 2.9.5
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/FasterXML/jackson-annotations/archive/jackson-annotations-{{FOSSVersion}}.tar.gz
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 49/CAX1056157
+    # Not Available in Bazaar
+    PRIMNumber(CTC): CTC 101 5279
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: This project contains general purpose annotations for Jackson Data Processor, used on value and handler types. The only annotations not included are ones that require dependency to the Databind package.
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: Apache License 2.0
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'com.fasterxml.jackson.core:jackson-annotations:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ENTNGRG Georgios Antoniou

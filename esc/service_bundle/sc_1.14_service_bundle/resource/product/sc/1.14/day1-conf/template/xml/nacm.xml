@@ -1,0 +1,119 @@
+<?xml version='1.0' encoding='utf-8'?>
+  <hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <capabilities>
+      <capability>urn:ietf:params:netconf:base:1.0</capability>
+    </capabilities>
+  </hello>
+]]>]]>
+  <rpc message-id="0" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <edit-config>
+      <target>
+        <running/>
+      </target>
+      <config xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+        <nacm xmlns="urn:ietf:params:xml:ns:yang:ietf-netconf-acm">
+          <cmd-read-default>deny</cmd-read-default>
+          <cmd-exec-default>deny</cmd-exec-default>
+          <groups>
+            <group>
+              <name>pc-probe-privacy-admin</name>
+            </group>
+          </groups>
+          <rule-list>
+            <name>ericsson-admin-user-management-5-system-privacy-operator</name>
+            <group>system-privacy-operator</group>
+            <rule>
+              <name>ietf-system-1-system-privacy-operator</name>
+              <module-name>ietf-system</module-name>
+              <access-operations>read</access-operations>
+              <action>permit</action>
+              <comment>"Rule updated by AUM"</comment>
+              <path>/system/authentication/user/name</path>
+            </rule>
+            <rule>
+              <name>ericsson-system-ext-2-system-privacy-operator</name>
+              <module-name>ericsson-system-ext</module-name>
+              <access-operations>read</access-operations>
+              <action>permit</action>
+              <comment>"Rule updated by AUM"</comment>
+              <path>/system/authentication/user/full-name</path>
+            </rule>
+            <cmdrule>
+              <name>cli-metrics-query-cmd</name>
+              <context>cli</context>
+              <command>metrics-query</command>
+              <access-operations>*</access-operations>
+              <action>permit</action>
+            </cmdrule>
+          </rule-list>
+          <rule-list>
+            <name>ericsson-bsf-manager-3-bsf-read-only</name>
+            <group>bsf-read-only</group>
+            <rule>
+              <name>ericsson-bsf-1-bsf-read-only</name>
+              <module-name>ericsson-bsf</module-name>
+              <access-operations>read</access-operations>
+              <action>permit</action>
+              <comment>"Rule updated by BSF-Manager"</comment>
+            </rule>
+            <rule>
+              <name>ietf-keystore-1-bsf-read-only</name>
+              <module-name>ietf-keystore</module-name>
+              <access-operations>read</access-operations>
+              <action>permit</action>
+              <comment>"Rule updated by BSF-Manager"</comment>
+            </rule>
+            <rule>
+              <name>ietf-truststore-1-bsf-read-only</name>
+              <module-name>ietf-truststore</module-name>
+              <access-operations>read</access-operations>
+              <action>permit</action>
+              <comment>"Rule updated by BSF-Manager"</comment>
+            </rule>
+            <rule>
+              <name>ericsson-keystore-ext-1-bsf-read-only</name>
+              <module-name>ericsson-keystore-ext-1-bsf-read-only</module-name>
+              <access-operations>read</access-operations>
+              <action>permit</action>
+              <comment>"Rule updated by BSF-Manager"</comment>
+            </rule>
+            <rule>
+              <name>ericsson-truststore-ext-1-bsf-read-only</name>
+              <module-name>ericsson-truststore-ext</module-name>
+              <access-operations>read</access-operations>
+              <action>permit</action>
+              <comment>"Rule updated by BSF-Manager"</comment>
+            </rule>
+            <rule>
+              <name>ietf-netconf-monitoring-1-bsf-read-only</name>
+              <module-name>ietf-netconf-monitoring</module-name>
+              <access-operations>read</access-operations>
+              <action>permit</action>
+              <comment>"Rule updated by BSF-Manager"</comment>
+            </rule>
+            <rule>
+              <name>ericsson-diameter-adp-1-bsf-read-only</name>
+              <module-name>ericsson-diameter-adp</module-name>
+              <access-operations>read</access-operations>
+              <action>permit</action>
+              <comment>"Rule updated by BSF-Manager"</comment>
+            </rule>
+            <cmdrule>
+              <name>cli-show-alarm-cmd</name>
+              <context>cli</context>
+              <command>"show alarm"</command>
+              <access-operations>*</access-operations>
+              <action>permit</action>
+            </cmdrule>
+            <cmdrule>
+              <name>cli-show-alarm-history-cmd</name>
+              <context>cli</context>
+              <command>"show alarm-history"</command>
+              <access-operations>*</access-operations>
+              <action>permit</action>
+            </cmdrule>
+          </rule-list>
+        </nacm>
+      </config>
+    </edit-config>
+  </rpc>

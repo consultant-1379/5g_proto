@@ -1,0 +1,17 @@
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalUserCA
+metadata:
+  name: {{ template "eric-scp.name" . }}-manager-ca
+  labels:
+{{- include "eric-scp.labels" . | indent 4 }}
+    app: {{ template "eric-scp.name" . }}-manager
+  annotations:
+{{- include "eric-scp.helm-annotations" . | indent 4 }}
+{{- include "eric-scp.config-annotations" . | indent 4 }}
+spec:
+  kubernetes:
+    generatedSecretName: {{ template "eric-scp.name" . }}-manager-ca-certificate
+    certificateName: cacertbundle.pem
+  certificate:
+    subject:
+      cn: {{ template "eric-scp.name" . }}-manager-ca

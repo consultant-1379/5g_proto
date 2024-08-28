@@ -1,0 +1,38 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2019-07-03 16:00
+FOSS:
+    # Available in Bazaar
+    FOSSName: Commons BeanUtils, Apache
+    # Available in Bazaar
+    FOSSVersion: 1.9.3
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: http://httpd-mirror.frgl.pw/apache//commons/beanutils/source/commons-beanutils-1.9.3-src.tar.gz
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 9/CAX1053285
+    # Not Available in Bazaar
+    PRIMNumber(CTC): CTC 101 5263
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: Commons BeanUtils is a collection of utilities that makes working with beans and bean properties much easier.
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: Apache License 2.0
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: Apache License 2.0
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'commons-beanutils:commons-beanutils:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ENTNGRG Georgios Antoniou

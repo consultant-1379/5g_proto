@@ -1,0 +1,167 @@
+<?xml version="1.0" ?>
+<!-- ericsson-bsf-fm-instances 0.1.8 -->
+<!-- modified: 2021-05-25 -->
+<!-- Copyright (c) 2020 Ericsson AB. All rights reserved.     -->
+<config xmlns="http://tail-f.com/ns/config/1.0">
+    <fm xmlns="urn:rdns:com:ericsson:oammodel:ericsson-fm">
+		<alarm-model>
+            <id>eric-bsf-fm</id>
+            <alarm-type>
+                <id>Test</id>
+                <major-type>193</major-type>
+                <minor-type>8650752</minor-type>
+                <specific-problem>Test Alarm</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>This is a test alarm, please ignore.</additional-text>
+                <configured-severity/>
+                <default-severity>warning</default-severity>
+            </alarm-type>
+            <alarm-type>
+                <id>BsfNrfGroupUnavailable</id>
+                <major-type>193</major-type>
+                <minor-type>8650753</minor-type>
+                <specific-problem>BSF, NRF Group Unavailable</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>The NRF-group is unavailable</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+			<alarm-type>
+                <id>BsfUnsuccBindingDbOperations</id>
+                <major-type>193</major-type>
+                <minor-type>8650755</minor-type>
+                <specific-problem>BSF, Unsuccessful Binding Database Operations</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>Unsuccessful Binding Database Operations</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+			<alarm-type>
+                <id>BsfUnsuccDbSchemaInsertion</id>
+                <major-type>193</major-type>
+                <minor-type>8650756</minor-type>
+                <specific-problem>BSF, Unsuccessful Binding Database Schema Insertion</specific-problem>
+                <event-type>other</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>Unsuccessful Binding Database Schema Insertion</additional-text>
+                <configured-severity/>
+                <default-severity>critical</default-severity>
+            </alarm-type>
+			<alarm-type>
+                <id>MissingCertificate</id>
+                <major-type>193</major-type>
+                <minor-type>8650757</minor-type>
+                <specific-problem>BSF, Certificate Missing</specific-problem>
+                <event-type>other</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>An asymmetric key or/and a certificate authority are unavailable which can result in the failure of the secure connection that uses them.</additional-text>
+                <configured-severity/>
+                <default-severity>critical</default-severity>
+            </alarm-type>
+			<alarm-type>
+                <id>BsfBindingDbStorageHighUtilization</id>
+                <major-type>193</major-type>
+                <minor-type>8650758</minor-type>
+                <specific-problem>BSF, Binding Database Storage High Utilization</specific-problem>
+                <event-type>other</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>Binding database storage high utilization.</additional-text>
+                <configured-severity/>
+                <default-severity>critical</default-severity>
+            </alarm-type>			
+			<alarm-type>
+                <id>BsfBindingDbConnectionErrors</id>
+                <major-type>193</major-type>
+                <minor-type>8650759</minor-type>
+                <specific-problem>BSF, Binding Database Connection Errors</specific-problem>
+                <event-type>other</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>Binding database connection errors.</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>			
+			<alarm-type>
+                <id>BsfHighLoad</id>
+                <major-type>193</major-type>
+                <minor-type>8650760</minor-type>
+                <specific-problem>BSF, High Load</specific-problem>
+                <event-type>other</event-type>
+                <probable-cause>207</probable-cause>
+                <is-stateful>true</is-stateful>
+                <additional-text>BSF load has passed a defined threshold.</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>			
+			<alarm-type>
+                <id>BsfThrottlingErrors</id>
+                <major-type>193</major-type>
+                <minor-type>8650761</minor-type>
+                <specific-problem>BSF, Throttling Errors</specific-problem>
+                <event-type>other</event-type>
+                <probable-cause>207</probable-cause>
+                <is-stateful>true</is-stateful>
+                <additional-text>Requests rejected due to Request Throttling.</additional-text>
+                <configured-severity/>
+                <default-severity>warning</default-severity>
+            </alarm-type>			
+			<alarm-type>
+                <id>BsfVtapSegmentsDroppedRatio</id>
+                <major-type>193</major-type>
+                <minor-type>8650762</minor-type>
+                <specific-problem>BSF, Vtap segments dropped ratio</specific-problem>
+                <event-type>other</event-type>
+                <probable-cause>207</probable-cause>
+                <is-stateful>true</is-stateful>
+                <additional-text>BSF, Vtap segments dropped ratio.</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>			
+			<alarm-type>
+                <id>BsfCassandraNodeUnavailable</id>
+                <major-type>193</major-type>
+                <minor-type>8650763</minor-type>
+                <specific-problem>BSF, Cassandra Node Unavailable</specific-problem>
+                <event-type>other</event-type>
+                <probable-cause>14</probable-cause>
+                <is-stateful>true</is-stateful>
+                <additional-text>BSF, Cassandra Node Unavailable.</additional-text>
+                <configured-severity/>
+                <default-severity>critical</default-severity>
+            </alarm-type>			
+			<alarm-type>
+                <id>BsfCassandraDataCenterUnavailable</id>
+                <major-type>193</major-type>
+                <minor-type>8650764</minor-type>
+                <specific-problem>BSF, Cassandra Data Center Unavailable</specific-problem>
+                <event-type>other</event-type>
+                <probable-cause>14</probable-cause>
+                <is-stateful>true</is-stateful>
+                <additional-text>BSF, Cassandra Data Center Unavailable.</additional-text>
+                <configured-severity/>
+                <default-severity>critical</default-severity>
+            </alarm-type>			
+			<alarm-type>
+                <id>BsfUnresolvableHosts</id>
+                <major-type>193</major-type>
+                <minor-type>8650765</minor-type>
+                <specific-problem>BSF, Unresolvable Hosts</specific-problem>
+                <event-type>communications-alarm</event-type>
+                <probable-cause/>
+                <is-stateful>true</is-stateful>
+                <additional-text>One or more hostnames cannot be resolved</additional-text>
+                <configured-severity/>
+                <default-severity>major</default-severity>
+            </alarm-type>
+        </alarm-model>	
+    </fm>
+</config>

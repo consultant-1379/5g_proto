@@ -1,0 +1,13 @@
+eric-cm-yang-provider:
+  ldap:
+    ipv6Enabled: false
+
+eric-data-sftp-server:
+  userManagement:
+    ldap:
+      lookupFamilyOrder: ipv4_only
+
+eric-pm-bulk-reporter:
+  userConfig:
+    ldap:
+      useIPv6DNSFirst: false

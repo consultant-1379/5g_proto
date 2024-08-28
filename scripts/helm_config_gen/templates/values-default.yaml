@@ -1,0 +1,79 @@
+global:
+  log:
+    streamingMethod: "dual"
+    outputs: ["stream", "applicationLevel", "stdout", "k8sLevel"]
+  logShipper:
+    deployment:
+      type: "sidecar"
+
+eric-lm-combined-server:
+  licenseServerClient:
+    timer:
+      cumulativeUsageReportAggregationPeriod: 3600
+      licenseRequestAggregationPeriod: 20
+      peakUsageReportAggregationPeriod: 20
+
+eric-log-transformer:
+  labels:
+    eric-log-transformer-access: "true"
+  egress:
+    syslog:
+      certificates:
+        asymmetricKeyCertificateName: syslog-default-key-cert
+        trustedCertificateListName: sc-trusted-default-cas
+      remoteHosts:
+        - host: eric-syslog
+          port: 6514
+    lumberjack:
+      certificates:
+        asymmetricKeyCertificateName:
+        trustedCertificateListName: sc-trusted-default-cas
+      remoteHosts:
+        - id: ext-lj-1
+          host: eric-ext-log-transformer-1
+          port: 5044
+          codec: json
+          inclusions:
+            - field: "[extra_data][asi][log_plane]"
+              value: "alarm"
+        - id: ext-lj-2
+          host: eric-ext-log-transformer-2
+          port: 5044
+          codec: json
+          inclusions:
+            - field: "[facility]"
+              contains: "security"
+        - id: ext-lj-3
+          host: eric-ext-log-transformer-3
+          port: 5044
+          codec: json
+          exclusions:
+            - field: "[extra_data][asi][log_plane]"
+              value: "alarm"
+            - field: "[facility]"
+              contains: "security"
+
+eric-si-application-sys-info-handler:
+  applicationInfoService:
+    enabled: false
+    sendAppReport: false
+
+eric-tm-ingress-controller-cr:
+  labels:
+    eric-scp-worker-access: "true"
+    eric-sepp-worker-access: "true"
+    eric-data-search-engine-access: "true"
+    eric-pm-server-access: "true"
+
+eric-probe-virtual-tap-broker:
+  dtls:
+    enabled: false
+  egress:
+    VirtualTapBroker:
+      dscp: 34
+  resources:
+    VirtualTapBroker:
+      requests:
+        cpu: 2000m
+      limits:
+        cpu: 6000m

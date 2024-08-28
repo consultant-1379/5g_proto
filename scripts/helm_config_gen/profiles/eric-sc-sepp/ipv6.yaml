@@ -1,0 +1,11 @@
+global:
+  internalIPFamily: "IPv6"
+
+eric-sepp:
+  service:
+    worker:
+      externalIPv6:
+        enabled: true
+      multiVpn:
+         externalIPv6:
+           enabled: true

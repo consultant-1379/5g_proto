@@ -1,0 +1,385 @@
+Bob builder for Envoy
+---------------------
+
+Build of versions <= 1.16.0 is broken with the 3.x builder due to the non-root access rights.
+To build an older version, use the latest 2.x builder.
+
+Changelog
+---------
+3.0.0-21 - Upgrade to CBOS 6.15.0
+         - Apply Iasonas' patch for DND-65678 to correct the version information file
+3.0.0-20 - Add LLVM 17.0.4
+         - Upgrade to CBOS 6.9.0
+         - Upgrade to OpenJDK 21.0.2
+         - Upgrade to Bazelisk 1.19.0
+3.0.0-19 - Disable sandbox-debug due to log spamming on Ubuntu VDI
+         - Use new buildserver seroius05062
+3.0.0-18 - Fix Envoy Doc Build
+3.0.0-17 - Upgrade to CBOS 6.1
+         - Upgrade to gcc12
+         - Upgrade to Python 3.11
+         - Upgrade to OpenJDK 21.0.1
+         - Upgrade to Bazel 1.18.0
+         - Disable Python 2.7 compilation
+         - Printout sc_envoy commit ID before compilation
+3.0.0-16 - Fix use of compiled LLVM versions
+           Upgrade to CBOS 5.22
+3.0.0-15 - Updated build_envoy.sh to support tests and generation of documentation
+3.0.0-14 - Upgrade to CBOS 5.19 
+           Add compiled LLVM versions 12.0.1 and 14.0.6 (pre-compiled 12.0.0 from LLVM Project is default)
+           The image has labels attached listing the availabe and default LLVM versions 
+           Add new property to ruleset to select LLVM version to use
+           Updated rule to build LLVM
+3.0.0-13 - Upgrade to CBOS 5.17
+           Upgrade to Bazelisk 1.17           
+           Update LLVM compilation task
+           Stop execution when build fails
+3.0.0-12 - Upgrade to CBOS 5.14
+           Upgrade to Java 20.0.1
+           Upgrade to Bazelisk 1.16
+3.0.0-11 - Upgrade to CBOS 5.8.0
+         - Upgrade to Java 19.0.2
+         - Include libraries for compiling LLVM
+3.0.0-10 - Upgrade to CBOS 5.5.0
+           Build Envoy Base images with MicroCBOS
+           Move image creation to the "push images" rule
+3.0.0-9 - Upgrade to CBOS 5.3.0
+        - Fix bazel flag handling
+3.0.0-8 - Upgrade to CBOS 5.2.0
+        - Upgrade to Bazelisk 1.15.0
+3.0.0-7 - Upgrade to CBOS 5.1.0
+        - Upgrade to Java 19.0.1
+3.0.0-6 - Add fixes for remote build issues
+        - Change handling of build type variable
+3.0.0-5 - Upgrade to CBOS 4.3.0
+        - Add dedicated remote-build rules
+        - Add property to set jobs for remote build
+3.0.0-4 - Upgrade to CBOS 4.2.0
+        - Upgrade to Bazelisk 1.14.0
+3.0.0-3 - Upgrade to CBOS 4.1.0
+        - Upgrade to gcc11
+        - Remove CBOS black repo
+        - Add compiled Python 2 (Python 2 RPM unavailable in CBOS 4)
+        - Update to Java 18.0.2.1
+        - Update to Bazelisk 1.13.2
+        - Support for old versions (<= 1.19) partially fixed (llvm 11 access rights) but still broken
+3.0.0-2 - Remote build fix for IPv6 environment
+        - Add Remote test support
+3.0.0-1 - Add support for remote builds on the buildserver
+          The builder opens an ssh tunnel towards the buildserver and runs the build remotely.
+          For that to work non-interactive, it is necessary to add your public ssh key(s) to the buildserver.
+          Perform the following action to do so:
+          ssh-copy-id <your signum>@seroius01580.sero.gic.ericsson.se
+          Toggle "local" or "remote" build with the new property ENVOY_BAZEL_BUILD.
+          Default is "local".
+          Note: In case of a remote build, ENVOY_BAZEL_JOBS is ignored and hardcoded to 20.
+        - Introduce property that holds default docker flags
+        - Introduce variable that takes additional docker flags (e.g. for mounting the ssh directory in case
+          of remote builds) 
+        - Upgrade to CBOS 3.60.0
+        - Upgrade to ADP Dev Repo 1.35.2
+        - Upgrade to OpenJDK 18.0.2
+3.0.0-0 - All builds are now run as non-root
+        - Replace curl from CBOS repo with curl from CBOS Black Repo to allow build as non-root
+        - Add group "eusers" to container and set permissions to /build folder
+        - Upgrade to CBOS 3.58.0
+        - Upgrade to ADP Dev Repo 1.35.0
+        - Upgrade to CBOS Black Repo 4.0.0-3
+        - Changes to build_envoy.sh
+
+2.3.3-2 - Upgrade to Java 18.0.1.1
+        - Upgrade to Bazelisk 1.12.0
+        - Upgrade to CBOS 3.57.0
+2.3.3-1 - Include all debug symbols
+2.3.3-0 - Include libffi for compdb update
+        - Include CBOS Black Repo
+        - Include CBOS Devel Repo
+        - Upgrade to CBOS 3.54.0
+        - Upgrade to ADP Dev Repo 1.30
+        - Upgrade to Python 3.10 for compdb update
+        - Suppress git warning for sc_envoy repository
+        - Change directory layout for debug files to start with bazel-out in tar file
+        - Add test support for envoy 1.21.x and 1.22.x
+        - Minor optimizations
+2.3.2-6 - Upgraded to CBOS 3.50.0
+        - Upgraded to ADP Dev Repo 1.28.0
+        - Upgraded Java to 18.0
+        - Reduce builder image size: 6.56GB -> 4.25GB
+          Keep LLVM11 as tar and only unpack if an old version is built
+        - Use variables from base ruleset
+2.3.2-5 - Upgraded to CBOS 3.45.0
+          Securely add CBOS Repos
+          Upgraded to Java 17.0.2
+          Upgraded to ADP Dev Repo 1.27.5
+2.3.2-4 - Install virtualenv for Python 3.9 
+          Remove virtualenv for Python 3.6
+2.3.2-3 - Collect all bazel flags in one variable
+          Upgraded ADP Dev Repo to 1.27.1
+          Upgraded Bazelisk to 1.11.0
+          Introduced new flag for SSL Key Logging
+2.3.0-2 - Upgrade to CBOS 3.36.0
+          Add ADP Dev Repo to Base Ruleset
+          Remove unused variable from Dockerfile
+2.3.1-1 - Upgraded to CBOS 3.38.0
+          Upgraded to ADP Dev Repo 1.25.13
+          Included Python 3.9 (Set as default)
+          Added Python check: From 1.20 onwards, Python 3.9 is used, for any version before Python 2.7
+2.3.1-2 - Upgraded Java to 17.0.1
+          Optimized Dockerfile layers
+2.3.2-1 - Upgraded CBOS to 3.39.0
+          Upgraded ADP Dev Repo to 1.27.0
+          Included debug symbols in debug image
+          Included envoy sourcecode in debug image
+          Included dgb, binutils and wget in debug image
+          Restructured ruleset
+          build.sh cleanup
+2.3.2-2 - Upgraded to CBOS 3.41.0
+          Install libatomic1 from ADP Dev Repo instead of CBOS Repo
+          Fixed version switch between python 3.6 and 3.9
+2.3.2-3 - Collect all bazel flags in one variable
+          Upgraded ADP Dev Repo to 1.27.1
+          Upgraded Bazelisk to 1.11.0
+          Introduced new flag for SSL Key Logging          
+
+Old Versions:
+1.0.0   - First release
+1.0.1   - Added Envoy patches to builder
+1.0.2   - Upgraded to Common Base OS 2.2.0-28
+        - Fixed sizeopt-flag for Envoy 1.11.1 build
+1.0.3   - Upgraded to Common Base OS 2.3.0-12     
+1.0.4-1 - Upgraded to Common Base OS 2.5.0-12
+        - Switched to make, cmake, libltdl7, patch from the Common Base OS repository
+        - Upgraded to Java 13
+        - Adapted version to ADP style
+        - Temporary fix for Error 404 in Bazel Repositories definition file
+1.0.4-2 - Moved Bazel Repositories fix to /envoy_patches folder
+1.0.4-3 - Adapted Envoy Version printout to JSON
+1.0.4-4 - Removed support for Envoy < 1.11.0
+        - Added mapped patches for Envoy 1.11.2
+2.0.0-1 - Rework of the builder to use one builder for all Envoy versions: Bazel installation has been moved to runtime
+        - All necessary Bazel installation files are part of the container
+        - Bazel will be installed in the running container depending on which Envoy version is being built
+2.0.0-2 - Uplifted RPMs to SLES15 SP1
+2.0.0-3 - Added support for Envoy 1.30.0
+2.0.0-4 - Added support for Envoy 1.12.1 - 1.12.3 (Incl. outlier patches)
+        - Switched to official SLES Builder Common Base OS 3.0.0-9
+        - Reduced integration of non-ADP repositories
+        - Fixed compilation issue for Envoy > 1.12.0
+2.0.0-5 - Added support for Envoy 1.13.0 and 1.13.1 (Incl. outlier patches)
+        - Removed info on minideb builder        
+2.1.0-1 - Bazel artifacts are now stored in .bazel in the local 5g_proto dir
+          -> reduces rebuildtime significantly on subsequent builds
+        - Patches are not copied to the builder anymore but taken from the
+          local 5g_proto dir when the container is running
+          -> No need to recreate the builder in case of new patches to the envoy source code
+        - BoringSSL can now be built with FIPS via the flag ENVOY_BORING_SSL_FIPS_FLAG in the esc ruleset 
+        - Fixed outlier patches for envoy 1.13.0 and 1.13.3           
+2.1.0-2 - Removed unused custom envoy make targets
+        - Removed "sles" suffix from targets/names/rules etc.
+        - Removed double-installations of rpms
+        - Switched more rpms to the official adp builder repository
+2.1.0-3 - Updated Java to 13.0.2
+2.1.0-4 - Support for Envoy 1.14.x
+2.1.0-5 - Limited parallel bazel jobs to 3 due to VM performance
+        - Removed sizeopt flag as it is overridden by the opt flag
+2.1.0-6 - Updated deprecated link to the you-linux repository
+2.1.1-1 - Updated Java to 14.0.1
+          Added support for Envoy 1.14.3
+2.1.1-2 - Added support for Envoy 1.15.0
+          Added "latest" bazel version for Envoy 1.15.0
+2.1.1-3 - Updated Java to 14.0.2     
+        - Support for Envoy 1.16.0
+2.1.1-4 - Envoy compiles with exporting all symbols     
+        - Support for Envoy 1.15.1 and 1.15.2
+        - Updated Common Base OS for builder to 3.13.0-16
+        - Suse repositories cleanup
+        - Build script shows build time
+2.1.1-5 - Support for Envoy 1.16.0 via LLVM10 package and clang build
+        - Disabled unused packages for 1.16.0 via patch
+        - Updated gcc7 -> gcc9
+        - Updated LLVM7 -> LLVM9
+        - Updated clang5 -> clang9        
+        - Introduced flags for running tests and build types (release/fast/debug)
+2.1.1-6 - Updated builder to CBOS 3.14.0-16
+2.2.1-0 - Moved all Builder/Envoy Stuff to the Envoy-Ruleset
+2.2.1-1 - Fix for having the builder version in the VERSION_INFO file
+2.2.1-2 - LLVM build support for 1.16.x and 1.17.x
+2.2.2-0 - Upgraded java to 15.0.1
+        - Upgraded LLVM to 11.0.0
+        - Upgraded to CBOS 3.18.0-18
+        - Changed layer order for image optimization
+2.2.2-1 - Removed clang9 as LLVM is used
+        - Using more packages from CBOS repositories
+        - Changed layers
+        - Fixed current bazelisk version instead of latest
+        - Increased numbers of parallel jobs
+        - README updates
+2.2.2-2 - Removed all old bazel/bazelisk versions
+        - Use USE_BAZEL_VERSION variable for non-bazelisk compatible envoy versions
+        - Upgraded LLVM to 11.0.1
+        - Upgraded Java to 15.0.2
+        - CBOS version now passed als parameter to CBOS Dockerfile
+        - sc_envoy local builds are build as the current user, not as root. 
+          This allows easier handling of the output files. 
+          So far only non-FIPS builds are possible as user and intended for development builds. 
+          Builds to be intended for release (and builds from Github) will still be built as root and contain FIPS.
+        - sc_envoy output filders get a -local suffix in the bazel output folder to allow preseveration of official and local
+          build artifacts simulataneously
+        - Output folders contain now info about the build type and fips status, e.g.
+          envoy:    v1.17.0-official-RELEASE-FIPS
+                    v1.17.0-official-RELEASE
+                    v1.17.0-official-FAST-FIPS
+          sc-envoy: v1.17.0-local-RELEASE                            
+                    v1.17.0-local-RELEASE-FIPS
+2.2.2-3 - Upgraded to CBOS 3.19.0
+        - Upgraded ADP Build Env to 1.18.1
+        - Version info contains info if a local build (sc_envoy) or github build (envoy) was performed
+2.2.2-4 - Upgraded to CBOS 3.21.1
+          Upgraded ADP Dev Repo to 1.22.1
+          Upgraded Java to JDK 16
+          LLVM is used per default for all new versions
+2.2.2-5 - Upgraded to CBOS 3.22.0
+2.2.2-6 - Upgraded to CBOS 3.24.0
+          Upgraded to OpenJDK 16.0.1
+          Upgraded ADP Dev Env Repo to 1.22.9
+          Install cmake and zip from CBOS repo
+          Add new environment variable to ruleset for setting the Bazel "jobs" option
+2.2.2-7 - Upgraded to CBOS 3.25.0
+          Upgraded Bazelisk to 1.8.1
+2.2.2-8 - Upgraded to CBOS 3.27.0
+          Upgraded to Bazelisk 1.9.0
+          Upgraded ADP Dev Env Repo to 1.14.1
+2.2.2-9 - Upgraded to CBOS 3.31.0
+          Upgraded to Bazel 1.10.1
+          Upgraded to Java 16.0.2
+          Upgraded to gcc 10
+          Upgraded to libasan 6
+          Upgraded to ADP Dev Env Repo 1.25.5
+          Remove LLVM RPM install from CBOS Repo
+          Install make from the ADP Dev Env Repo
+2.2.2-10 - Upgraded to CBOS 3.32.0
+2.2.2-11 - Upgraded to CBOS 3.33.0
+           Upgraded to ADP Dev Env Repo 1.25.7
+2.3.0-1 -  Upgrade to CBOS 3.35.0
+           Upgraded to ADP Dev Env Repo 1.25.10
+           Switched to gcc10
+           Included two LLVM versions: 11 + 12 with automatic choice
+           Envoy 1.19.x and below use LLVM11, Envoy 1.20.x and above LLVM12
+           Fixed error in status printouts
+           Cleanup
+
+
+Author
+------
+eedbjhe
+
+
+Usage
+-----
+To create the Envoy builder, run "make" in this folder.
+
+To build envoy, set the desired Envoy version in rulesets/ruleset2.0-envoy.yaml.
+
+To build the envoy base images (production & debug), run
+bob/bob -r rulesets/ruleset2.0-eric-envoy.yaml build-sc-envoy-fips
+
+To push the images, run
+bob/bob -r rulesets/ruleset2.0-eric-envoy.yaml push-images
+
+More information can be found at
+WoW for building and modifying Envoy (WiP)
+https://eteamspace.internal.ericsson.com/pages/viewpage.action?pageId=608802737
+
+
+Info
+----
+The builder contains all necessary software to compile Envoy.
+The builder clones the Envoy repository from Github and compiles the Envoy version specified in the ruleset.
+Git patches may be placed in the envoy_patches directory for the corresponding version and will be applied before the build.
+
+Additional software in the builder is installed from the official Common Base OS repositories and the local Ericsson Suse
+(you) server.
+
+
+Ruleset parameters
+------------------
+ENVOY_VERSION - The internal Envoy version number, according to Ericsson versioning rules.
+ENVOY_GIT_TAG - The verstion to checkout from Github.
+ENVOY_BORING_SSL_FIPS - Boolean whether to build BoringSSL according to FIPS or not
+ENVOY_WORKER_DIR - The location where the Dockerfile for the SCP Worker resides
+ENVOY_BAZEL_OUTPUT_DIR - Local output directory for the Bazzel artifacts. NOTE: This has to be deleted with sudo rights as it is owned by
+                         root.
+
+Details
+-------
+The SLES container is built on the Common Base Image.
+For software that is missing from the Common Base Image Repository, SLES15 repositories of the you.linux.ericsson.se server are added.
+The builder is not yet pushed to Artifactory, it needs to be present in your local Docker registry.
+
+The first build process takes about 120 minutes on a VM with 3 cores and 16GB RAM.
+Earlier versions (<1.12.0) take about an hour.
+Subsequent builds will be faster as the artifacts are stored outside the builder on your local filesystem, taking about 4GB for
+one version.
+
+When invoked, the builder clones the Envoy repository from Github, checks out the specified version tag (as specified in the ruleset),
+installs and invokes Bazel and builds two static binaries.
+One includes debug symbols (~700MB) and one is build for production and performance (~25MB).
+For each of these binaries, an Envoy Base Image is created that is then used as base image to build the scp worker.
+Version information (Build date, used builder, etc.) is stored in a file that is included in the base image together
+with the binary (VERSION_INFO).
+
+The according rule in the esc ruleset is called "envoy".
+If the builder was upgraded to a newer version, also remember to update the builder version in the base ruleset.
+The Envoy version is taken from the variable ENVOY_GIT_TAG in the esc ruleset.
+The variable ENVOY_VERSION is to be set to correspond with the Ericsson version convention.
+
+Bazel needs to run as root for now to avoid some issues, which is why the Bob default settings are overridden in the esc ruleset.
+A compilation of local files is not (yet?) possible as the Bazel-task running as root in the container has not the necessary access rights
+on the local home directory mounted in the container.
+As a result, everything is done in the container with root permissions, and the compiled binary is copied to the .bob folder.
+This binary is also then owned by root.
+
+Bazel artifacts, as mentioned above, are stored on your local filesystem. In there is a symbolic link that points
+to a directory that is part of the container. This link is created by Bazel for convenience and can be ignored. 
+The fact that the link is not working has no further implications.
+
+The final binaries and version infos will be copied to the .bob folder.
+If you run the Bob clean-target the binaries will be removed and you will need to recompile.
+The bazel artifacts in your home will not be removed as root is the owner of these files for reaseons explained above.
+To clean those up, please delete them manually with sudo rights.
+
+Code changes to envoy can be achieved by including them in the envoy_patchs directory as GIT patches.
+They will be applied by the build_envoy.sh script.
+It is not necessary to rebuild the builder when the patches are updated as they are taking directly from the local
+directory from the running container.
+
+When the base images are being built, the ruleset renames the binary and copies it over to scp/envoywrk directory where the Dockerfile.sles
+is used to build the Envoy container.
+
+
+Base images
+-----------
+The mentioned base images use the Common Base Image and include the built Envoy binary and version information in it.
+They are used as base for the esc/scp/envoywrk/Dockerfile Envoy image, which will add configuration files and an entrypoint.
+
+
+Rules and makefiles
+-------------------
+ruleset:
+envoy:
+   task: build           : invokes the sles builder and compiles Envoy. The version to be compiled is specified in the ruleset under ENVOY_VERSION                     
+   task: image           : Copies the static stripped binary from the .bob folder to esc/scp/envoywrk, renames it and creates the scp worker image for production
+   task: image-debug     : same as above, but uses the binary containing debug symbols.
+   task: push-images     : pushes the images to artifactory.   
+   task: clean           : removes artifacts from the .bob folder and scp worker directory
+   
+Makefile:
+make build-envoy-base-image : creates the Envoy base image, that is the currently set version of the Common Base OS with the Envoy binary
+make push-envoy-base-image  : pushes the image to artifactory.
+
+
+Compatibility
+-------------
+Since not each Envoy can be compiled with each Bazel version, the builder contains the necessary Bazel installers needed to build from version
+1.10.0 upwards. Depending on which Envoy version has been selected for building, the builder will install the corresponding Bazel version.
+By this, all Envoys can be built by using this one builder.

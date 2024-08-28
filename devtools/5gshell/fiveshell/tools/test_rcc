@@ -1,0 +1,313 @@
+#!/usr/bin/perl -w
+#
+# Test program for SCP for China Telecom (Regional Converged Charging)
+#
+# Usage:
+#  -1              only CREATE (default is -1 -2 -3 -4)
+#  -2 location     only UPDATE or MODIFY (default is -1 -2 -3 -4)
+#  -3 location     only RELEASE (default is -1 -2 -3 -4)
+#  -4              only NOTIFY
+#  -q [1|2]        converged charging: use v1 or v2
+#  -n number       number of iterations for each request (default is one)
+#  -o              no colors
+#  -v              verbose mode: print curl requests and replies
+#  -w              worker service name, default is 'eric-scp-worker'
+#  -N node_ip
+#  -W worker port
+#  -C chfsim_port  for notify
+#  -O notifyUrl    for notify
+#  -E envoyDomain  default is "scp.ericsson.se"
+#  -F fiveshellDir directory where fiveshell.py is stored
+#  -P              prompt after each request
+#
+# Send for Converged Charging:
+#   CREATE
+#   UPDATE to the chargingDataRef obtained with CREATE
+#   RELEASE to the chargingDataRef obtained with CREATE
+#   NOTIFY for a NotifyUri sent with a CREATE
+#
+# eedala, 2019-05-08 2020-06-05
+
+use strict;
+use Getopt::Std;
+
+getopts("12:3:4hC:E:F:N:n:oO:Pq:vw:W:");
+$::opt_h = $::opt_h;
+$::opt_E = $::opt_E;
+$::opt_F = $::opt_F;
+$::opt_C = $::opt_C;
+$::opt_n = $::opt_n;
+$::opt_N = $::opt_N;
+$::opt_o = $::opt_o;
+$::opt_O = $::opt_O;
+$::opt_W = $::opt_W;
+$::opt_w = $::opt_w;
+
+if ($::opt_h) {
+print"
+Test program for SCP for China Telecom (regional-CC)
+
+Usage:
+ -1              only CREATE (default is -1 -2 -3 -4)
+ -2 location     only UPDATE (default is -1 -2 -3 -4)
+ -3 location     only RELEASE (default is -1 -2 -3 -4)
+ -4              only NOTIFY
+ -q [1|2]        converged charging: use v1 or v2
+ -n number       number of iterations for each request (default is one)
+ -o              no colors
+ -v              verbose mode: print curl requests and replies
+ -w              worker service name, default is 'eric-scp-worker'
+ -N node_ip
+ -W worker port
+ -E envoyDomain  default is scp.ericsson.se
+ -F fiveshellDir directory where fiveshell.py is stored
+ -C chfsim_port  for notify
+ -O notifyUrl    for notify
+ -P              prompt after each request
+
+Send for Converged Charging:
+  CREATE
+  UPDATE to the chargingDataRef obtained with CREATE
+  RELEASE to the chargingDataRef obtained with CREATE
+  NOTIFY for a NotifyUri sent with a CREATE
+";
+exit;
+
+}
+
+
+if ((! $::opt_1) && (! $::opt_2) && (! $::opt_3) && (! $::opt_4))
+{
+  $::opt_1 = 1;
+  $::opt_2 = 1;
+  $::opt_3 = 1;
+  $::opt_4 = 1;
+}
+$::opt_n ||= 1;
+$::opt_w ||= 'eric-scp-worker';
+my $worker_svc = $::opt_w;
+
+my $location;
+# If only UPDATE (no CREATE), then we need the location from the user:
+if ($::opt_2 && !$::opt_1)
+{
+  $location = $::opt_2;
+}
+# If only DELETE (no CREATE and no UPDATE), then we need the location from the user:
+if ($::opt_3 && !$::opt_1)
+{
+  $location = $::opt_3;
+}
+
+# Protocol versions:
+$::opt_q ||= 1; # Converged Charging
+
+##------------------------------------------------------------------------
+## Colors!!
+if ($::opt_o)
+{
+  $::red     = "";
+  $::green   = "";
+  $::yellow  = "";
+  $::blue    = "";
+  $::magenta = "";
+  $::reset   = "";
+}
+else
+{
+  $::red     = "\e[31m";
+  $::green   = "\e[32m";
+  $::yellow  = "\e[33m";
+  $::blue    = "\e[34m";
+  $::magenta = "\e[35m";
+  $::reset   = "\e[0m";
+}
+
+$::yellow  = $::yellow;
+$::blue    = $::blue;
+$::magenta = $::magenta;
+
+##------------------------------------------------------------------------
+my $user = $ENV{"USER"};
+my $worker_port = $::opt_W || `kubectl get --namespace 5g-bsf-$user -o jsonpath="{.spec.ports[0].nodePort}" services $worker_svc`;
+my $chfsim1_port = $::opt_C || `kubectl get --namespace 5g-bsf-$user -o jsonpath="{.spec.ports[0].nodePort}" services eric-chfsim-1`;
+my $node_ip = $::opt_N || `kubectl get nodes --namespace 5g-bsf-$user -o jsonpath="{.items[3].status.addresses[0].address}"`;
+my $notifySmfUri = $::opt_O || "http://eric-chfsim-7:80/nchf-convergedcharging/v$::opt_q/chargingdata/notify_cc_receiver";
+my $envoy_domain = $::opt_E || "scp.ericsson.se";
+my $pwd = `pwd`; chomp($pwd);
+my $fiveshell_dir = $::opt_F || $pwd . "/..";
+
+##------------------------------------------------------------------------
+# 
+sub cc_create
+{
+    my $region = shift;
+    my $expected_chf = shift;
+
+    # Send CC-CREATE
+    my $createCmdCC = <<EOCCC;
+docker run --rm -v "$fiveshell_dir/tools:/data" curlnew -Ssv --stderr - -X POST -H 'Content-Type: application/json' -d '\@/data/rcc_create_body_Region$region.json' --resolve $envoy_domain:$worker_port:$node_ip --http2-prior-knowledge  'http://$envoy_domain:$worker_port/nchf-convergedcharging/v$::opt_q/chargingdata'
+EOCCC
+
+    print "CC CREATE Region$region:\n$createCmdCC" if $::opt_v;
+
+    my $createCC = `$createCmdCC`;
+    print "$createCC" if $::opt_v;
+
+    if ($createCC !~ m/HTTP\/2 201/)  # CREATE failed
+    {
+      print $::red . "CC CREATE failed Region$region: \n$::reset$createCmdCC\n$createCC\n";
+      exit 1;
+    }
+
+    # CREATE failed:
+    if ($createCC !~ m/location: (\S+)/)
+    {
+      print $::red . "CC CREATE failed Region$region: no 'location:'-header found in reply\n$::reset$createCmdCC\n$createCC\n";
+      exit 1;
+    }
+    # CREATE returned a location header. Good.
+    $location = $1;
+
+    if ($createCC !~ m/$expected_chf/)
+    {
+      print $::red . "CC CREATE failed Region$region: expected $expected_chf to reply\n$::reset$createCmdCC\n$createCC\n";
+      exit 1;
+    }
+
+    print $::green . "CC CREATE OK Region$region  ". $::reset;
+    print "Location: $location\n";
+    $location =~ m|chargingdata/(.+)$|;
+    my $cdr = $1;
+
+    if ($::opt_P)
+    {
+      print "Press Enter to continue\n";
+      <STDIN>;
+    }
+    
+    return $cdr;
+}
+
+##------------------------------------------------------------------------
+#
+sub cc_update
+{
+    my $cdr = shift;
+    my $region = shift;
+    my $expected_chf = shift;
+
+    # Send CC-UPDATE:
+    my $updateCmdCC = <<EOUCC;
+docker run --rm -v "$fiveshell_dir/tools:/data" curlnew -Ssv --stderr - -X POST -H 'Content-Type: application/json' -d '\@/data/rcc_create_body_Region$region.json' --resolve $envoy_domain:$worker_port:$node_ip --http2-prior-knowledge  'http://$envoy_domain:$worker_port/nchf-convergedcharging/v$::opt_q/chargingdata/$cdr/update'
+EOUCC
+    print "CC UPDATE Region$region\n$updateCmdCC" if $::opt_v;
+
+    my $updateCC = `$updateCmdCC`;
+    print "$updateCC" if $::opt_v;
+
+    if ($updateCC !~ m/HTTP\/2 20\d/)  # UPDATE failed
+    {
+      print $::red . "CC UPDATE failed Region$region:\n$::reset$updateCmdCC\n$updateCC\n";
+      exit 1;
+    }
+
+    if ($updateCC !~ m/$expected_chf/)
+    {
+      print $::red . "CC UPDATE failed Region$region: expected $expected_chf to reply\n$::reset$updateCmdCC\n$updateCC\n";
+      exit 1;
+    }
+
+    print $::green . "CC UPDATE OK Region$region\n" . $::reset;
+
+    if ($::opt_P)
+    {
+      print "Press Enter to continue\n";
+      <STDIN>;
+    }
+}
+
+##------------------------------------------------------------------------
+#
+sub cc_release
+{
+    my $cdr = shift;
+    my $region = shift;
+    my $expected_chf = shift;
+
+    # Send CC-RELEASE:
+    my $releaseCmdCC = <<EORCC;
+docker run --rm -v "$fiveshell_dir/tools:/data" curlnew -Ssv --stderr - -X POST -H 'Content-Type: application/json' -d '\@/data/rcc_create_body_Region$region.json' --resolve $envoy_domain:$worker_port:$node_ip --http2-prior-knowledge  'http://$envoy_domain:$worker_port/nchf-convergedcharging/v$::opt_q/chargingdata/$cdr/release'
+EORCC
+    print "CC RELEASE Region$region:\n$releaseCmdCC" if $::opt_v;
+
+    my $releaseCC = `$releaseCmdCC`;
+    print "$releaseCC" if $::opt_v;
+    
+    if ($releaseCC !~ m/HTTP\/2 204/)
+    {
+      print $::red . "CC RELEASE failed Region$region:\n$::reset$releaseCC\n";
+      exit 1;
+    }
+    print $::green . "CC RELEASE OK Region$region (only checked 204, not which chfsim replied)\n" . $::reset;
+}
+
+##------------------------------------------------------------------------
+sub cc_notify
+{
+    my $region = shift;
+    my $expected_chf = shift;
+
+    my $safe_node_ip = ($node_ip =~ m/:/) ? "[$node_ip]" : $node_ip;
+
+    # Send NOTIFY for CC
+    my $notifyCmdCC = <<EONCC;
+docker run --rm -v "$fiveshell_dir/tools:/data" curlnew -Ssv --stderr - --http2-prior-knowledge -X POST  --proxy '$safe_node_ip:$worker_port' 'http://eric-$expected_chf/nchf-convergedcharging/notify-cg/v2/chargingdata?SmfUri=$notifySmfUri'
+EONCC
+    print "CC NOTIFY Region$region:\n$notifyCmdCC" if $::opt_v;
+
+    my $notifyCC = `$notifyCmdCC`;
+    print "$notifyCC" if $::opt_v;
+
+    if ($notifyCC !~ m/HTTP.+ 204/)
+    {
+      print $::red . "CC NOTIFY failed Region$region:\n$::reset$notifyCC\n";
+      exit 1;
+    }
+    if ($notifyCC !~ m/$expected_chf/)
+    {
+      print $::red . "CC NOTIFY failed Region$region: expected $expected_chf to reply\n$::reset$notifyCC\n";
+      exit 1;
+    }
+
+    print $::green . "CC NOTIFY OK Region$region \n" . $::reset;
+}
+
+##------------------------------------------------------------------------
+# CONVERGED CHARGING
+{
+  print "Using protocol version v$::opt_q for Converged Charging\n";
+    my $cdr;
+    $cdr = cc_create("A", "chfsim-1") if ($::opt_1);
+    cc_update($cdr,  "A", "chfsim-1") if ($::opt_2);
+    cc_release($cdr, "A", "chfsim-1") if ($::opt_3);
+    cc_notify(       "A", "chfsim-7") if ($::opt_4);
+    cc_notify(       "A", "chfsim-8") if ($::opt_4);
+
+    $cdr = cc_create("B", "chfsim-3") if ($::opt_1);
+    cc_update($cdr,  "B", "chfsim-3") if ($::opt_2);
+    cc_release($cdr, "B", "chfsim-3") if ($::opt_3);
+    
+    $cdr = cc_create("C", "chfsim-5") if ($::opt_1);
+    cc_update($cdr,  "C", "chfsim-5") if ($::opt_2);
+    cc_release($cdr, "C", "chfsim-5") if ($::opt_3);
+
+
+  ##------------------------------
+
+  #--------------------------
+
+  print "All tests complete\n";
+}
+
+

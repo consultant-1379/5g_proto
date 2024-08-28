@@ -1,0 +1,7 @@
+eric-cm-yang-provider:
+  service:
+    allocateLoadBalancerNodePorts: true
+    
+eric-data-sftp-server:
+  service:
+    allocateLoadBalancerNodePorts: true

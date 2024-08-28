@@ -1,0 +1,87 @@
+# SC-TOOLS
+
+global:
+  registry:
+    url: "armdocker.rnd.ericsson.se"
+  pullSecret: ""
+  k6:
+    enabled: true 
+  seppsim:
+    enabled: false 
+  nrfsim:
+    enabled: true 
+  sftp: 
+    enabled: true 
+  chfsim:
+    enabled: true
+  dscload:
+    enabled: true 
+
+eric-k6:
+  # imageCredentials:
+    # registry:
+      # url:
+      # pullSecret:
+  spec:
+    replicas: "4"
+
+
+eric-seppsim:
+  # imageCredentials:
+    # registry:
+      # url:
+      # pullSecret:
+  certificates:
+    enabled: false 
+     
+
+eric-nrfsim:
+  # imageCredentials:
+    # registry:
+      # url:
+      # pullSecret:
+  certificates:
+    enabled: false 
+  
+eric-chfsim:
+  # imageCredentials:
+    # registry:
+      # url:
+      # pullSecret:
+  certificates:
+    enabled: false
+  # chfsim: "chfsim" 
+  
+#  eric-chfsim-redis:
+  # imageCredentials:
+    # registry:
+      # url:
+      # pullSecret:
+  certificates:
+    enabled: false
+ 
+#  eric-atmoz-sftp:
+  # imageCredentials:
+    # registry:
+      # url:
+      # pullSecret:
+
+eric-dscload:
+  configuration:
+    # af-diameter-realm: "af-diamrealm"
+    # pcf-diameter-host: "pcf-diamhost.com"
+    # pcf-diameter-realm: "pcf-diamrealm.com"
+    # diameter-service-ip: 10.63.138.252
+    # diameter-service-port: 3868
+    # diameter-service-name 
+    diameter-tps: 500
+    #  ip-version: 4
+    tls:
+      enabled: false
+  # imageCredentials:
+    # registry:
+      # url:
+      # pullSecret:
+
+
+

@@ -1,0 +1,176 @@
+
+
+
+PREPARATION
+
+>>>>>>>> Get Mouse!!!
+>>>>>>>> Open SuSE shell
+>>>>>>>> Open vSPhere GUI
+
+
+
+
+
+EXECUTION
+
+>>>>>>>> USE NODE 1 AS MAIDEN CentOS (for this section)
+
+
+Namespace:
+==========
+- ssh node2
+- ll /proc/$$/ns
+- ping -c 2 hpmuseum.org
+- ip a
+- unshare --net bash
+- ip a
+
+
+Container I (fetch and run webserver):
+======================================
+- Show web page https://hub.docker.com
+	- Explore
+	- Go to Engine-X (nginx)
+- docker pull nginx
+- docker run --detach --publish 80:80 --name webserver nginx
+- docker container list --all
+- curl http://127.0.0.1
+
+- docker stop webserver
+- docker container list --all
+- docker start webserver && curl http://127.0.0.1		# TIMING = SUPER FAST!!!
+- docker stop webserver
+
+
+
+Container II (show that different OS share same kernel):
+========================================================
+- cat /etc/os-release
+- uname -a
+- Show web page https://hub.docker.com
+	- Explore
+	- Go to Ubuntu
+- docker pull ubuntu
+- docker images
+- docker run -ti --entrypoint /bin/sh ubuntu
+- cat /etc/os-release									# SAME KERNEL DIFFERENT OS!!!
+- uname -a
+
+
+IN DIFFERENT TERMINAL ON THE GUEST (node1):				# JUST A PROCESS IN THE GUEST OS
+- docker container list
+- ps -ef | grep <Container ID>
+
+
+- cd /etc/init.d
+- exit
+
+
+Container III (create an own image):
+====================================
+- mkdir /root/context
+- cd /root/context
+- vi Dockerfile:
+FROM ubuntu
+CMD ["/bin/sh" "-c" "echo Hello from the Ubuntu Container"]
+- docker build -t hello-ubuntu:latest .
+- docker images
+- docker run hello-ubuntu
+
+
+
+
+
+>>>>>>>> USE MASTER for this section
+
+
+Kubernetes I (create cluster of stateless application):
+=======================================================
+- cd /root/demo/kubernetes
+- vi deployment.yaml
+	=> SHOW
+- kubectl apply -f deployment.yaml 
+- kubectl get pods -l app=nginx
+- kubectl describe pod nginx-deployment-75675f5897-9lk69
+
+
+Kubernetes II (update image version to 1.8):
+============================================
+- vi deployment.yaml
+	=> Replace 1.7.9. by 1.8
+- kubectl apply -f deployment.yaml 
+- kubectl get pods -l app=nginx
+- kubectl describe pod nginx-deployment-75675f5897-9lk69
+	=> SHOW IMAGE VERSION
+	=> SHOW EVENTS: Docker is triggered in the background
+
+
+Kubernetes III (scale-out):
+===========================
+- vi deployment.yaml
+	=> Replace 1 by 4
+- kubectl apply -f deployment.yaml 
+- kubectl get pods -l app=nginx
+- kubectl describe pod -l app=nginx | less
+	=> SEARCH FOR 'kube1-node'
+
+
+Kubernetes IV (further upgrade image using set and rollout commands):
+=====================================================================
+- kubectl get deployments -l app=nginx
+- kubectl describe deployment nginx-deployment
+- kubectl set image deployment/nginx-deployment nginx=nginx:1.9.1
+- kubectl rollout status deployment/nginx-deployment
+- kubectl get deployments -l app=nginx
+
+
+Kubernetes V (create a LB service to expose the cluster to the outside world):
+==============================================================================
+- kubectl get deployments -l app=nginx
+- kubectl expose deployment nginx-deployment --type=LoadBalancer --name=my-nginx-service
+- kubectl get service -l app=nginx
+
+
+
+
+
+HELM I (create HELM application from chart):
+============================================
+- cd /root/demo/helm
+- ls
+- cd hello-world
+	==> SHOW DIR
+	==> SHOW CONTENT OF ALL FILES
+- cd ..
+- tar -cvzf hello-world.tar.gz hello-world
+- helm install hello-world.tar.gz
+- helm ls
+- kubectl get pods,services
+
+
+HELM II (delete and rollback HELM application from chart):
+==========================================================
+- helm ls
+- helm delete <name>
+- helm ls
+- kubectl get pods,services
+- helm ls --deleted
+- helm rollback <name>					# DID NOT WORK FOR ONKNOWN REASON
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

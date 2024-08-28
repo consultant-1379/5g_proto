@@ -1,0 +1,4 @@
+{{- if eq (include "eric-sc-nlf.logshipper-enabled" . ) "true" }}
+  {{- include "eric-log-shipper-sidecar.logshipper-sidecar-configmap" . }}
+{{- end }}
+

@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "eric-stm-diameter-proxy-grpc.name" . }}-log-ctrl
+  labels:
+{{- if (include "eric-stm-diameter-proxy-grpc.labels" .) }}
+{{- include "eric-stm-diameter-proxy-grpc.labels" . | nindent 4 }}
+{{- end }}
+  annotations:
+{{- if (include "eric-stm-diameter-proxy-grpc.annotations" .) }}
+{{- include "eric-stm-diameter-proxy-grpc.annotations" . | nindent 4 }}
+{{- end }}
+data:
+  logControl.json: |
+      [
+          {
+            "container": "dsl",
+            "severity": "{{ .Values.configuration.logSeverity.dsl }}"
+          },
+          {
+            "container": "diameterproxygrpc",
+            "severity": "{{ .Values.configuration.logSeverity.diameterproxygrpc }}"
+          },
+          {
+            "container": "bsfdiameter",
+            "severity": "{{ .Values.configuration.logSeverity.bsfdiameter }}"
+          }
+      ]

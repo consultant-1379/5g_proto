@@ -1,0 +1,41 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2023-11-14 11:30
+FOSS:
+    # Available in Bazaar
+    FOSSName: PyYAML
+    # Available in Bazaar
+    FOSSVersion: 6.0
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/yaml/pyyaml/archive/refs/tags/6.0.tar.gz
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 13/CAX1056382
+    # Not Available in Bazaar
+    Primary: Y
+    # Available in Bazaar
+    STAKOCode: Restricted Use
+    # Available in Bazaar
+    STAKOReason: Product verison is older than 18 months
+    # Not Available in Bazaar    
+    FunctionalityUsedInTheEricssonProduct: PyYAML is the YAML parser and emitter for Python. 
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: MIT License (MIT)
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: MIT License (MIT)
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: NO
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ZARISAR Aristeidis Sarras

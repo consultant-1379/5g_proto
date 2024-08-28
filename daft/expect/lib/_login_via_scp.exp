@@ -1,0 +1,214 @@
+################################################################################
+#
+#  Author   : eustone
+#
+#  Revision : 1.9
+#  Date     : 2022-05-06 15:16:12
+#
+################################################################################
+#
+# (C) COPYRIGHT ERICSSON GMBH 2014,2015,2018,2022
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson GmbH, Germany.
+#
+# The program(s) may be used and/or copied only with the written permission
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in
+# the agreement/contract under which the program(s) have been supplied.
+#
+################################################################################
+
+# -----------------------------------------------------------------------------
+# Copy files using secure copy "scp".
+#
+# Input:
+#  - From data
+#  - To data
+#  - Password
+#  - Port (default is 22)
+#
+# Output:
+#  - 0: Success
+#    1: Timout or other error
+#
+
+# I really had problems to get the "spawn scp $from_data $to_data" to work
+# if the input to the procedure was:
+# "-r root@10.87.13.54:/home/daft/useraccount_backup" "." "rootroot"
+#
+# I tried the following logic:
+#    not working: spawn scp $from_data $to_data
+#    not working: spawn scp '$from_data $to_data'
+#    not working: spawn scp "$from_data $to_data"
+#    not working: send -- "scp $from_data $to_data\r"
+#        working: spawn scp -v -r root@10.87.13.54:/home/daft/user* .
+#        working: spawn scp -r root@10.87.13.54:/home/daft/useraccount* .
+#    not working: spawn scp $from_data .
+#        working: spawn scp -r root@10.87.13.54:/home/daft/useraccount* $to_data
+#        working: spawn scp -r root@10.87.13.54:/home/daft/useraccount_backup $to_data
+#        working: set from_data "root@10.87.13.54:/home/daft/useraccount_backup"; spawn scp -r $from_data $to_data
+#    not working: set from_data "-r root@10.87.13.54:/home/daft/useraccount_backup"; spawn scp $from_data $to_data
+#    not working: set from_data "\-r root@10.87.13.54:/home/daft/useraccount_backup"; spawn scp $from_data $to_data
+#    not working: set from_data "\\-r root@10.87.13.54:/home/daft/useraccount_backup"; spawn scp $from_data $to_data
+#    not working: set from_data "\\\-r root@10.87.13.54:/home/daft/useraccount_backup"; spawn scp $from_data $to_data
+#        working: spawn scp -pr $from_data $to_data
+#
+# So the problem seems to be the "-r " part, so for now I just hard code this
+
+proc login_via_scp {from_data to_data password {port 22} {options ""}} {
+    global spawn_id
+
+    set ipv6_address 0
+
+    # Check for IPv6 address in from_data
+    puts "\nChecking 'from_data' contents to detect possible IPv6 address:"
+    if { [regexp "^(.+):(.+)$" $from_data whole_match user_host_match file_match] == 1 } {
+        # We have a host and file in from_data meaning copy from remote node
+        if { [regexp "^(.+) (.+)@(.+)$" $user_host_match whole_match prefix_match user_match host_match] == 1 } {
+            # We have a prefix, username and hostname
+            if { [regexp "^\[0-9\]+.\[0-9\]+.\[0-9\]+.\[0-9\]+$" $host_match whole_match] == 1 } {
+                # We have something that looks like an IPv4 address
+                puts "1:IPv4 address detected in 'from_data'\n"
+            } elseif { [regexp "^.+:.*$" $host_match whole_match] == 1 } {
+                # We have something that looks like an IPv6 address
+                puts "2:IPv6 address detected in 'from_data'\n"
+                set ipv6_address 1
+                set from_data "$prefix_match $user_match@\\\[$host_match\\\]:$file_match"
+            } else {
+                # Does not look like an IPv4 or IPv6 address
+                puts "3:Neither IPv4 nor IPv6 address detected in 'from_data', maybe a hostname\n"
+            }
+        } elseif { [regexp "^(.+)@(.+)$" $user_host_match whole_match user_match host_match] == 1 } {
+            # We have a username and hostname
+            if { [regexp "^\[0-9\]+\.\[0-9\]+\.\[0-9\]+\.\[0-9\]+$" $host_match whole_match] == 1 } {
+                # We have something that looks like an IPv4 address
+                puts "4:IPv4 address detected in 'from_data'\n"
+            } elseif { [regexp "^.+:.+$" $host_match whole_match] == 1 } {
+                # We have something that looks like an IPv6 address
+                puts "5:IPv6 address detected in 'from_data'\n"
+                set ipv6_address 1
+                set from_data "$user_match@\\\[$host_match\\\]:$file_match"
+            } else {
+                # Does not look like an IPv4 or IPv6 address
+                puts "6:Neither IPv4 nor IPv6 address detected in 'from_data', maybe a hostname\n"
+            }
+        } elseif { [regexp "^(.+) (.+)$" $user_host_match whole_match prefix_match host_match] == 1 } {
+            # We have a prefix and hostname
+            if { [regexp "^\[0-9\]+\.\[0-9\]+\.\[0-9\]+\.\[0-9\]+$" $host_match whole_match] == 1 } {
+                # We have something that looks like an IPv4 address
+                puts "7:IPv4 address detected in 'from_data'\n"
+            } elseif { [regexp "^.+:.+$" $host_match whole_match] == 1 } {
+                # We have something that looks like an IPv6 address
+                puts "8:IPv6 address detected in 'from_data'\n"
+                set ipv6_address 1
+                set from_data "$prefix_match \\\[$host_match\\\]:$file_match"
+            } else {
+                # Does not look like an IPv4 or IPv6 address
+                puts "9:Neither IPv4 nor IPv6 address detected in 'from_data', maybe a hostname\n"
+            }
+        } elseif { [regexp "^\[0-9\]+\.\[0-9\]+\.\[0-9\]+\.\[0-9\]+$" $user_host_match whole_match] == 1 } {
+            # We have something that looks like an IPv4 address
+            puts "10:IPv4 address detected in 'from_data'\n"
+        } elseif { [regexp "^.+:.+$" $user_host_match whole_match] == 1 } {
+            # We have something that looks like an IPv6 address
+            puts "11:IPv6 address detected in 'from_data'\n"
+            set ipv6_address 1
+            set from_data "\\\[$user_host_match\\\]:$file_match"
+        } else {
+            puts "12:Did not detect a username in 'from_data', maybe using same user on remote host\n"
+        }
+    } else {
+        puts "13:Did not detect a remote host in 'from_data', maybe a local file\n"
+    }
+
+    # Check for IPv6 address in to_data
+    puts "Checking 'to_data' contents to detect possible IPv6 address:"
+    if { [regexp "^(.+):(.+)$" $to_data whole_match user_host_match file_match] == 1 } {
+        # We have a host and file in to_data meaning copy from remote node
+        if { [regexp "^(.+)@(.+)$" $user_host_match whole_match user_match host_match] == 1 } {
+            # We have a username and hostname
+            if { [regexp "^\[0-9\]+\.\[0-9\]+\.\[0-9\]+\.\[0-9\]+$" $host_match whole_match] == 1 } {
+                # We have something that looks like an IPv4 address
+                puts "1:IPv4 address detected in 'to_data'\n"
+            } elseif { [regexp "^.+:.+$" $host_match whole_match] == 1 } {
+                # We have something that looks like an IPv6 address
+                puts "2:IPv6 address detected in 'to_data'\n"
+                set ipv6_address 1
+                set to_data "$user_match@\\\[$host_match\\\]:$file_match"
+            } else {
+                # Does not look like an IPv4 or IPv6 address
+                puts "3:Neither IPv4 nor IPv6 address detected in 'to_data', maybe a hostname\n"
+            }
+        } elseif { [regexp "^\[0-9\]+\.\[0-9\]+\.\[0-9\]+\.\[0-9\]+$" $user_host_match whole_match] == 1 } {
+            # We have something that looks like an IPv4 address
+            puts "4:IPv4 address detected in 'to_data'\n"
+        } elseif { [regexp "^.+:.+$" $user_host_match whole_match] == 1 } {
+            # We have something that looks like an IPv6 address
+            puts "5:IPv6 address detected in 'to_data'\n"
+            set ipv6_address 1
+            set to_data "\\\[$user_host_match\\\]:$file_match"
+        } else {
+            puts "6:Did not detect a username in 'to_data', maybe using same user on remote host\n"
+        }
+    } else {
+        puts "7:Did not detect a remote host in 'to_data', maybe a local file\n"
+    }
+
+    # Copy the data
+    if { $ipv6_address == 1 } {
+        if [catch "spawn bash -c \"scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o loglevel=ERROR $options -6 -P $port $from_data $to_data\"" reason] {
+            puts "\nSpawn of 'scp' for IPv6 failed with reason: $reason\n"
+            exit 1
+        }
+    } else {
+        if [catch "spawn bash -c \"scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o loglevel=ERROR $options -P $port $from_data $to_data\"" reason] {
+            puts "\nSpawn of 'scp' for IPv4 failed with reason: $reason\n"
+            exit 1
+        }
+    }
+
+    # Wait for password request and finished transfer
+    expect {
+        "Connection closed by foreign host*" {
+            # Login failed for some reason
+            return 1
+        }
+        "lost connection*" {
+            # Login failed for some reason
+            return 1
+        }
+        "illegal option*" {
+            # Login failed due to some bad parameters
+            return 1
+        }
+        "Killed by signal*" {
+            # Login failed due to some bad parameters
+            return 1
+        }
+        "\n" {
+            # Any line
+            exp_continue
+        }
+        "assword:" {
+            send "$password\r"
+            exp_continue
+        }
+        -re "^Are you sure you want to continue connecting (yes/no(/\[fingerprint\])?)\?" {
+            # OpenSSH 8.0 added the option to use a fingerprint as authentication
+            send "yes\r"
+            exp_continue
+        }
+        timeout {
+            return 1
+        }
+        eof {
+            # Copy finished
+            return 0
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    return 0
+}

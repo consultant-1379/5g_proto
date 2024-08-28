@@ -1,0 +1,42 @@
+Version: v2
+Decription: FOSS list
+LastUpdate: 2023-10-13 09:05
+FOSS:
+    # Available in Bazaar
+    FOSSName: jaxb-api
+    # Available in Bazaar
+    FOSSVersion: 4.0.0
+    # Available in Bazaar >>> used as kind of ID.
+    FOSSURL: https://github.com/eclipse-ee4j/jaxb-api/archive/{{FOSSVersion}}.zip  
+    # Available in Bazaar
+    PRIMNumber(CAX/CTX): 21/CAX1055785 
+    # Not Available in Bazaar
+    Primary: N
+    # Available in Bazaar
+    STAKOCode: Restricted Use
+    # Available in Bazaar
+    STAKOReason: Copyleft license found 
+    # Not Available in Bazaar
+    FunctionalityUsedInTheEricssonProduct: 'The JAXB API, defined in the javax.xml.bind package, is a set of interfaces through which client applications communicate with code generated from a schema.'
+    # Available in Bazaar. Not used for specific report. >>> Includes _list_ of licenses taken from Bazaar
+    AvailableLicenses: BSD 3-Clause
+    # Not available in Bazaar, >>> FAL should be factored out into separate mapping file
+    ChoiceOfLicense: BSD 3-Clause
+    # Not Available in Bazaar >>> list of algorithms used (instead of bool)
+    CryptographicAlgorithmsUsed: ()
+    # Not Available in Bazaar
+    CryptographicAlgorithmsUsedDescription: NA
+    # Not Available in Bazaar >>> list
+    SecureProtocolsUsed: ()
+    # Not Available in Bazaar
+    SecureProtocolsUsedDescription: NA
+    # Select one of the following: Statically, Dynamically, Classpath, NotLinked. Not Available in Bazaar
+    EricssonCodeLinkedWithTheFOSSCode: Dynamically
+    # Not Available in Bazaar
+    MavenDependency: 
+    - 'jakarta.xml.bind:jakarta.xml.bind-api:jar:{{FOSSVersion}}'
+    # >>> New attribute:
+    # If yes, the default values of /scripts/fossReport/templates/defaultTemplate.yaml are not taken into account.
+    # In this case, the yaml attributes of the defaultTemplate.yaml should be copied in this file with the desired values.
+    ManualSpecificFOSSEvaluation: NO
+    ReportAuthor: ZARISAR Aristeidis Sarras

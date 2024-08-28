@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "eric-sc-sepp.name" . }}-hcagent-severities
+  labels:
+{{- include "eric-sc-sepp.labels" . | indent 4 }}
+    app: {{ template "eric-sc-sepp.name" . }}
+  annotations:
+{{- include "eric-sc-sepp.common-annotations" . | indent 4 }}
+data:
+  {{ template "eric-sc-sepp.name" . }}-severities.json: |
+{{ .Values.severities | toPrettyJson | indent 4 }}

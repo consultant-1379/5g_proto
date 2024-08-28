@@ -1,0 +1,165 @@
+modelVersion: 2.0
+
+description: "RLF Subchart PRA"
+
+import:
+  base: ../rulesets/ruleset2.0-eric-base.yaml
+  rlf: ruleset2.0.yaml
+
+properties:
+  - DOCKER_REPO_RELEASED: "proj-sc-all-released"
+  - HELM_REPO_RELEASED: "proj-sc-all-released-helm"
+  - DOCKER_REPO_DROP_URL: ${base.DOCKER_REGISTRY_URL}/${rlf.DOCKER_REPO_DROP}
+  - DOCKER_REPO_RELEASED_URL: ${base.DOCKER_REGISTRY_URL}/${DOCKER_REPO_RELEASED}
+  - HELM_REPO_DROP_URL: ${base.ARMSERO_ARTIFACTORY_URL}/${rlf.HELM_REPO_DROP}
+  - HELM_REPO_RELEASED_URL: ${base.ARMSERO_ARTIFACTORY_URL}/${HELM_REPO_RELEASED}
+  - HELM_CHART_RELEASED_FOLDER: ${base.OUTPUT_DIR}/released-charts
+
+env:
+  - USER
+  # the name of branch where Git commit is merged
+  - BRANCH (default=master)
+  # the microservice release candidate version (e.g. 1.0.0-3)
+  - RELEASE_CANDIDATE
+  # type of release version update (e.g. MINOR, PATCH)
+  - VERSION_UPDATE (default=MINOR)
+  # the ARM functional user name for Helm repository
+  - HELM_USER
+  # the ARM functional user token for Helm repository (J-Frog ARM Token)
+  - HELM_TOKEN
+  # the GERRIT username
+  - GERRIT_USERNAME
+  # the GERRIT password (Gerrit HTTP password)
+  - GERRIT_PASSWORD
+  # Run git related actions in dry-run
+  - DRY_RUN (default=true)
+  # cihelm timers
+  - CIHELM_RETRY_TIMEOUT (default = 600)
+  - CIHELM_RETRY_SLEEP (default = 30)
+  - CIHELM_HTTP_RETRY (default = 10)
+  # committer email
+  - COMMITTER_EMAIL (default = eiffelesc-noreply@ericsson.com)
+
+var:
+  - released-version
+  - semver
+  - helmchart-file-name
+  - next-version
+
+rules:
+
+  clean:
+    - task: output-folder
+      cmd: rm -rf ${base.OUTPUT_DIR}
+    - task: artifact-properties
+      cmd: rm -f artifact.properties
+    - task: images
+      description: Remove created/pulled microservice images
+      cmd:
+        - docker rmi --force ${DOCKER_REPO_DROP_URL}/${rlf.RLF_IMAGE_NAME}:${env.RELEASE_CANDIDATE} >/dev/null 2>&1
+        - docker rmi --force ${DOCKER_REPO_RELEASED_URL}/${rlf.RLF_IMAGE_NAME}:${env.RELEASE_CANDIDATE} >/dev/null 2>&1
+
+  init:
+    - task: generate-released-version
+      description: Generates the released version based on environment variable RELEASE_CANDIDATE
+      docker-image: base.adp-release-auto
+      cmd:
+        - version-handler convert-version
+          -s ${env.RELEASE_CANDIDATE} -o ${base.OUTPUT_DIR}/var.released-version
+        - cat ${base.OUTPUT_DIR}/var.released-version | cut -d '+' -f 1 > ${base.OUTPUT_DIR}/var.semver
+    - task: helmchart-file-name
+      cmd: echo ${rlf.CHART_NAME}-${var.released-version}.tgz > ${base.OUTPUT_DIR}/var.helmchart-file-name
+    - task: adp-artifacts-properties
+      description: Generates adp artifacts properties
+      docker-image: base.adp-release-auto
+      cmd: generate-adp-artifacts
+           --chart-name ${rlf.CHART_NAME}
+           --chart-version ${var.released-version}
+           --chart-repo ${HELM_REPO_RELEASED_URL}
+    - task: generate-service-name
+      cmd: echo ${rlf.CHART_NAME}> .bob/var.service-name
+    - task: create-chart-folder
+      cmd: mkdir -p ${HELM_CHART_RELEASED_FOLDER}
+
+  pre-publish:
+    - task: fetch-chart
+      docker-image: base.cihelm
+      cmd:
+        --username ${env.HELM_USER}
+        --password ${env.HELM_TOKEN}
+        --retry-timeout '${env.CIHELM_RETRY_TIMEOUT}'
+        --retry-sleep '${env.CIHELM_RETRY_SLEEP}'
+        --http-retry '${env.CIHELM_HTTP_RETRY}'
+        fetch
+          --destination '${HELM_CHART_RELEASED_FOLDER}'
+          '${rlf.CHART_NAME}'
+          '${env.RELEASE_CANDIDATE}'
+          '${HELM_REPO_DROP_URL}'
+    - task: unpack-chart
+      cmd: tar -C '${HELM_CHART_RELEASED_FOLDER}' -xzf '${HELM_CHART_RELEASED_FOLDER}/${rlf.CHART_NAME}-${env.RELEASE_CANDIDATE}.tgz'
+    - task: generate-release-chart
+      docker-image: base.cihelm
+      cmd:
+        --username ${env.HELM_USER}
+        --password ${env.HELM_TOKEN}
+        --retry-timeout '${env.CIHELM_RETRY_TIMEOUT}'
+        --retry-sleep '${env.CIHELM_RETRY_SLEEP}'
+        --http-retry '${env.CIHELM_HTTP_RETRY}'
+        package
+          --destination '${HELM_CHART_RELEASED_FOLDER}'
+          --version '${var.released-version}'
+          --replace eric-product-info.yaml:${rlf.DOCKER_REPO_DROP}=${DOCKER_REPO_RELEASED}
+          ${HELM_CHART_RELEASED_FOLDER}/${rlf.CHART_NAME}
+
+  publish:
+    - task: release-rlf-image
+      cmd:
+        - docker pull ${DOCKER_REPO_DROP_URL}/${rlf.RLF_IMAGE_NAME}:${env.RELEASE_CANDIDATE}
+        - docker tag ${DOCKER_REPO_DROP_URL}/${rlf.RLF_IMAGE_NAME}:${env.RELEASE_CANDIDATE} ${DOCKER_REPO_RELEASED_URL}/${rlf.RLF_IMAGE_NAME}:${env.RELEASE_CANDIDATE}
+        - docker push ${DOCKER_REPO_RELEASED_URL}/${rlf.RLF_IMAGE_NAME}:${env.RELEASE_CANDIDATE}
+    - task: release-helm-package
+      docker-image: base.adp-release-auto
+      docker-envs:
+        - HELM_USER
+        - HELM_TOKEN
+      cmd: upload_helm_package
+           --chart-filename "${HELM_CHART_RELEASED_FOLDER}/${rlf.CHART_NAME}-${var.released-version}.tgz"
+           --chart-repo ${HELM_REPO_RELEASED_URL}
+           --helm-user ${env.HELM_USER}
+           --helm-token ${env.HELM_TOKEN}
+           --virtual-repo ${HELM_REPO_RELEASED_URL}
+           --dry-run ${env.DRY_RUN}
+           --skip-existing-version
+
+  post-publish:
+    - task: pra-git-tag
+      description: Create and push git tag. Example eric-sc-rlf/1.0.0+55
+      docker-image: base.adp-release-auto
+      docker-envs:
+        - GERRIT_USERNAME
+        - GERRIT_PASSWORD
+      cmd: version-handler create-git-tag
+           --tag ${rlf.CHART_NAME}/${var.released-version}
+           --message "PRA Release ${var.released-version}"
+           --git-repo-url ${base.GIT_REPO_URL}
+           --commitid ${rlf.CHART_NAME}/${env.RELEASE_CANDIDATE}
+           --branch ${env.BRANCH}
+           --dry-run ${env.DRY_RUN}
+           --debug
+    - task: version-prefix-increment
+      description: Step version in VERSION_PREFIX (e.g. 1.0.0 -> 1.1.0) and push it to git
+      docker-image: base.adp-release-auto
+      docker-envs:
+        - GERRIT_USERNAME
+        - GERRIT_PASSWORD
+      cmd: version-handler increment
+           --step-version-prefix ${env.VERSION_UPDATE}
+           --git-repo-url ${base.GIT_REPO_URL}
+           --branch ${env.BRANCH}
+           --version-prefix-file ${rlf.CHART_NAME}/VERSION_PREFIX
+           --dry-run ${env.DRY_RUN}
+           --email ${env.COMMITTER_EMAIL}
+    - task: archive
+      cmd: /bin/bash -c 'echo "CHART_NAME=${rlf.IMAGE_NAME}" > artifact.properties;
+                         echo "CHART_REPO_PATH=${rlf.DOCKER_REPO_RELEASED}" >> artifact.properties;
+                         echo "CHART_VERSION=${env.RELEASE_CANDIDATE}" >> artifact.properties;'

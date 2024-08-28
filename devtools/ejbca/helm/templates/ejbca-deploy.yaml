@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ejbca-deployment
+  labels:
+    app: ejbca
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ejbca
+  template:
+    metadata:
+      labels:
+        app: ejbca
+    spec:
+      containers:
+      - name: ejbca
+        image: "{{ .Values.container.image.repo }}/{{ .Values.container.image.reference }}:{{ .Values.container.image.tag }}"
+        imagePullPolicy: {{ .Values.container.image.pullPolicy }}
+        resources:
+{{ toYaml .Values.resources.ejbca | indent 10 }}
+        ports:
+        - containerPort: 8081
+          name: proxied-http
+        - containerPort: 8082
+          name: proxied-https
+        env:
+        - name: PROXY_HTTP_BIND
+          value: "0.0.0.0"
+        - name: DATABASE_JDBC_URL
+          value: "jdbc:mysql://ejbca-database-service:3306/ejbca?characterEncoding=utf8"
+        - name: TLS_SETUP_ENABLED
+          value: "true"
+        - name: INITIAL_ADMIN
+          value: ";PublicAccessAuthenticationToken:TRANSPORT_ANY;"
+          #For official setup admin need to be configured
+          #value: "ManagementCA;CertificateAuthenticationToken:WITH_COMMONNAME;SuperAdmin"
+        - name: TZ
+          value: "UTC"
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              name: ejbca-database-credentials
+              key: username
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ejbca-database-credentials
+              key: password

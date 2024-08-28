@@ -1,0 +1,79 @@
+################################################################################
+# $Revision: 1.4 $                                                             #
+#   $Author: EUSTONE $                                                         #
+#     $Date: 2017-03-06 14:01:14 $                                             #
+################################################################################
+#                                                                              #
+# (C) COPYRIGHT ERICSSON GMBH 2014                                             #
+#                                                                              #
+# The copyright to the computer program(s) herein is the property of           #
+# Ericsson GmbH, Germany.                                                      #
+#                                                                              #
+# The program(s) may be used and/or copied only with the written permission    #
+# of Ericsson GmbH in accordance with the terms and conditions stipulated in   #
+# the agreement/contract under which the program(s) have been supplied.        #
+#                                                                              #
+################################################################################
+
+source [file join [file dirname [info script]] ../lib/_GEP_valid_command.exp]
+
+# -----------------------------------------------------------------------------
+# Get primary SC where CLISS is running.
+#
+# Input:
+#  -
+#
+# Output:
+#  - Hostname or the string "-"
+#
+proc GEP_get_primary_sc {} {
+    global spawn_id
+
+    # Some internal variables
+    set hostname "-"
+
+    # Set command to use
+    set command ""
+
+    # Check which command is valid
+    if { [GEP_valid_command "dsc-show-active-controller"] == 0 } {
+        set command "dsc-show-active-controller -s COM"
+    } else {
+        if { [GEP_valid_command "dsc-show-primary-sc"] == 0 } {
+            set command "dsc-show-primary-sc"
+        } else {
+            # None of the two commands exists, exit now
+            return "-"
+        }
+    }
+
+    # Send command
+    send -- "$command\r"
+
+    # Wait for result and new prompt
+    expect {
+        -re "^(SC-\[12\])\r*\n" {
+            # Wanted line
+            set hostname $expect_out(1,string)
+            exp_continue
+        }
+        "\n" {
+            # Any other line
+            exp_continue
+        }
+        -re "SC-\[12\]\[^\n\]*$" {
+            # Ready for next command
+        }
+        -re "PL-\[0-9\]+\[^\n\]*$" {
+            # Ready for next command
+        }
+        timeout {
+            return $hostname
+        }
+    }
+
+    # Read any pending output
+    expect -re ".*"
+
+    return $hostname
+}

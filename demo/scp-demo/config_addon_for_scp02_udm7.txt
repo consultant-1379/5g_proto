@@ -1,0 +1,63 @@
+<hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <capabilities>
+        <capability>urn:ietf:params:netconf:base:1.0</capability>
+    </capabilities>
+</hello>
+]]>]]>
+
+<?xml version="1.0"?>
+<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:ns2="urn:com:ericsson:ecim:1.0" xmlns:ns3="http://tail-f.com/ns/netconf/actions/1.0" xmlns:ns4="urn:ietf:params:xml:ns:yang:ietf-netconf-monitoring"
+    xmlns:ns5="urn:ietf:params:xml:ns:netconf:notification:1.0" message-id="0">
+    <edit-config>
+        <target>
+            <running />
+        </target>
+        <config>
+            <scp-function xmlns="urn:rdns:com:ericsson:oammodel:ericsson-scp">
+                <nf-instance>   
+                    <name>scp_instance_1</name>
+                    <static-nf-instance-data>
+                        <name>udm_set3_static</name>
+                        <static-nf-instance>
+                            <name>udm7-seppsim7</name>
+                            <nf-type>udm</nf-type>
+                            <static-nf-service>
+                                <name>nudm-uecm</name>
+                                <address>
+                                    <scheme>http</scheme>
+                                    <fqdn>eric-seppsim-p7-mcc-262-mnc-73.5g-bsf-eedcsi</fqdn>
+                                </address>
+                            </static-nf-service>
+                        </static-nf-instance>						
+                    </static-nf-instance-data>
+                    <nf-pool>
+                        <name>NfUdm_rr_pool_set3</name>
+                        <nf-pool-discovery>
+                            <name>NfUdm_pr_static_pool_set3</name>
+                            <static-nf-instance-data-ref>udm_set3_static</static-nf-instance-data-ref>
+                        </nf-pool-discovery>
+                    </nf-pool>                  
+                    <routing-case>      
+                        <name>default_routing</name>                    
+                        <routing-rule>
+                            <name>Send_to_ownPLMN_NfUdm_set3_rr</name>
+                            <condition>var.setid=='set3.udmset.5gc.mnc073.mcc262'</condition>
+                            <routing-action>
+                                <name>NfUdm_set3_rr</name>
+                                <action-route-round-robin>
+                                    <target-nf-pool>
+                                        <nf-pool-ref>NfUdm_rr_pool_set3</nf-pool-ref>
+                                    </target-nf-pool>
+                                    <failover-profile-ref>fop1</failover-profile-ref>
+                                    <preserve-if-indirect-routing>target-api-root-header</preserve-if-indirect-routing>
+                                </action-route-round-robin>
+                            </routing-action>
+                        </routing-rule>
+                    </routing-case>                 
+                </nf-instance>
+            </scp-function>
+        </config>
+    </edit-config>
+</rpc>
+]]>]]>
+

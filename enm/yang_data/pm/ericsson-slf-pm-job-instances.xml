@@ -1,0 +1,46 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- ericsson-slf-pm-job-instances 0.1.0 -->
+<!-- modified: 2024-02-20 -->
+<!-- Copyright (c) 2024 Ericsson AB. All rights reserved. -->
+<config xmlns="http://tail-f.com/ns/config/1.0">
+	<pm xmlns="urn:rdns:com:ericsson:oammodel:ericsson-pm">
+		<job>
+			<name>slf_system_job</name>
+			<granularity-period>five-min</granularity-period>
+			<requested-job-state>active</requested-job-state>
+			<type>measurement-job</type>
+			<measurement-reader>
+				<name>slf_system_metrics_reader</name>
+				<group-ref>slf_system_metrics</group-ref>
+			</measurement-reader>
+            <measurement-reader>
+                <name>slf_nrf_reader</name>
+                <group-ref>slf_nrf</group-ref>
+            </measurement-reader>
+		</job>
+		<job>
+			<name>slf_overload_job</name>
+			<granularity-period>one-min</granularity-period>
+			<requested-job-state>active</requested-job-state>
+			<type>threshold-job</type>
+			<measurement-reader>
+				<name>slf_overload_reader</name>
+				<measurement-type-ref>slf_load_avg</measurement-type-ref>
+				<group-ref>slf_system_metrics</group-ref>
+				<threshold-direction>increasing</threshold-direction>
+				<threshold-monitoring>
+					<name>slf_overload_threshold_monitoring</name>
+					<threshold-high>70</threshold-high>
+					<threshold-low>60</threshold-low>
+					<threshold-severity>major</threshold-severity>
+				</threshold-monitoring>
+				<threshold-monitoring>
+					<name>slf_overload_threshold_escalation</name>
+					<threshold-high>80</threshold-high>
+					<threshold-low>75</threshold-low>
+					<threshold-severity>critical</threshold-severity>
+				</threshold-monitoring>
+			</measurement-reader>
+		</job>
+	</pm>
+</config>
